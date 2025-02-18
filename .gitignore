@@ -1,0 +1,11 @@
+# Ignorer les fichiers de configuration sensibles
+.env
+config/*.php
+
+# database/*.sql
+
+# Ignorer les fichiers temporaires
+*.log
+*.cache
+node_modules/
+vendor/
