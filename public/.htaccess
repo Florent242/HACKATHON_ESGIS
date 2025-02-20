@@ -1,6 +1,8 @@
 # Active la réécriture d'URL
 RewriteEngine On
-RewriteBase /
+
+# Définit le dossier de base pour les réécritures
+RewriteBase /HACKATHON_ESGIS/public/
 
 # Si le fichier ou le répertoire existe, ne pas le réécrire
 RewriteCond %{REQUEST_FILENAME} !-f
