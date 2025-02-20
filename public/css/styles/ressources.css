@@ -1,7 +1,7 @@
 /* styles.css */
 :root {
-    --background: #0B1121;
-    --card-bg: #0F172A;
+    --background: #030B20;
+    --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
     --card-hover: #1E293B;
     --blue: #3B82F6;
     --text: #FFFFFF;

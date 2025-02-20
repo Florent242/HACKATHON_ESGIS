@@ -1,3 +1,4 @@
+<script defer src="/HACKATHON_ESGIS/public/js/header.js"></script>
 <header>
         <div class="header-container">
             <div class="logo-nav">

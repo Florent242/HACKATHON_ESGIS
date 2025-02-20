@@ -1,5 +1,5 @@
 // Initialize Lucide icons
-// lucide.createIcons();
+lucide.createIcons();
 
 // Add event listeners for interactive elements
 document.addEventListener('DOMContentLoaded', () => {
@@ -31,17 +31,5 @@ document.addEventListener('DOMContentLoaded', () => {
             const challengeTitle = button.closest('.challenge-card').querySelector('h3').textContent;
             alert(`Viewing challenge: ${challengeTitle}`);
         });
-    });
-
-    // Notification button click handler
-    const notificationBtn = document.querySelector('.notification-btn');
-    notificationBtn.addEventListener('click', () => {
-        alert('Notifications coming soon!');
-    });
-
-    // Start Challenge button click handler
-    const startChallengeBtn = document.querySelector('.start-challenge');
-    startChallengeBtn.addEventListener('click', () => {
-        alert('Start a new challenge coming soon!');
     });
 });
