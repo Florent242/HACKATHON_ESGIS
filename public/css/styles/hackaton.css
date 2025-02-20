@@ -1,7 +1,7 @@
 /* styles.css */
 :root {
-    --background: #0B1121;
-    --card-bg: #0F172A;
+    --background: #030B20;
+    --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
     --card-hover: #1E293B;
     --blue: #3B82F6;
     --text: #FFFFFF;
@@ -26,17 +26,18 @@ body {
 /* Main Content Styles */
 main {
     max-width: 1200px;
-    margin: 0 auto;
+    margin: auto;
     padding: 2rem 1rem;
-    background: linear-gradient(to bottom, 
+    /* background: linear-gradient(to bottom, 
                 transparent, 
                 var(--background)),
                 radial-gradient(circle at center, rgba(59, 130, 246, 0.25), 
-                transparent 70%);
+                transparent 70%); */
 }
-
 .hackathons-container {
-    background-color: var(--card-bg);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.25), 0 4px 6px -2px rgba(59, 130, 246, 0.25);
     border-radius: 1rem;
     padding: 2rem;
 }

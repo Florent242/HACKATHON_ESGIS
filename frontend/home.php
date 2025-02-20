@@ -16,20 +16,20 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="container">
-            <h1 class="hero-title">
+            <h1 class="hero-title fade-in">
                 Challenge Yourself with
                 <span class="highlight">EsgisHub</span>
             </h1>
-            <p class="hero-subtitle">
+            <p class="hero-subtitle fade-in">
                 Join our community of developers and security enthusiasts in building amazing projects,
                 mastering new technologies, and discovering cybersecurity challenges.
             </p>
             <div class="hero-buttons">
-                <button class="btn btn-primary">
+                <button class="btn btn-primary fade-in">
                     Start Your Journey
                     <i data-lucide="arrow-right"></i>
                 </button>
-                <button class="btn btn-secondary">
+                <button class="btn btn-secondary fade-in">
                     Explore Challenges
                 </button>
             </div>
@@ -37,26 +37,26 @@
     </section>
 
     <!-- Stats Section -->
-  <section class="stats-section">
-    <div class="stats-container">
-      <div class="stat-item">
-        <h2>1,200+</h2>
-        <p>Active Members</p>
-      </div>
-      <div class="stat-item">
-        <h2>50+</h2>
-        <p>Weekly Challenges</p>
-      </div>
-      <div class="stat-item">
-        <h2>$50K</h2>
-        <p>In Prizes</p>
-      </div>
-      <div class="stat-item">
-        <h2>2</h2>
-        <p>Challenge Types</p>
-      </div>
-    </div>
-  </section>
+    <section class="stats-section">
+        <div class="stats-container">
+            <div class="stat-item">
+                <h2><span>1200+</span></h2>
+                <p>Active Members</p>
+            </div>
+            <div class="stat-item">
+                <h2><span>50+</span></h2>
+                <p>Weekly Challenges</p>
+            </div>
+            <div class="stat-item">
+                <h2>$<span>50</span>K</h2>
+                <p>In Prizes</p>
+            </div>
+            <div class="stat-item">
+                <h2><span>2</span></h2>
+                <p>Challenge Types</p>
+            </div>
+        </div>
+    </section>
 
     <!-- Featured Challenges Section -->
     <section class="featured-challenges">
@@ -133,7 +133,5 @@
             </div>
         </div>
     </section>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script defer src="/HACKATHON_ESGIS/public/js/challenge.js"></script>
 </body>
 </html>
