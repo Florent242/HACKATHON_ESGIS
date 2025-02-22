@@ -1,18 +1,19 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>EsgisHub - Challenges</title>
         <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/challenge.css">
         <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
-        <!-- Lucide Icons -->
+        <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
         <script defer src="/HACKATHON_ESGIS/public/js/challenge.js"></script>
-        <script src="https://unpkg.com/lucide@latest"></script>
+        <!-- Lucide Icons -->       
+        <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
     </head>
     <body>
         <!-- Header -->
-        <?php include '../includes/header.php'; ?>
+        <?php require_once '../includes/header.php'; ?>
 
         <!-- Main Content -->
         <main class="container">
@@ -36,8 +37,11 @@
             <!-- Chat App Challenge -->
             <div class="challenge-card">
                 <div class="card-header">
-                    <div class="difficulty medium">Medium</div>
-                    <h3>Build a Real-time Chat App</h3>
+                    <div class="first-row">
+                        <i data-lucide="chevrons-left-right"></i>
+                        <h3>Build a Real-time Chat App</h3>
+                        <div class="difficulty medium">Medium</div>
+                    </div>
                     <div class="category">Development</div>
                 </div>
                 <div class="card-content">
@@ -61,8 +65,11 @@
             <!-- Security Audit Challenge -->
             <div class="challenge-card">
                 <div class="card-header">
-                    <div class="difficulty hard">Hard</div>
-                    <h3>Web Application Security Audit</h3>
+                    <div class="first-row">
+                        <i data-lucide="shield"></i>
+                        <h3>Web Application Security Audit</h3>
+                        <div class="difficulty hard">Hard</div>
+                    </div>
                     <div class="category">Hacking</div>
                 </div>
                 <div class="card-content">
@@ -86,8 +93,11 @@
             <!-- Portfolio Challenge -->
             <div class="challenge-card">
                 <div class="card-header">
-                    <div class="difficulty easy">Easy</div>
-                    <h3>Portfolio Website</h3>
+                    <div class="first-row">
+                        <i data-lucide="layout"></i>
+                        <h3>Portfolio Website</h3>
+                        <div class="difficulty easy">Easy</div>
+                    </div>
                     <div class="category">Development</div>
                 </div>
                 <div class="card-content">

@@ -6,7 +6,9 @@
     <title>EsgisHub - Sign in</title>
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/connexion.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
+    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
     <script defer src="/HACKATHON_ESGIS/public/js/connexion.js"></script>
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
