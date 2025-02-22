@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize Lucide icons
-    lucide.createIcons();
+    // lucide.createIcons();
 
     /* Handle scroll for hero section */
     // Select all element that have the .fade-in class for the animation when they are visible

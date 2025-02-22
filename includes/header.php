@@ -1,3 +1,4 @@
+<script defer src="/HACKATHON_ESGIS/public/js/lucide.js"></script>
 <script defer src="/HACKATHON_ESGIS/public/js/header.js"></script>
 <header>
         <div class="header-container">

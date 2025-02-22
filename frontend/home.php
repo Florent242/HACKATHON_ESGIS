@@ -6,12 +6,14 @@
     <title>EsgisHub - Challenge Yourself</title>
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/home.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
+    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
     <script defer src="/HACKATHON_ESGIS/public/js/home.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Lucide Icons -->
+    <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
 </head>
 <body>
     <!-- Navigation -->
-    <?php include '../includes/header.php'; ?>
+    <?php require_once '../includes/header.php'; ?>
 
     <!-- Hero Section -->
     <section class="hero">

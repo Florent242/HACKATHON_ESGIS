@@ -1,5 +1,5 @@
 // Initialize Lucide icons
-lucide.createIcons();
+// lucide.createIcons();
 
 // Add event listeners for interactive elements
 document.addEventListener('DOMContentLoaded', () => {

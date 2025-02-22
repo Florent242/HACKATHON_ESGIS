@@ -9,3 +9,15 @@ config/*.php
 *.cache
 node_modules/
 vendor/
+
+# Ignorer les fichiers de configuration locaux
+.env
+.env.local
+
+# Ignorer les fichiers de build
+dist/
+build/
+
+# Ignorer les fichiers de dépendances de système d'exploitation
+.DS_Store
+Thumbs.db

@@ -6,10 +6,13 @@
     <title>EsgisHub - Profil</title>
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/profil.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
+    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
     <script defer src="/HACKATHON_ESGIS/public/js/profil.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Lucide Icons -->
+    <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
 </head>
 <body>
+    <?php include '../includes/header.php'; ?>
     <div class="container">
         <!-- Header Profile -->
         <div class="profile-header">

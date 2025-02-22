@@ -6,7 +6,9 @@
     <title>EsgisHub - Sign up</title>
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/inscription.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
+    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
     <script defer src="/HACKATHON_ESGIS/public/js/inscription.js"></script>
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>

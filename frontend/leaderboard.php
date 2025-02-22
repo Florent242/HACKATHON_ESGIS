@@ -6,10 +6,11 @@
     <title>EsgisHub - Leaderboard</title>
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/classement.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
+    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
 </head>
 <body>
     <!-- Header -->
-    <?php include '../includes/header.php'; ?>
+    <?php require_once '../includes/header.php'; ?>
 
     <main>
         <div class="leaderboard-header">
