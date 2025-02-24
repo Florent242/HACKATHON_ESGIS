@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Resources</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/ressources.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
+    <link rel="stylesheet" href="../public/css/styles/ressources.css">
+    <link rel="stylesheet" href="../public/css/styles/header.css">
+    <link rel="stylesheet" href="../public/css/dist/output.css">
 </head>
 <body>
 <?php require_once '../includes/header.php'; ?>
@@ -30,12 +30,12 @@
                 </div>
                 <p>Comprehensive guides for web development, from basics to advanced topics</p>
                 <ul class="resource-links">
-                    <li><a href="#">React Fundamentals</a></li>
-                    <li><a href="#">API Integration</a></li>
-                    <li><a href="#">State Management</a></li>
-                    <li><a href="#">Testing Strategies</a></li>
+                    <li><a href="https://react.dev/learn" target="_blank">React Fundamentals</a></li>
+                    <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch" target="_blank">API Integration</a></li>
+                    <li><a href="https://redux.js.org/introduction/getting-started" target="_blank">State Management</a></li>
+                    <li><a href="https://www.softwaretestinghelp.com/types-of-software-testing/" target="_blank">Testing Strategies</a></li>
                 </ul>
-                <a href="#" class="explore-btn">Explore Development Guides</a>
+                <a href="https://github.com/kamranahmedse/developer-roadmap" target="_blank" class="explore-btn">Explore Development Guides</a>
             </div>
 
             <!-- Security Resources Card -->
@@ -50,12 +50,12 @@
                 </div>
                 <p>Learn about cybersecurity, penetration testing, and secure coding practices</p>
                 <ul class="resource-links">
-                    <li><a href="#">OWASP Top 10</a></li>
-                    <li><a href="#">Penetration Testing</a></li>
-                    <li><a href="#">Security Tools</a></li>
-                    <li><a href="#">Best Practices</a></li>
+                    <li><a href="https://owasp.org/www-project-top-ten/" target="_blank">OWASP Top 10</a></li>
+                    <li><a href="https://www.hackthebox.com/blog/what-is-penetration-testing" target="_blank">Penetration Testing</a></li>
+                    <li><a href="https://www.kali.org/tools/" target="_blank">Security Tools</a></li>
+                    <li><a href="https://www.sans.org/blog/security-best-practices/" target="_blank">Best Practices</a></li>
                 </ul>
-                <a href="#" class="explore-btn">Explore Security Resources</a>
+                <a href="https://www.cybrary.it/catalog/" target="_blank" class="explore-btn">Explore Security Resources</a>
             </div>
 
             <!-- Documentation Card -->
@@ -71,12 +71,12 @@
                 </div>
                 <p>Official documentation and references for various technologies</p>
                 <ul class="resource-links">
-                    <li><a href="#">API References</a></li>
-                    <li><a href="#">Framework Guides</a></li>
-                    <li><a href="#">Security Standards</a></li>
-                    <li><a href="#">Code Examples</a></li>
+                    <li><a href="https://developer.mozilla.org/en-US/docs/Web/API" target="_blank">API References</a></li>
+                    <li><a href="https://reactjs.org/docs/getting-started.html" target="_blank">Framework Guides</a></li>
+                    <li><a href="https://www.cisecurity.org/controls/cis-controls-list" target="_blank">Security Standards</a></li>
+                    <li><a href="https://github.com/public-apis/public-apis" target="_blank">Code Examples</a></li>
                 </ul>
-                <a href="#" class="explore-btn">Explore Documentation</a>
+                <a href="https://devdocs.io/" target="_blank" class="explore-btn">Explore Documentation</a>
             </div>
 
             <!-- Learning Paths Card -->
@@ -92,12 +92,12 @@
                 </div>
                 <p>Structured learning paths for different skill levels and interests</p>
                 <ul class="resource-links">
-                    <li><a href="#">Beginner Track</a></li>
-                    <li><a href="#">Advanced Development</a></li>
-                    <li><a href="#">Security Expert</a></li>
-                    <li><a href="#">Full Stack Path</a></li>
+                    <li><a href="https://www.freecodecamp.org/learn/2022/responsive-web-design/" target="_blank">Beginner Track</a></li>
+                    <li><a href="https://fullstackopen.com/en/" target="_blank">Advanced Development</a></li>
+                    <li><a href="https://www.offensive-security.com/pwk-oscp/" target="_blank">Security Expert</a></li>
+                    <li><a href="https://roadmap.sh/full-stack" target="_blank">Full Stack Path</a></li>
                 </ul>
-                <a href="#" class="explore-btn">Explore Learning Paths</a>
+                <a href="https://www.codecademy.com/catalog/all" target="_blank" class="explore-btn">Explore Learning Paths</a>
             </div>
         </div>
     </main>
