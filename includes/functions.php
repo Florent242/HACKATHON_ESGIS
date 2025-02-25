@@ -28,18 +28,28 @@ function getCurrentUser() {
     }
     
     require_once MODELS_PATH . '/User.php';
-    $userModel = new User();
+    require_once MODELS_PATH . '/Database.php';
+    
+    $database = Database::getInstance();
+    $db = $database->getConnection();
+    $userModel = new User($db);
     return $userModel->find($_SESSION['user_id']);
 }
 
 // Fonction pour vérifier le rôle de l'utilisateur
 function hasRole($role) {
     $user = getCurrentUser();
-    return $user && $user['role'] === $role;
+    if (!$user) {
+        return false;
+    }
+    return isset($user['role']) && $user['role'] === $role;
 }
 
 // Fonction pour générer un token CSRF
 function generateCsrfToken() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
     if (empty($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
@@ -48,17 +58,26 @@ function generateCsrfToken() {
 
 // Fonction pour vérifier le token CSRF
 function verifyCsrfToken($token) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
 
 // Fonction pour rediriger
 function redirect($path) {
+    if (php_sapi_name() === 'cli') {
+        return; // Ne pas rediriger en mode CLI
+    }
     header("Location: " . APP_URL . $path);
     exit;
 }
 
 // Fonction pour afficher un message flash
 function setFlashMessage($type, $message) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
     $_SESSION['flash'] = [
         'type' => $type,
         'message' => $message
@@ -67,6 +86,9 @@ function setFlashMessage($type, $message) {
 
 // Fonction pour récupérer et effacer le message flash
 function getFlashMessage() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
     if (isset($_SESSION['flash'])) {
         $flash = $_SESSION['flash'];
         unset($_SESSION['flash']);

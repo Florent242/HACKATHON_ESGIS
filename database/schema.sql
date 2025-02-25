@@ -121,3 +121,10 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+USE hackathon_db;
+
+ALTER TABLE evaluations
+DROP FOREIGN KEY evaluations_ibfk_1,
+ADD CONSTRAINT fk_evaluation_projet 
+FOREIGN KEY (projet_id) REFERENCES projets(id) 
+ON DELETE CASCADE;
