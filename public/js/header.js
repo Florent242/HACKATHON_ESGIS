@@ -4,7 +4,7 @@ lucide.createIcons();
 // Start Challenge button click handler
 if (document.querySelector('.start-challenge')) {
     document.querySelector('.start-challenge').addEventListener('click', () => {
-        window.location.href = '/HACKATHON_ESGIS/public/signup';
+        window.location.href = '/HACKATHON_ESGIS/public/auth';
     });
 }
 

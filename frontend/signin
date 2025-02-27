@@ -15,8 +15,8 @@
     <main class="auth-container">
         <div class="auth-card">
             <div class="auth-tabs">
-                <button href="connexion.html" class="auth-tab">Connexion</button>
-                <button href="inscription.html"class="auth-tab active">Inscription</button>
+                <button href="connexion.html" class="auth-tab active">Connexion</button>
+                <button href="inscription.html"class="auth-tab">Inscription</button>
             </div>
             
             <div class="auth-form">
@@ -26,12 +26,12 @@
                 <form id="loginForm">
                     <div class="form-group">
                         <label for="email">Email</label>
-                        <input type="email" id="email" placeholder="exemple@esgis.bj">
+                        <input name="email" type="email" id="email" placeholder="exemple@esgis.bj">
                     </div>
 
                     <div class="form-group">
                         <label for="password">Mot de passe</label>
-                        <input type="password" id="password">
+                        <input name="password" type="password" id="password">
                     </div>
 
                     <button type="submit" class="submit-btn">Se connecter</button>

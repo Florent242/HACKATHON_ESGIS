@@ -39,18 +39,31 @@ body {
 .auth-tab {
     flex: 1;
     padding: 1rem;
+    text-align: center;
+    text-decoration: none;
+    color: #94a3b8;
     background: none;
     border: none;
-    color: #94a3b8;
     cursor: pointer;
     transition: all 0.2s;
 }
 
-.auth-tab.active {
+
+/* Survol des onglets, même quand ils ne sont pas actifs */
+.auth-tab:hover {
+    color: white;
+    background-color: #0D1117;
+    border-bottom: 2px solid #3B82F6;
+    opacity: 1;
+}
+
+
+.auth-tab.active{
     color: white;
     background-color: #0D1117;
     border-bottom: 2px solid #3B82F6;
 }
+
 
 .auth-form {
     padding: 2rem;
@@ -95,7 +108,7 @@ body {
     width: 100%;
     padding: 0.75rem;
     background-color: #3B82F6;
-    color: white;
+    color:  #031a4b;
     border: none;
     border-radius: 0.375rem;
     font-size: 1rem;
