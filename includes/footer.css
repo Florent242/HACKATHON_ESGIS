@@ -1,0 +1,68 @@
+
+footer {
+    background-color: #0d1117;
+    color: #ffffff;
+    padding: 20px 0;
+    font-family: Arial, sans-serif;
+    }
+
+.footer-container {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    padding: 20px;
+}
+
+.footer-section {
+    width: 200px;
+}
+
+.footer-section h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.footer-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-section ul li {
+    margin-bottom: 8px;
+}
+
+.footer-section ul li a {
+    color: #ffffff;
+    text-decoration: none;
+    opacity: 0.8;
+}
+
+.footer-section ul li a:hover {
+    opacity: 1;
+}
+
+.social a {
+    font-size: 20px;
+    color: #ffffff;
+    margin-right: 10px;
+    text-decoration: none;
+}
+
+.social i {
+    width: 24px;
+    height: 24px;
+    color: white;
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+  
+  .social i:hover {
+    color: #1da1f2; /* Bleu de Twitter par exemple */
+  }
+  
+
+.footer-bottom {
+    text-align: center;
+    padding: 10px;
+    background-color: #161b22;
+}
