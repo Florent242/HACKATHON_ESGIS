@@ -3,35 +3,73 @@
 <header>
         <div class="header-container">
             <div class="logo-nav">
-                <a href="/HACKATHON_ESGIS/public/user" class="logo">
+                <div class="logo">
                     <div class="logo-circle">E</div>
                     <span>EsgisHub</span>
-                </a>
-                <div>
-                    <nav>
+                </div>
+                <a href="/HACKATHON_ESGIS/public/user">Dashboard</a>
+                <div class="nav-container">
+                    <nav class="main-nav">
                         <!-- verifie et attribut la classe active au lien correspondant -->
-                        <a href="/HACKATHON_ESGIS/public/user/challenges" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/user/challenges' ? 'active' : ''; ?>">Challenges</a>
-                        <a href="/HACKATHON_ESGIS/public/user/hackathon" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/user/hackathon' ? 'active' : ''; ?>">Hackathons</a>
-                        <a href="/HACKATHON_ESGIS/public/user/leaderboard" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/user/leaderboard' ? 'active' : ''; ?>">Leaderboard</a>
-                        <a href="/HACKATHON_ESGIS/public/user/resources" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/user/resources' ? 'active' : ''; ?>">Resources</a>
-                    </nav>
+                        <li data-item="0">Événements <i data-lucide="chevron-down"></i></li>
+                        <li data-item="1">Communauté <i data-lucide="chevron-down"></i></li>
+                        <li data-item="2">Resources <i data-lucide="chevron-down"></i></li>
+                    </nav>  
                     <nav class="header-dropdown">
                         <div class="dropdown-container">
-                            <ul class="dropdown-item">
-                                <li>Challenges</li>
-                                <li>Hackathons</li>
-                                <li>Workshop</li>
-                            </ul>
-                            <ul class="dropdown-item">
-                                <li>Challenges</li>
-                                <li>Hackathons</li>
-                                <li>Workshop</li>
-                            </ul>
-                            <ul class="dropdown-item">
-                                <li>Challenges</li>
-                                <li>Hackathons</li>
-                                <li>Workshop</li>
-                            </ul>
+                            <div class="dropdown">
+                                <ul class="dropdown-item" data-item="0">
+                                    <a href="/HACKATHON_ESGIS/public/user/challenges">
+                                        <li>
+                                            Challenges
+                                        </li>
+                                    </a>
+                                    <a href="/HACKATHON_ESGIS/public/user/hackathon">
+                                        <li>
+                                            Hackathons
+                                        </li>
+                                    </a>
+                                    <a href="/HACKATHON_ESGIS/public/user/workshop">
+                                        <li>
+                                            Workshop
+                                        </li>
+                                    </a>
+                                </ul>
+                                <ul class="dropdown-item" data-item="1">
+                                    <a href="/HACKATHON_ESGIS/public/user/teams">
+                                        <li>
+                                            Teams
+                                        </li>
+                                    </a>
+                                    <a href="/HACKATHON_ESGIS/public/user/mentors">
+                                        <li>
+                                            Mentors
+                                        </li>
+                                    </a>
+                                    <a href="/HACKATHON_ESGIS/public/user/leaderboard">
+                                        <li>
+                                            Leaderboard
+                                        </li>
+                                    </a>
+                                </ul>
+                                <ul class="dropdown-item" data-item="2">
+                                    <a href="/HACKATHON_ESGIS/public/user/documentation">
+                                        <li>
+                                            Documentation
+                                        </li>
+                                    </a>
+                                    <a href="/HACKATHON_ESGIS/public/user/blog">
+                                        <li>
+                                            Blog
+                                        </li>
+                                    </a>
+                                    <a href="/HACKATHON_ESGIS/public/user/faq">
+                                        <li>
+                                            FAQ
+                                        </li>
+                                    </a>
+                                </ul>
+                            </div>
                         </div>
                     </nav>
                 </div>
@@ -43,7 +81,7 @@
                         <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                     </svg>
                 </button>
-                <button class="start-challenge">Start Challenge</button>
+                <button class="profile-btn"><i data-lucide="circle-user"></i></button>
             </div>
         </div>
     </header>
