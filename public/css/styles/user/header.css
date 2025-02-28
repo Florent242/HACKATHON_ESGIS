@@ -1,7 +1,7 @@
 /* ==================================================
    HEADER
    ================================================== */
-/* :root {
+:root {
     --background: #0B1121;
     --blue: #3B82F6;
     --primary: #3B82F6;
@@ -9,7 +9,7 @@
     --border: #1E293B;
     --text: #FFFFFF;
     --text-secondary: #94A3B8;
-} */
+}
 header {
     border-bottom: 1px solid var(--border);
     position: sticky;
@@ -101,4 +101,28 @@ nav a:hover, nav a.active {
     border: none;
     cursor: pointer;
     transition: opacity 0.2s;
+}
+
+.header-dropdown {
+    position: absolute;
+    top: 100%;
+    background-color: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+}
+
+.dropdown-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    padding: 0.5rem;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    cursor: pointer;
 }

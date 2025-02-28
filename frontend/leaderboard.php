@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="../public/css/styles/classement.css">
     <link rel="stylesheet" href="../public/css/styles/header.css">
     <link rel="stylesheet" href="../public/css/dist/output.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> -->
     <script defer src="../public/js/classement.js"></script>
 </head>
 <body>

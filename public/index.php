@@ -50,7 +50,7 @@ switch ($url) {
 
     // Page user
     case '/HACKATHON_ESGIS/public/user':
-        require_once '../frontend/user/home.php'; // Inclure la page "User"
+        require_once '../frontend/user/dashboard.php'; // Inclure la page "User"
         break;
     case '/HACKATHON_ESGIS/public/user/challenges':
         require_once '../frontend/user/challenge.php'; // Inclure la page "user/challenges"

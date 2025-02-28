@@ -11,11 +11,17 @@
     --text: #FFFFFF;
     --text-secondary: #94A3B8;
     --blue: #3B82F6;
+    --blue-opac: #2564eb25;
     --primary: #3B82F6;
     --primary-hover: #2563EB;
     --green: #22C55E;
     --yellow: #EAB308;
     --red: #EF4444;
+    --font-size-sm: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.25rem;
+    --font-size-xl: 1.5rem;
+    --font-size-xxl: 2rem;
 }
 
 /* Reset global */
@@ -25,6 +31,10 @@
     box-sizing: border-box;
 }
 
+html {
+    font-size: 100%; /* Base size, typically 16px */
+}
+
 /* Body */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -32,17 +42,6 @@ body {
     color: var(--text);
     line-height: 1.5;
     min-height: 100vh;
-}
-
-.fade-in {
-    opacity: 0;
-    transform: translateY(20px); /* Déplace légèrement vers le bas */
-    transition: opacity 1s ease, transform 1s ease; /* Transition douce */
-}
-
-.fade-in.visible {
-    opacity: 1;
-    transform: translateY(0); /* Remet à sa position d'origine */
 }
 
 /* Container */
@@ -157,6 +156,14 @@ body {
     text-align: center;
   }
 
+  .stat-item svg {
+    color: var(--blue);
+    stroke-width: 2; 
+    width: 2rem; 
+    height: 2rem; 
+    margin-bottom: 0.5rem;
+  }
+
   .stat-item h2 {
     font-size: 2.5rem;
     font-weight: 700;
@@ -169,54 +176,170 @@ body {
   }
 
 /* ==================================================
-   FEATURED CHALLENGES / CONTENT CARDS
+   ARGUMENTS 
    ================================================== */
-.featured-challenges {
+.arguments-section {
     max-width: 1200px;
-    margin: 3rem auto;
-    padding: 0 1rem;
+    margin: 6rem auto;
 }
 
-.section-header {
+.arguments-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     margin-bottom: 2rem;
 }
 
-.section-header h2 {
+.arguments-header h2 {
     font-size: 2rem;
     margin-bottom: 0.5rem;
 }
 
-.section-header p {
+.arguments-header p {
     color: var(--text-secondary);
 }
 
-.challenges-grid {
+.arguments-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(20%, 1fr));
+    gap: 1rem;
 }
 
-.challenge-card {
+.arguments-list {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 0.5rem;
     padding: 1.5rem;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    margin-bottom: 1rem;
 }
 
-.challenge-card:hover {
+.arguments-list:hover {
     transform: translateY(-0.5rem);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);}
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
 
-.card-header {
+.arguments-list svg {
+    background-color: var(--blue-opac);
+    color: var(--blue);
+    stroke: var(--blue); 
+    stroke-width: 1.5; 
+    width: 3rem; 
+    height: 3rem; 
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    margin: 0; 
+}
+
+.arguments-list p{
+    color:  var(--text-secondary);
+    font-size: 1rem;
+}
+
+/* ==================================================
+   EVENTS SECTION 
+   ================================================== */
+
+.events-section {
+    max-width: 1200px;
+    margin: 6rem auto;
+}
+
+.events-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.events-header h2 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.events-header p {
+    color: var(--text-secondary);
+}
+
+.events-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(25%, 1fr));
+    gap: 1rem;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.events-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    margin-bottom: 1rem;
     position: relative;
+}
+
+.events-item h3{
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.events-item div{
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.events-item div span{
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.events-item svg {
+    stroke-width: 1; 
+    width: 1rem; 
+    height: 1rem; 
+}
+
+.events-item button{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--text);
+    width: 100%;
+    background-color: var(--border);
+    border: none;
+    cursor: pointer;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    margin-top: 1rem;
+}
+
+.events-item button svg{
+    stroke-width: 2;
 }
 
 .difficulty {
     position: absolute;
     right: 0;
     top: 0;
+    border-radius: 1rem;
     padding: 0.25rem 0.75rem;
     border-radius: 1rem;
     font-size: 0.875rem;
@@ -303,19 +426,72 @@ body {
 /* ==================================================
    RESPONSIVE STYLES
    ================================================== */
-@media (max-width: 768px) {
+@media (max-width: 1150px) {
     .stats-container {
         grid-template-columns: repeat(2, 1fr);
     }
-    
-    nav {
+
+    .stats-section {
+        margin: 5%;
+    }
+
+    .arguments-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(50%, 1fr));
+        gap: 1rem;
+        padding: 5%;
+    }
+
+    .events-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(50%, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .header-nav{
         display: none;
     }
+
+    .stats-container {
+        grid-template-columns: repeat(auto-fit, minmax(30%, 1fr));
+    }
+
+    .stats-section {
+        margin: 5%;
+    }
+
+    .arguments-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(70%, 1fr));
+        gap: 1rem;
+        padding: 5%;
+    }
+
+    .events-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(50%, 1fr));
+    }
+    
 }
 
 @media (max-width: 480px) {
+    .header-nav{
+        display: none;
+    }
+
     .stats-container {
         grid-template-columns: 1fr;
     }
-}
 
+    .stats-section {
+        margin: 5%;
+    }
+
+    .arguments-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(50%, 2fr));
+        gap: 1rem;
+        padding: 5%;
+    }
+}

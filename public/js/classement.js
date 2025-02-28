@@ -42,7 +42,8 @@ function updateStats(data) {
 // Fonction pour charger et afficher le leaderboard
 async function loadLeaderboard() {
     try {
-        const response = await fetch('../backend/api/leaderboard.php');
+        // const response = await fetch('../backend/api/leaderboard.php');
+        return
         if (!response.ok) {
             throw new Error('Erreur réseau');
         }

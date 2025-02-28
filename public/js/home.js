@@ -70,15 +70,15 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Entry is intersecting:', entry.isIntersecting);
             if (entry.isIntersecting) {
                 console.log('Observed stats section');
-            animateStats();
-            observer.unobserve(entry.target);
-        }
+                animateStats();
+                observer.unobserve(entry.target);
+            }
+        });
+    }, {
+        root: null, // Utilise la fenêtre de visualisation
+        rootMargin: '0px 0px 100% 0px', // Ajuste la marge inférieure pour déclencher l'animation plus tôt
+        threshold: 0.1 // Déclenche l'événement lorsque 10% de l'élément est visible
     });
-}, {
-    root: null, // Utilise la fenêtre de visualisation
-    rootMargin: '0px 0px 100% 0px', // Ajuste la marge inférieure pour déclencher l'animation plus tôt
-    threshold: 0.1 // Déclenche l'événement lorsque 10% de l'élément est visible
-});
 
     const statsSection = document.querySelector('.stats');
     console.log('Stats section:', statsSection); // Vérifie si l'élément est trouvé
@@ -105,4 +105,13 @@ document.addEventListener('DOMContentLoaded', () => {
             hero.style.backgroundPositionY = scrolled * 0.5 + 'px';
         });
     }
+});
+
+// Handle event info buttons
+const eventInfo = document.querySelectorAll('.event-info');
+// handle start journey button
+eventInfo?.forEach(button => {
+    button.addEventListener('click', () => {
+        window.location.href = '/HACKATHON_ESGIS/public/hackathon';
+    });
 });

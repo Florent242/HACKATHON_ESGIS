@@ -7,13 +7,34 @@
                     <div class="logo-circle">E</div>
                     <span>EsgisHub</span>
                 </a>
-                <nav>
-                    <!-- verifie et attribut la classe active au lien correspondant -->
-                    <a href="/HACKATHON_ESGIS/public/user/challenges" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/user/challenges' ? 'active' : ''; ?>">Challenges</a>
-                    <a href="/HACKATHON_ESGIS/public/user/hackathon" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/user/hackathon' ? 'active' : ''; ?>">Hackathons</a>
-                    <a href="/HACKATHON_ESGIS/public/user/leaderboard" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/user/leaderboard' ? 'active' : ''; ?>">Leaderboard</a>
-                    <a href="/HACKATHON_ESGIS/public/user/resources" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/user/resources' ? 'active' : ''; ?>">Resources</a>
-                </nav>
+                <div>
+                    <nav>
+                        <!-- verifie et attribut la classe active au lien correspondant -->
+                        <a href="/HACKATHON_ESGIS/public/user/challenges" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/user/challenges' ? 'active' : ''; ?>">Challenges</a>
+                        <a href="/HACKATHON_ESGIS/public/user/hackathon" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/user/hackathon' ? 'active' : ''; ?>">Hackathons</a>
+                        <a href="/HACKATHON_ESGIS/public/user/leaderboard" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/user/leaderboard' ? 'active' : ''; ?>">Leaderboard</a>
+                        <a href="/HACKATHON_ESGIS/public/user/resources" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/user/resources' ? 'active' : ''; ?>">Resources</a>
+                    </nav>
+                    <nav class="header-dropdown">
+                        <div class="dropdown-container">
+                            <ul class="dropdown-item">
+                                <li>Challenges</li>
+                                <li>Hackathons</li>
+                                <li>Workshop</li>
+                            </ul>
+                            <ul class="dropdown-item">
+                                <li>Challenges</li>
+                                <li>Hackathons</li>
+                                <li>Workshop</li>
+                            </ul>
+                            <ul class="dropdown-item">
+                                <li>Challenges</li>
+                                <li>Hackathons</li>
+                                <li>Workshop</li>
+                            </ul>
+                        </div>
+                    </nav>
+                </div>
             </div>
             <div class="header-actions">
                 <button class="notification-btn">
