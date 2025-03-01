@@ -1,0 +1,83 @@
+/* ==================================================
+    FOOTER
+    ================================================== */
+
+    :root {
+        --background: #030B20;
+        --background-hover: #151821;
+        --card-hover: #1E293B;
+        --blue: #3B82F6;
+        --primary: #3B82F6;
+        --primary-hover: #2563EB;
+        --border: #1E293B;
+        --text: #FFFFFF;
+        --text-secondary: #94A3B8;
+    }
+footer {
+    background-color: var(--background-hover);
+    color: var(--text);
+    padding: 20px 0;
+    font-family: Arial, sans-serif;
+    }
+
+.footer-container {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    padding: 20px;
+}
+
+.footer-section {
+    width: 200px;
+}
+
+.footer-section h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.footer-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-section ul li {
+    margin-bottom: 8px;
+}
+
+.footer-section ul li a {
+    color: var(--text);
+    text-decoration: none;
+    opacity: 0.8;
+}
+
+.footer-section ul li a:hover {
+    opacity: 1;
+}
+
+.social a {
+    font-size: 20px;
+    color: var(--text);
+    margin-right: 10px;
+    text-decoration: none;
+}
+
+.social svg {
+    width: 24px;
+    height: 24px;
+    color: var(--text);
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+  
+  .social svg:hover {
+    color: var(--primary-hover);
+  }
+  
+
+.footer-bottom {
+    border-top: 1px solid var(--border);
+    text-align: center;
+    padding: 1rem;
+    background-color: var(--background-hover);
+}

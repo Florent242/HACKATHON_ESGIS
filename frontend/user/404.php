@@ -8,7 +8,9 @@
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
 </head>
 <body>
-    <h1>Oops! Cette page n'existe pas.</h1>
-    <p>Essayez de revenir à la <a href="/HACKATHON_ESGIS/public/user">page d'accueil</a>.</p>
+    <main class="flex flex-col items-center justify-center gap-15 max-w-[1200px] my-2 mx-auto p-5 mb-50">
+    <h1 class="text-4xl">Oops! Cette page n'existe pas.</h1>
+    <p>Essayez de revenir à la <a href="/HACKATHON_ESGIS/public/user" class="text-blue-500 hover:underline">page d'accueil</a>.</p>
+    </main>
 </body>
 </html>

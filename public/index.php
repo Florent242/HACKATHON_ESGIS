@@ -9,7 +9,7 @@ switch ($url) {
     case '/HACKATHON_ESGIS/public/':
         require_once '../frontend/home.php';  // Inclure la page d'accueil
         break;
-    case '/HACKATHON_ESGIS/public/challenges': 
+    case '/HACKATHON_ESGIS/public/challenges':
         require_once '../frontend/challenge.php';  // Inclure la page "Challenge"
         break;
     case '/HACKATHON_ESGIS/public/hackathon':
@@ -21,11 +21,11 @@ switch ($url) {
     case '/HACKATHON_ESGIS/public/leaderboard':
         require_once '../frontend/leaderboard.php'; // Inclure la page "Leaderboard"
         break;
-    case '/HACKATHON_ESGIS/public/signup':
-        require_once '../frontend/signup.php'; // Inclure la page "Signup"
+    case '/HACKATHON_ESGIS/public/auth':
+        require_once '../frontend/auth.php'; // Inclure la page "auth"
         break;
-    case '/HACKATHON_ESGIS/public/signin': 
-        require_once '../frontend/signin.php'; // Inclure la page "Connexion"
+    case '/HACKATHON_ESGIS/public/auth_admin':
+        require_once '../frontend/admin.php'; // Inclure la page "logout"
         break;
     case '/HACKATHON_ESGIS/public/profile':
         require_once '../frontend/profile.php'; // Inclure la page "Profil"
@@ -50,7 +50,7 @@ switch ($url) {
 
     // Page user
     case '/HACKATHON_ESGIS/public/user':
-        require_once '../frontend/user/home.php'; // Inclure la page "User"
+        require_once '../frontend/user/dashboard.php'; // Inclure la page "User"
         break;
     case '/HACKATHON_ESGIS/public/user/challenges':
         require_once '../frontend/user/challenge.php'; // Inclure la page "user/challenges"
@@ -73,4 +73,3 @@ switch ($url) {
         break;
 }
 // a ce niveau d'autres amelioration devront etre fait n'y toucher donc pas
-?>
