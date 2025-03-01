@@ -4,102 +4,165 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Resources</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/ressources.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
+    <link rel="stylesheet" href="../../public/css/styles/user/ressources.css">
+    <link rel="stylesheet" href="../../public/css/styles/user/header.css">
+    <link rel="stylesheet" href="../../public/css/dist/output.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+
 </head>
 <body>
-<?php require_once '../includes/user/header.php'; ?>
+<?php require_once '../../includes/user/header.php'; ?>
 
-    <main>
+<main>
+    <div class="resources-container">
         <div class="resources-header">
             <h1>Learning Resources</h1>
             <p>Everything you need to excel in challenges and hackathons</p>
         </div>
 
-        <div class="resources-grid">
-            <!-- Development Guides Card -->
-            <div class="resource-card">
-                <div class="card-header">
-                    <div class="icon-wrapper dev-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>
-                        </svg>
-                    </div>
-                    <h2>Development Guides</h2>
-                </div>
-                <p>Comprehensive guides for web development, from basics to advanced topics</p>
-                <ul class="resource-links">
-                    <li><a href="#">React Fundamentals</a></li>
-                    <li><a href="#">API Integration</a></li>
-                    <li><a href="#">State Management</a></li>
-                    <li><a href="#">Testing Strategies</a></li>
-                </ul>
-                <a href="#" class="explore-btn">Explore Development Guides</a>
+        <div class="stats-container">
+            <div class="stat-card">
+                <i class="fas fa-book"></i>
+                <h3>9</h3>
+                <p>Total Resources</p>
             </div>
-
-            <!-- Security Resources Card -->
-            <div class="resource-card">
-                <div class="card-header">
-                    <div class="icon-wrapper security-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        </svg>
-                    </div>
-                    <h2>Security Resources</h2>
-                </div>
-                <p>Learn about cybersecurity, penetration testing, and secure coding practices</p>
-                <ul class="resource-links">
-                    <li><a href="#">OWASP Top 10</a></li>
-                    <li><a href="#">Penetration Testing</a></li>
-                    <li><a href="#">Security Tools</a></li>
-                    <li><a href="#">Best Practices</a></li>
-                </ul>
-                <a href="#" class="explore-btn">Explore Security Resources</a>
-            </div>
-
-            <!-- Documentation Card -->
-            <div class="resource-card">
-                <div class="card-header">
-                    <div class="icon-wrapper doc-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                        </svg>
-                    </div>
-                    <h2>Documentation</h2>
-                </div>
-                <p>Official documentation and references for various technologies</p>
-                <ul class="resource-links">
-                    <li><a href="#">API References</a></li>
-                    <li><a href="#">Framework Guides</a></li>
-                    <li><a href="#">Security Standards</a></li>
-                    <li><a href="#">Code Examples</a></li>
-                </ul>
-                <a href="#" class="explore-btn">Explore Documentation</a>
-            </div>
-
-            <!-- Learning Paths Card -->
-            <div class="resource-card">
-                <div class="card-header">
-                    <div class="icon-wrapper path-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                        </svg>
-                    </div>
-                    <h2>Learning Paths</h2>
-                </div>
-                <p>Structured learning paths for different skill levels and interests</p>
-                <ul class="resource-links">
-                    <li><a href="#">Beginner Track</a></li>
-                    <li><a href="#">Advanced Development</a></li>
-                    <li><a href="#">Security Expert</a></li>
-                    <li><a href="#">Full Stack Path</a></li>
-                </ul>
-                <a href="#" class="explore-btn">Explore Learning Paths</a>
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <h3>1234</h3>
+                <p>Active Users</p>
             </div>
         </div>
-    </main>
+
+        <div class="search-container">
+            <input type="text" class="search-bar" id="searchInput" placeholder="Search resources...">
+        </div>
+
+        <div class="filters-container" id="filterTags">
+            <span class="filter-tag active" data-category="all">All Levels</span>
+            <span class="filter-tag" data-category="development">Development</span>
+            <span class="filter-tag" data-category="security">Security</span>
+            <span class="filter-tag" data-category="frontend">Frontend</span>
+            <span class="filter-tag" data-category="backend">Backend</span>
+            <span class="filter-tag" data-category="api">API</span>
+            <span class="filter-tag" data-category="testing">Testing</span>
+            <span class="filter-tag" data-category="devops">DevOps</span>
+        </div>
+
+        <div class="resources-grid" id="resourcesGrid">
+            <!-- Resources will be dynamically generated -->
+        </div>
+    </div>
+</main>
+
+<script>
+const resources = [
+    {
+        title: "Development Guides",
+        description: "Comprehensive guides for web development, from basics to advanced topics",
+        tags: ["development", "frontend", "backend"],
+        links: [
+            { name: "React Fundamentals", url: "https://react.dev/learn" },
+            { name: "API Integration", url: "https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch" },
+            { name: "State Management", url: "https://redux.js.org/introduction/getting-started" },
+            { name: "Testing Strategies", url: "https://www.softwaretestinghelp.com/types-of-software-testing/" }
+        ],
+        exploreLink: "https://github.com/kamranahmedse/developer-roadmap"
+    },
+    {
+        title: "Security Resources",
+        description: "Learn about cybersecurity, penetration testing, and secure coding practices",
+        tags: ["security", "testing", "devops"],
+        links: [
+            { name: "OWASP Top 10", url: "https://owasp.org/www-project-top-ten/" },
+            { name: "Penetration Testing", url: "https://www.hackthebox.com/blog/what-is-penetration-testing" },
+            { name: "Security Tools", url: "https://www.kali.org/tools/" },
+            { name: "Best Practices", url: "https://www.sans.org/blog/security-best-practices/" }
+        ],
+        exploreLink: "https://www.cybrary.it/catalog/"
+    },
+    {
+        title: "Documentation",
+        description: "Official documentation and references for various technologies",
+        tags: ["api", "backend", "development"],
+        links: [
+            { name: "API References", url: "https://developer.mozilla.org/en-US/docs/Web/API" },
+            { name: "Framework Guides", url: "https://reactjs.org/docs/getting-started.html" },
+            { name: "Security Standards", url: "https://www.cisecurity.org/controls/cis-controls-list" },
+            { name: "Code Examples", url: "https://github.com/public-apis/public-apis" }
+        ],
+        exploreLink: "https://devdocs.io/"
+    },
+    {
+        title: "Learning Paths",
+        description: "Structured learning paths for different skill levels and interests",
+        tags: ["frontend", "development"],
+        links: [
+            { name: "Beginner Track", url: "https://www.freecodecamp.org/learn/2022/responsive-web-design/" },
+            { name: "Advanced Development", url: "https://fullstackopen.com/en/" },
+            { name: "Security Expert", url: "https://www.offensive-security.com/pwk-oscp/" },
+            { name: "Full Stack Path", url: "https://roadmap.sh/full-stack" }
+        ],
+        exploreLink: "https://www.codecademy.com/catalog/all"
+    }
+];
+
+function displayResources(filteredResources = resources) {
+    const grid = document.getElementById('resourcesGrid');
+    grid.innerHTML = '';
+
+    filteredResources.forEach(resource => {
+        const card = document.createElement('div');
+        card.className = 'resource-card';
+        card.innerHTML = `
+            <h2>${resource.title}</h2>
+            <p>${resource.description}</p>
+            <div class="resource-tags">
+                ${resource.tags.map(tag => `<span class="resource-tag">${tag}</span>`).join('')}
+            </div>
+            <ul class="resource-links">
+                ${resource.links.map(link => `<li><a href="${link.url}" target="_blank" rel="noopener noreferrer">${link.name}</a></li>`).join('')}
+            </ul>
+            <a href="${resource.exploreLink}" target="_blank" rel="noopener noreferrer" class="explore-btn">Explore ${resource.title}</a>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+// Filter management
+document.getElementById('filterTags').addEventListener('click', (e) => {
+    if (e.target.classList.contains('filter-tag')) {
+        document.querySelectorAll('.filter-tag').forEach(tag => tag.classList.remove('active'));
+        e.target.classList.add('active');
+
+        const category = e.target.dataset.category;
+        if (category === 'all') {
+            displayResources();
+        } else {
+            const filtered = resources.filter(resource => 
+                resource.tags.includes(category)
+            );
+            displayResources(filtered);
+        }
+    }
+});
+
+// Search management
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    const filtered = resources.filter(resource => 
+        resource.title.toLowerCase().includes(searchTerm) ||
+        resource.description.toLowerCase().includes(searchTerm) ||
+        resource.tags.some(tag => tag.toLowerCase().includes(searchTerm)) ||
+        resource.links.some(link => link.name.toLowerCase().includes(searchTerm))
+    );
+    displayResources(filtered);
+});
+
+// Initial display
+displayResources();
+
+</script>
+
 </body>
 </html>
