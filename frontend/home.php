@@ -39,7 +39,7 @@
     </section>
 
     <!-- Stats Section -->
-    <section class="stats-section fade-in">
+    <section id="stats" class="stats-section fade-in">
         <div class="stats-container">
             <div class="stat-item">
                 <i data-lucide="users"></i>

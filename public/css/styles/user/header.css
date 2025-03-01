@@ -95,6 +95,10 @@ a{
     color: var(--text-secondary);
     cursor: pointer;
     padding: 0.5rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .profile-btn{
@@ -102,6 +106,9 @@ a{
     background: none;
     cursor: pointer;
     padding: 0.5rem;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
 }
 
 .profile-btn:hover{
@@ -109,9 +116,6 @@ a{
 }
 
 .profile-btn svg{
-    width: 5vw;
-    height: 5vh;
-    stroke-width: 2;
     stroke: var(--text-secondary);
 }
 
@@ -134,13 +138,13 @@ a{
     width: 100%;
     overflow: hidden;
     margin-top: 1rem;
-    transition: opacity 0.2s ease-in, visibility 0.2s ease-in;
+    transition: opacity 0.2s ease-in 0.1s, visibility 0.1s ease-in 0.1s;
 }
 
 .header-dropdown.visible {
     opacity: 1;
     visibility: visible; 
-    transition: opacity 0.2s ease-in, visibility 0.5s ease-in; 
+    transition: opacity 0.2s ease-in 0.2s, visibility 0.1s ease-in 0.1s; 
 }
 
 .dropdown-container {

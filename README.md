@@ -130,6 +130,8 @@ HACKATHON_ESGIS/
 │   └── user/       # Dossier des utilisateurs
 │
 ├── includes/             # Dossier pour les fichiers inclus ou partagés
+│   ├── footer.php       # Fichier pour le pied de page
+│   └── header.php        # Fichier pour l'en-tête
 │
 └── public/               # Dossier pour les fichiers accessibles publiquement
     ├── css/              # Fichiers CSS

@@ -1,31 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize Lucide icons
-    // lucide.createIcons();
-
-    /* Handle scroll for hero section */
-    // Select all element that have the .fade-in class for the animation when they are visible
-    const fadeElements = document.querySelectorAll('.fade-in');
-    // Intersection Observer to trigger the animation when the element is visible...hehe that's cool tho
-    const heroObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
-                heroObserver.unobserve(entry.target); // Here we stop the observer when the element is visible
-            }
-        });
-    });
-
-    fadeElements.forEach(element => {
-        heroObserver.observe(element);
-    });
-
-    // Handle notification button
-    const notificationBtn = document.querySelector('.notification-btn');
-    if (notificationBtn) {
-        notificationBtn.addEventListener('click', () => {
-            alert('Notifications coming soon!');
-        });
-    }
 
     // Handle hero buttons
     const startJourneyBtn = document.querySelector('.btn-primary');
@@ -34,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // handle start journey button
     startJourneyBtn?.addEventListener('click', () => {
         // window.location.href = '/HACKATHON_ESGIS/public/signup';
-        alert('Start a new challenge coming soon!');
+        window.location.href = '/HACKATHON_ESGIS/public/auth';
     });
 
     // handle explore challenges button
@@ -64,12 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Intersection Observer for stats animation
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-            console.log('Element bounds:', entry.boundingClientRect);
-            console.log('Viewport bounds:', entry.rootBounds);
-            console.log('Entry:', entry);
-            console.log('Entry is intersecting:', entry.isIntersecting);
             if (entry.isIntersecting) {
-                console.log('Observed stats section');
                 animateStats();
                 observer.unobserve(entry.target);
             }
@@ -81,21 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const statsSection = document.querySelector('.stats');
-    console.log('Stats section:', statsSection); // Vérifie si l'élément est trouvé
     if (statsSection) {
         observer.observe(statsSection);
         console.log('Observing stats section'); // Vérifie que l'observation a commencé
     }
-
-    // Add smooth scroll behavior. La partie a[href^="#"] est un sélecteur CSS qui cible tous les éléments <a> (liens) dont l'attribut href commence par le caractère #
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            document.querySelector(this.getAttribute('href')).scrollIntoView({
-                behavior: 'smooth'
-            });
-        });
-    });
 
     // Add parallax effect to hero section
     const hero = document.querySelector('.hero');
@@ -105,13 +62,13 @@ document.addEventListener('DOMContentLoaded', () => {
             hero.style.backgroundPositionY = scrolled * 0.5 + 'px';
         });
     }
-});
 
-// Handle event info buttons
-const eventInfo = document.querySelectorAll('.event-info');
-// handle start journey button
-eventInfo?.forEach(button => {
-    button.addEventListener('click', () => {
-        window.location.href = '/HACKATHON_ESGIS/public/hackathon';
+    // Handle event info buttons
+    const eventInfo = document.querySelectorAll('.event-info');
+    // handle start journey button
+    eventInfo?.forEach(button => {
+        button.addEventListener('click', () => {
+            window.location.href = '/HACKATHON_ESGIS/public/hackathon';
+        });
     });
 });

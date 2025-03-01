@@ -1,7 +1,21 @@
+/* ==================================================
+    FOOTER
+    ================================================== */
 
+    :root {
+        --background: #030B20;
+        --background-hover: #151821;
+        --card-hover: #1E293B;
+        --blue: #3B82F6;
+        --primary: #3B82F6;
+        --primary-hover: #2563EB;
+        --border: #1E293B;
+        --text: #FFFFFF;
+        --text-secondary: #94A3B8;
+    }
 footer {
-    background-color: #0d1117;
-    color: #ffffff;
+    background-color: var(--background-hover);
+    color: var(--text);
     padding: 20px 0;
     font-family: Arial, sans-serif;
     }
@@ -32,7 +46,7 @@ footer {
 }
 
 .footer-section ul li a {
-    color: #ffffff;
+    color: var(--text);
     text-decoration: none;
     opacity: 0.8;
 }
@@ -43,26 +57,27 @@ footer {
 
 .social a {
     font-size: 20px;
-    color: #ffffff;
+    color: var(--text);
     margin-right: 10px;
     text-decoration: none;
 }
 
-.social i {
+.social svg {
     width: 24px;
     height: 24px;
-    color: white;
+    color: var(--text);
     cursor: pointer;
     transition: color 0.3s;
   }
   
-  .social i:hover {
-    color: #1da1f2; /* Bleu de Twitter par exemple */
+  .social svg:hover {
+    color: var(--primary-hover);
   }
   
 
 .footer-bottom {
+    border-top: 1px solid var(--border);
     text-align: center;
-    padding: 10px;
-    background-color: #161b22;
+    padding: 1rem;
+    background-color: var(--background-hover);
 }

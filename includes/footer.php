@@ -1,20 +1,22 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Footer</title>
-    <link rel="stylesheet" href="footer.css?v=1.1">
-    <!--link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css"-->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/footer.css">
+    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
+    <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
 </head>
+
 <body>
 
     <footer class="footer-container">
         <div class="footer-section">
             <h3>À propos</h3>
             <ul>
-                <li><a href="#">Notre mission</a></li>
+                <li><a href="#stats">Notre mission</a></li>
                 <li><a href="#">L'équipe</a></li>
                 <li><a href="#">Contact</a></li>
             </ul>
@@ -42,16 +44,11 @@
             <a href="#"><i data-lucide="github"></i></a>
             <a href="#"><i data-lucide="linkedin"></i></a>
         </div>
-    </footer> 
+    </footer>
 
     <div class="footer-bottom">
         © 2025 Challenge Platform. Tous droits réservés.
     </div>
-
-    
-    <script>
-        lucide.createIcons();
-    </script>
-
 </body>
+
 </html>

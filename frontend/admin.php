@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Esgis Admin</title>
-    <link rel="stylesheet" href="admin.css?v=1.1">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
+    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/auth_admin.css">
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.280.0/dist/umd/lucide.min.js"></script>
-
 </head>
 <body>
     <div class="ad-container">
@@ -35,11 +33,11 @@
         </form>
     </div>
 </div>
-    <script>
-  window.addEventListener("load", function () {
-    lucide.createIcons();
-  });
-</script>
+    <script defer>
+    window.addEventListener("load", function () {
+        lucide.createIcons();
+    });
+    </script>
 
 </body>
 </html>

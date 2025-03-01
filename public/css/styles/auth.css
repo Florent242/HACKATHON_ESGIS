@@ -1,11 +1,13 @@
 :root {
     --background: #030B20;
-    --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
+    --background-hover: #151821;
     --card-hover: #1E293B;
     --blue: #3B82F6;
+    --primary: #3B82F6;
+    --primary-hover: #2563EB;
+    --border: #1E293B;
     --text: #FFFFFF;
     --text-secondary: #94A3B8;
-    --border: #1E293B;
 }
 
 * {
@@ -20,7 +22,6 @@ body {
     color: var(--text);
     display: flex;
     justify-content: center;
-    align-items: center;
     height: 100vh;
     padding: 10px;
 }
@@ -33,8 +34,9 @@ p{
 
 .auth-container {
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
     text-align: center;
+    margin: auto;
 }
 
 .auth-tabs {
@@ -44,7 +46,6 @@ p{
     background: var(--card-hover);
     padding: 5px;
     margin-bottom: 10px;
-    margin-top: 25%;
 }
 
 
@@ -73,6 +74,7 @@ p{
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     border: 1px solid var(--text-secondary);
+    transition: height 2s ease-in-out;
 }
 
 .auth-form {
@@ -120,7 +122,7 @@ p{
 }
 
 .form-group .display:focus-within {
-    border: 2px solid var(--blue); /* Bordure blanc au focus */
+    border: 1px solid var(--blue); /* Bordure bleue au focus */
   }
 
 /* Affiche l'icône uniquement quand l'input est focus */
@@ -137,42 +139,38 @@ p{
     border: none;
     border-radius: 8px;
     background: transparent;
-    color:var(--text-secondary);
+    color:var(--text);
     outline: none;
 }
 
-.form-group input::placeholder , i{
+.form-group input::placeholder , svg{
     color: var(--text-secondary);
 }
-
- i{
-    width: 20px;
-    height: 15px;
-    margin-right: 5px;
-}
-
-i[data-icon="key"] {
-    opacity: 0; /* Cache l'icône */
-    transition: opacity 0.3s ease-in-out;
+[data-icon="eye"] {
+    color: var(--text-secondary);
 }
 .submit-btn {
     width: 100%;
     padding: 10px;
-    background: #3b82f6;
+    background: var(--primary);
     border: none;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 5px;
-    color: #051831;
+    color: var(--text);
     font-weight: 500;
     cursor: pointer;
     transition: background 0.3s ease;
 }
 
+.submit-btn svg{
+    color: var(--text);
+}
+
 .submit-btn:hover {
-    background: #2563eb;
+    background: var(--primary-hover);
 }
 
 /* Affichage correct des formulaires */

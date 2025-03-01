@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "postcss ./public/css/styles/global.css -o ./public/css/dist/output.css --watch",
+    "dev": "npx tailwindcss -i ./public/css/styles/global.css -o ./public/css/dist/output.css --watch",
+    "postcss": "postcss ./public/css/styles/global.css -o ./public/css/dist/output.css --watch",
     "build:css": "postcss ./public/css/styles/global.css -o ./public/css/dist/output.css --env production",
     "lucide:build": "npx lucide build frontend/icons",
     "lucide:update": "npm update @lucide/icons && npm run lucide:build"
