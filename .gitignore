@@ -15,7 +15,6 @@ vendor/
 .env.local
 
 # Ignorer les fichiers de build
-dist/
 build/
 
 # Ignorer les fichiers de dépendances de système d'exploitation

@@ -1,0 +1,116 @@
+/* ==================================================
+   Fichier CSS fusionné et harmonisé
+   ================================================== */
+
+/* Variables globales */
+:root {
+    --background: #030B20;
+    --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
+    --card-hover: #1E293B;
+    --card-hv: #1a2a437e;
+    --blue-opac: #2564eb25;
+    --border: #1E293B;
+    --text: #FFFFFF;
+    --text-secondary: #94A3B8;
+    --blue: #3B82F6;
+    --primary: #3B82F6;
+    --primary-hover: #2563EB;
+    --green: #22C55E;
+    --yellow: #EAB308;
+    --red: #EF4444;
+    --card: #1E293B;
+}
+
+/* Reset global */
+* {
+    box-sizing: border-box;
+}
+
+/* Body */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: var(--background);
+    color: var(--text);
+    /* line-height: 1.5; */
+    min-height: 100vh;
+}
+
+main {
+    padding: 2rem 0;
+    background: linear-gradient(to bottom, 
+                transparent, 
+                var(--background)),
+                radial-gradient(circle at center, rgba(59, 130, 246, 0.25), 
+                transparent 70%);
+}
+
+
+.fade-in {
+    opacity: 0;
+    transform: translateY(2rem); /* Déplace légèrement vers le bas */
+    transition: opacity 1s ease, transform 1s ease-in-out; /* Transition douce */
+}
+
+.fade-in.visible {
+    opacity: 1;
+    transform: translateY(0); /* Remet à sa position d'origine */
+}
+
+.fade-out {
+    opacity: 1;
+    transform: translateY(0); /* Remet à sa position d'origine */
+    transition: opacity 1s ease, transform 1s ease; /* Transition douce */
+}
+
+.fade-out.visible {
+    opacity: 0;
+    transform: translateY(2rem); /* Déplace légèrement vers le bas */
+}
+
+.fade-in-left {
+    opacity: 0;
+    transform: translateX(-6rem); /* Déplace légèrement vers la gauche */
+    transition: opacity 1s ease, transform 1s ease; /* Transition douce */
+}
+
+.fade-in-left.visible {
+    opacity: 1;
+    transform: translateX(0); /* Remet à sa position d'origine */
+}
+
+.fade-in-right {
+    opacity: 0;
+    transform: translateX(6rem); /* Déplace légèrement vers la droite */
+    transition: opacity 1s ease, transform 1s ease; /* Transition douce */
+}
+
+.fade-in-right.visible {
+    opacity: 1;
+    transform: translateX(0); /* Remet à sa position d'origine */
+}
+
+.container {
+    width: 100%; /* Ensure it takes the full width */
+    max-width: 1200px; /* This may limit the width */
+    margin: 0 auto; /* Centering may affect width */
+}
+
+/* ==================================================
+   RESPONSIVE STYLES
+   ================================================== */
+@media (max-width: 768px) {
+    .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    nav {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-container {
+        grid-template-columns: 1fr;
+    }
+}
+

@@ -19,6 +19,50 @@ header {
     z-index: 100;
 }
 
+.fade-in {
+    opacity: 0;
+    transform: translateY(2rem); /* Déplace légèrement vers le bas */
+    transition: opacity 1s ease, transform 1s ease-in-out; /* Transition douce */
+}
+
+.fade-in.visible {
+    opacity: 1;
+    transform: translateY(0); /* Remet à sa position d'origine */
+}
+
+.fade-out {
+    opacity: 1;
+    transform: translateY(0); /* Remet à sa position d'origine */
+    transition: opacity 1s ease, transform 1s ease; /* Transition douce */
+}
+
+.fade-out.visible {
+    opacity: 0;
+    transform: translateY(2rem); /* Déplace légèrement vers le bas */
+}
+
+.fade-in-left {
+    opacity: 0;
+    transform: translateX(-6rem); /* Déplace légèrement vers la gauche */
+    transition: opacity 1s ease, transform 1s ease; /* Transition douce */
+}
+
+.fade-in-left.visible {
+    opacity: 1;
+    transform: translateX(0); /* Remet à sa position d'origine */
+}
+
+.fade-in-right {
+    opacity: 0;
+    transform: translateX(6rem); /* Déplace légèrement vers la droite */
+    transition: opacity 1s ease, transform 1s ease; /* Transition douce */
+}
+
+.fade-in-right.visible {
+    opacity: 1;
+    transform: translateX(0); /* Remet à sa position d'origine */
+}
+
 .header-container {
     max-width: 1200px;
     margin: 0 auto;
