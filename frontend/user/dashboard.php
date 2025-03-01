@@ -54,7 +54,7 @@
                 <div class="flex flex-wrap items-stretch justify-between max-md:flex-col max-md:w-full max-md:justify-center gap-2 w-full">
 
                     <!-- Carte Défis de développement -->
-                    <div class="transition-all fade-in-left duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col flex-[1_1_22%] gap-2 bg-(--card-bg) border border-gray-700 p-5 rounded-2xl shadow-lg relative">
+                    <div class="transition transition-border fade-in-left duration-300 ease hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col flex-[1_1_22%] gap-2 bg-(--card-bg) border border-gray-700 p-5 rounded-2xl shadow-lg relative">
                         <div class="flex flex-row gap-2 items-center justify-between mb-2">
                             <h3 class="text-md font-normal">Défis de développement</h3>
                             <i data-lucide="code" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
@@ -65,7 +65,7 @@
                     </div>
 
                     <!-- Carte Défis de hacking -->
-                    <div class="transition-all fade-in-left duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col flex-[1_1_22%] gap-2 bg-(--card-bg) border border-gray-700 p-5 rounded-2xl shadow-lg relative">
+                    <div class="transition transition-border fade-in-left duration-300 ease hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col flex-[1_1_22%] gap-2 bg-(--card-bg) border border-gray-700 p-5 rounded-2xl shadow-lg relative">
                         <div class="flex flex-row gap-2 items-center justify-between mb-2">
                             <h3 class="text-md font-normal">Défis de hacking</h3>
                             <i data-lucide="shield" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
@@ -212,7 +212,7 @@
                             <h3 class="text-white font-medium">Défis de développement</h3>
                             <p class="text-gray-400 text-sm">Voir tous les défis disponibles</p>
                         </div>
-                        <span class="ml-auto text-gray-500"><i data-lucide="link"></i></span>
+                        <span class="ml-auto text-gray-500"><i data-lucide="square-arrow-out-up-right"></i></span>
                     </a>
 
                     <!-- Carte 2 -->
@@ -224,7 +224,7 @@
                             <h3 class="text-white font-medium">Challenges de hacking</h3>
                             <p class="text-gray-400 text-sm">Explorer les challenges CTF</p>
                         </div>
-                        <span class="ml-auto text-gray-500"><i data-lucide="link"></i></span>
+                        <span class="ml-auto text-gray-500"><i data-lucide="square-arrow-out-up-right"></i></span>
                     </a>
 
                     <!-- Carte 3 -->
@@ -236,7 +236,7 @@
                             <h3 class="text-white font-medium">Modifier mon profil</h3>
                             <p class="text-gray-400 text-sm">Personnaliser votre compte</p>
                         </div>
-                        <span class="ml-auto text-gray-500"><i data-lucide="link"></i></span>
+                        <span class="ml-auto text-gray-500"><i data-lucide="square-arrow-out-up-right"></i></span>
                     </a>
                 </div>
             </section>
