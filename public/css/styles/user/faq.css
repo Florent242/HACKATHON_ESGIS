@@ -1,0 +1,174 @@
+:root {
+    --background: #030B20;
+    --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
+    --card-hover: #1E293B;
+    --blue: #3B82F6;
+    --text: #FFFFFF;
+    --text-secondary: #94A3B8;
+    --border: #1E293B;
+    --color-primary: #3B82F6;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--text);
+    font-family: "Arial", sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 2rem;
+}
+
+.faq-container {
+    max-width: 800px;
+    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+}
+
+@media (min-width: 768px) {
+    .faq-container {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 480px) {
+    .faq-title {
+        font-size: 1.5em;
+    }
+    .faq-item {
+        margin-bottom: 10px;
+    }
+}
+
+.faq-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: 0.3s ease;
+}
+
+.faq-question {
+    padding: 15px 20px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.faq-question i {
+    transition: transform 0.3s ease;
+}
+
+.faq-item.open .faq-question i {
+    transform: rotate(180deg);
+}
+
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0 20px;
+    background-color: var(--card-hover);
+    color: var(--text-secondary);
+    transition: max-height 0.4s ease-out, padding 0.3s ease-out;
+}
+
+.faq-item.open .faq-answer {
+    max-height: 200px;
+    /* Ajustable */
+    padding: 10px 20px;
+}
+
+.scroll-down {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.scrollDownBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+#scrollDownBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+#scroll-down {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.accordion {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+.accordion-item {
+    border-bottom: 1px solid #ccc;
+}
+
+.accordion-header {
+    background-color: #f7f7f7;
+}
+
+.accordion-button {
+    background-color: #f7f7f7;
+    border: none;
+    text-align: left;
+    width: 100%;
+    padding: 15px;
+    font-size: 16px;
+}
+
+.accordion-button:focus {
+    outline: none;
+}
+
+.accordion-body {
+    padding: 15px;
+    background-color: #fff;
+}

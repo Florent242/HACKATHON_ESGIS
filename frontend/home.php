@@ -41,21 +41,25 @@
     </section>
 
     <!-- Stats Section -->
-    <section class="stats-section">
+    <section id="stats" class="stats-section fade-in">
         <div class="stats-container">
             <div class="stat-item">
+                <i data-lucide="users"></i>
                 <h2><span>1200+</span></h2>
                 <p>Active Members</p>
             </div>
             <div class="stat-item">
+                <i data-lucide="calendar"></i>
                 <h2><span>50+</span></h2>
                 <p>Weekly Challenges</p>
             </div>
             <div class="stat-item">
+                <i data-lucide="trophy"></i>
                 <h2>$<span>50</span>K</h2>
                 <p>In Prizes</p>
             </div>
             <div class="stat-item">
+                <i data-lucide="swords"></i>
                 <h2><span>2</span></h2>
                 <p>Challenge Types</p>
             </div>
@@ -63,79 +67,80 @@
     </section>
 
     <!-- Featured Challenges Section -->
-    <section class="featured-challenges">
-        <div class="section-header">
-            <h2>Featured Challenges</h2>
-            <p>From web development to cybersecurity, find your next challenge</p>
+    <section class="arguments-section">
+        <div class="arguments-header">
+            <h2>Pourquoi Choisir EsgisHub ?</h2>
+            <p>Découvrez ce qui rend notre plateforme unique.</p>
         </div>
-
-        <div class="challenges-grid">
-            <!-- Challenge Card 1 -->
-            <div class="challenge-card">
-                <div class="card-header">
-                    <span class="difficulty medium">Medium</span>
-                    <h3>Build a Real-time Chat App</h3>
-                    <span class="category">Development</span>
-                </div>
-                <p class="description">Create a modern chat application using WebSocket technology and React</p>
-                <div class="technologies">
-                    <span class="tech-tag">React</span>
-                    <span class="tech-tag">WebSocket</span>
-                    <span class="tech-tag">Firebase</span>
-                </div>
-                <div class="card-footer">
-                    <div class="stats">
-                        <span class="participants">128 participants</span>
-                        <span class="time-left">7 days left</span>
-                    </div>
-                    <button class="view-challenge">View Challenge</button>
-                </div>
+        <div class="arguments-container">
+            <div class="arguments-list fade-in">
+                <i data-lucide="chevrons-left-right"></i>
+                <h3>Défis de Développement</h3>
+                <p>Participez à des défis de programmation stimulants et améliorez vos compétences</p>
             </div>
-
-            <!-- Challenge Card 2 -->
-            <div class="challenge-card">
-                <div class="card-header">
-                    <span class="difficulty hard">Hard</span>
-                    <h3>Web Application Security Audit</h3>
-                    <span class="category">Hacking</span>
-                </div>
-                <p class="description">Conduct a security assessment of a web application and identify vulnerabilities</p>
-                <div class="technologies">
-                    <span class="tech-tag">Security</span>
-                    <span class="tech-tag">Pentesting</span>
-                    <span class="tech-tag">OWASP</span>
-                </div>
-                <div class="card-footer">
-                    <div class="stats">
-                        <span class="participants">256 participants</span>
-                        <span class="time-left">14 days left</span>
-                    </div>
-                    <button class="view-challenge">View Challenge</button>
-                </div>
+            <div class="arguments-list fade-in">
+                <i data-lucide="shield"></i>
+                <h3>Défis de Sécurité</h3>
+                <p>Testez vos compétences en cybersécurité avec des challenges réalistes</p>
             </div>
-
-            <!-- Challenge Card 3 -->
-            <div class="challenge-card">
-                <div class="card-header">
-                    <span class="difficulty easy">Easy</span>
-                    <h3>Portfolio Website</h3>
-                    <span class="category">Development</span>
-                </div>
-                <p class="description">Design and build a responsive portfolio website with modern animations</p>
-                <div class="technologies">
-                    <span class="tech-tag">HTML</span>
-                    <span class="tech-tag">CSS</span>
-                    <span class="tech-tag">JavaScript</span>
-                </div>
-                <div class="card-footer">
-                    <div class="stats">
-                        <span class="participants">64 participants</span>
-                        <span class="time-left">5 days left</span>
-                    </div>
-                    <button class="view-challenge">View Challenge</button>
-                </div>
+            <div class="arguments-list fade-in">
+                <i data-lucide="users"></i>
+                <h3>Communauté Active</h3>
+                <p>Rejoignez une communauté dynamique de développeurs et d'experts en sécurité</p>
+            </div>
+            <div class="arguments-list fade-in">
+                <i data-lucide="trophy"></i>
+                <h3>Competitions</h3>
+                <p>Participez à des hackathons et gagnez des prix exceptionnels</p>
             </div>
         </div>
     </section>
+
+    <!-- events section -->
+    <section class="events-section">
+        <div class="events-header">
+            <h2>Événements à Venir</h2>
+            <p>Ne manquez pas nos prochains hackathons</p>
+        </div>
+
+        <div class="events-container">
+                <div class="events-item fade-in-left">
+                    <h3>ESGIS Hackathon 2024</h3>
+                    <div>
+                        <span>
+                            <i data-lucide="calendar"></i>
+                        15-17 Mars 2024
+                        </span>
+                        <span>
+                            <i data-lucide="users"></i>200 participants
+                        </span>
+                        <span>
+                            <i data-lucide="trophy"></i>Prix: 2,000,000 FCFA
+                        </span>
+                    </div>
+                    <button class="event-info">En savoir plus <i data-lucide="arrow-right"></i>
+                    </button>
+                </div>
+                <div class="events-item  fade-in-right">
+                    <h3>Security Challenge Week</h3>
+                    <div>
+                        <span>
+                            <i data-lucide="calendar"></i>
+                            15-17 Mars 2024
+                        </span>
+                        <span>
+                            <i data-lucide="users"></i>200 participants
+                        </span>
+                        <span>
+                            <i data-lucide="trophy"></i>Prix: 2,000,000 FCFA
+                        </span>
+                    </div>
+                    <button class="event-info">En savoir plus <i data-lucide="arrow-right"></i>
+                    </button>
+                </div>
+
+    </section>
+    <!-- footer -->
+    <?php include '../includes/footer.php'; ?>
 </body>
 </html>
