@@ -2,6 +2,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Lucide icons
     lucide.createIcons();
 
+    // Appel pour récupérer les ressources d'un hackathon
+    const hackathonId = 1; // Remplace par l'ID approprié
+    fetch(`/ressources?hackathonId=${hackathonId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération des ressources');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(data);
+            // Ici, tu peux ajouter du code pour afficher les ressources dans le DOM
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+        });
+
     /* Handle scroll for hero section */
     // Select all element that have the .fade-in class for the animation when they are visible
     const fadeElements = document.querySelectorAll('.fade-in');

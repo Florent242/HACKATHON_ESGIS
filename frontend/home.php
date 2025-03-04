@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
     <script defer src="/HACKATHON_ESGIS/public/js/home.js"></script>
+    <script src="/HACKATHON_ESGIS/public/js/user/test.js"></script> <!-- Inclure le script ici -->
+
     <!-- Lucide Icons -->
     <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
 </head>
