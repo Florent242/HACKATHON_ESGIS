@@ -2,33 +2,28 @@
     FOOTER
     ================================================== */
 
-    :root {
-        --background: #030B20;
-        --background-hover: #151821;
-        --card-hover: #1E293B;
-        --blue: #3B82F6;
-        --primary: #3B82F6;
-        --primary-hover: #2563EB;
-        --border: #1E293B;
-        --text: #FFFFFF;
-        --text-secondary: #94A3B8;
-    }
+
 footer {
     background-color: var(--background-hover);
     color: var(--text);
     padding: 20px 0;
     font-family: Arial, sans-serif;
+    border-top: 1px solid var(--border);
     }
 
-.footer-container {
+.footer-container>div{
     display: flex;
     justify-content: space-around;
     flex-wrap: wrap;
-    padding: 20px;
+    gap: 2rem;
+    width: 80%;
+    margin: 0 auto;
+    align-items:baseline;
+    padding: 1rem;
 }
 
 .footer-section {
-    width: 200px;
+    width: 22%;
 }
 
 .footer-section h3 {
@@ -55,10 +50,28 @@ footer {
     opacity: 1;
 }
 
+.social {
+    display: flex;
+    align-items: start;
+    flex-direction: column;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.social h3{
+    margin: 0;
+}
+
+.social div{
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    flex-direction: row;
+}
+
 .social a {
     font-size: 20px;
     color: var(--text);
-    margin-right: 10px;
     text-decoration: none;
 }
 
