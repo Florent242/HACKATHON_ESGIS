@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EsgisHub - FAQ</title>
-<link rel="stylesheet" href="../../public/css/styles/user/faq.css">
-<link rel="stylesheet" href="../../public/css/styles/user/header.css">
-<link rel="stylesheet" href="../../public/css/dist/output.css">
+<link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/faq.css">
+<link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/header.css">
+<link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 <!-- Tailwind + Flowbite (CDN) -->
@@ -17,7 +17,7 @@
 
 <body class="bg-gray-900 text-gray-100">
 
-<?php require_once '../../includes/user/header.php'; ?>
+<?php require_once '../includes/user/header.php'; ?>
 
 <main class="container mx-auto px-4 py-8">
     <h1 class="text-3xl font-bold mb-2">Foire aux Questions (FAQ)</h1>
