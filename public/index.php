@@ -85,9 +85,4 @@ switch ($url) {
         break; 
 }
 // a ce niveau d'autres amelioration devront etre fait n'y toucher donc pas
-<<<<<<< HEAD
 ?>
-</body>
-</html>
-=======
->>>>>>> origin/main
