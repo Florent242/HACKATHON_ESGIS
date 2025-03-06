@@ -3,8 +3,9 @@
    ================================================== */
 
 /* Variables globales */
-:root {
-    --background: #030B20;
+/* :root {
+    --background: hsl(222, 85%, 7%);
+    --card: hsl(222, 65%, 12%);
     --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
     --card-hover: #1E293B;
     --card-hv: #1a2a437e;
@@ -18,9 +19,11 @@
     --green: #22C55E;
     --yellow: #EAB308;
     --red: #EF4444;
-    --card: #1E293B;
-}
-
+} */
+.card-bg {
+    background: var(--card-bg);
+  }
+  
 /* Reset global */
 * {
     box-sizing: border-box;
@@ -36,63 +39,21 @@ body {
 }
 
 main {
-    padding: 2rem 0;
-    background: linear-gradient(to bottom, 
-                transparent, 
-                var(--background)),
-                radial-gradient(circle at center, rgba(59, 130, 246, 0.25), 
-                transparent 70%);
-}
-
-
-.fade-in {
-    opacity: 0;
-    transform: translateY(2rem); /* Déplace légèrement vers le bas */
-    transition: opacity 1s ease, transform 1s ease-in-out; /* Transition douce */
-}
-
-.fade-in.visible {
-    opacity: 1;
-    transform: translateY(0); /* Remet à sa position d'origine */
-}
-
-.fade-out {
-    opacity: 1;
-    transform: translateY(0); /* Remet à sa position d'origine */
-    transition: opacity 1s ease, transform 1s ease; /* Transition douce */
-}
-
-.fade-out.visible {
-    opacity: 0;
-    transform: translateY(2rem); /* Déplace légèrement vers le bas */
-}
-
-.fade-in-left {
-    opacity: 0;
-    transform: translateX(-6rem); /* Déplace légèrement vers la gauche */
-    transition: opacity 1s ease, transform 1s ease; /* Transition douce */
-}
-
-.fade-in-left.visible {
-    opacity: 1;
-    transform: translateX(0); /* Remet à sa position d'origine */
-}
-
-.fade-in-right {
-    opacity: 0;
-    transform: translateX(6rem); /* Déplace légèrement vers la droite */
-    transition: opacity 1s ease, transform 1s ease; /* Transition douce */
-}
-
-.fade-in-right.visible {
-    opacity: 1;
-    transform: translateX(0); /* Remet à sa position d'origine */
+    padding: 1rem 0;
+    background: linear-gradient(to bottom,
+            transparent,
+            var(--background)),
+        radial-gradient(circle at top, rgba(59, 130, 246, 0.25),
+            transparent 30%);
 }
 
 .container {
-    width: 100%; /* Ensure it takes the full width */
-    max-width: 1200px; /* This may limit the width */
-    margin: 0 auto; /* Centering may affect width */
+    width: 100%;
+    /* Ensure it takes the full width */
+    max-width: 1200px;
+    /* This may limit the width */
+    margin: 0 auto;
+    /* Centering may affect width */
 }
 
 /* ==================================================
@@ -102,7 +63,7 @@ main {
     .stats-container {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     nav {
         display: none;
     }
@@ -113,4 +74,3 @@ main {
         grid-template-columns: 1fr;
     }
 }
-

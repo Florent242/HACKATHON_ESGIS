@@ -44,11 +44,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }, {
         root: null, // Utilise la fenêtre de visualisation
-        rootMargin: '0px 0px 100% 0px', // Ajuste la marge inférieure pour déclencher l'animation plus tôt
-        threshold: 0.1 // Déclenche l'événement lorsque 10% de l'élément est visible
+        threshold: 0.9 // Déclenche l'événement lorsque 10% de l'élément est visible
     });
 
-    const statsSection = document.querySelector('.stats');
+    const statsSection = document.querySelector('#stats');
     if (statsSection) {
         observer.observe(statsSection);
         console.log('Observing stats section'); // Vérifie que l'observation a commencé

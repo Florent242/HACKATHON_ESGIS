@@ -1,17 +1,81 @@
 /* ==================================================
    HEADER
    ================================================== */
-:root {
-    --background: #030B20;
-    --background-hover: #151821;
+   :root {
+    --background: hsl(222, 85%, 7%);
+    --card: hsl(222, 65%, 12%);
+    --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
     --card-hover: #1E293B;
-    --blue: #3B82F6;
-    --primary: #3B82F6;
-    --primary-hover: #2563EB;
+    --card-hv: #1a2a437e;
+    --blue-opac: #2564eb25;
     --border: #1E293B;
     --text: #FFFFFF;
     --text-secondary: #94A3B8;
+    --blue: #3B82F6;
+    --primary: #3B82F6;
+    --primary-hover: #2563EB;
+    --green: #22C55E;
+    --yellow: #EAB308;
+    --red: #EF4444;
 }
+
+.fade-in {
+    opacity: 0;
+    transform: translateY(2rem);
+    /* Déplace légèrement vers le bas */
+    transition: opacity 1s ease, transform 1s ease-in-out;
+    /* Transition douce */
+}
+
+.fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+    /* Remet à sa position d'origine */
+}
+
+.fade-out {
+    opacity: 1;
+    transform: translateY(0);
+    /* Remet à sa position d'origine */
+    transition: opacity 1s ease, transform 1s ease;
+    /* Transition douce */
+}
+
+.fade-out.visible {
+    opacity: 0;
+    transform: translateY(2rem);
+    /* Déplace légèrement vers le bas */
+}
+
+.fade-in-left {
+    opacity: 0;
+    transform: translateX(-6rem);
+    /* Déplace légèrement vers la gauche */
+    transition: opacity 1s ease, transform 1s ease;
+    /* Transition douce */
+}
+
+.fade-in-left.visible {
+    opacity: 1;
+    transform: translateX(0);
+    /* Remet à sa position d'origine */
+}
+
+.fade-in-right {
+    opacity: 0;
+    transform: translateX(6rem);
+    /* Déplace légèrement vers la droite */
+    transition: opacity 1s ease, transform 1s ease;
+    /* Transition douce */
+}
+
+.fade-in-right.visible {
+    opacity: 1;
+    transform: translateX(0);
+    /* Remet à sa position d'origine */
+}
+
+/* HEADER */
 header {
     border-bottom: 1px solid var(--border);
     position: sticky;
@@ -25,6 +89,11 @@ a{
     text-decoration: none;
     color: var(--text);
 }
+
+.card-bg {
+    background: var(--card-bg);
+  }
+  
 
 .header-container {
     max-width: 1200px;
