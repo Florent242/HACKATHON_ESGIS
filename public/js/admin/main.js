@@ -13,121 +13,188 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
-* Gestion des dropdowns
-* Permet aux dropdowns d'apparaître en dehors de leurs conteneurs
-*/
-function initDropdowns() {
-  const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
-  
-  dropdownToggles.forEach(toggle => {
-      toggle.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          const dropdown = this.parentElement;
-          const menu = dropdown.querySelector('.dropdown-menu');
-          
-          // Fermer tous les autres dropdowns
-          document.querySelectorAll('.dropdown.active').forEach(activeDropdown => {
-              if (activeDropdown !== dropdown) {
-                  activeDropdown.classList.remove('active');
-                  activeDropdown.querySelector('.dropdown-menu').classList.remove('show');
-              }
-          });
-          
-          // Toggle le dropdown actuel
-          dropdown.classList.toggle('active');
-          menu.classList.toggle('show');
-          
-          if (menu.classList.contains('show')) {
-              positionDropdownMenu(toggle, menu);
-          }
-      });
-  });
-  
-  // Fermer les dropdowns quand on clique ailleurs
-  document.addEventListener('click', function(e) {
-      if (!e.target.closest('.dropdown')) {
-          document.querySelectorAll('.dropdown.active').forEach(dropdown => {
-              dropdown.classList.remove('active');
-              dropdown.querySelector('.dropdown-menu').classList.remove('show');
-          });
-      }
-  });
-  
-  // Fermer les dropdowns quand on appuie sur Escape
-  document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-          document.querySelectorAll('.dropdown.active').forEach(dropdown => {
-              dropdown.classList.remove('active');
-              dropdown.querySelector('.dropdown-menu').classList.remove('show');
-          });
-      }
-  });
+ * Positionne le menu dropdown par rapport à son bouton déclencheur
+ * Solution robuste qui fonctionne même avec des conteneurs complexes
+ */
+function positionDropdownMenu(toggle, menu) {
+    // Déplacer le menu au niveau du body pour éviter les problèmes de overflow
+    if (!menu.dataset.originalParent) {
+        // Sauvegarder le parent original pour pouvoir le restaurer plus tard
+        const originalParent = menu.parentNode;
+        menu.dataset.originalParent = true;
+        
+        // Créer un placeholder pour maintenir la structure DOM
+        const placeholder = document.createElement('div');
+        placeholder.style.display = 'none';
+        placeholder.classList.add('dropdown-placeholder');
+        placeholder.dataset.for = menu.id || `dropdown-${Math.random().toString(36).substr(2, 9)}`;
+        if (!menu.id) menu.id = placeholder.dataset.for;
+        
+        // Remplacer le menu par le placeholder
+        originalParent.replaceChild(placeholder, menu);
+        
+        // Ajouter le menu au body
+        document.body.appendChild(menu);
+    }
+    
+    // Réinitialiser les styles pour mesurer correctement
+    menu.style.position = 'fixed';
+    menu.style.top = '';
+    menu.style.left = '';
+    menu.style.right = '';
+    menu.style.bottom = '';
+    menu.style.transform = '';
+    menu.style.maxHeight = '';
+    
+    // Obtenir les dimensions et positions
+    const toggleRect = toggle.getBoundingClientRect();
+    const menuRect = menu.getBoundingClientRect();
+    
+    // Calculer l'espace disponible
+    const windowHeight = window.innerHeight;
+    const windowWidth = window.innerWidth;
+    
+    // Positionner le menu sous le bouton par défaut
+    let top = toggleRect.bottom + 5;
+    let left = toggleRect.left;
+    
+    // Vérifier si le menu dépasse à droite
+    if (left + menuRect.width > windowWidth) {
+        left = toggleRect.right - menuRect.width;
+        if (left < 0) left = 5; // Éviter de sortir à gauche
+    }
+    
+    // Vérifier si le menu dépasse en bas
+    const spaceBelow = windowHeight - top - menuRect.height;
+    if (spaceBelow < 0) {
+        // Si l'espace au-dessus est plus grand que l'espace en dessous
+        if (toggleRect.top > (windowHeight - toggleRect.bottom)) {
+            top = toggleRect.top - menuRect.height - 5;
+        } else {
+            // Sinon, limiter la hauteur du menu et ajouter un défilement
+            menu.style.maxHeight = `${windowHeight - top - 20}px`;
+            menu.style.overflowY = 'auto';
+        }
+    }
+    
+    // Appliquer les positions
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
+    
+    // Ajouter une classe pour l'animation
+    menu.classList.add('dropdown-positioned');
 }
 
 /**
-* Positionne le menu dropdown en fonction de l'espace disponible
-*/
-function positionDropdownMenu(toggle, menu) {
-  // Réinitialiser les styles pour mesurer correctement
-  menu.style.position = 'fixed';
-  menu.style.top = '';
-  menu.style.left = '';
-  menu.style.right = '';
-  menu.style.bottom = '';
-  
-  const toggleRect = toggle.getBoundingClientRect();
-  const menuRect = menu.getBoundingClientRect();
-  const windowHeight = window.innerHeight;
-  const windowWidth = window.innerWidth;
-  
-  // Déterminer si le menu doit s'ouvrir vers le haut ou vers le bas
-  const spaceBelow = windowHeight - toggleRect.bottom;
-  const spaceAbove = toggleRect.top;
-  const openUpward = spaceBelow < menuRect.height && spaceAbove > menuRect.height;
-  
-  // Déterminer si le menu doit s'ouvrir vers la gauche ou vers la droite
-  const spaceRight = windowWidth - toggleRect.left;
-  const spaceLeft = toggleRect.right;
-  const openLeftward = spaceRight < menuRect.width && spaceLeft > menuRect.width;
-  
-  // Positionner le menu
-  if (openUpward) {
-      menu.style.bottom = (windowHeight - toggleRect.top) + 'px';
-  } else {
-      menu.style.top = toggleRect.bottom + 'px';
-  }
-  
-  if (openLeftward) {
-      menu.style.right = (windowWidth - toggleRect.right) + 'px';
-  } else {
-      menu.style.left = toggleRect.left + 'px';
-  }
-  
-  // Ajuster si le menu dépasse les bords de la fenêtre
-  const updatedMenuRect = menu.getBoundingClientRect();
-  
-  if (updatedMenuRect.right > windowWidth) {
-      menu.style.left = '';
-      menu.style.right = '5px';
-  }
-  
-  if (updatedMenuRect.left < 0) {
-      menu.style.left = '5px';
-      menu.style.right = '';
-  }
-  
-  if (updatedMenuRect.bottom > windowHeight) {
-      menu.style.top = '';
-      menu.style.bottom = '5px';
-  }
-  
-  if (updatedMenuRect.top < 0) {
-      menu.style.top = '5px';
-      menu.style.bottom = '';
-  }
+ * Ferme tous les dropdowns et restaure leur position d'origine
+ */
+function closeAllDropdowns() {
+    document.querySelectorAll('.dropdown.active').forEach(dropdown => {
+        dropdown.classList.remove('active');
+        
+        const menu = dropdown.querySelector('.dropdown-menu') || 
+                     document.getElementById(dropdown.querySelector('.dropdown-placeholder')?.dataset.for);
+        
+        if (menu) {
+            menu.classList.remove('show');
+            menu.classList.remove('dropdown-positioned');
+            
+            // Restaurer le menu à sa position d'origine si nécessaire
+            if (menu.dataset.originalParent) {
+                const placeholder = document.querySelector(`.dropdown-placeholder[data-for="${menu.id}"]`);
+                if (placeholder && placeholder.parentNode) {
+                    placeholder.parentNode.replaceChild(menu, placeholder);
+                    delete menu.dataset.originalParent;
+                }
+            }
+        }
+    });
 }
+
+/**
+ * Gestion des dropdowns
+ * Solution robuste qui fonctionne même avec des conteneurs complexes
+ */
+function initDropdowns() {
+    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+    
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const dropdown = this.closest('.dropdown');
+            const menu = dropdown.querySelector('.dropdown-menu');
+            
+            // Si le dropdown est déjà actif, le fermer
+            if (dropdown.classList.contains('active')) {
+                dropdown.classList.remove('active');
+                menu.classList.remove('show');
+                
+                // Restaurer le menu à sa position d'origine si nécessaire
+                if (menu.dataset.originalParent) {
+                    const placeholder = document.querySelector(`.dropdown-placeholder[data-for="${menu.id}"]`);
+                    if (placeholder && placeholder.parentNode) {
+                        placeholder.parentNode.replaceChild(menu, placeholder);
+                        delete menu.dataset.originalParent;
+                    }
+                }
+                
+                return;
+            }
+            
+            // Fermer tous les autres dropdowns
+            closeAllDropdowns();
+            
+            // Activer le dropdown actuel
+            dropdown.classList.add('active');
+            menu.classList.add('show');
+            
+            // Positionner le menu
+            positionDropdownMenu(toggle, menu);
+        });
+    });
+    
+    // Fermer les dropdowns quand on clique ailleurs
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown') && !e.target.closest('.dropdown-menu')) {
+            closeAllDropdowns();
+        }
+    });
+    
+    // Fermer les dropdowns quand on appuie sur Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAllDropdowns();
+        }
+    });
+    
+    // Repositionner les dropdowns lors du défilement ou du redimensionnement
+    window.addEventListener('scroll', function() {
+        document.querySelectorAll('.dropdown.active').forEach(dropdown => {
+            const toggle = dropdown.querySelector('.dropdown-toggle');
+            const menu = dropdown.querySelector('.dropdown-menu') || 
+                         document.getElementById(dropdown.querySelector('.dropdown-placeholder')?.dataset.for);
+            
+            if (toggle && menu && menu.classList.contains('show')) {
+                positionDropdownMenu(toggle, menu);
+            }
+        });
+    }, { passive: true });
+    
+    window.addEventListener('resize', function() {
+        document.querySelectorAll('.dropdown.active').forEach(dropdown => {
+            const toggle = dropdown.querySelector('.dropdown-toggle');
+            const menu = dropdown.querySelector('.dropdown-menu') || 
+                         document.getElementById(dropdown.querySelector('.dropdown-placeholder')?.dataset.for);
+            
+            if (toggle && menu && menu.classList.contains('show')) {
+                positionDropdownMenu(toggle, menu);
+            }
+        });
+    });
+}
+  
 
 /**
 * Gestion des modals

@@ -509,11 +509,13 @@ nav a:hover, nav a.active {
   }
   
   /* Dropdown */
-  .dropdown {
-    position: relative;
-  }
   
-  .dropdown-toggle {
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-toggle {
     background-color: var(--background-lighter);
     color: var(--text);
     border: 1px solid var(--border);
@@ -524,78 +526,88 @@ nav a:hover, nav a.active {
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-  }
-  
-  .dropdown-toggle:hover {
+    user-select: none;
+}
+
+.dropdown-toggle:hover {
     background-color: var(--background-light);
     color: var(--primary-light);
-  }
-  
-  .dropdown-menu {
-    position: fixed;
-    background-color: var(--background-light);
-    border-radius: 0.5rem;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-    min-width: 12rem;
-    z-index: 1000;
+}
+
+.dropdown-menu {
     display: none;
+    position: fixed; /* Changé pour fixed pour le positionnement global */
+    background-color: var(--background-lighter);
+    min-width: 160px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    z-index: 9999; /* Z-index très élevé pour être au-dessus de tout */
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
     border: 1px solid rgba(255, 255, 255, 0.05);
-    animation: dropdown-fade 0.2s ease;
-    transform-origin: top right;
-  }
-  
-  @keyframes dropdown-fade {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  
-  .dropdown-menu.show {
+    max-height: 80vh; /* Hauteur maximale pour éviter de dépasser l'écran */
+    overflow-y: auto; /* Défilement si nécessaire */
+}
+
+.dropdown-menu.show {
     display: block;
-  }
-  
-  .dropdown-item {
-    padding: 0.75rem 1rem;
-    color: var(--text);
-    text-decoration: none;
+    opacity: 1;
+    transform: translateY(0);
+}
+body {
+    overflow-x: hidden; /* Éviter le défilement horizontal */
+}
+
+/* Styles pour le défilement dans les dropdowns */
+.dropdown-menu::-webkit-scrollbar {
+    width: 4px;
+}
+
+.dropdown-menu::-webkit-scrollbar-track {
+    background: var(--background-lighter);
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 4px;
+}
+
+
+.dropdown-item {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    transition: all 0.15s ease;
-  }
-  
-  .dropdown-item:first-child {
-    border-top-left-radius: 0.5rem;
-    border-top-right-radius: 0.5rem;
-  }
-  
-  .dropdown-item:last-child {
-    border-bottom-left-radius: 0.5rem;
-    border-bottom-right-radius: 0.5rem;
-  }
-  
-  .dropdown-item:hover {
-    background-color: var(--background-lighter);
-    color: var(--primary-light);
-  }
-  
-  .dropdown-item i {
-    font-size: 0.875rem;
-    width: 1rem;
-    text-align: center;
-  }
-  
-  .dropdown-divider {
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: var(--background-hover);
+}
+
+.dropdown-item:first-child {
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
+
+.dropdown-item:last-child {
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+
+.dropdown-divider {
     height: 1px;
-    background-color: var(--border);
     margin: 0.5rem 0;
-  }
-  
+    background-color: var(--border-color);
+}
+
+.dropdown-positioned {
+    z-index: 1000;
+}
   /* Activity Feed */
   .activity-feed {
     margin-top: 1rem;

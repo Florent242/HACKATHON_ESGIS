@@ -45,16 +45,16 @@ switch ($url) {
     case '/HACKATHON_ESGIS/public/admin/resources':
         require_once '../frontend/admin/resources.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin/utilisateurs.php': // Correct
+    case '/HACKATHON_ESGIS/public/admin/utilisateurs': // Correct
         require_once '../frontend/admin/utilisateurs.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin/equipes.php': // Correct
+    case '/HACKATHON_ESGIS/public/admin/equipes': // Correct
         require_once '../frontend/admin/equipes.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin/logs.php': // Correct
+    case '/HACKATHON_ESGIS/public/admin/logs': // Correct
         require_once '../frontend/admin/logs.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin/soumissions.php': // Correct
+    case '/HACKATHON_ESGIS/public/admin/soumissions': // Correct
         require_once '../frontend/admin/soumissions.php'; // Inclure la page "Admin"
         break;
 
