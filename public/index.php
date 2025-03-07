@@ -1,6 +1,4 @@
 <?php
-// Début de la logique d'inclusion simple
-
 // Récupérer l'URL demandée (par exemple /home ou /about)
 $url = $_SERVER['REQUEST_URI'] ?? "/HACKATHON_ESGIS/public/";
 
@@ -47,6 +45,18 @@ switch ($url) {
     case '/HACKATHON_ESGIS/public/admin/resources':
         require_once '../frontend/admin/resources.php'; // Inclure la page "Admin"
         break;
+    case '/HACKATHON_ESGIS/public/admin/utilisateurs.php': // Correct
+        require_once '../frontend/admin/utilisateurs.php'; // Inclure la page "Admin"
+        break;
+    case '/HACKATHON_ESGIS/public/admin/equipes.php': // Correct
+        require_once '../frontend/admin/equipes.php'; // Inclure la page "Admin"
+        break;
+    case '/HACKATHON_ESGIS/public/admin/logs.php': // Correct
+        require_once '../frontend/admin/logs.php'; // Inclure la page "Admin"
+        break;
+    case '/HACKATHON_ESGIS/public/admin/soumissions.php': // Correct
+        require_once '../frontend/admin/soumissions.php'; // Inclure la page "Admin"
+        break;
 
     // Page user
     case '/HACKATHON_ESGIS/public/user':
@@ -84,4 +94,3 @@ switch ($url) {
         }
         break; 
 }
-// a ce niveau d'autres amelioration devront etre fait n'y toucher donc pas

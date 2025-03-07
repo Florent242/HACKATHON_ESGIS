@@ -12,91 +12,266 @@
     <?php require_once '../includes/admin/header.php'; ?>
 
     <main>
-        <div class="hackathons-container">
-            <div class="hackathons-header">
-                <div>
-                    <h1>Upcoming Hackathons</h1>
-                    <p>Compete in exciting hackathons and win amazing prizes</p>
-                </div>
-                <button class="host-hackathon">Host a Hackathon</button>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title"><i class="fas fa-laptop-code"></i> Gestion des Hackathons</h1>
+                <p class="page-subtitle">Créez et gérez les hackathons de votre plateforme</p>
             </div>
+            <button class="btn btn-primary" data-modal="newHackathonModal">
+                <i class="fas fa-plus btn-icon"></i> Nouveau Hackathon
+            </button>
+        </div>
 
-            <div class="hackathons-grid">
-                <!-- First Hackathon Card -->
-                <div class="hackathon-card">
-                    <div class="card-badge upcoming">Upcoming</div>
-                    <h2>EsgisHub Global Hackathon 2024</h2>
-                    <p>Join the biggest hackathon of the year! Build innovative solutions for real-world problems.</p>
-                    
-                    <div class="hackathon-details">
-                        <div class="detail-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                            500 participants
-                        </div>
-                        <div class="detail-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            2024-03-15
-                        </div>
-                        <div class="detail-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="1" x2="12" y2="23"></line>
-                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                            </svg>
-                            $10,000
-                        </div>
-                    </div>
-                    
-                    <button class="view-details">View Details</button>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-list"></i> Liste des hackathons</div>
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Rechercher un hackathon..." data-table="hackathonsTable">
                 </div>
+            </div>
+            
+            <div class="table-container">
+                <table id="hackathonsTable">
+                    <thead>
+                        <tr>
+                            <th>Nom</th>
+                            <th>Date</th>
+                            <th>Participants</th>
+                            <th>Statut</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ESGIS Hackathon 2024</td>
+                            <td>15 Mars 2024</td>
+                            <td>120</td>
+                            <td><span class="badge badge-primary"><i class="fas fa-calendar-alt"></i> À venir</span></td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="dropdown-toggle">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a href="#" class="dropdown-item action-button" data-action="edit" data-id="1"><i class="fas fa-edit"></i> Modifier</a>
+                                        <a href="#" class="dropdown-item action-button" data-action="view" data-id="1"><i class="fas fa-eye"></i> Voir détails</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a href="#" class="dropdown-item action-button" data-action="delete" data-id="1"><i class="fas fa-trash"></i> Supprimer</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Web Security Challenge</td>
+                            <td>22 Avril 2024</td>
+                            <td>85</td>
+                            <td><span class="badge badge-primary"><i class="fas fa-calendar-alt"></i> À venir</span></td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="dropdown-toggle">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a href="#" class="dropdown-item action-button" data-action="edit" data-id="2"><i class="fas fa-edit"></i> Modifier</a>
+                                        <a href="#" class="dropdown-item action-button" data-action="view" data-id="2"><i class="fas fa-eye"></i> Voir détails</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a href="#" class="dropdown-item action-button" data-action="delete" data-id="2"><i class="fas fa-trash"></i> Supprimer</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Mobile App Innovation</td>
+                            <td>10 Février 2024</td>
+                            <td>75</td>
+                            <td><span class="badge badge-success"><i class="fas fa-check-circle"></i> Terminé</span></td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="dropdown-toggle">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a href="#" class="dropdown-item action-button" data-action="edit" data-id="3"><i class="fas fa-edit"></i> Modifier</a>
+                                        <a href="#" class="dropdown-item action-button" data-action="view" data-id="3"><i class="fas fa-eye"></i> Voir détails</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a href="#" class="dropdown-item action-button" data-action="delete" data-id="3"><i class="fas fa-trash"></i> Supprimer</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                <!-- Second Hackathon Card -->
-                <div class="hackathon-card">
-                    <div class="card-badge registration">Registration Open</div>
-                    <h2>Security Challenge Week</h2>
-                    <p>A week-long event focused on cybersecurity challenges and penetration testing.</p>
-                    
-                    <div class="hackathon-details">
-                        <div class="detail-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                            250 participants
-                        </div>
-                        <div class="detail-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            2024-04-01
-                        </div>
-                        <div class="detail-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="1" x2="12" y2="23"></line>
-                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                            </svg>
-                            $5,000
-                        </div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-history"></i> Activités récentes</div>
+            </div>
+            
+            <div class="activity-feed">
+                <div class="activity-item">
+                    <div class="activity-icon" style="background-color: rgba(109, 40, 217, 0.2); color: #6d28d9;">
+                        <i class="fas fa-file-alt"></i>
                     </div>
-                    
-                    <button class="view-details">View Details</button>
+                    <div class="activity-content">
+                        <div class="activity-title">Admin</div>
+                        <div class="activity-subtitle">A créé un nouveau hackathon : ESGIS Hackathon 2024</div>
+                    </div>
+                    <div class="activity-time">
+                        <i class="fas fa-clock"></i> Il y a 2 heures
+                    </div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-icon" style="background-color: rgba(16, 185, 129, 0.2); color: #10b981;">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">Équipe CodeMasters</div>
+                        <div class="activity-subtitle">S'est inscrite au hackathon ESGIS Hackathon 2024</div>
+                        <div class="activity-subtitle">5 membres</div>
+                    </div>
+                    <div class="activity-time">
+                        <i class="fas fa-clock"></i> Il y a 3 heures
+                    </div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-icon" style="background-color: rgba(59, 130, 246, 0.2); color: #3b82f6;">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">Jean Durand</div>
+                        <div class="activity-subtitle">S'est connecté à la plateforme</div>
+                    </div>
+                    <div class="activity-time">
+                        <i class="fas fa-clock"></i> Il y a 4 heures
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- Modal pour nouveau hackathon -->
+        <div id="newHackathonModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-plus-circle"></i> Nouveau Hackathon</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form class="needs-validation" novalidate>
+                        <div class="form-group">
+                            <label for="hackathonName">Nom</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-tag input-icon"></i>
+                                <input type="text" id="hackathonName" class="form-control" placeholder="Nom du hackathon" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Image/Bannière</label>
+                            <div class="file-upload">
+                                <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
+                                <div class="file-upload-text">Cliquez pour télécharger ou glissez-déposez</div>
+                                <div class="file-upload-info">PNG, JPG ou WEBP (max. 2Mo)</div>
+                                <input type="file" id="hackathonImage" accept="image/*">
+                            </div>
+                        </div>
+                        
+                        <div class="date-input-group">
+                            <div class="form-group">
+                                <label for="hackathonStartDate">Date de début</label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-calendar input-icon"></i>
+                                    <input type="date" id="hackathonStartDate" class="form-control" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="hackathonEndDate">Date de fin</label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-calendar input-icon"></i>
+                                    <input type="date" id="hackathonEndDate" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="hackathonLocation">Lieu</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-map-marker-alt input-icon"></i>
+                                <input type="text" id="hackathonLocation" class="form-control" placeholder="Lieu du hackathon (en ligne ou physique)">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="hackathonMaxParticipants">Nombre maximum de participants</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-users input-icon"></i>
+                                <input type="number" id="hackathonMaxParticipants" class="form-control" min="1" placeholder="Nombre maximum de participants">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="hackathonTeamSize">Taille des équipes</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-user-friends input-icon"></i>
+                                <input type="number" id="hackathonTeamSize" class="form-control" min="1" placeholder="Nombre de personnes par équipe">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="hackathonDuration">Durée (en heures)</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-clock input-icon"></i>
+                                <input type="number" id="hackathonDuration" class="form-control" min="1" placeholder="Durée du hackathon en heures">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="hackathonPrizes">Prix/Récompenses</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-award input-icon"></i>
+                                <textarea id="hackathonPrizes" class="form-control" rows="3" placeholder="Description des prix et récompenses"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="hackathonDescription">Description</label>
+                            <textarea id="hackathonDescription" class="form-control" rows="4" placeholder="Description détaillée du hackathon"></textarea>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary modal-close"><i class="fas fa-times"></i> Annuler</button>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Créer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .page-header .btn {
+                width: 100%;
+            }
+        }
+        </style>
     </main>
 </body>
 </html>
