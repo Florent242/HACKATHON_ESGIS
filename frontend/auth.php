@@ -48,7 +48,7 @@
                 </form>
             </div>
 
-            <div class="auth-form hidden" id="registerForm">
+            <div class="auth-form" id="registerForm">
                 <h1>Inscription</h1>
                 <p>Créez votre compte EsgisHub</p>
                 <br>

@@ -1,7 +1,5 @@
 /* Reset and base styles */
 * {
-    margin: 0;
-    padding: 0;
     box-sizing: border-box;
 }
 
@@ -10,165 +8,40 @@ body {
     background-color: #030B20;
     color: #FFFFFF;
     line-height: 1.5;
-    padding: 2rem;
 }
 
 .container {
-    max-width: 1000px;
+    max-width: 1300px;
     margin: 0 auto;
 }
 
-/* Profile Header */
-.profile-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
+/* Challenges Card - Deep Blue Gradient */
+.challenges-card {
+    background: linear-gradient(135deg, #1a2c60 0%, #0c1836 100%);
 }
 
-.avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    overflow: hidden;
-    background-color: #1E2028;
+/* Points Card - Purple Gradient */
+.points-card {
+    background: linear-gradient(135deg, #4a2578 0%, #2a0f50 100%);
 }
 
-.avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+/* Ranking Card - Dark Blue Gradient */
+.ranking-card {
+    background: linear-gradient(135deg, #0f1740 0%, #060c28 100%);
 }
 
-.profile-info h1 {
-    font-size: 1.5rem;
-    font-weight: 500;
-    margin-bottom: 0.25rem;
+.form-card-background {
+    background: linear-gradient(140deg, #090E28 0%, #0C1538 50%, #0F1B4A 100%);
+    border: 1px solid rgba(100, 120, 220, 0.25);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(150, 140, 255, 0.08);
+    border-radius: 12px;
 }
 
-.profile-info p {
-    color: #94A3B8;
-    font-size: 0.875rem;
-}
-
-/* Content Grid */
-.content-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-}
-
-.card {
-    background-color: rgba(13, 17, 23, 0.5);
-    border: 1px solid #1E2028;
-    border-radius: 0.75rem;
-    padding: 1.5rem;
-}
-
-.card.full-width {
-    grid-column: 1 / -1;
-}
-
-h2 {
-    font-size: 1.25rem;
-    font-weight: 500;
-    margin-bottom: 0.25rem;
-}
-
-.subtitle {
-    color: #94A3B8;
-    font-size: 0.875rem;
-    margin-bottom: 1.5rem;
-}
-
-/* Statistics */
-.stats-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.stat-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.875rem;
-}
-
-.stat-item .value {
-    color: #94A3B8;
-}
-
-/* Badges */
-.badges-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-}
-
-.badge {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background-color: rgba(10, 12, 20, 0.5);
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-}
-
-.badge-icon {
-    font-size: 1rem;
-}
-
-/* Form Styles */
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.form-group label {
-    font-size: 0.875rem;
-}
-
-.form-group input,
-.form-group textarea {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: rgba(10, 12, 20, 0.5);
-    border: 1px solid #1E2028;
-    border-radius: 0.5rem;
-    color: #FFFFFF;
-    font-size: 0.875rem;
-    font-family: inherit;
-}
-
-.form-group textarea {
-    resize: vertical;
-    min-height: 100px;
-}
-
-.save-btn {
-    margin-top: 1rem;
-    padding: 0.75rem 1.5rem;
-    background-color: #3B82F6;
-    color: #FFFFFF;
-    border: none;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.save-btn:hover {
-    background-color: #2563EB;
+.input-gradient-royal {
+    background: linear-gradient(165deg, #070F2A 0%, #0D1A44 60%, #121D4C 100%);
+    /* border: 1px solid rgba(110, 120, 220, 0.25); */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(150, 140, 255, 0.08);
+    border-radius: 8px;
 }
 
 /* Responsive Design */

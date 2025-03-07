@@ -96,9 +96,9 @@ a{
   
 
 .header-container {
-    max-width: 1200px;
+    max-width: 1300px;
     margin: 0 auto;
-    padding: 1rem;
+    padding: 0.5rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -172,16 +172,22 @@ a{
 
 .profile-btn{
     border: none;
-    background: none;
+    background-color: none;
+    color: var(--text-secondary);
     cursor: pointer;
     padding: 0.5rem;
-    border-radius: 1rem;
+    border-radius: 100%;
     display: flex;
     align-items: center;
+    transition: background-color 0.3s ease;
 }
 
 .profile-btn:hover{
-    background-color: var(--card-hover);
+    background-color: var(--blue-opac);
+    color: var(--primary-hover);
+}
+.profile-btn:hover svg{
+    stroke: var(--primary-hover);
 }
 
 .profile-btn svg{
