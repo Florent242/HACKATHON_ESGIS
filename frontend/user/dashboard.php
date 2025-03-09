@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/header.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
     <script defer src="/HACKATHON_ESGIS/public/js/user/dashboard.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
 </head>
 
 <body>
