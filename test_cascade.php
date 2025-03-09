@@ -1,5 +1,5 @@
 <?php
-require 'c:\Users\flore\Documents\ESGIS20ans\HACKATHON_ESGIS\backend\models\Database.php';
+require 'HACKATHON_ESGIS\backend\models\Database.php';
 $db = Database::getInstance()->getConnection();
 
 // Création d'un projet
