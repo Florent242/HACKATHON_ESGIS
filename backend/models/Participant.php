@@ -4,8 +4,8 @@ class Participant {
     private $db;
     private $table = 'participants';
 
-    public function __construct() {
-        $this->db = require_once __DIR__ . '/Database.php';
+    public function __construct($db) {
+        $this->db = $db;
     }
 
     // Inscrire un participant à un hackathon

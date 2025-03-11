@@ -11,10 +11,9 @@ class ParticipantController extends Controller {
     private $notification;
     private $db;
 
-    public function __construct() {
+    public function __construct($db) {
         parent::__construct();
-        $database = Database::getInstance();
-        $this->db = $database->getConnection();
+        $this->db = $db;
         $this->participant = new Participant($this->db);
         $this->notification = new Notification($this->db);
     }

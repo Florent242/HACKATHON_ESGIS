@@ -1,4 +1,6 @@
 <?php require_once '../includes/admin/header.php'; ?>
+<?php require_once '../controllers/ParticipantController.php';
+$participantController = new ParticipantController();?>
 
 <h1 class="page-title">Gestion des Équipes</h1>
 
