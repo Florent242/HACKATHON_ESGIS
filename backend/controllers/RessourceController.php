@@ -3,103 +3,50 @@
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../models/Ressource.php';
-require_once __DIR__ . '/../models/Notification.php';
 require_once __DIR__ . '/Controller.php';
 
 class RessourceController extends Controller {
     private $ressource;
-    private $notification;
     private $db;
 
-    public function __construct() {
+    public function __construct($db) {
         parent::__construct();
-        $database = Database::getInstance();
-        $this->db = $database->getConnection();
+        $this->db = $db;
         $this->ressource = new Ressource($this->db);
-        $this->notification = new Notification($this->db);
     }
 
-    // Afficher les ressources d'un hackathon
-    public function index($hackathonId) {
-        try {
-            // Vérifier si l'utilisateur est connecté
-            if (!isAuthenticated()) {
-                throw new Exception('Non autorisé');
-            }
-
-            // Récupérer le type filtré si présent
-            $type = isset($_GET['type']) ? cleanInput($_GET['type']) : null;
-
-            // Récupérer la recherche si présente
-            $search = isset($_GET['q']) ? cleanInput($_GET['q']) : null;
-
-            // Récupérer les ressources
-            $ressources = $search 
-                ? $this->ressource->search($hackathonId, $search)
-                : $this->ressource->getByHackathon($hackathonId, $type);
-
-            // Si c'est une requête AJAX, renvoyer JSON
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->jsonResponse([
-                    'success' => true,
-                    'data' => [
-                        'ressources' => $ressources
-                    ]
-                ]);
-            }
-
-            // Sinon, afficher la vue
-            require_once VIEWS_PATH . '/ressource/index.php';
-        } catch (Exception $e) {
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->jsonResponse([
-                    'success' => false,
-                    'error' => $e->getMessage()
-                ], 500);
-            }
-            setFlashMessage('error', $e->getMessage());
-            redirect("/hackathons/{$hackathonId}");
-        }
-    }
-
-    // Créer une nouvelle ressource
     public function create() {
         try {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Méthode non autorisée');
+            $this->validateMethod('POST');
+            
+            if (!hasRole('organisateur')) {
+                throw new Exception('Non autorisé');
             }
 
-            if (!isAuthenticated() || !hasRole('organisateur')) {
-                throw new Exception('Non autorisé');
+            $requiredFields = ['titre', 'description', 'hackathon_id', 'type'];
+            $this->validateRequiredFields($_POST, $requiredFields);
+
+            if (!in_array($_POST['type'], ['document', 'video', 'lien'])) {
+                throw new Exception('Type de ressource invalide');
             }
 
             $data = [
-                'hackathon_id' => $_POST['hackathon_id'] ?? null,
-                'title' => $_POST['title'] ?? null,
-                'description' => $_POST['description'] ?? null,
+                'titre' => $_POST['titre'],
+                'description' => $_POST['description'],
+                'hackathon_id' => (int)$_POST['hackathon_id'],
+                'type' => $_POST['type'],
                 'url' => $_POST['url'] ?? null,
-                'type' => $_POST['type'] ?? 'document'
+                'created_by' => $_SESSION['user_id'],
+                'created_at' => date('Y-m-d H:i:s')
             ];
 
-            // Créer la ressource
             $ressourceId = $this->ressource->create($data);
-
-            // Notifier les participants
-            $this->notification->create([
-                'user_id' => $_SESSION['user_id'],
-                'title' => 'Nouvelle ressource disponible',
-                'message' => "Une nouvelle ressource a été ajoutée : {$data['title']}",
-                'type' => 'info'
-            ]);
 
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Ressource créée avec succès',
-                'data' => [
-                    'id' => $ressourceId
-                ]
+                'data' => ['id' => $ressourceId]
             ]);
-
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
@@ -108,38 +55,71 @@ class RessourceController extends Controller {
         }
     }
 
-    // Mettre à jour une ressource
-    public function update($id) {
+    public function get($id) {
         try {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Méthode non autorisée');
-            }
-
-            if (!isAuthenticated() || !hasRole('organisateur')) {
-                throw new Exception('Non autorisé');
-            }
-
-            // Vérifier si la ressource existe
+            $this->validateMethod('GET');
+            
             $ressource = $this->ressource->find($id);
             if (!$ressource) {
                 throw new Exception('Ressource non trouvée');
             }
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $ressource
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
 
-            $data = [
-                'title' => $_POST['title'] ?? $ressource['title'],
-                'description' => $_POST['description'] ?? $ressource['description'],
-                'url' => $_POST['url'] ?? $ressource['url'],
-                'type' => $_POST['type'] ?? $ressource['type']
-            ];
+    public function getByHackathon($hackathonId) {
+        try {
+            $this->validateMethod('GET');
+            
+            $ressources = $this->ressource->getByHackathon($hackathonId);
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $ressources
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
 
-            // Mettre à jour la ressource
+    public function update($id) {
+        try {
+            $this->validateMethod('POST');
+            
+            if (!hasRole('organisateur')) {
+                throw new Exception('Non autorisé');
+            }
+
+            $updatableFields = ['titre', 'description', 'url', 'type'];
+            $data = $this->filterData($_POST, $updatableFields);
+            
+            if (empty($data)) {
+                throw new Exception('Aucune donnée à mettre à jour');
+            }
+
+            if (isset($data['type']) && !in_array($data['type'], ['document', 'video', 'lien'])) {
+                throw new Exception('Type de ressource invalide');
+            }
+
+            $data['updated_at'] = date('Y-m-d H:i:s');
             $this->ressource->update($id, $data);
-
+            
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Ressource mise à jour avec succès'
             ]);
-
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
@@ -148,31 +128,20 @@ class RessourceController extends Controller {
         }
     }
 
-    // Supprimer une ressource
     public function delete($id) {
         try {
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Méthode non autorisée');
-            }
-
-            if (!isAuthenticated() || !hasRole('organisateur')) {
+            $this->validateMethod('POST');
+            
+            if (!hasRole('organisateur')) {
                 throw new Exception('Non autorisé');
             }
 
-            // Vérifier si la ressource existe
-            $ressource = $this->ressource->find($id);
-            if (!$ressource) {
-                throw new Exception('Ressource non trouvée');
-            }
-
-            // Supprimer la ressource
             $this->ressource->delete($id);
-
+            
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Ressource supprimée avec succès'
             ]);
-
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
@@ -181,30 +150,32 @@ class RessourceController extends Controller {
         }
     }
 
-    // Afficher mes ressources
-    public function myRessources() {
+    public function search($hackathonId) {
         try {
-            // Vérifier si l'utilisateur est connecté
-            if (!isAuthenticated()) {
-                throw new Exception('Non autorisé');
+            $this->validateMethod('GET');
+            
+            $query = $_GET['q'] ?? '';
+            $type = $_GET['type'] ?? null;
+            
+            if (empty($query)) {
+                throw new Exception('Terme de recherche requis');
             }
 
-            // Récupérer les ressources
-            $ressources = $this->ressource->getByCreator($_SESSION['user_id']);
-
-            // Si c'est une requête AJAX, renvoyer JSON
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->jsonResponse(['ressources' => $ressources]);
+            if ($type && !in_array($type, ['document', 'video', 'lien'])) {
+                throw new Exception('Type de ressource invalide');
             }
 
-            // Sinon, afficher la vue
-            require_once VIEWS_PATH . '/ressource/my-ressources.php';
+            $ressources = $this->ressource->search($hackathonId, $query, $type);
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $ressources
+            ]);
         } catch (Exception $e) {
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->jsonResponse(['error' => $e->getMessage()], 500);
-            }
-            setFlashMessage('error', $e->getMessage());
-            redirect('/dashboard');
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 }

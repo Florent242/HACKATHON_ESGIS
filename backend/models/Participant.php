@@ -34,6 +34,11 @@ class Participant {
         }
     }
 
+    // Alias de register pour la cohérence avec les autres modèles
+    public function create($data) {
+        return $this->register($data);
+    }
+
     // Vérifier si un utilisateur est déjà inscrit à un hackathon
     public function isRegistered($hackathonId, $userId) {
         try {
@@ -167,6 +172,48 @@ class Participant {
             return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
         } catch (PDOException $e) {
             throw new Exception("Erreur lors du comptage des participants : " . $e->getMessage());
+        }
+    }
+
+    // Mettre à jour un participant
+    public function update($id, $data) {
+        try {
+            $fields = [];
+            $params = [':id' => $id];
+
+            foreach ($data as $key => $value) {
+                if ($key !== 'id' && $key !== 'hackathon_id' && $key !== 'user_id') {
+                    $fields[] = "$key = :$key";
+                    $params[":$key"] = $value;
+                }
+            }
+
+            if (empty($fields)) {
+                throw new Exception("Aucune donnée à mettre à jour");
+            }
+
+            $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute($params);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la mise à jour du participant : " . $e->getMessage());
+        }
+    }
+
+    // Supprimer une inscription
+    public function delete($id) {
+        try {
+            // Vérifier si le participant existe
+            $participant = $this->find($id);
+            if (!$participant) {
+                throw new Exception("Participant non trouvé");
+            }
+
+            $sql = "DELETE FROM {$this->table} WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([':id' => $id]);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la suppression du participant : " . $e->getMessage());
         }
     }
 

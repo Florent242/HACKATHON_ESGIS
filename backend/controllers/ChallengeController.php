@@ -4,212 +4,159 @@ require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../models/Challenge.php';
 require_once __DIR__ . '/../models/Hackathon.php';
+require_once __DIR__ . '/Controller.php';
 
-class ChallengeController {
-    private $challengeModel;
-    private $hackathonModel;
+class ChallengeController extends Controller {
+    private $challenge;
+    private $hackathon;
+    private $db;
 
-    public function __construct() {
-        $this->challengeModel = new Challenge();
-        $this->hackathonModel = new Hackathon();
+    public function __construct($db) {
+        parent::__construct();
+        $this->db = $db;
+        $this->challenge = new Challenge($db);
+        $this->hackathon = new Hackathon($db);
     }
 
-    // Afficher la liste des challenges d'un hackathon
     public function index($hackathonId) {
         try {
-            // Vérifier si le hackathon existe
-            $hackathon = $this->hackathonModel->find($hackathonId);
+            $this->validateMethod('GET');
+            
+            $hackathon = $this->hackathon->find($hackathonId);
             if (!$hackathon) {
                 throw new Exception('Hackathon non trouvé');
             }
 
-            // Récupérer les challenges
-            $challenges = $this->challengeModel->getByHackathon($hackathonId);
-
-            // Si c'est une requête AJAX, renvoyer JSON
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                jsonResponse(['challenges' => $challenges]);
-            }
-
-            // Sinon, afficher la vue
-            require_once VIEWS_PATH . '/challenge/index.php';
+            $challenges = $this->challenge->getByHackathon($hackathonId);
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => [
+                    'hackathon' => $hackathon,
+                    'challenges' => $challenges
+                ]
+            ]);
         } catch (Exception $e) {
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                jsonResponse(['error' => $e->getMessage()], 500);
-            }
-            setFlashMessage('error', $e->getMessage());
-            redirect("/hackathons/{$hackathonId}");
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 
-    // Afficher un challenge spécifique
-    public function show($id) {
+    public function create() {
         try {
-            $challenge = $this->challengeModel->find($id);
-            if (!$challenge) {
-                throw new Exception('Challenge non trouvé');
-            }
-
-            // Récupérer les projets associés
-            $challenge['projets'] = $this->challengeModel->getProjets($id);
-
-            // Si c'est une requête AJAX, renvoyer JSON
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                jsonResponse($challenge);
-            }
-
-            // Sinon, afficher la vue
-            require_once VIEWS_PATH . '/challenge/show.php';
-        } catch (Exception $e) {
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                jsonResponse(['error' => $e->getMessage()], 404);
-            }
-            setFlashMessage('error', $e->getMessage());
-            redirect('/challenges');
-        }
-    }
-
-    // Créer un nouveau challenge
-    public function create($hackathonId) {
-        try {
-            // Vérifier si l'utilisateur est un organisateur
-            if (!isAuthenticated() || !hasRole('organisateur')) {
+            $this->validateMethod('POST');
+            
+            if (!hasRole('organisateur')) {
                 throw new Exception('Non autorisé');
             }
 
-            // Vérifier si le hackathon existe
-            $hackathon = $this->hackathonModel->find($hackathonId);
-            if (!$hackathon) {
-                throw new Exception('Hackathon non trouvé');
+            $requiredFields = ['titre', 'description', 'hackathon_id', 'points'];
+            $this->validateRequiredFields($_POST, $requiredFields);
+
+            if (!is_numeric($_POST['points']) || $_POST['points'] < 0) {
+                throw new Exception('Le nombre de points doit être un nombre positif');
             }
 
-            // Vérifier si l'utilisateur est l'organisateur du hackathon
-            if ($hackathon['created_by'] !== $_SESSION['user_id']) {
-                throw new Exception('Non autorisé à créer des challenges pour ce hackathon');
-            }
+            $data = [
+                'titre' => $_POST['titre'],
+                'description' => $_POST['description'],
+                'hackathon_id' => (int)$_POST['hackathon_id'],
+                'points' => (int)$_POST['points'],
+                'created_by' => $_SESSION['user_id'],
+                'created_at' => date('Y-m-d H:i:s')
+            ];
 
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                // Vérifier le token CSRF
-                if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                    throw new Exception('Token CSRF invalide');
-                }
+            $challengeId = $this->challenge->create($data);
 
-                // Récupérer et nettoyer les données
-                $data = [
-                    'title' => cleanInput($_POST['title']),
-                    'description' => cleanInput($_POST['description']),
-                    'hackathon_id' => $hackathonId,
-                    'criteres_evaluation' => cleanInput($_POST['criteres_evaluation']),
-                    'ressources' => cleanInput($_POST['ressources'] ?? ''),
-                    'created_by' => $_SESSION['user_id']
-                ];
-
-                // Créer le challenge
-                $challengeId = $this->challengeModel->create($data);
-
-                setFlashMessage('success', 'Challenge créé avec succès !');
-                redirect("/challenges/{$challengeId}");
-            }
-
-            // Afficher le formulaire
-            require_once VIEWS_PATH . '/challenge/create.php';
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Challenge créé avec succès',
+                'data' => ['id' => $challengeId]
+            ]);
         } catch (Exception $e) {
-            setFlashMessage('error', $e->getMessage());
-            redirect("/hackathons/{$hackathonId}");
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 
-    // Mettre à jour un challenge
     public function update($id) {
         try {
-            // Vérifier si l'utilisateur est un organisateur
-            if (!isAuthenticated() || !hasRole('organisateur')) {
+            $this->validateMethod('POST');
+            
+            if (!hasRole('organisateur')) {
                 throw new Exception('Non autorisé');
             }
 
-            // Vérifier si le challenge existe
-            $challenge = $this->challengeModel->find($id);
-            if (!$challenge) {
-                throw new Exception('Challenge non trouvé');
+            $updatableFields = ['titre', 'description', 'points'];
+            $data = $this->filterData($_POST, $updatableFields);
+
+            if (empty($data)) {
+                throw new Exception('Aucune donnée à mettre à jour');
             }
 
-            // Vérifier si l'utilisateur est le créateur du challenge
-            if ($challenge['created_by'] !== $_SESSION['user_id']) {
-                throw new Exception('Non autorisé à modifier ce challenge');
+            if (isset($data['points']) && (!is_numeric($data['points']) || $data['points'] < 0)) {
+                throw new Exception('Le nombre de points doit être un nombre positif');
             }
 
-            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                // Vérifier le token CSRF
-                if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                    throw new Exception('Token CSRF invalide');
-                }
+            $data['updated_at'] = date('Y-m-d H:i:s');
+            $this->challenge->update($id, $data);
 
-                // Récupérer et nettoyer les données
-                $data = [
-                    'title' => cleanInput($_POST['title']),
-                    'description' => cleanInput($_POST['description']),
-                    'criteres_evaluation' => cleanInput($_POST['criteres_evaluation']),
-                    'ressources' => cleanInput($_POST['ressources'] ?? '')
-                ];
-
-                // Mettre à jour le challenge
-                $this->challengeModel->update($id, $data);
-
-                setFlashMessage('success', 'Challenge mis à jour avec succès !');
-                redirect("/challenges/{$id}");
-            }
-
-            // Afficher le formulaire
-            require_once VIEWS_PATH . '/challenge/edit.php';
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Challenge mis à jour avec succès'
+            ]);
         } catch (Exception $e) {
-            setFlashMessage('error', $e->getMessage());
-            redirect("/challenges/{$id}");
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 
-    // Supprimer un challenge
     public function delete($id) {
         try {
-            // Vérifier si l'utilisateur est un organisateur
-            if (!isAuthenticated() || !hasRole('organisateur')) {
+            $this->validateMethod('POST');
+            
+            if (!hasRole('organisateur')) {
                 throw new Exception('Non autorisé');
             }
 
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Méthode non autorisée');
-            }
+            $this->challenge->delete($id);
 
-            // Vérifier le token CSRF
-            if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                throw new Exception('Token CSRF invalide');
-            }
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Challenge supprimé avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
 
-            // Vérifier si le challenge existe
-            $challenge = $this->challengeModel->find($id);
+    public function get($id) {
+        try {
+            $this->validateMethod('GET');
+            
+            $challenge = $this->challenge->find($id);
             if (!$challenge) {
                 throw new Exception('Challenge non trouvé');
             }
 
-            // Vérifier si l'utilisateur est le créateur du challenge
-            if ($challenge['created_by'] !== $_SESSION['user_id']) {
-                throw new Exception('Non autorisé à supprimer ce challenge');
-            }
-
-            // Supprimer le challenge
-            $this->challengeModel->delete($id);
-
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                jsonResponse(['message' => 'Challenge supprimé avec succès']);
-            }
-
-            setFlashMessage('success', 'Challenge supprimé avec succès !');
-            redirect("/hackathons/{$challenge['hackathon_id']}");
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $challenge
+            ]);
         } catch (Exception $e) {
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                jsonResponse(['error' => $e->getMessage()], 400);
-            }
-            setFlashMessage('error', $e->getMessage());
-            redirect("/challenges/{$id}");
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 404);
         }
     }
 }

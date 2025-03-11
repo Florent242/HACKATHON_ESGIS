@@ -8,19 +8,21 @@ class Challenge {
         $this->db = $db;
     }
 
-    // Créer un nouveau challenge
     public function create($data) {
         try {
-            $sql = "INSERT INTO {$this->table} (title, description, hackathon_id, max_teams, points) 
-                    VALUES (:title, :description, :hackathon_id, :max_teams, :points)";
+            $this->validate($data);
+
+            $sql = "INSERT INTO {$this->table} (titre, description, hackathon_id, points, created_by, created_at) 
+                    VALUES (:titre, :description, :hackathon_id, :points, :created_by, :created_at)";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
-                ':title' => $data['title'],
+                ':titre' => $data['titre'],
                 ':description' => $data['description'],
                 ':hackathon_id' => $data['hackathon_id'],
-                ':max_teams' => $data['max_teams'],
-                ':points' => $data['points']
+                ':points' => $data['points'],
+                ':created_by' => $data['created_by'],
+                ':created_at' => $data['created_at']
             ]);
 
             return $this->db->lastInsertId();
@@ -29,12 +31,11 @@ class Challenge {
         }
     }
 
-    // Trouver un challenge par son ID
     public function find($id) {
         try {
-            $sql = "SELECT c.*, u.username as creator_name,
-                    h.title as hackathon_title,
-                    COUNT(DISTINCT p.id) as project_count
+            $sql = "SELECT c.*, u.nom as created_by_nom, u.prenom as created_by_prenom,
+                    h.titre as hackathon_titre,
+                    COUNT(DISTINCT p.id) as nombre_projets
                     FROM {$this->table} c
                     LEFT JOIN users u ON c.created_by = u.id
                     LEFT JOIN hackathons h ON c.hackathon_id = h.id
@@ -44,13 +45,12 @@ class Challenge {
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':id' => $id]);
-            return $stmt->fetch();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             throw new Exception("Erreur lors de la recherche du challenge : " . $e->getMessage());
         }
     }
 
-    // Mettre à jour un challenge
     public function update($id, $data) {
         try {
             $fields = [];
@@ -63,6 +63,10 @@ class Challenge {
                 }
             }
 
+            if (empty($fields)) {
+                throw new Exception("Aucune donnée à mettre à jour");
+            }
+
             $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute($params);
@@ -71,7 +75,6 @@ class Challenge {
         }
     }
 
-    // Supprimer un challenge
     public function delete($id) {
         try {
             // Vérifier si des projets sont associés
@@ -91,11 +94,10 @@ class Challenge {
         }
     }
 
-    // Récupérer les challenges par hackathon
     public function getByHackathon($hackathonId) {
         try {
-            $sql = "SELECT c.*, u.username as creator_name,
-                    COUNT(DISTINCT p.id) as project_count
+            $sql = "SELECT c.*, u.nom as created_by_nom, u.prenom as created_by_prenom,
+                    COUNT(DISTINCT p.id) as nombre_projets
                     FROM {$this->table} c
                     LEFT JOIN users u ON c.created_by = u.id
                     LEFT JOIN projets p ON c.id = p.challenge_id
@@ -105,36 +107,14 @@ class Challenge {
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':hackathon_id' => $hackathonId]);
-            return $stmt->fetchAll();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             throw new Exception("Erreur lors de la récupération des challenges : " . $e->getMessage());
         }
     }
 
-    // Récupérer les projets d'un challenge
-    public function getProjets($challengeId) {
-        try {
-            $sql = "SELECT p.*, e.name as equipe_name,
-                    COUNT(DISTINCT ev.id) as evaluation_count,
-                    AVG(ev.score) as average_score
-                    FROM projets p
-                    INNER JOIN equipes e ON p.equipe_id = e.id
-                    LEFT JOIN evaluations ev ON p.id = ev.projet_id
-                    WHERE p.challenge_id = :challenge_id
-                    GROUP BY p.id
-                    ORDER BY p.created_at DESC";
-
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':challenge_id' => $challengeId]);
-            return $stmt->fetchAll();
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des projets : " . $e->getMessage());
-        }
-    }
-
-    // Validation des données
     private function validate($data) {
-        if (empty($data['title'])) {
+        if (empty($data['titre'])) {
             throw new Exception("Le titre est obligatoire");
         }
 
@@ -143,16 +123,20 @@ class Challenge {
         }
 
         if (empty($data['hackathon_id'])) {
-            throw new Exception("Le hackathon est obligatoire");
+            throw new Exception("L'ID du hackathon est obligatoire");
         }
 
-        if (empty($data['criteres_evaluation'])) {
-            throw new Exception("Les critères d'évaluation sont obligatoires");
+        if (!is_numeric($data['hackathon_id'])) {
+            throw new Exception("L'ID du hackathon doit être un nombre");
+        }
+
+        if (empty($data['points']) || !is_numeric($data['points']) || $data['points'] < 0) {
+            throw new Exception("Le nombre de points doit être un nombre positif");
         }
 
         // Vérifier si le titre est unique pour ce hackathon
         $sql = "SELECT COUNT(*) FROM {$this->table} 
-                WHERE title = :title AND hackathon_id = :hackathon_id";
+                WHERE titre = :titre AND hackathon_id = :hackathon_id";
 
         if (isset($data['id'])) {
             $sql .= " AND id != :id";
@@ -160,7 +144,7 @@ class Challenge {
 
         $stmt = $this->db->prepare($sql);
         $params = [
-            ':title' => $data['title'],
+            ':titre' => $data['titre'],
             ':hackathon_id' => $data['hackathon_id']
         ];
 
@@ -172,6 +156,15 @@ class Challenge {
 
         if ($stmt->fetchColumn() > 0) {
             throw new Exception("Un challenge avec ce titre existe déjà dans ce hackathon");
+        }
+
+        // Vérifier si le hackathon existe
+        $sql = "SELECT id FROM hackathons WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $data['hackathon_id']]);
+        
+        if (!$stmt->fetch()) {
+            throw new Exception("Hackathon non trouvé");
         }
     }
 }

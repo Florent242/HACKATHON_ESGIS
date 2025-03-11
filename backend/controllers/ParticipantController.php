@@ -309,4 +309,149 @@ class ParticipantController extends Controller {
             redirect('/dashboard');
         }
     }
+
+    public function create() {
+        try {
+            $this->validateMethod('POST');
+            
+            $requiredFields = ['hackathon_id', 'user_id'];
+            $this->validateRequiredFields($_POST, $requiredFields);
+
+            $data = [
+                'hackathon_id' => (int)$_POST['hackathon_id'],
+                'user_id' => (int)$_POST['user_id'],
+                'statut' => 'en_attente',
+                'created_at' => date('Y-m-d H:i:s')
+            ];
+
+            $participantId = $this->participant->create($data);
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Participation créée avec succès',
+                'data' => ['id' => $participantId]
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function get($id) {
+        try {
+            $this->validateMethod('GET');
+            
+            $participant = $this->participant->find($id);
+            if (!$participant) {
+                throw new Exception('Participant non trouvé');
+            }
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $participant
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
+
+    public function getByHackathon($hackathonId) {
+        try {
+            $this->validateMethod('GET');
+            
+            $participants = $this->participant->getByHackathon($hackathonId);
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $participants
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function updateStatus($id) {
+        try {
+            $this->validateMethod('POST');
+            
+            if (!hasRole('admin')) {
+                throw new Exception('Non autorisé');
+            }
+
+            $requiredFields = ['statut'];
+            $this->validateRequiredFields($_POST, $requiredFields);
+
+            if (!in_array($_POST['statut'], ['en_attente', 'accepte', 'refuse'])) {
+                throw new Exception('Statut invalide');
+            }
+
+            $this->participant->update($id, [
+                'statut' => $_POST['statut'],
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Statut mis à jour avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function delete($id) {
+        try {
+            $this->validateMethod('POST');
+            
+            if (!hasRole('admin')) {
+                throw new Exception('Non autorisé');
+            }
+
+            $this->participant->delete($id);
+            
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Participant supprimé avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function getStats($hackathonId) {
+        try {
+            $this->validateMethod('GET');
+            
+            $stats = [
+                'total' => $this->participant->countByStatus($hackathonId, null),
+                'en_attente' => $this->participant->countByStatus($hackathonId, 'en_attente'),
+                'accepte' => $this->participant->countByStatus($hackathonId, 'accepte'),
+                'refuse' => $this->participant->countByStatus($hackathonId, 'refuse')
+            ];
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $stats
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
 }

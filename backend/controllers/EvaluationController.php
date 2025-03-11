@@ -22,24 +22,21 @@ class EvaluationController extends Controller {
         try {
             $this->validateMethod('POST');
             
-            $requiredFields = ['projet_id', 'evaluateur_id', 'note', 'commentaire'];
+            if (!hasRole('jury')) {
+                throw new Exception('Non autorisé - Réservé aux membres du jury');
+            }
+
+            $requiredFields = ['projet_id', 'jury_id', 'note', 'commentaire'];
             $this->validateRequiredFields($_POST, $requiredFields);
 
-            // Validation de la note
-            $note = (int)$_POST['note'];
+            $note = (float)$_POST['note'];
             if ($note < 0 || $note > 20) {
                 throw new Exception('La note doit être comprise entre 0 et 20');
             }
 
-            // Vérifier si le projet existe
-            $projet = $this->projet->find($_POST['projet_id']);
-            if (!$projet) {
-                throw new Exception('Projet non trouvé');
-            }
-
             $data = [
                 'projet_id' => (int)$_POST['projet_id'],
-                'evaluateur_id' => (int)$_POST['evaluateur_id'],
+                'jury_id' => (int)$_POST['jury_id'],
                 'note' => $note,
                 'commentaire' => $_POST['commentaire'],
                 'created_at' => date('Y-m-d H:i:s')
@@ -60,16 +57,31 @@ class EvaluationController extends Controller {
         }
     }
 
+    public function get($id) {
+        try {
+            $this->validateMethod('GET');
+            
+            $evaluation = $this->evaluation->find($id);
+            if (!$evaluation) {
+                throw new Exception('Évaluation non trouvée');
+            }
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $evaluation
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
+
     public function getByProjet($projetId) {
         try {
             $this->validateMethod('GET');
             
-            // Vérifier si le projet existe
-            $projet = $this->projet->find($projetId);
-            if (!$projet) {
-                throw new Exception('Projet non trouvé');
-            }
-
             $evaluations = $this->evaluation->getByProjet($projetId);
             
             $this->jsonResponse([
@@ -80,7 +92,25 @@ class EvaluationController extends Controller {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 404);
+            ], 400);
+        }
+    }
+
+    public function getByJury($juryId) {
+        try {
+            $this->validateMethod('GET');
+            
+            $evaluations = $this->evaluation->getByJury($juryId);
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $evaluations
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 
@@ -88,6 +118,10 @@ class EvaluationController extends Controller {
         try {
             $this->validateMethod('POST');
             
+            if (!hasRole('jury')) {
+                throw new Exception('Non autorisé - Réservé aux membres du jury');
+            }
+
             $updatableFields = ['note', 'commentaire'];
             $data = $this->filterData($_POST, $updatableFields);
             
@@ -95,15 +129,15 @@ class EvaluationController extends Controller {
                 throw new Exception('Aucune donnée à mettre à jour');
             }
 
-            // Validation de la note si présente
             if (isset($data['note'])) {
-                $note = (int)$data['note'];
+                $note = (float)$data['note'];
                 if ($note < 0 || $note > 20) {
                     throw new Exception('La note doit être comprise entre 0 et 20');
                 }
                 $data['note'] = $note;
             }
 
+            $data['updated_at'] = date('Y-m-d H:i:s');
             $this->evaluation->update($id, $data);
             
             $this->jsonResponse([
@@ -122,7 +156,6 @@ class EvaluationController extends Controller {
         try {
             $this->validateMethod('POST');
             
-            // Vérifier si l'utilisateur a les droits
             if (!hasRole('admin')) {
                 throw new Exception('Non autorisé');
             }
@@ -132,6 +165,47 @@ class EvaluationController extends Controller {
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Évaluation supprimée avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function getAverageScore($projetId) {
+        try {
+            $this->validateMethod('GET');
+            
+            $average = $this->evaluation->getAverageScore($projetId);
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => ['moyenne' => $average]
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function getStats($hackathonId) {
+        try {
+            $this->validateMethod('GET');
+            
+            $stats = [
+                'total_evaluations' => $this->evaluation->countByHackathon($hackathonId),
+                'moyenne_generale' => $this->evaluation->getAverageScoreByHackathon($hackathonId),
+                'projets_evalues' => $this->evaluation->countEvaluatedProjects($hackathonId),
+                'projets_non_evalues' => $this->evaluation->countNonEvaluatedProjects($hackathonId)
+            ];
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $stats
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([

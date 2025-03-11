@@ -8,78 +8,170 @@ class Hackathon {
         $this->db = $db;
     }
 
-    public function create($data) {
-        try {
-            $sql = "INSERT INTO {$this->table} (title, description, start_date, end_date, max_participants, status, created_by) 
-                    VALUES (:title, :description, :start_date, :end_date, :max_participants, :status, :created_by)";
-            
-            $stmt = $this->db->prepare($sql);
-            
-            $stmt->execute([
-                ':title' => $data['title'],
-                ':description' => $data['description'],
-                ':start_date' => $data['start_date'],
-                ':end_date' => $data['end_date'],
-                ':max_participants' => $data['max_participants'],
-                ':status' => $data['status'],
-                ':created_by' => $data['created_by']
-            ]);
-            
-            return $this->db->lastInsertId();
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la création du hackathon : " . $e->getMessage());
-        }
+    public function getAll() {
+        return $this->db->getAll($this->table);
     }
 
     public function find($id) {
-        $sql = "SELECT * FROM {$this->table} WHERE id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':id', $id);
-        $stmt->execute();
+        return $this->db->find($this->table, $id);
+    }
+
+    public function create($data) {
+        // Validation des données
+        if (!isset($data['titre']) || empty($data['titre'])) {
+            throw new Exception('Le titre est requis');
+        }
+        if (!isset($data['date_debut']) || empty($data['date_debut'])) {
+            throw new Exception('La date de début est requise');
+        }
+        if (!isset($data['date_fin']) || empty($data['date_fin'])) {
+            throw new Exception('La date de fin est requise');
+        }
+
+        // Vérification des dates
+        $dateDebut = strtotime($data['date_debut']);
+        $dateFin = strtotime($data['date_fin']);
         
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($dateDebut === false || $dateFin === false) {
+            throw new Exception('Format de date invalide');
+        }
+        
+        if ($dateDebut > $dateFin) {
+            throw new Exception('La date de début doit être antérieure à la date de fin');
+        }
+
+        // Création du hackathon
+        return $this->db->create($this->table, [
+            'titre' => $data['titre'],
+            'description' => $data['description'] ?? '',
+            'date_debut' => $data['date_debut'],
+            'date_fin' => $data['date_fin'],
+            'status' => 'draft'
+        ]);
     }
 
     public function update($id, $data) {
-        $sql = "UPDATE {$this->table} SET ";
-        $params = [];
-        
-        foreach ($data as $key => $value) {
-            $sql .= "$key = :$key, ";
-            $params[":$key"] = $value;
+        $hackathon = $this->find($id);
+        if (!$hackathon) {
+            throw new Exception('Hackathon non trouvé');
         }
-        
-        $sql = rtrim($sql, ', ') . " WHERE id = :id";
-        $params[':id'] = $id;
-        
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($params);
+
+        // Validation des données
+        if (isset($data['titre']) && empty($data['titre'])) {
+            throw new Exception('Le titre ne peut pas être vide');
+        }
+
+        if (isset($data['date_debut']) && isset($data['date_fin'])) {
+            $dateDebut = strtotime($data['date_debut']);
+            $dateFin = strtotime($data['date_fin']);
+            
+            if ($dateDebut === false || $dateFin === false) {
+                throw new Exception('Format de date invalide');
+            }
+            
+            if ($dateDebut > $dateFin) {
+                throw new Exception('La date de début doit être antérieure à la date de fin');
+            }
+        }
+
+        // Mise à jour du hackathon
+        $updateData = array_filter([
+            'titre' => $data['titre'] ?? null,
+            'description' => $data['description'] ?? null,
+            'date_debut' => $data['date_debut'] ?? null,
+            'date_fin' => $data['date_fin'] ?? null,
+            'status' => $data['status'] ?? null
+        ], function($value) { return $value !== null; });
+
+        return $this->db->update($this->table, $id, $updateData);
     }
 
     public function delete($id) {
-        $sql = "DELETE FROM {$this->table} WHERE id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':id', $id);
-        return $stmt->execute();
-    }
+        $hackathon = $this->find($id);
+        if (!$hackathon) {
+            throw new Exception('Hackathon non trouvé');
+        }
 
-    public function getAll() {
-        $sql = "SELECT * FROM {$this->table} ORDER BY start_date DESC";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // Vérifier si le hackathon peut être supprimé
+        // TODO: Vérifier s'il y a des équipes inscrites
+
+        return $this->db->delete($this->table, $id);
     }
 
     public function getActive() {
-        try {
-            $now = date('Y-m-d H:i:s');
-            $sql = "SELECT * FROM {$this->table} WHERE start_date <= :now AND end_date >= :now";
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(':now', $now);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des hackathons actifs : " . $e->getMessage());
+        $now = date('Y-m-d');
+        $hackathons = $this->db->getAll($this->table);
+        return array_filter($hackathons, function($h) use ($now) {
+            return $h['date_debut'] <= $now && $h['date_fin'] >= $now;
+        });
+    }
+
+    public function getPast() {
+        $now = date('Y-m-d');
+        $hackathons = $this->db->getAll($this->table);
+        return array_filter($hackathons, function($h) use ($now) {
+            return $h['date_fin'] < $now;
+        });
+    }
+
+    public function getFuture() {
+        $now = date('Y-m-d');
+        $hackathons = $this->db->getAll($this->table);
+        return array_filter($hackathons, function($h) use ($now) {
+            return $h['date_debut'] > $now;
+        });
+    }
+
+    public function getStats($id) {
+        $hackathon = $this->find($id);
+        if (!$hackathon) {
+            return null;
         }
+
+        $equipes = $this->db->query('equipes', ['hackathon_id' => $id]);
+        $participants = [];
+        $projets = [];
+        
+        foreach ($equipes as $equipe) {
+            $equipeParticipants = $this->db->query('participants', ['equipe_id' => $equipe['id']]);
+            $equipeProjets = $this->db->query('projets', ['equipe_id' => $equipe['id']]);
+            $participants = array_merge($participants, $equipeParticipants);
+            $projets = array_merge($projets, $equipeProjets);
+        }
+
+        return [
+            'id' => $id,
+            'titre' => $hackathon['titre'],
+            'nombre_equipes' => count($equipes),
+            'nombre_participants' => count($participants),
+            'nombre_projets' => count($projets),
+            'projets_soumis' => count(array_filter($projets, function($p) {
+                return $p['status'] === 'submitted';
+            })),
+            'projets_evalues' => count(array_filter($projets, function($p) {
+                return $p['status'] === 'evaluated';
+            }))
+        ];
+    }
+
+    public function getEquipes($id) {
+        $hackathon = $this->find($id);
+        if (!$hackathon) {
+            throw new Exception('Hackathon non trouvé');
+        }
+
+        return $this->db->query('equipes', ['hackathon_id' => $id]);
+    }
+
+    public function getProjets($id) {
+        $equipes = $this->getEquipes($id);
+        $projets = [];
+        
+        foreach ($equipes as $equipe) {
+            $equipeProjets = $this->db->query('projets', ['equipe_id' => $equipe['id']]);
+            $projets = array_merge($projets, $equipeProjets);
+        }
+        
+        return $projets;
     }
 }

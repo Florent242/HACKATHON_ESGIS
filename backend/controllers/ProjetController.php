@@ -57,6 +57,10 @@ class ProjetController extends Controller {
                 throw new Exception('Projet non trouvé');
             }
             
+            // Récupérer les évaluations si disponibles
+            $evaluations = $this->projet->getEvaluations($id);
+            $projet['evaluations'] = $evaluations;
+            
             $this->jsonResponse([
                 'success' => true,
                 'data' => $projet
@@ -170,6 +174,29 @@ class ProjetController extends Controller {
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Projet supprimé avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function getStats($hackathonId) {
+        try {
+            $this->validateMethod('GET');
+            
+            $stats = [
+                'total' => $this->projet->countByStatus($hackathonId, null),
+                'en_cours' => $this->projet->countByStatus($hackathonId, 'en_cours'),
+                'soumis' => $this->projet->countByStatus($hackathonId, 'soumis'),
+                'termine' => $this->projet->countByStatus($hackathonId, 'termine')
+            ];
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $stats
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([

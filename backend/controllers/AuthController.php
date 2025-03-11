@@ -1,123 +1,200 @@
 <?php
 
-class AuthController {
+require_once __DIR__ . '/../../includes/config.php';
+require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/Controller.php';
+
+class AuthController extends Controller {
     private $user;
     private $db;
 
-    public function __construct() {
-        $database = Database::getInstance();
-        $this->db = $database->getConnection();
+    public function __construct($db) {
+        parent::__construct();
+        $this->db = $db;
         $this->user = new User($this->db);
     }
 
-    // Traiter l'inscription
-    public function register() {
-        try {
-            // Vérifier si la requête est en POST
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Méthode non autorisée');
-            }
-
-            // Récupérer et valider les données
-            $data = [
-                'username' => $_POST['username'] ?? '',
-                'email' => $_POST['email'] ?? '',
-                'password' => $_POST['password'] ?? '',
-                'role' => 'participant', // Par défaut
-                'full_name' => $_POST['full_name'] ?? null
-            ];
-
-            // Créer l'utilisateur
-            $userId = $this->user->create($data);
-
-            // Générer le token JWT
-            $token = $this->generateToken($userId);
-
-            // Démarrer la session
-            $_SESSION['user_id'] = $userId;
-            $_SESSION['user_role'] = $data['role'];
-
-            // Rediriger avec un message de succès
-            setFlashMessage('success', 'Inscription réussie ! Bienvenue sur la plateforme.');
-            redirect('/profile');
-
-        } catch (Exception $e) {
-            setFlashMessage('error', $e->getMessage());
-            redirect('/register');
-        }
-    }
-
-    // Traiter la connexion
     public function login() {
         try {
-            // Vérifier si la requête est en POST
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Méthode non autorisée');
-            }
+            $this->validateMethod('POST');
+            
+            $requiredFields = ['email', 'password'];
+            $this->validateRequiredFields($_POST, $requiredFields);
 
-            // Récupérer les identifiants
-            $email = $_POST['email'] ?? '';
-            $password = $_POST['password'] ?? '';
-
-            // Authentifier l'utilisateur
-            $user = $this->user->authenticate($email, $password);
-
-            if (!$user) {
+            $user = $this->user->findByEmail($_POST['email']);
+            if (!$user || !password_verify($_POST['password'], $user['password'])) {
                 throw new Exception('Email ou mot de passe incorrect');
             }
 
-            // Générer le token JWT
-            $token = $this->generateToken($user['id']);
-
-            // Démarrer la session
+            // Créer la session
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_role'] = $user['role'];
+            $_SESSION['user_email'] = $user['email'];
+            $_SESSION['user_nom'] = $user['nom'];
+            $_SESSION['user_prenom'] = $user['prenom'];
 
-            // Rediriger selon le rôle
-            $redirect = '/profile';
-            if ($user['role'] === 'organisateur') {
-                $redirect = '/admin/dashboard';
-            } elseif ($user['role'] === 'juge') {
-                $redirect = '/jury/dashboard';
-            }
+            // Ne pas renvoyer le mot de passe
+            unset($user['password']);
 
-            setFlashMessage('success', 'Connexion réussie !');
-            redirect($redirect);
-
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Connexion réussie',
+                'data' => $user
+            ]);
         } catch (Exception $e) {
-            setFlashMessage('error', $e->getMessage());
-            redirect('/login');
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 
-    // Traiter la déconnexion
+    public function register() {
+        try {
+            $this->validateMethod('POST');
+            
+            $requiredFields = ['nom', 'prenom', 'email', 'password'];
+            $this->validateRequiredFields($_POST, $requiredFields);
+
+            // Vérifier si l'email existe déjà
+            if ($this->user->findByEmail($_POST['email'])) {
+                throw new Exception('Cette adresse email est déjà utilisée');
+            }
+
+            // Validation du mot de passe
+            if (strlen($_POST['password']) < 8) {
+                throw new Exception('Le mot de passe doit contenir au moins 8 caractères');
+            }
+
+            $data = [
+                'nom' => $_POST['nom'],
+                'prenom' => $_POST['prenom'],
+                'email' => $_POST['email'],
+                'password' => $_POST['password'],
+                'role' => 'participant',
+                'created_at' => date('Y-m-d H:i:s')
+            ];
+
+            $userId = $this->user->create($data);
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Inscription réussie',
+                'data' => ['id' => $userId]
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
     public function logout() {
         try {
-            // Vérifier si la requête est en POST
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Méthode non autorisée');
-            }
-
-            // Supprimer le token (côté client)
+            $this->validateMethod('POST');
+            
             // Détruire la session
             session_destroy();
-
-            // Rediriger vers la page d'accueil
-            setFlashMessage('success', 'Vous avez été déconnecté avec succès.');
-            redirect('/');
-
+            
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Déconnexion réussie'
+            ]);
         } catch (Exception $e) {
-            setFlashMessage('error', $e->getMessage());
-            redirect('/');
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 
-    // Afficher le profil
-    public function profile() {
+    public function resetPassword() {
         try {
-            // Vérifier si l'utilisateur est connecté
+            $this->validateMethod('POST');
+            
+            $requiredFields = ['email'];
+            $this->validateRequiredFields($_POST, $requiredFields);
+
+            $user = $this->user->findByEmail($_POST['email']);
+            if (!$user) {
+                throw new Exception('Adresse email non trouvée');
+            }
+
+            // Générer un token unique
+            $token = bin2hex(random_bytes(32));
+            $expiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
+
+            // Sauvegarder le token dans la base de données
+            $this->user->update($user['id'], [
+                'reset_token' => $token,
+                'reset_token_expiry' => $expiry
+            ]);
+
+            // TODO: Envoyer l'email avec le lien de réinitialisation
+            // Pour l'instant, on renvoie juste le token
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Instructions envoyées par email',
+                'data' => ['token' => $token] // À supprimer en production
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function confirmResetPassword() {
+        try {
+            $this->validateMethod('POST');
+            
+            $requiredFields = ['token', 'new_password'];
+            $this->validateRequiredFields($_POST, $requiredFields);
+
+            if (strlen($_POST['new_password']) < 8) {
+                throw new Exception('Le mot de passe doit contenir au moins 8 caractères');
+            }
+
+            // Vérifier le token
+            $user = $this->user->findByResetToken($_POST['token']);
+            if (!$user) {
+                throw new Exception('Token invalide');
+            }
+
+            // Vérifier si le token n'a pas expiré
+            if (strtotime($user['reset_token_expiry']) < time()) {
+                throw new Exception('Le lien de réinitialisation a expiré');
+            }
+
+            // Mettre à jour le mot de passe
+            $this->user->update($user['id'], [
+                'password' => password_hash($_POST['new_password'], PASSWORD_DEFAULT),
+                'reset_token' => null,
+                'reset_token_expiry' => null,
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Mot de passe réinitialisé avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function checkAuth() {
+        try {
+            $this->validateMethod('GET');
+            
             if (!isAuthenticated()) {
-                redirect('/login');
+                throw new Exception('Non authentifié');
             }
 
             $user = $this->user->find($_SESSION['user_id']);
@@ -125,103 +202,17 @@ class AuthController {
                 throw new Exception('Utilisateur non trouvé');
             }
 
-            // Inclure la vue du profil
-            require_once VIEWS_PATH . '/profile.php';
-
+            unset($user['password']);
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $user
+            ]);
         } catch (Exception $e) {
-            setFlashMessage('error', $e->getMessage());
-            redirect('/');
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 401);
         }
-    }
-
-    // Mettre à jour le profil
-    public function updateProfile() {
-        try {
-            // Vérifier si l'utilisateur est connecté
-            if (!isAuthenticated()) {
-                throw new Exception('Non autorisé');
-            }
-
-            // Vérifier si la requête est en POST
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Méthode non autorisée');
-            }
-
-            // Vérifier le token CSRF
-            if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                throw new Exception('Token CSRF invalide');
-            }
-
-            // Récupérer et valider les données
-            $data = [
-                'username' => $_POST['username'] ?? '',
-                'email' => $_POST['email'] ?? '',
-                'full_name' => $_POST['full_name'] ?? null
-            ];
-
-            // Ajouter le mot de passe s'il est fourni
-            if (!empty($_POST['password'])) {
-                $data['password'] = $_POST['password'];
-            }
-
-            // Mettre à jour l'utilisateur
-            $this->user->update($_SESSION['user_id'], $data);
-
-            setFlashMessage('success', 'Profil mis à jour avec succès !');
-            redirect('/profile');
-
-        } catch (Exception $e) {
-            setFlashMessage('error', $e->getMessage());
-            redirect('/profile');
-        }
-    }
-
-    // Afficher le formulaire de réinitialisation du mot de passe
-    public function forgotPassword() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            try {
-                $email = cleanInput($_POST['email']);
-                $user = $this->user->findByEmail($email);
-
-                if ($user) {
-                    // Générer un token de réinitialisation
-                    $token = bin2hex(random_bytes(32));
-                    $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
-
-                    // Stocker le token dans la base de données
-                    // Envoyer l'email de réinitialisation
-                    // Note : À implémenter selon vos besoins
-
-                    setFlashMessage('success', 'Si votre email existe dans notre base de données, vous recevrez les instructions de réinitialisation.');
-                    redirect('/login');
-                }
-
-            } catch (Exception $e) {
-                setFlashMessage('error', $e->getMessage());
-            }
-        }
-
-        // Afficher le formulaire
-        require_once VIEWS_PATH . '/auth/forgot-password.php';
-    }
-
-    private function generateToken($userId) {
-        // En production, utilisez une bibliothèque JWT sécurisée
-        $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
-        $payload = base64_encode(json_encode([
-            'sub' => $userId,
-            'iat' => time(),
-            'exp' => time() + (60 * 60 * 24) // 24 heures
-        ]));
-        $signature = hash_hmac('sha256', "$header.$payload", $_ENV['JWT_SECRET'] ?? 'your-256-bit-secret');
-
-        return "$header.$payload.$signature";
-    }
-
-    private function jsonResponse($data, $statusCode = 200) {
-        http_response_code($statusCode);
-        header('Content-Type: application/json');
-        echo json_encode($data);
-        exit;
     }
 }

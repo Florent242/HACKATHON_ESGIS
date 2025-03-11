@@ -98,6 +98,33 @@ class Notification {
         }
     }
 
+    public function update($id, $data) {
+        try {
+            $fields = [];
+            $params = [':id' => $id];
+
+            foreach ($data as $key => $value) {
+                if ($key !== 'id') {
+                    $fields[] = "$key = :$key";
+                    $params[":$key"] = $value;
+                }
+            }
+
+            if (empty($fields)) {
+                throw new Exception("Aucune donnée à mettre à jour");
+            }
+
+            $fields[] = "updated_at = :updated_at";
+            $params[':updated_at'] = date('Y-m-d H:i:s');
+
+            $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute($params);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la mise à jour de la notification : " . $e->getMessage());
+        }
+    }
+
     public function deleteAllRead($userId) {
         try {
             $sql = "DELETE FROM {$this->table} WHERE user_id = :user_id AND is_read = TRUE";
@@ -116,6 +143,16 @@ class Notification {
             return $stmt->fetchColumn();
         } catch (PDOException $e) {
             throw new Exception("Erreur lors du comptage des notifications : " . $e->getMessage());
+        }
+    }
+
+    public function deleteByUser($userId) {
+        try {
+            $sql = "DELETE FROM {$this->table} WHERE user_id = :user_id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([':user_id' => $userId]);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la suppression des notifications : " . $e->getMessage());
         }
     }
 }

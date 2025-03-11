@@ -8,25 +8,21 @@ class User {
         $this->db = $db;
     }
 
-    // Créer un nouvel utilisateur
     public function create($data) {
         try {
-            // Validation des données
             $this->validate($data);
 
-            // Hashage du mot de passe
-            $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-
-            $sql = "INSERT INTO {$this->table} (username, email, password, role, full_name) 
-                    VALUES (:username, :email, :password, :role, :full_name)";
+            $sql = "INSERT INTO {$this->table} (nom, prenom, email, password, role, created_at) 
+                    VALUES (:nom, :prenom, :email, :password, :role, :created_at)";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
-                ':username' => $data['username'],
+                ':nom' => $data['nom'],
+                ':prenom' => $data['prenom'],
                 ':email' => $data['email'],
-                ':password' => $data['password'],
+                ':password' => password_hash($data['password'], PASSWORD_DEFAULT),
                 ':role' => $data['role'] ?? 'participant',
-                ':full_name' => $data['full_name'] ?? null
+                ':created_at' => $data['created_at'] ?? date('Y-m-d H:i:s')
             ]);
 
             return $this->db->lastInsertId();
@@ -35,7 +31,6 @@ class User {
         }
     }
 
-    // Trouver un utilisateur par son ID
     public function find($id) {
         try {
             $sql = "SELECT * FROM {$this->table} WHERE id = :id";
@@ -47,7 +42,6 @@ class User {
         }
     }
 
-    // Trouver un utilisateur par son email
     public function findByEmail($email) {
         try {
             $sql = "SELECT * FROM {$this->table} WHERE email = :email";
@@ -59,10 +53,19 @@ class User {
         }
     }
 
-    // Mettre à jour un utilisateur
+    public function findByResetToken($token) {
+        try {
+            $sql = "SELECT * FROM {$this->table} WHERE reset_token = :token AND reset_token_expiry > NOW()";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':token' => $token]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la recherche de l'utilisateur : " . $e->getMessage());
+        }
+    }
+
     public function update($id, $data) {
         try {
-            // Construire la requête de mise à jour dynamiquement
             $fields = [];
             $params = [':id' => $id];
             
@@ -82,7 +85,6 @@ class User {
         }
     }
 
-    // Supprimer un utilisateur
     public function delete($id) {
         try {
             $sql = "DELETE FROM {$this->table} WHERE id = :id";
@@ -93,59 +95,25 @@ class User {
         }
     }
 
-    // Authentifier un utilisateur
-    public function authenticate($email, $password) {
+    public function getByRole($role) {
         try {
-            $user = $this->findByEmail($email);
-            
-            if ($user && password_verify($password, $user['password'])) {
-                unset($user['password']); // Ne pas retourner le mot de passe
-                return $user;
-            }
-            
-            return false;
+            $sql = "SELECT id, nom, prenom, email, role, created_at FROM {$this->table} WHERE role = :role";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':role' => $role]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de l'authentification : " . $e->getMessage());
+            throw new Exception("Erreur lors de la récupération des utilisateurs : " . $e->getMessage());
         }
     }
 
-    // Valider les données de l'utilisateur
-    private function validate($data) {
-        // Vérifier que les champs requis sont présents
-        if (empty($data['username']) || empty($data['email']) || empty($data['password'])) {
-            throw new Exception("Tous les champs requis doivent être remplis");
-        }
-
-        // Valider l'email
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            throw new Exception("L'adresse email n'est pas valide");
-        }
-
-        // Vérifier que l'email n'est pas déjà utilisé
-        $existingUser = $this->findByEmail($data['email']);
-        if ($existingUser) {
-            throw new Exception("Cette adresse email est déjà utilisée");
-        }
-
-        // Valider le mot de passe
-        if (strlen($data['password']) < 8) {
-            throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
-        }
-
-        // Valider le rôle
-        $validRoles = ['participant', 'organisateur', 'juge', 'admin'];
-        if (!empty($data['role']) && !in_array($data['role'], $validRoles)) {
-            throw new Exception("Le rôle spécifié n'est pas valide");
-        }
-
-        return true;
-    }
-
-    // Récupérer tous les utilisateurs
-    public function getAll($page = 1, $limit = 10) {
+    public function getAll($page = 1, $limit = 20) {
         try {
             $offset = ($page - 1) * $limit;
-            $sql = "SELECT * FROM {$this->table} LIMIT :limit OFFSET :offset";
+            
+            $sql = "SELECT id, nom, prenom, email, role, created_at 
+                   FROM {$this->table} 
+                   ORDER BY created_at DESC 
+                   LIMIT :limit OFFSET :offset";
             
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
@@ -153,7 +121,7 @@ class User {
             $stmt->execute();
             
             return [
-                'users' => $stmt->fetchAll(),
+                'users' => $stmt->fetchAll(PDO::FETCH_ASSOC),
                 'page' => $page,
                 'limit' => $limit,
                 'total' => $this->count()
@@ -163,7 +131,36 @@ class User {
         }
     }
 
-    // Compter le nombre total d'utilisateurs
+    public function search($query, $page = 1, $limit = 20) {
+        try {
+            $offset = ($page - 1) * $limit;
+            $searchTerm = "%{$query}%";
+            
+            $sql = "SELECT id, nom, prenom, email, role, created_at 
+                   FROM {$this->table} 
+                   WHERE nom LIKE :search 
+                   OR prenom LIKE :search 
+                   OR email LIKE :search 
+                   ORDER BY created_at DESC 
+                   LIMIT :limit OFFSET :offset";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':search', $searchTerm);
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            return [
+                'users' => $stmt->fetchAll(PDO::FETCH_ASSOC),
+                'page' => $page,
+                'limit' => $limit,
+                'total' => $this->countSearch($query)
+            ];
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la recherche des utilisateurs : " . $e->getMessage());
+        }
+    }
+
     private function count() {
         try {
             $sql = "SELECT COUNT(*) FROM {$this->table}";
@@ -171,5 +168,44 @@ class User {
         } catch (PDOException $e) {
             throw new Exception("Erreur lors du comptage des utilisateurs : " . $e->getMessage());
         }
+    }
+
+    private function countSearch($query) {
+        try {
+            $searchTerm = "%{$query}%";
+            $sql = "SELECT COUNT(*) FROM {$this->table} 
+                   WHERE nom LIKE :search 
+                   OR prenom LIKE :search 
+                   OR email LIKE :search";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':search', $searchTerm);
+            $stmt->execute();
+            
+            return $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors du comptage des utilisateurs : " . $e->getMessage());
+        }
+    }
+
+    private function validate($data) {
+        if (empty($data['nom']) || empty($data['prenom']) || empty($data['email'])) {
+            throw new Exception("Les champs nom, prénom et email sont obligatoires");
+        }
+
+        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            throw new Exception("L'adresse email n'est pas valide");
+        }
+
+        if (isset($data['password']) && strlen($data['password']) < 8) {
+            throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
+        }
+
+        $validRoles = ['participant', 'jury', 'organisateur', 'admin'];
+        if (!empty($data['role']) && !in_array($data['role'], $validRoles)) {
+            throw new Exception("Le rôle spécifié n'est pas valide");
+        }
+
+        return true;
     }
 }

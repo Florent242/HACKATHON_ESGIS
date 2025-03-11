@@ -8,81 +8,149 @@ class Evaluation {
         $this->db = $db;
     }
 
-    public function create($data) {
-        try {
-            $sql = "INSERT INTO {$this->table} (projet_id, juge_id, score, commentaire) 
-                    VALUES (:projet_id, :juge_id, :score, :commentaire)";
-            
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                ':projet_id' => $data['projet_id'],
-                ':juge_id' => $data['juge_id'],
-                ':score' => $data['score'],
-                ':commentaire' => $data['commentaire'] ?? null
-            ]);
-            
-            return $this->db->lastInsertId();
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la création de l'évaluation : " . $e->getMessage());
-        }
+    public function getAll() {
+        return $this->db->getAll($this->table);
     }
 
     public function find($id) {
-        $sql = "SELECT * FROM {$this->table} WHERE id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':id', $id);
-        $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        return $this->db->find($this->table, $id);
+    }
+
+    public function create($data) {
+        return $this->db->create($this->table, $data);
     }
 
     public function update($id, $data) {
-        $sql = "UPDATE {$this->table} SET ";
-        $params = [];
-        
-        foreach ($data as $key => $value) {
-            $sql .= "$key = :$key, ";
-            $params[":$key"] = $value;
-        }
-        
-        $sql = rtrim($sql, ', ') . " WHERE id = :id";
-        $params[':id'] = $id;
-        
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($params);
+        return $this->db->update($this->table, $id, $data);
     }
 
     public function delete($id) {
-        $sql = "DELETE FROM {$this->table} WHERE id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':id', $id);
-        return $stmt->execute();
+        return $this->db->delete($this->table, $id);
     }
 
     public function getByProjet($projetId) {
-        $sql = "SELECT e.*, u.username as juge_nom 
-                FROM {$this->table} e 
-                LEFT JOIN users u ON e.juge_id = u.id 
-                WHERE e.projet_id = :projet_id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':projet_id', $projetId);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $this->db->query($this->table, ['projet_id' => $projetId]);
+    }
+
+    public function getByJury($juryId) {
+        return $this->db->query($this->table, ['juge_id' => $juryId]);
+    }
+
+    public function getAverageScore($projetId) {
+        $evaluations = $this->getByProjet($projetId);
+        if (empty($evaluations)) {
+            return 0;
+        }
+        $scores = array_column($evaluations, 'score');
+        return array_sum($scores) / count($scores);
     }
 
     public function getProjectScores($projetId) {
-        try {
-            $sql = "SELECT AVG(score) as average_score,
-                           COUNT(*) as evaluation_count,
-                           MIN(score) as min_score,
-                           MAX(score) as max_score
-                    FROM {$this->table}
-                    WHERE projet_id = :projet_id";
-            
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':projet_id' => $projetId]);
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des scores : " . $e->getMessage());
+        $evaluations = $this->getByProjet($projetId);
+        $scores = [];
+        foreach ($evaluations as $eval) {
+            $juge = $this->db->find('users', $eval['juge_id']);
+            $scores[] = [
+                'evaluation_id' => $eval['id'],
+                'score' => $eval['score'],
+                'commentaire' => $eval['commentaire'],
+                'juge' => $juge ? $juge['nom'] . ' ' . $juge['prenom'] : 'Inconnu',
+                'date' => $eval['created_at'] ?? null
+            ];
         }
+        return $scores;
+    }
+
+    public function countByHackathon($hackathonId) {
+        $count = 0;
+        $equipes = $this->db->query('equipes', ['hackathon_id' => $hackathonId]);
+        foreach ($equipes as $equipe) {
+            $projets = $this->db->query('projets', ['equipe_id' => $equipe['id']]);
+            foreach ($projets as $projet) {
+                $evaluations = $this->getByProjet($projet['id']);
+                $count += count($evaluations);
+            }
+        }
+        return $count;
+    }
+
+    public function getAverageScoreByHackathon($hackathonId) {
+        $scores = [];
+        $equipes = $this->db->query('equipes', ['hackathon_id' => $hackathonId]);
+        foreach ($equipes as $equipe) {
+            $projets = $this->db->query('projets', ['equipe_id' => $equipe['id']]);
+            foreach ($projets as $projet) {
+                $moyenne = $this->getAverageScore($projet['id']);
+                if ($moyenne > 0) {
+                    $scores[] = $moyenne;
+                }
+            }
+        }
+        return empty($scores) ? 0 : array_sum($scores) / count($scores);
+    }
+
+    public function countEvaluatedProjects($hackathonId) {
+        $count = 0;
+        $equipes = $this->db->query('equipes', ['hackathon_id' => $hackathonId]);
+        foreach ($equipes as $equipe) {
+            $projets = $this->db->query('projets', ['equipe_id' => $equipe['id']]);
+            foreach ($projets as $projet) {
+                if (!empty($this->getByProjet($projet['id']))) {
+                    $count++;
+                }
+            }
+        }
+        return $count;
+    }
+
+    public function countNonEvaluatedProjects($hackathonId) {
+        $count = 0;
+        $equipes = $this->db->query('equipes', ['hackathon_id' => $hackathonId]);
+        foreach ($equipes as $equipe) {
+            $projets = $this->db->query('projets', ['equipe_id' => $equipe['id']]);
+            foreach ($projets as $projet) {
+                if (empty($this->getByProjet($projet['id']))) {
+                    $count++;
+                }
+            }
+        }
+        return $count;
+    }
+
+    public function getMoyenneProjet($projetId) {
+        $projet = $this->db->find('projets', $projetId);
+        if (!$projet) {
+            return null;
+        }
+
+        $evaluations = $this->getByProjet($projetId);
+        $equipe = $this->db->find('equipes', $projet['equipe_id']);
+        
+        $stats = [
+            'projet_id' => $projetId,
+            'projet_titre' => $projet['titre'],
+            'equipe_nom' => $equipe ? $equipe['name'] : 'Inconnue',
+            'nombre_evaluations' => count($evaluations),
+            'moyenne_score' => 0,
+            'score_min' => null,
+            'score_max' => null,
+            'evaluateurs' => []
+        ];
+
+        if (!empty($evaluations)) {
+            $scores = array_column($evaluations, 'score');
+            $stats['moyenne_score'] = round(array_sum($scores) / count($scores), 2);
+            $stats['score_min'] = min($scores);
+            $stats['score_max'] = max($scores);
+
+            foreach ($evaluations as $eval) {
+                $juge = $this->db->find('users', $eval['juge_id']);
+                if ($juge) {
+                    $stats['evaluateurs'][] = $juge['nom'] . ' ' . $juge['prenom'];
+                }
+            }
+        }
+
+        return $stats;
     }
 }

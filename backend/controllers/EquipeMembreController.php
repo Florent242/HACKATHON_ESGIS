@@ -8,10 +8,12 @@ require_once __DIR__ . '/../models/Notification.php';
 class EquipeMembreController {
     private $equipemembreModel;
     private $notificationModel;
+    private $db;
 
-    public function __construct() {
-        $this->equipemembreModel = new EquipeMembre();
-        $this->notificationModel = new Notification();
+    public function __construct($db) {
+        $this->db = $db;
+        $this->equipemembreModel = new EquipeMembre($db);
+        $this->notificationModel = new Notification($db);
     }
 
     // Afficher les membres d'une équipe

@@ -8,109 +8,89 @@ class Equipe {
         $this->db = $db;
     }
 
-    // Créer une nouvelle équipe
-    public function create($data) {
-        try {
-            $sql = "INSERT INTO {$this->table} (name, hackathon_id, created_by) 
-                    VALUES (:name, :hackathon_id, :created_by)";
-            
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                ':name' => $data['name'],
-                ':hackathon_id' => $data['hackathon_id'],
-                ':created_by' => $data['created_by']
-            ]);
-            
-            return $this->db->lastInsertId();
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la création de l'équipe : " . $e->getMessage());
-        }
+    public function getAll() {
+        return $this->db->getAll($this->table);
     }
 
-    // Ajouter un membre à l'équipe
-    public function addMember($equipeId, $userId, $role = 'member') {
-        try {
-            $sql = "INSERT INTO membres_equipe (equipe_id, user_id, role) 
-                    VALUES (:equipe_id, :user_id, :role)";
-            
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
-                ':equipe_id' => $equipeId,
-                ':user_id' => $userId,
-                ':role' => $role
-            ]);
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de l'ajout du membre : " . $e->getMessage());
-        }
-    }
-
-    // Récupérer les membres d'une équipe
-    public function getMembers($equipeId) {
-        try {
-            $sql = "SELECT u.*, me.role as team_role 
-                    FROM users u 
-                    JOIN membres_equipe me ON u.id = me.user_id 
-                    WHERE me.equipe_id = :equipe_id";
-            
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':equipe_id' => $equipeId]);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des membres : " . $e->getMessage());
-        }
-    }
-
-    // Trouver une équipe par son ID
     public function find($id) {
-        $sql = "SELECT * FROM {$this->table} WHERE id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':id', $id);
-        $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        return $this->db->find($this->table, $id);
     }
 
-    // Mettre à jour une équipe
+    public function create($data) {
+        if (empty($data['name'])) {
+            throw new Exception("Le nom de l'équipe est requis");
+        }
+        if (empty($data['hackathon_id'])) {
+            throw new Exception("L'ID du hackathon est requis");
+        }
+        return $this->db->create($this->table, $data);
+    }
+
     public function update($id, $data) {
-        $sql = "UPDATE {$this->table} SET ";
-        $params = [];
+        $equipe = $this->find($id);
+        if (!$equipe) {
+            throw new Exception("Équipe non trouvée");
+        }
+        return $this->db->update($this->table, $id, $data);
+    }
+
+    public function delete($id) {
+        return $this->db->delete($this->table, $id);
+    }
+
+    public function getByHackathon($hackathonId) {
+        return $this->db->query($this->table, ['hackathon_id' => $hackathonId]);
+    }
+
+    public function addMembre($equipeId, $participantId, $role = 'member') {
+        $equipe = $this->find($equipeId);
+        if (!$equipe) {
+            throw new Exception("Équipe non trouvée");
+        }
+
+        return $this->db->create('equipe_membres', [
+            'equipe_id' => $equipeId,
+            'participant_id' => $participantId,
+            'role' => $role
+        ]);
+    }
+
+    public function getMembres($equipeId) {
+        $membres = $this->db->query('equipe_membres', ['equipe_id' => $equipeId]);
+        $result = [];
         
-        foreach ($data as $key => $value) {
-            $sql .= "$key = :$key, ";
-            $params[":$key"] = $value;
+        foreach ($membres as $membre) {
+            $participant = $this->db->find('participants', $membre['participant_id']);
+            if ($participant) {
+                $participant['role'] = $membre['role'];
+                $result[] = $participant;
+            }
         }
         
-        $sql = rtrim($sql, ', ') . " WHERE id = :id";
-        $params[':id'] = $id;
+        return $result;
+    }
+
+    public function countMembres($equipeId) {
+        $membres = $this->db->query('equipe_membres', ['equipe_id' => $equipeId]);
+        return count($membres);
+    }
+
+    public function removeMembre($equipeId, $participantId) {
+        $membres = $this->db->query('equipe_membres', [
+            'equipe_id' => $equipeId,
+            'participant_id' => $participantId
+        ]);
         
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($params);
+        if (!empty($membres)) {
+            foreach ($membres as $membre) {
+                $this->db->delete('equipe_membres', $membre['id']);
+            }
+        }
+        
+        return true;
     }
 
-    // Supprimer une équipe
-    public function delete($id) {
-        // Supprimer d'abord les membres de l'équipe
-        $sql = "DELETE FROM membres_equipe WHERE equipe_id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':id', $id);
-        $stmt->execute();
-
-        // Puis supprimer l'équipe
-        $sql = "DELETE FROM {$this->table} WHERE id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':id', $id);
-        return $stmt->execute();
-    }
-
-    // Récupérer les équipes par hackathon
-    public function getByHackathon($hackathonId) {
-        $sql = "SELECT e.*, COUNT(me.user_id) as membre_count 
-                FROM {$this->table} e 
-                LEFT JOIN membres_equipe me ON e.id = me.equipe_id 
-                WHERE e.hackathon_id = :hackathon_id 
-                GROUP BY e.id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->bindParam(':hackathon_id', $hackathonId);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    public function getProjets($equipeId) {
+        return $this->db->query('projets', ['equipe_id' => $equipeId]);
     }
 }
