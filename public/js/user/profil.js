@@ -1,44 +1,43 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const profileForm = document.getElementById('profileForm');
-    
-    // Handle form submission
-    profileForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        // Collect form data
-        const formData = {
-            fullName: document.getElementById('fullName').value,
-            email: document.getElementById('email').value,
-            specialization: document.getElementById('specialization').value,
-            github: document.getElementById('github').value,
-            bio: document.getElementById('bio').value
-        };
+document.addEventListener("DOMContentLoaded", function () {
+    /* Tabs for main content */
 
-        // Simulate API call
-        console.log('Saving profile data:', formData);
-        
-        // Show success message
-        const saveBtn = document.querySelector('.save-btn');
-        const originalText = saveBtn.textContent;
-        saveBtn.textContent = 'Modifications enregistrées !';
-        saveBtn.style.backgroundColor = '#059669'; // Success green color
-        
-        // Reset button after 2 seconds
-        setTimeout(() => {
-            saveBtn.textContent = originalText;
-            saveBtn.style.backgroundColor = '#3B82F6';
-        }, 2000);
+    // tabs button link
+    const tabs = document.querySelectorAll(".tab-link");
+    // tabs content
+    const contents = document.querySelectorAll(".tab-content");
+
+    tabs.forEach(tab => {
+        tab.addEventListener("click", function () {
+            const target = this.getAttribute("data-tab");
+
+            // Supprime la classe active de tous les onglets et cache le contenu
+            tabs.forEach(t => t.classList.remove("text-white", "border-blue-500", "bg-gray-900/75"));
+            contents.forEach(c => c.classList.add("hidden"));
+
+            // Active le bon onglet et affiche le bon contenu
+            this.classList.add("text-white", "border-blue-500", "bg-gray-900/75");
+            document.getElementById(target).classList.remove("hidden");
+        });
     });
 
-    // Add input validation
-    const inputs = document.querySelectorAll('input, textarea');
-    inputs.forEach(input => {
-        input.addEventListener('input', () => {
-            if (input.value.trim() === '') {
-                input.style.borderColor = '#EF4444'; // Error red color
-            } else {
-                input.style.borderColor = '#1E2028'; // Normal border color
-            }
+    /* Tabs for challenges subcontent */
+    
+    // subtabs button link
+    const subTabs = document.querySelectorAll(".sub-tab-link");
+    // subtabs content
+    const subContents = document.querySelectorAll(".sub-tab-content");
+
+    subTabs.forEach(subTab => {
+        subTab.addEventListener("click", function () {
+            const target = this.getAttribute("data-sub-tab");
+
+            // Supprime la classe active de tous les onglets et cache le contenu
+            subTabs.forEach(t => t.classList.remove("text-white", "border-blue-500", "bg-gray-900/75"));
+            subContents.forEach(c => c.classList.add("hidden"));
+
+            // Active le bon onglet et affiche le bon contenu
+            this.classList.add("text-white", "border-blue-500", "bg-gray-900/75");
+            document.getElementById(target).classList.remove("hidden");
         });
     });
 });

@@ -12,94 +12,204 @@
 <?php require_once '../includes/admin/header.php'; ?>
 
     <main>
-        <div class="resources-header">
-            <h1>Learning Resources</h1>
-            <p>Everything you need to excel in challenges and hackathons</p>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title"><i class="fas fa-book"></i> Gestion des Ressources</h1>
+                <p class="page-subtitle">Gérez les ressources pédagogiques et documentations</p>
+            </div>
+            <button class="btn btn-primary" data-modal="newResourceModal">
+                <i class="fas fa-plus btn-icon"></i> Nouvelle Ressource
+            </button>
         </div>
 
-        <div class="resources-grid">
-            <!-- Development Guides Card -->
-            <div class="resource-card">
-                <div class="card-header">
-                    <div class="icon-wrapper dev-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>
-                        </svg>
-                    </div>
-                    <h2>Development Guides</h2>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-list"></i> Liste des ressources</div>
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Rechercher une ressource..." data-table="resourcesTable">
                 </div>
-                <p>Comprehensive guides for web development, from basics to advanced topics</p>
-                <ul class="resource-links">
-                    <li><a href="#">React Fundamentals</a></li>
-                    <li><a href="#">API Integration</a></li>
-                    <li><a href="#">State Management</a></li>
-                    <li><a href="#">Testing Strategies</a></li>
-                </ul>
-                <a href="#" class="explore-btn">Explore Development Guides</a>
             </div>
-
-            <!-- Security Resources Card -->
-            <div class="resource-card">
-                <div class="card-header">
-                    <div class="icon-wrapper security-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                        </svg>
-                    </div>
-                    <h2>Security Resources</h2>
-                </div>
-                <p>Learn about cybersecurity, penetration testing, and secure coding practices</p>
-                <ul class="resource-links">
-                    <li><a href="#">OWASP Top 10</a></li>
-                    <li><a href="#">Penetration Testing</a></li>
-                    <li><a href="#">Security Tools</a></li>
-                    <li><a href="#">Best Practices</a></li>
-                </ul>
-                <a href="#" class="explore-btn">Explore Security Resources</a>
-            </div>
-
-            <!-- Documentation Card -->
-            <div class="resource-card">
-                <div class="card-header">
-                    <div class="icon-wrapper doc-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                        </svg>
-                    </div>
-                    <h2>Documentation</h2>
-                </div>
-                <p>Official documentation and references for various technologies</p>
-                <ul class="resource-links">
-                    <li><a href="#">API References</a></li>
-                    <li><a href="#">Framework Guides</a></li>
-                    <li><a href="#">Security Standards</a></li>
-                    <li><a href="#">Code Examples</a></li>
-                </ul>
-                <a href="#" class="explore-btn">Explore Documentation</a>
-            </div>
-
-            <!-- Learning Paths Card -->
-            <div class="resource-card">
-                <div class="card-header">
-                    <div class="icon-wrapper path-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                        </svg>
-                    </div>
-                    <h2>Learning Paths</h2>
-                </div>
-                <p>Structured learning paths for different skill levels and interests</p>
-                <ul class="resource-links">
-                    <li><a href="#">Beginner Track</a></li>
-                    <li><a href="#">Advanced Development</a></li>
-                    <li><a href="#">Security Expert</a></li>
-                    <li><a href="#">Full Stack Path</a></li>
-                </ul>
-                <a href="#" class="explore-btn">Explore Learning Paths</a>
+            
+            <div class="table-container">
+                <table id="resourcesTable">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Type</th>
+                            <th>Auteur</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Introduction à React</td>
+                            <td><span class="badge badge-info"><i class="fas fa-chalkboard-teacher"></i> Workshop</span></td>
+                            <td>John Doe</td>
+                            <td>01/03/2024</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="dropdown-toggle">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a href="#" class="dropdown-item action-button" data-action="edit" data-id="1"><i class="fas fa-edit"></i> Modifier</a>
+                                        <a href="#" class="dropdown-item action-button" data-action="view" data-id="1"><i class="fas fa-eye"></i> Voir détails</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a href="#" class="dropdown-item action-button" data-action="download" data-id="1"><i class="fas fa-download"></i> Télécharger</a>
+                                        <a href="#" class="dropdown-item action-button" data-action="delete" data-id="1"><i class="fas fa-trash"></i> Supprimer</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Guide de sécurité API</td>
+                            <td><span class="badge badge-primary"><i class="fas fa-file-pdf"></i> Document</span></td>
+                            <td>Marie Dupont</td>
+                            <td>15/02/2024</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="dropdown-toggle">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a href="#" class="dropdown-item action-button" data-action="edit" data-id="2"><i class="fas fa-edit"></i> Modifier</a>
+                                        <a href="#" class="dropdown-item action-button" data-action="view" data-id="2"><i class="fas fa-eye"></i> Voir détails</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a href="#" class="dropdown-item action-button" data-action="download" data-id="2"><i class="fas fa-download"></i> Télécharger</a>
+                                        <a href="#" class="dropdown-item action-button" data-action="delete" data-id="2"><i class="fas fa-trash"></i> Supprimer</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Tutoriel Docker</td>
+                            <td><span class="badge badge-success"><i class="fas fa-video"></i> Vidéo</span></td>
+                            <td>Pierre Martin</td>
+                            <td>20/01/2024</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="dropdown-toggle">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a href="#" class="dropdown-item action-button" data-action="edit" data-id="3"><i class="fas fa-edit"></i> Modifier</a>
+                                        <a href="#" class="dropdown-item action-button" data-action="view" data-id="3"><i class="fas fa-eye"></i> Voir détails</a>
+                                        <div class="dropdown-divider"></div>
+                                        <a href="#" class="dropdown-item action-button" data-action="download" data-id="3"><i class="fas fa-download"></i> Télécharger</a>
+                                        <a href="#" class="dropdown-item action-button" data-action="delete" data-id="3"><i class="fas fa-trash"></i> Supprimer</a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
+
+        <!-- Modal pour nouvelle ressource -->
+        <div id="newResourceModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-book"></i> Nouvelle Ressource</h2>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form class="needs-validation" novalidate>
+                        <div class="form-group">
+                            <label for="resourceTitle">Titre</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-heading input-icon"></i>
+                                <input type="text" id="resourceTitle" class="form-control" placeholder="Nom de la ressource" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="resourceType">Type</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-file-alt input-icon"></i>
+                                <select id="resourceType" class="form-control">
+                                    <option value="">Sélectionner un type</option>
+                                    <option value="document">Document</option>
+                                    <option value="video">Vidéo</option>
+                                    <option value="workshop">Workshop</option>
+                                    <option value="tutorial">Tutoriel</option>
+                                    <option value="tool">Outil</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Image</label>
+                            <div class="file-upload">
+                                <i class="fas fa-cloud-upload-alt file-upload-icon"></i>
+                                <div class="file-upload-text">Cliquez pour télécharger ou glissez-déposez</div>
+                                <div class="file-upload-info">PNG, JPG ou WEBP (max. 2Mo)</div>
+                                <input type="file" id="resourceImage" accept="image/*">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="resourceDescription">Description</label>
+                            <textarea id="resourceDescription" class="form-control" rows="4" placeholder="Description détaillée de la ressource"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="resourceUrl">Lien URL</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-link input-icon"></i>
+                                <input type="url" id="resourceUrl" class="form-control" placeholder="https://exemple.com/ressource">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Fichier associé</label>
+                            <div class="file-upload">
+                                <i class="fas fa-file-upload file-upload-icon"></i>
+                                <div class="file-upload-text">Choisir un fichier</div>
+                                <div class="file-upload-info">PDF, DOCX, PPTX, etc. (max. 10Mo)</div>
+                                <input type="file" id="resourceFile">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="resourcePublishDate">Date de publication</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-calendar input-icon"></i>
+                                <input type="date" id="resourcePublishDate" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary modal-close"><i class="fas fa-times"></i> Annuler</button>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Créer</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .page-header .btn {
+                width: 100%;
+            }
+        }
+        </style>
     </main>
 </body>
 </html>
