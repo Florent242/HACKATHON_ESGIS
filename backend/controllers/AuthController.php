@@ -19,7 +19,7 @@ class AuthController extends Controller {
         $this->user = new User($this->db);
     }
 
-    public function login(?array $credentials = null): array {
+    public function login(?array $credentials = null): void {
         try {
             $this->validateMethod('POST');
             
@@ -57,10 +57,16 @@ class AuthController extends Controller {
 
             unset($user['password']); // Ne pas renvoyer le mot de passe
 
-            return [
-                'jwt' => $jwt,
-                'user' => $user
+            $response = [
+                'success' => true,
+                'message' => 'Connexion réussie',
+                'data' => [
+                    'jwt' => $jwt,
+                    'user' => $user
+                ]
             ];
+
+            $this->jsonResponse($response);
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }
