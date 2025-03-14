@@ -44,6 +44,10 @@
                             <input type="password" id="password_user" placeholder="............">
                         </div>
                     </div>
+                    <div>
+                        <label for="remember_me">Rester connecté</label>
+                        <input type="checkbox" name="remember_me" id="remember_me">
+                    </div>
                     <button type="submit" class="submit-btn"> <i data-lucide="send"></i>Se connecter</button>
                 </form>
             </div>
