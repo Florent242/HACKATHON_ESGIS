@@ -19,7 +19,7 @@ class AuthController extends Controller {
         $this->user = new User($this->db);
     }
 
-    public function login(array $credentials = null): array {
+    public function login(?array $credentials = null): array {
         try {
             $this->validateMethod('POST');
             
