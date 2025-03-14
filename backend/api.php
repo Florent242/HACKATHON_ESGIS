@@ -10,6 +10,7 @@ require_once __DIR__ . '/includes/config.php';
 // Contrôleurs
 require_once __DIR__ . '/controllers/AuthController.php';
 require_once __DIR__ . '/controllers/SignupController.php';
+require_once __DIR__ . '/controllers/ResetPasswordController.php';
 
 // Modèles
 require_once __DIR__ . '/models/User.php';
@@ -20,6 +21,7 @@ require_once __DIR__ . '/models/Evaluation.php';
 
 use Auth\Controller\AuthController;
 use Auth\Controller\SignupController;
+use Auth\Controller\ResetPasswordController;
 
 // Initialisation de la base de données
 $db = new PDO('sqlite:' . DB_FILE, null, null, [
@@ -120,6 +122,22 @@ try {
                 case 'logout':
                     if ($method === 'POST') {
                         $authController->logout();
+                    } else {
+                        throw new Exception('Méthode non autorisée');
+                    }
+                    break;
+                case 'forgot-password':
+                    if ($method === 'POST') {
+                        $resetController = new ResetPasswordController($db);
+                        $resetController->requestReset();
+                    } else {
+                        throw new Exception('Méthode non autorisée');
+                    }
+                    break;
+                case 'reset-password':
+                    if ($method === 'POST') {
+                        $resetController = new ResetPasswordController($db);
+                        $resetController->resetPassword();
                     } else {
                         throw new Exception('Méthode non autorisée');
                     }
