@@ -1,53 +1,86 @@
 <?php
+namespace Auth\Model;
 
-class User {
-    private $db;
-    private $table = 'users';
+use PDO;
+use PDOException;
+use Exception;
 
-    public function __construct($db) {
-        $this->db = $db;
+require_once __DIR__ . '/Model.php';
+
+class User extends Model {
+    protected $table = 'users';
+    private $pdo;
+
+    public function __construct(PDO $pdo) {
+        parent::__construct($pdo);
+        $this->pdo = $pdo;
     }
 
-    public function create($data) {
+    public function createUser(array $userData): int {
         try {
-            $this->validate($data);
+            $this->validate($userData);
 
-            $sql = "INSERT INTO {$this->table} (nom, prenom, email, password, role, created_at) 
-                    VALUES (:nom, :prenom, :email, :password, :role, :created_at)";
-
-            $stmt = $this->db->prepare($sql);
+            $stmt = $this->pdo->prepare("INSERT INTO {$this->table} (email, password, nom, prenom, role, created_at) 
+                                      VALUES (:email, :password, :nom, :prenom, :role, :created_at)");
+            
             $stmt->execute([
-                ':nom' => $data['nom'],
-                ':prenom' => $data['prenom'],
-                ':email' => $data['email'],
-                ':password' => password_hash($data['password'], PASSWORD_DEFAULT),
-                ':role' => $data['role'] ?? 'participant',
-                ':created_at' => $data['created_at'] ?? date('Y-m-d H:i:s')
+                ':email' => $userData['email'],
+                ':password' => $userData['password'], // Le mot de passe est déjà hashé dans AuthController::signup
+                ':nom' => $userData['nom'] ?? '',
+                ':prenom' => $userData['prenom'] ?? '',
+                ':role' => $userData['role'] ?? 'participant',
+                ':created_at' => $userData['created_at'] ?? date('Y-m-d H:i:s')
             ]);
 
-            return $this->db->lastInsertId();
+            return (int)$this->pdo->lastInsertId();
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la création de l'utilisateur : " . $e->getMessage());
+            throw new Exception("Erreur lors de la création de l'utilisateur: " . $e->getMessage());
         }
     }
 
-    public function find($id) {
+    public function getUserById(int $id): ?array {
         try {
-            $sql = "SELECT * FROM {$this->table} WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':id' => $id]);
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt = $this->pdo->prepare("SELECT * FROM {$this->table} WHERE id = ?");
+            $stmt->execute([$id]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($user) {
+                unset($user['password']); // Ne jamais renvoyer le mot de passe
+                return $this->formatResponse($this->sanitizeOutput($user))['data'];
+            }
+            return null;
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la recherche de l'utilisateur : " . $e->getMessage());
+            throw new Exception("Erreur lors de la récupération de l'utilisateur: " . $e->getMessage());
         }
     }
 
-    public function findByEmail($email) {
+    public function authenticate(string $email, string $password): ?array {
         try {
-            $sql = "SELECT * FROM {$this->table} WHERE email = :email";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':email' => $email]);
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt = $this->pdo->prepare("SELECT id, password FROM {$this->table} WHERE email = ?");
+            $stmt->execute([$email]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($user && password_verify($password, $user['password'])) {
+                return $this->formatResponse(['id' => $user['id']])['data'];
+            }
+
+            return null;
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de l'authentification: " . $e->getMessage());
+        }
+    }
+
+    public function findByEmail(string $email) {
+        try {
+            $stmt = $this->pdo->prepare("SELECT * FROM {$this->table} WHERE email = ?");
+            $stmt->execute([$email]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($user) {
+                unset($user['password']);
+                return $this->formatResponse($this->sanitizeOutput($user))['data'];
+            }
+            return null;;
         } catch (PDOException $e) {
             throw new Exception("Erreur lors de la recherche de l'utilisateur : " . $e->getMessage());
         }
@@ -56,7 +89,7 @@ class User {
     public function findByResetToken($token) {
         try {
             $sql = "SELECT * FROM {$this->table} WHERE reset_token = :token AND reset_token_expiry > NOW()";
-            $stmt = $this->db->prepare($sql);
+            $stmt = $this->pdo->prepare($sql);
             $stmt->execute([':token' => $token]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
@@ -64,32 +97,36 @@ class User {
         }
     }
 
-    public function update($id, $data) {
+    public function updateUser(int $id, array $data): bool {
         try {
             $fields = [];
-            $params = [':id' => $id];
+            $params = ['id' => $id];
             
             foreach ($data as $key => $value) {
                 if ($key !== 'id') {
-                    $fields[] = "{$key} = :{$key}";
-                    $params[":{$key}"] = $value;
+                    $fields[] = "{$key} = ?";
+                    $params[] = $value;
                 }
             }
             
-            $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
+            if (empty($fields)) {
+                return false;
+            }
             
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute($params);
+            $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = ?";
+            $params[] = $id;
+            
+            $stmt = $this->pdo->prepare($sql);
+            return $stmt->execute($params);;
         } catch (PDOException $e) {
             throw new Exception("Erreur lors de la mise à jour de l'utilisateur : " . $e->getMessage());
         }
     }
 
-    public function delete($id) {
+    public function deleteUser(int $id): bool {
         try {
-            $sql = "DELETE FROM {$this->table} WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([':id' => $id]);
+            $stmt = $this->pdo->prepare("DELETE FROM {$this->table} WHERE id = ?");
+            return $stmt->execute([$id]);;
         } catch (PDOException $e) {
             throw new Exception("Erreur lors de la suppression de l'utilisateur : " . $e->getMessage());
         }
@@ -98,7 +135,7 @@ class User {
     public function getByRole($role) {
         try {
             $sql = "SELECT id, nom, prenom, email, role, created_at FROM {$this->table} WHERE role = :role";
-            $stmt = $this->db->prepare($sql);
+            $stmt = $this->pdo->prepare($sql);
             $stmt->execute([':role' => $role]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
@@ -106,7 +143,7 @@ class User {
         }
     }
 
-    public function getAll($page = 1, $limit = 20) {
+    public function getAllUsers(int $page = 1, int $limit = 20): array {
         try {
             $offset = ($page - 1) * $limit;
             
@@ -115,17 +152,13 @@ class User {
                    ORDER BY created_at DESC 
                    LIMIT :limit OFFSET :offset";
             
-            $stmt = $this->db->prepare($sql);
+            $stmt = $this->pdo->prepare($sql);
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
             
-            return [
-                'users' => $stmt->fetchAll(PDO::FETCH_ASSOC),
-                'page' => $page,
-                'limit' => $limit,
-                'total' => $this->count()
-            ];
+            $users = $this->sanitizeOutput($stmt->fetchAll(PDO::FETCH_ASSOC));
+            return $this->formatPaginatedResponse($users, $page, $limit, $this->count());
         } catch (PDOException $e) {
             throw new Exception("Erreur lors de la récupération des utilisateurs : " . $e->getMessage());
         }
@@ -144,18 +177,14 @@ class User {
                    ORDER BY created_at DESC 
                    LIMIT :limit OFFSET :offset";
             
-            $stmt = $this->db->prepare($sql);
+            $stmt = $this->pdo->prepare($sql);
             $stmt->bindValue(':search', $searchTerm);
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
             
-            return [
-                'users' => $stmt->fetchAll(PDO::FETCH_ASSOC),
-                'page' => $page,
-                'limit' => $limit,
-                'total' => $this->countSearch($query)
-            ];
+            $users = $this->sanitizeOutput($stmt->fetchAll(PDO::FETCH_ASSOC));
+            return $this->formatPaginatedResponse($users, $page, $limit, $this->countSearch($query));
         } catch (PDOException $e) {
             throw new Exception("Erreur lors de la recherche des utilisateurs : " . $e->getMessage());
         }
@@ -178,7 +207,7 @@ class User {
                    OR prenom LIKE :search 
                    OR email LIKE :search";
             
-            $stmt = $this->db->prepare($sql);
+            $stmt = $this->pdo->prepare($sql);
             $stmt->bindValue(':search', $searchTerm);
             $stmt->execute();
             

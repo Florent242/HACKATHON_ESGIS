@@ -1,4 +1,7 @@
 <?php
+namespace Auth\Controller;
+
+use Exception;
 
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -12,7 +15,7 @@ class UserController extends Controller {
     public function __construct($db) {
         parent::__construct();
         $this->db = $db;
-        $this->user = new User($this->db);
+        $this->user = new \Auth\Model\User($this->db);
     }
 
     public function register() {
@@ -39,7 +42,8 @@ class UserController extends Controller {
                 'created_at' => date('Y-m-d H:i:s')
             ];
 
-            $userId = $this->user->create($data);
+            $result = $this->user->createUser($data);
+            $userId = $result;
 
             $this->jsonResponse([
                 'success' => true,
@@ -61,12 +65,13 @@ class UserController extends Controller {
             $requiredFields = ['email', 'password'];
             $this->validateRequiredFields($_POST, $requiredFields);
 
-            $user = $this->user->findByEmail($_POST['email']);
-            if (!$user || !password_verify($_POST['password'], $user['password'])) {
+            $result = $this->user->authenticate($_POST['email'], $_POST['password']);
+            if (!$result) {
                 throw new Exception('Email ou mot de passe incorrect');
             }
 
             // Créer la session
+            $user = $this->user->getUserById($result['id']);
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_role'] = $user['role'];
             $_SESSION['user_email'] = $user['email'];
@@ -108,7 +113,7 @@ class UserController extends Controller {
         try {
             $this->validateMethod('GET');
             
-            $user = $this->user->find($id);
+            $user = $this->user->getUserById($id);
             if (!$user) {
                 throw new Exception('Utilisateur non trouvé');
             }
@@ -157,7 +162,7 @@ class UserController extends Controller {
             }
 
             $data['updated_at'] = date('Y-m-d H:i:s');
-            $this->user->update($id, $data);
+            $this->user->updateUser($id, $data);
             
             $this->jsonResponse([
                 'success' => true,
@@ -184,7 +189,7 @@ class UserController extends Controller {
             $this->validateRequiredFields($_POST, $requiredFields);
 
             // Vérifier l'ancien mot de passe
-            $user = $this->user->find($id);
+            $user = $this->user->getUserById($id);
             if (!password_verify($_POST['old_password'], $user['password'])) {
                 throw new Exception('Ancien mot de passe incorrect');
             }
@@ -192,7 +197,7 @@ class UserController extends Controller {
             // Hasher le nouveau mot de passe
             $hashedPassword = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
 
-            $this->user->update($id, [
+            $this->user->updateUser($id, [
                 'password' => $hashedPassword,
                 'updated_at' => date('Y-m-d H:i:s')
             ]);
@@ -217,7 +222,9 @@ class UserController extends Controller {
                 throw new Exception('Non autorisé');
             }
 
-            $this->user->delete($id);
+            if (!$this->user->deleteUser($id)) {
+                throw new Exception('Erreur lors de la suppression de l\'utilisateur');
+            }
             
             $this->jsonResponse([
                 'success' => true,
@@ -257,7 +264,7 @@ class UserController extends Controller {
                 throw new Exception('Non autorisé');
             }
 
-            $user = $this->user->find($_SESSION['user_id']);
+            $user = $this->user->getUserById($_SESSION['user_id']);
             unset($user['password']);
             
             $this->jsonResponse([

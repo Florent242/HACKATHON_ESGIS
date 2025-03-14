@@ -1,4 +1,9 @@
 <?php
+namespace Auth\Model;
+
+use Exception;
+use PDO;
+use PDOException;
 
 class Challenge {
     private $db;

@@ -1,4 +1,7 @@
 <?php
+namespace Auth\Controller;
+
+use Exception;
 
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -225,13 +228,13 @@ class EvaluationController extends Controller {
                 throw new Exception('Projet non trouvé');
             }
 
-            $moyenne = $this->evaluation->getMoyenneProjet($projetId);
+            $stats = $this->evaluation->getMoyenneProjet($projetId);
             
             $this->jsonResponse([
                 'success' => true,
                 'data' => [
                     'projet_id' => (int)$projetId,
-                    'moyenne' => round($moyenne, 2)
+                    'moyenne' => $stats ? $stats['moyenne_score'] : 0
                 ]
             ]);
         } catch (Exception $e) {

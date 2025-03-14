@@ -1,4 +1,8 @@
 <?php
+namespace Auth\Model;
+
+use Exception;
+use PDO;
 
 class Equipe {
     private $db;

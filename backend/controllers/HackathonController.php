@@ -1,4 +1,8 @@
 <?php
+namespace Auth\Controller;
+
+use Exception;
+use Auth\Model\Hackathon;
 
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
