@@ -30,6 +30,7 @@
                 <h1>Espace Utilisateur</h1>
                 <p>Connectez-vous à votre compte étudiant</p> <br><br>
                 <form>
+                    
                     <div class="form-group">
                         <label for="email_user">Email</label>
                         <div class="display">
@@ -37,12 +38,18 @@
                             <input type="email" id="email_user" placeholder="etudiant@esgis.bj">
                         </div>
                     </div>
+
                     <div class="form-group">
                         <label for="password_user">Mot de passe</label>
                         <div class="display">
                             <i data-lucide="key"></i>
                             <input type="password" id="password_user" placeholder="............">
                         </div>
+                    </div>
+
+                    <div>
+                        <label for="remember_me">Rester connecté</label>
+                        <input type="checkbox" name="remember_me" id="remember_me">
                     </div>
                     <button type="submit" class="submit-btn"> <i data-lucide="send"></i>Se connecter</button>
                 </form>
