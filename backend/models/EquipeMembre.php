@@ -4,8 +4,8 @@ class EquipeMembre {
     private $db;
     private $table = 'equipe_membres';
 
-    public function __construct() {
-        $this->db = require_once __DIR__ . '/../../database/database.php';
+    public function __construct($db) {
+        $this->db = $db;
     }
 
     // Ajouter un membre à une équipe
