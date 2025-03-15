@@ -6,13 +6,15 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/database/database.php';
+require_once __DIR__ . '/models/Database.php';
 require_once __DIR__ . '/models/Hackathon.php';
 require_once __DIR__ . '/models/Equipe.php';
 require_once __DIR__ . '/models/Projet.php';
 require_once __DIR__ . '/models/Evaluation.php';
+require_once __DIR__ . '/models/User.php';
 
 // Initialisation de la base de données
-$db = new JsonDatabase(__DIR__ . '/database/db.json');
+$db = Database::getInstance()->getConnection();
 
 // Pour les requêtes OPTIONS, renvoyer directement une réponse
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -22,10 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Récupération de la méthode HTTP et de l'URL
 $method = $_SERVER['REQUEST_METHOD'];
-
-// Récupération du chemin de la requête
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$uri = str_replace('/api/', '/', $uri);
+$uri = str_replace('/HACKATHON_ESGIS/public/api/', '/', $uri); // Nettoyer l'URI
 $request = explode('/', trim($uri, '/'));
 
 // Extraction des composants de l'URL
@@ -45,12 +45,17 @@ try {
             $controller = new Hackathon($db);
             handleRequest($method, $controller, $id, $input);
             break;
-            
+
         case 'equipes':
             $controller = new Equipe($db);
             handleRequest($method, $controller, $id, $input);
             break;
-            
+
+        case 'users':
+            $controller = new User($db);
+            handleRequest($method, $controller, $id, $input);
+            break;
+
         case 'projets':
             $controller = new Projet($db);
             if ($id && $action === 'submit') {
@@ -60,7 +65,7 @@ try {
                 handleRequest($method, $controller, $id, $input);
             }
             break;
-            
+
         case 'evaluations':
             $controller = new Evaluation($db);
             if ($id === 'projet' && isset($request[2])) {
@@ -71,19 +76,16 @@ try {
                 handleRequest($method, $controller, $id, $input);
             }
             break;
-            
+
         default:
-            if ($endpoint === '') {
-                sendResponse(200, ['message' => 'API is running']);
-            } else {
-                sendResponse(404, ['error' => 'Endpoint non trouvé']);
-            }
+            sendResponse(404, ['error' => 'Endpoint non trouvé']);
     }
 } catch (Exception $e) {
     sendResponse(500, ['error' => $e->getMessage()]);
 }
 
-function handleRequest($method, $controller, $id, $input = null) {
+function handleRequest($method, $controller, $id, $input = null)
+{
     switch ($method) {
         case 'GET':
             if ($id) {
@@ -96,7 +98,7 @@ function handleRequest($method, $controller, $id, $input = null) {
             }
             sendResponse(200, $result);
             break;
-            
+
         case 'POST':
             try {
                 $result = $controller->create($input);
@@ -105,7 +107,7 @@ function handleRequest($method, $controller, $id, $input = null) {
                 sendResponse(400, ['error' => $e->getMessage()]);
             }
             break;
-            
+
         case 'PUT':
             if (!$id) {
                 sendResponse(400, ['error' => 'ID requis pour la mise à jour']);
@@ -117,7 +119,7 @@ function handleRequest($method, $controller, $id, $input = null) {
                 sendResponse(400, ['error' => $e->getMessage()]);
             }
             break;
-            
+
         case 'DELETE':
             if (!$id) {
                 sendResponse(400, ['error' => 'ID requis pour la suppression']);
@@ -129,14 +131,17 @@ function handleRequest($method, $controller, $id, $input = null) {
                 sendResponse(400, ['error' => $e->getMessage()]);
             }
             break;
-            
+
         default:
             sendResponse(405, ['error' => 'Méthode non autorisée']);
+            break;
     }
 }
 
-function sendResponse($status, $data) {
+function sendResponse($status, $data)
+{
     http_response_code($status);
     echo json_encode($data);
     exit;
 }
+?>

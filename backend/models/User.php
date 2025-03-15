@@ -12,13 +12,12 @@ class User {
         try {
             $this->validate($data);
 
-            $sql = "INSERT INTO {$this->table} (nom, prenom, email, password, role, created_at) 
-                    VALUES (:nom, :prenom, :email, :password, :role, :created_at)";
+            $sql = "INSERT INTO {$this->table} (username, email, password, role, created_at) 
+                    VALUES (:username, :email, :password, :role, :created_at)";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
-                ':nom' => $data['nom'],
-                ':prenom' => $data['prenom'],
+                ':username' => $data['username'],
                 ':email' => $data['email'],
                 ':password' => password_hash($data['password'], PASSWORD_DEFAULT),
                 ':role' => $data['role'] ?? 'participant',
@@ -97,7 +96,7 @@ class User {
 
     public function getByRole($role) {
         try {
-            $sql = "SELECT id, nom, prenom, email, role, created_at FROM {$this->table} WHERE role = :role";
+            $sql = "SELECT id, username, email, role, created_at FROM {$this->table} WHERE role = :role";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':role' => $role]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -110,7 +109,7 @@ class User {
         try {
             $offset = ($page - 1) * $limit;
             
-            $sql = "SELECT id, nom, prenom, email, role, created_at 
+            $sql = "SELECT id, username, email, role, created_at 
                    FROM {$this->table} 
                    ORDER BY created_at DESC 
                    LIMIT :limit OFFSET :offset";
@@ -136,10 +135,9 @@ class User {
             $offset = ($page - 1) * $limit;
             $searchTerm = "%{$query}%";
             
-            $sql = "SELECT id, nom, prenom, email, role, created_at 
+            $sql = "SELECT id, username, email, role, created_at 
                    FROM {$this->table} 
-                   WHERE nom LIKE :search 
-                   OR prenom LIKE :search 
+                   WHERE username LIKE :search 
                    OR email LIKE :search 
                    ORDER BY created_at DESC 
                    LIMIT :limit OFFSET :offset";
@@ -174,8 +172,7 @@ class User {
         try {
             $searchTerm = "%{$query}%";
             $sql = "SELECT COUNT(*) FROM {$this->table} 
-                   WHERE nom LIKE :search 
-                   OR prenom LIKE :search 
+                   WHERE username LIKE :search 
                    OR email LIKE :search";
             
             $stmt = $this->db->prepare($sql);
@@ -189,7 +186,7 @@ class User {
     }
 
     private function validate($data) {
-        if (empty($data['nom']) || empty($data['prenom']) || empty($data['email'])) {
+        if (empty($data['username']) || empty($data['email'])) {
             throw new Exception("Les champs nom, prénom et email sont obligatoires");
         }
 

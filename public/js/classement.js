@@ -42,7 +42,7 @@ function updateStats(data) {
 // Fonction pour charger et afficher le leaderboard
 async function loadLeaderboard() {
     try {
-        const response = await fetch('../backend/api.php');
+        const response = await fetch('/HACKATHON_ESGIS/public/api/users');
         if (!response.ok) {
             throw new Error('Erreur réseau');
         }

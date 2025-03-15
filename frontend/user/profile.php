@@ -12,7 +12,7 @@
     <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
 </head>
 
-<body>
+<body class="size-fit overflow-y-scroll h-screen min-h-screen w-full">
     <?php require_once '../includes/user/header.php'; ?>
     <!-- Container -->
     <div class="container mx-auto p-6 flex gap-6 flex-row justify-between max-md:flex-col mb-30">
@@ -85,7 +85,7 @@
                         <!-- Cards Row -->
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             <!-- Challenges Card -->
-                            <div class="challenges-card rounded-lg p-6 transition-all duration-300 ease-in-out hover:border-blue-600 hover:shadow-md hover:shadow-blue-600/70">
+                            <div class="challenges-card rounded-lg p-6 transition-all duration-300 ease-in-out hover:border-blue-600 hover:shadow-md hover:shadow-blue-600/70 hover:-translate-y-1">
                                 <div class="flex flex-col gap-6 justify-between items-start w-full h-full">
                                     <div class="w-full flex flex-row justify-between items-center gap-2">
                                         <p class="max-lg:text-xs text-gray-300">Total Challenges Solved</p>
@@ -99,7 +99,7 @@
                             </div>
 
                             <!-- Points Card -->
-                            <div class="points-card rounded-lg p-6 transition-all duration-300 ease-in-out hover:border-purple-600 hover:shadow-md hover:shadow-purple-600/50">
+                            <div class="points-card rounded-lg p-6 transition-all duration-300 ease-in-out hover:border-purple-600 hover:shadow-md hover:shadow-purple-600/50 hover:-translate-y-1">
                                 <div class="flex flex-col gap-6 justify-between items-start w-full h-full">
                                     <div class="w-full flex flex-row justify-between items-center gap-2">
                                         <p class="max-lg:text-xs text-gray-300">Current Points</p>
@@ -113,7 +113,7 @@
                             </div>
 
                             <!-- Ranking Card -->
-                            <div class="ranking-card rounded-lg p-6 transition-all duration-300 ease-in-out hover:border-blue-600/60 hover:shadow-md hover:shadow-blue-600/40">
+                            <div class="ranking-card rounded-lg p-6 transition-all duration-300 ease-in-out hover:border-blue-600/60 hover:shadow-md hover:shadow-blue-600/40 hover:-translate-y-1">
                                 <div class="flex flex-col gap-6 justify-between items-start w-full h-full">
                                     <div class="w-full flex flex-row justify-between items-center gap-2">
                                         <p class="max-lg:text-xs text-gray-300">Global Ranking</p>
@@ -138,7 +138,7 @@
                             <!-- Activity Items -->
                             <div class="space-y-4">
                                 <!-- Completed Challenge -->
-                                <div class="border-b border-slate-800 pb-4">
+                                <div class="border-b border-slate-800 pb-4 transition duration-300 ease-in-out hover:-translate-y-1">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center">
                                             <div class="flex items-center justify-center size-fit bg-green-700/30 p-2 rounded-full mr-4">
@@ -154,7 +154,7 @@
                                 </div>
 
                                 <!-- Started Challenge -->
-                                <div class="border-b border-slate-800 pb-4">
+                                <div class="border-b border-slate-800 pb-4 transition duration-300 ease-in-out hover:-translate-y-1">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center">
                                             <div class="flex items-center justify-center size-fit bg-blue-700/30 p-2 rounded-full mr-4">
@@ -170,7 +170,7 @@
                                 </div>
 
                                 <!-- Feedback Item -->
-                                <div class="border-b border-slate-800 pb-4">
+                                <div class="border-b border-slate-800 pb-4 transition duration-300 ease-in-out hover:-translate-y-1">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center">
                                             <div class="flex items-center justify-center size-fit bg-purple-700/30 p-2 rounded-full mr-4">
@@ -216,7 +216,7 @@
                             <div class="sub-tab-content" id="subTab1">
                                 <div class="w-full grid grid-cols-2 max-md:grid-cols-1 gap-4 rounded-lg shadow-md mx-auto">
                                     <!-- XSS Attack Simulation Card -->
-                                    <div class="card-bg w-full flex flex-col justify-between gap-2 p-4 border border-gray-700 rounded-xl shadow-md mx-auto">
+                                    <div class="card-bg w-full flex flex-col justify-between gap-2 p-4 border border-gray-700 rounded-xl shadow-md mx-auto transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                                         <div class="flex items-center justify-between mb-2">
                                             <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">web</span>
                                             <span class="bg-orange-500/20 text-orange-500 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">Medium</span>
@@ -227,11 +227,11 @@
                                             <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">Started: Dec 12, 2023</p>
                                             <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">100 points</p>
                                         </div>
-                                        <button class="max-lg:text-sm bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 max-md:font-normal">Continue Challenge</button>
+                                        <button class="max-lg:text-sm bg-blue-500 text-white px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50 max-md:font-normal">Continue Challenge</button>
                                     </div>
 
                                     <!-- Data Exfiltration Challenge Card -->
-                                    <div class="card-bg w-full flex flex-col justify-between gap-2 p-4 border border-gray-700 rounded-xl shadow-md mx-auto">
+                                    <div class="card-bg w-full flex flex-col justify-between gap-2 p-4 border border-gray-700 rounded-xl shadow-md mx-auto transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                                         <div class="flex items-center justify-between mb-2">
                                             <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">Forencis</span>
                                             <span class="bg-red-500/20 text-red-500 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">Hard</span>
@@ -242,7 +242,7 @@
                                             <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">Started: Jan 5, 2024</p>
                                             <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">200 points</p>
                                         </div>
-                                        <button class="max-lg:text-sm bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 max-md:font-normal">Continue Challenge</button>
+                                        <button class="max-lg:text-sm bg-blue-500 text-white px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50 max-md:font-normal">Continue Challenge</button>
                                     </div>
                                 </div>
                             </div>
@@ -250,7 +250,7 @@
                             <div class="sub-tab-content hidden" id="subTab2">
                                 <div class="w-full grid grid-cols-2 max-md:grid-cols-1 gap-4 rounded-lg shadow-md mx-auto">
                                     <!-- XSS Attack Simulation Card -->
-                                    <div class="card-bg w-full flex flex-col justify-between gap-2 p-4 border border-gray-700 rounded-xl shadow-md mx-auto">
+                                    <div class="card-bg w-full flex flex-col justify-between gap-2 p-4 border border-gray-700 rounded-xl shadow-md mx-auto transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                                         <div class="flex items-center justify-between mb-4">
                                             <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">web</span>
                                             <span class="bg-green-500/20 text-green-500 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">Easy</span>
@@ -264,7 +264,7 @@
                                         <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">Completed on: March 15, 2023</p>
                                     </div>
 
-                                    <div class="card-bg w-full flex flex-col justify-between gap-2 p-4 border border-gray-700 rounded-xl shadow-md mx-auto">
+                                    <div class="card-bg w-full flex flex-col justify-between gap-2 p-4 border border-gray-700 rounded-xl shadow-md mx-auto transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                                         <div class="flex items-center justify-between mb-4">
                                             <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">Cryptography</span>
                                             <span class="bg-green-500/20 text-green-500 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">Easy</span>
@@ -279,8 +279,9 @@
                                     </div>
                                 </div>
                             </div>
+
                             <div class="sub-tab-content hidden" id="subTab3">
-                                <div class="All-challenges cursor-pointer w-fit mx-auto flex flex-row items-center justify-center gap-2 rounded-full transition-all duration-300 ease-in-out text-white hover:bg-gray-700 py-2 px-4 max-md:w-full border border-gray-700">
+                                <div class="All-challenges cursor-pointer w-fit mx-auto flex flex-row items-center justify-center gap-2 rounded-full transition-all duration-300 ease-in-out text-white hover:bg-gray-700 py-2 px-4 max-md:w-full border border-gray-700 hover:-translate-y-1">
                                     <i data-lucide="link-2"></i><span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs">All challenges</span>
                                 </div>
                             </div>
@@ -300,7 +301,7 @@
                         <!-- Activity Items -->
                         <div class="space-y-4">
                             <!-- Completed Challenge -->
-                            <div class="border-b border-slate-800 pb-4">
+                            <div class="border-b border-slate-800 pb-4 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
                                         <div class="flex items-center justify-center size-fit bg-green-700/30 p-2 rounded-full mr-4">
@@ -316,7 +317,7 @@
                             </div>
 
                             <!-- Started Challenge -->
-                            <div class="border-b border-slate-800 pb-4">
+                            <div class="border-b border-slate-800 pb-4 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
                                         <div class="flex items-center justify-center size-fit bg-blue-700/30 p-2 rounded-full mr-4">
@@ -332,7 +333,7 @@
                             </div>
 
                             <!-- Feedback Item -->
-                            <div class="border-b border-slate-800 pb-4">
+                            <div class="border-b border-slate-800 pb-4 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
                                         <div class="flex items-center justify-center size-fit bg-purple-700/30 p-2 rounded-full mr-4">
@@ -407,7 +408,7 @@
                             </div>
 
                             <!-- Update Profile Button -->
-                            <button class="bg-blue-500 w-full text-white px-4 py-2 rounded-lg hover:bg-blue-600">Update Profile</button>
+                            <button class="bg-blue-500 w-full text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50">Update Profile</button>
                         </form>
 
                         <form class="form-card-background p-6 rounded-lg shadow-md w-full mx-auto border border-gray-700">
@@ -435,7 +436,7 @@
                             </div>
 
                             <!-- Change Password Button -->
-                            <button class="bg-blue-500 w-full text-white px-4 py-3 rounded-lg hover:bg-blue-600 mb-6">Change Password</button>
+                            <button class="bg-blue-500 w-full text-white px-4 py-3 rounded-lg transition duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50 mb-6">Change Password</button>
 
                             <!-- Email Notifications -->
                             <!-- <div class="mb-6">
