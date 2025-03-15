@@ -20,6 +20,18 @@ class User extends Model {
         try {
             $this->validate($userData);
 
+<<<<<<< HEAD
+            $sql = "INSERT INTO {$this->table} (username, email, password, role, created_at) 
+                    VALUES (:username, :email, :password, :role, :created_at)";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':username' => $data['username'],
+                ':email' => $data['email'],
+                ':password' => password_hash($data['password'], PASSWORD_DEFAULT),
+                ':role' => $data['role'] ?? 'participant',
+                ':created_at' => $data['created_at'] ?? date('Y-m-d H:i:s')
+=======
             $stmt = $this->pdo->prepare("INSERT INTO {$this->table} (email, password, nom, prenom, role, created_at) 
                                       VALUES (:email, :password, :nom, :prenom, :role, :created_at)");
             
@@ -30,6 +42,7 @@ class User extends Model {
                 ':prenom' => $userData['prenom'] ?? '',
                 ':role' => $userData['role'] ?? 'participant',
                 ':created_at' => $userData['created_at'] ?? date('Y-m-d H:i:s')
+>>>>>>> d07363345c399c7a5b7c589f546ca407f849d0d3
             ]);
 
             return (int)$this->pdo->lastInsertId();
@@ -134,8 +147,13 @@ class User extends Model {
 
     public function getByRole($role) {
         try {
+<<<<<<< HEAD
+            $sql = "SELECT id, username, email, role, created_at FROM {$this->table} WHERE role = :role";
+            $stmt = $this->db->prepare($sql);
+=======
             $sql = "SELECT id, nom, prenom, email, role, created_at FROM {$this->table} WHERE role = :role";
             $stmt = $this->pdo->prepare($sql);
+>>>>>>> d07363345c399c7a5b7c589f546ca407f849d0d3
             $stmt->execute([':role' => $role]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
@@ -147,7 +165,7 @@ class User extends Model {
         try {
             $offset = ($page - 1) * $limit;
             
-            $sql = "SELECT id, nom, prenom, email, role, created_at 
+            $sql = "SELECT id, username, email, role, created_at 
                    FROM {$this->table} 
                    ORDER BY created_at DESC 
                    LIMIT :limit OFFSET :offset";
@@ -169,10 +187,9 @@ class User extends Model {
             $offset = ($page - 1) * $limit;
             $searchTerm = "%{$query}%";
             
-            $sql = "SELECT id, nom, prenom, email, role, created_at 
+            $sql = "SELECT id, username, email, role, created_at 
                    FROM {$this->table} 
-                   WHERE nom LIKE :search 
-                   OR prenom LIKE :search 
+                   WHERE username LIKE :search 
                    OR email LIKE :search 
                    ORDER BY created_at DESC 
                    LIMIT :limit OFFSET :offset";
@@ -203,8 +220,7 @@ class User extends Model {
         try {
             $searchTerm = "%{$query}%";
             $sql = "SELECT COUNT(*) FROM {$this->table} 
-                   WHERE nom LIKE :search 
-                   OR prenom LIKE :search 
+                   WHERE username LIKE :search 
                    OR email LIKE :search";
             
             $stmt = $this->pdo->prepare($sql);
@@ -218,7 +234,7 @@ class User extends Model {
     }
 
     private function validate($data) {
-        if (empty($data['nom']) || empty($data['prenom']) || empty($data['email'])) {
+        if (empty($data['username']) || empty($data['email'])) {
             throw new Exception("Les champs nom, prénom et email sont obligatoires");
         }
 

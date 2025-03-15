@@ -19,7 +19,11 @@
         <section class="header-dashboard flex flex-col items-center justify-center gap-12 max-md:gap-10 max-w-[1200px] max-md:mx-[5%] my-1 mx-auto p-5">
             <div class="container flex flex-row w-full max-md:flex-col items-center justify-between gap-5 mx-auto">
 
-                <h1 class="text-3xl font-bold w-auto max-md:text-center max-md:text-3xl max-sm:text-2xl">Welcome to your Dashboard, [Username]</h1>
+                <h1 class="text-3xl font-bold w-auto max-md:text-center max-md:text-3xl max-sm:text-2xl">Welcome to your Dashboard, 
+                    <span class="text-blue-500 Username">
+                        [Username]
+                    </span>
+                </h1>
 
                 <div class="challenges-link flex flex-row gap-5 items-center">
                     <button class="cursor-pointer flex flex-row items-center justify-center gap-1 rounded-xl bg-blue-500 text-white p-2 text-sm max-md:text-center max-md:text-xs">
@@ -38,8 +42,8 @@
                         <i data-lucide="circle-user" class="w-24 h-24 stroke-current"></i>
                     </div>
                     <div class="user-info-text text-left flex flex-col justify-start max-md:text-center">
-                        <h2 class="text-xl font-semibold w-auto max-md:text-center max-md:text-lg">[Username]</h2>
-                        <p class=" text-gray-400 text-sm max-md:text-center max-md:text-sm">[Email]</p>
+                        <h2 class="Username text-xl font-semibold w-auto max-md:text-center max-md:text-lg">[Username]</h2>
+                        <p class="Email text-gray-400 text-sm max-md:text-center max-md:text-sm">[Email]</p>
                     </div>
                 </div>
                 <a href="/HACKATHON_ESGIS/public/user/profile">
@@ -51,56 +55,55 @@
 
             <div class="text-white w-full max-w-[1200px]">
                 <!-- Grid des cartes -->
-                <div class="flex flex-wrap items-stretch justify-between max-md:flex-col max-md:w-full max-md:justify-center gap-2 w-full">
+                <div class="grid grid-cols-4 max-lg:grid-cols-2 max-md:grid-cols-1 items-stretch justify-between max-md:flex-col max-md:w-full max-md:justify-center gap-4 w-full">
 
                     <!-- Carte Défis de développement -->
-                    <div class="flex flex-[1_1_22%] fade-in-left">
+                    <div class="fade-in-left">
                         <div class="w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
                             <div class="flex flex-row gap-2 items-center justify-between mb-2">
                                 <h3 class="text-md font-normal">Défis de développement</h3>
                                 <i data-lucide="code" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
-                            <div class="text-3xl font-bold" id="number-dev-challenges">5</div>
-                            <p class="text-gray-400">2 défis en cours</p>
-                            <p class="text-green-400 text-sm mt-1">↑ 20% depuis le mois dernier</p>
+                            <div class="text-3xl font-bold mt-2" id="number-dev-challenges">0</div>
+                            <p class="text-gray-400"><span class="number-dev-challenges-on">0</span> défis en cours</p>
+                            <p class="text-green-400 text-sm mt-1"><span id="dev-stat">0</span> défis soumis</p>
                         </div>
                     </div>
 
                     <!-- Carte Défis de hacking -->
-                    <div class="flex flex-[1_1_22%] fade-in-left" style="transition-delay: 100ms;">
+                    <div class="fade-in-left" style="transition-delay: 100ms;">
                         <div class="w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
                             <div class="flex flex-row gap-2 items-center justify-between mb-2">
                                 <h3 class="text-md font-normal">Défis de hacking</h3>
                                 <i data-lucide="shield" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
-                            <div class="text-3xl font-bold mt-2" id="number-hacking-challenges">12</div>
-                            <p class="text-gray-400">8 flags validés</p>
-                            <p class="text-green-400 text-sm mt-1">↑ <span id="hacking-stat">10</span>% depuis le mois dernier</p>
+                            <div class="text-3xl font-bold mt-2" id="number-hacking-challenges">0</div>
+                            <p class="text-gray-400"><span class="number-hacking-challenges-validate">0</span> flags validés</p>
                         </div>
                     </div>
 
                     <!-- Carte Projets soumis -->
-                    <div class="flex flex-[1_1_22%] fade-in-right" style="transition-delay: 100ms;">
+                    <div class="fade-in-right" style="transition-delay: 100ms;">
                         <div class="w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
                             <div class="flex flex-row gap-2 items-center justify-between mb-2">
                                 <h3 class="text-md font-normal">Projets soumis</h3>
                                 <i data-lucide="file-text" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
-                            <div class="text-3xl font-bold mt-2" id="number-submitted-projects">3</div>
-                            <p class="text-gray-400">1 projet en attente d'évaluation</p>
+                            <div class="text-3xl font-bold mt-2" id="number-submitted-projects">0</div>
+                            <p class="text-gray-400"><span class="number-submitted-projects-wait">0</span> projet en attente d'évaluation</p>
                         </div>
                     </div>
 
                     <!-- Carte Points totaux -->
-                    <div class="flex flex-[1_1_22%] fade-in-right">
+                    <div class="fade-in-right">
                         <div class="w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
                             <div class="flex flex-row gap-2 items-center justify-between mb-2">
                                 <h3 class="text-md font-normal">Points totaux</h3>
                                 <i data-lucide="award" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
-                            <div class="text-3xl font-bold mt-2" id="total-points">850</div>
-                            <p class="text-gray-400">Rang: 12 sur 56</p>
-                            <p class="text-green-400 text-sm mt-1">↑ 5% depuis le mois dernier</p>
+                            <div class="text-3xl font-bold mt-2" id="total-points">0</div>
+                            <p class="text-gray-400"><span class="user-rank">12</span> sur <span class="rank-max">56</span></p>
+                            <p class="text-green-400 text-sm mt-1">↑ <span id="total-points-stat">0</span>% depuis la derniere connexion</p>
                         </div>
                     </div>
                 </div>
@@ -144,14 +147,14 @@
                     <!-- Activité récente -->
                     <section class="fade-in flex flex-col gap-2 space-y-4 p-5 border border-gray-700 rounded-2xl shadow-xl card-bg">
                         <h2 class="text-lg font-medium">Activité récente</h2>
-                        <div class="flex flex-row justify-start p-4 items-center w-full card-bg rounded-xl gap-5 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
+                        <div class="flex flex-row justify-start items-center w-full card-bg rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                             <i data-lucide="trophy" class="w-5 h-5 flex self-center stroke-current"></i>
                             <div>
                                 <p class="text-gray-400">Flag validé pour "XSS Challenge"</p>
                                 <p class="text-gray-500 text-sm">Il y a 3 heures</p>
                             </div>
                         </div>
-                        <div class="flex flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
+                        <div class="flex flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                             <i data-lucide="file-text" class="w-5 h-5 flex self-center stroke-current"></i>
                             <div>
                                 <p class="text-gray-400">Projet "API REST" mis à jour</p>
