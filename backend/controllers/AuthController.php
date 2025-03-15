@@ -87,7 +87,7 @@ class AuthController {
         } catch (Exception $e) {
             error_log("Erreur d'inscription : " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
-            header("Location: " . self::BASE_URL . "/frontend/auth.php");
+            header("Location: " . self::BASE_URL . "/auth");
             exit();
         }
     }
@@ -125,7 +125,7 @@ class AuthController {
         } catch (Exception $e) {
             error_log("Erreur de connexion : " . $e->getMessage());
             $_SESSION['error'] = $e->getMessage();
-            header("Location: " . self::BASE_URL . "/frontend/auth.php");
+            header("Location: " . self::BASE_URL . "/auth");
             exit();
         }
     }
