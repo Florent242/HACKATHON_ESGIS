@@ -4,26 +4,26 @@ class Ressource {
     private $db;
     private $table = 'ressources';
 
-    public function __construct() {
-        $this->db = require_once __DIR__ . '/Database.php';
+    public function __construct($db) {
+        $this->db = $db;
     }
 
-    // Créer une nouvelle ressource
     public function create($data) {
         try {
             $this->validate($data);
 
-            $sql = "INSERT INTO {$this->table} (hackathon_id, title, description, type, url, created_by) 
-                    VALUES (:hackathon_id, :title, :description, :type, :url, :created_by)";
+            $sql = "INSERT INTO {$this->table} (hackathon_id, titre, description, type, url, created_by, created_at) 
+                    VALUES (:hackathon_id, :titre, :description, :type, :url, :created_by, :created_at)";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':hackathon_id' => $data['hackathon_id'],
-                ':title' => $data['title'],
+                ':titre' => $data['titre'],
                 ':description' => $data['description'],
                 ':type' => $data['type'],
                 ':url' => $data['url'],
-                ':created_by' => $data['created_by']
+                ':created_by' => $data['created_by'],
+                ':created_at' => $data['created_at']
             ]);
 
             return $this->db->lastInsertId();
@@ -32,11 +32,10 @@ class Ressource {
         }
     }
 
-    // Trouver une ressource par son ID
     public function find($id) {
         try {
-            $sql = "SELECT r.*, u.username as created_by_name,
-                    h.title as hackathon_title
+            $sql = "SELECT r.*, u.nom as created_by_nom, u.prenom as created_by_prenom,
+                    h.titre as hackathon_titre
                     FROM {$this->table} r
                     INNER JOIN users u ON r.created_by = u.id
                     INNER JOIN hackathons h ON r.hackathon_id = h.id
@@ -44,39 +43,36 @@ class Ressource {
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':id' => $id]);
-            return $stmt->fetch();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             throw new Exception("Erreur lors de la recherche de la ressource : " . $e->getMessage());
         }
     }
 
-    // Mettre à jour une ressource
     public function update($id, $data) {
         try {
-            $this->validate($data);
+            if (isset($data['type'])) {
+                $this->validateType($data['type']);
+            }
 
-            $sql = "UPDATE {$this->table} 
-                    SET title = :title,
-                        description = :description,
-                        type = :type,
-                        url = :url,
-                        updated_at = NOW()
-                    WHERE id = :id";
+            $fields = [];
+            $params = [':id' => $id];
 
+            foreach ($data as $key => $value) {
+                if ($key !== 'id') {
+                    $fields[] = "{$key} = :{$key}";
+                    $params[":{$key}"] = $value;
+                }
+            }
+
+            $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
             $stmt = $this->db->prepare($sql);
-            return $stmt->execute([
-                ':id' => $id,
-                ':title' => $data['title'],
-                ':description' => $data['description'],
-                ':type' => $data['type'],
-                ':url' => $data['url']
-            ]);
+            return $stmt->execute($params);
         } catch (PDOException $e) {
             throw new Exception("Erreur lors de la mise à jour de la ressource : " . $e->getMessage());
         }
     }
 
-    // Supprimer une ressource
     public function delete($id) {
         try {
             $sql = "DELETE FROM {$this->table} WHERE id = :id";
@@ -87,13 +83,30 @@ class Ressource {
         }
     }
 
-    // Récupérer les ressources d'un hackathon
-    public function getByHackathon($hackathonId, $type = null) {
+    public function getByHackathon($hackathonId) {
         try {
-            $sql = "SELECT r.*, u.username as created_by_name
+            $sql = "SELECT r.*, u.nom as created_by_nom, u.prenom as created_by_prenom
                     FROM {$this->table} r
                     INNER JOIN users u ON r.created_by = u.id
-                    WHERE r.hackathon_id = :hackathon_id";
+                    WHERE r.hackathon_id = :hackathon_id
+                    ORDER BY r.created_at DESC";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':hackathon_id' => $hackathonId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la récupération des ressources : " . $e->getMessage());
+        }
+    }
+
+    public function search($hackathonId, $query, $type = null) {
+        try {
+            $sql = "SELECT r.*, u.nom as created_by_nom, u.prenom as created_by_prenom
+                    FROM {$this->table} r
+                    INNER JOIN users u ON r.created_by = u.id
+                    WHERE r.hackathon_id = :hackathon_id
+                    AND (r.titre LIKE :query 
+                    OR r.description LIKE :query)";
 
             if ($type) {
                 $sql .= " AND r.type = :type";
@@ -102,89 +115,58 @@ class Ressource {
             $sql .= " ORDER BY r.created_at DESC";
 
             $stmt = $this->db->prepare($sql);
-            $params = [':hackathon_id' => $hackathonId];
-            
+            $params = [
+                ':hackathon_id' => $hackathonId,
+                ':query' => "%{$query}%"
+            ];
+
             if ($type) {
                 $params[':type'] = $type;
             }
 
             $stmt->execute($params);
-            return $stmt->fetchAll();
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des ressources : " . $e->getMessage());
-        }
-    }
-
-    // Récupérer les ressources par créateur
-    public function getByCreator($userId) {
-        try {
-            $sql = "SELECT r.*, h.title as hackathon_title
-                    FROM {$this->table} r
-                    INNER JOIN hackathons h ON r.hackathon_id = h.id
-                    WHERE r.created_by = :created_by
-                    ORDER BY r.created_at DESC";
-
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':created_by' => $userId]);
-            return $stmt->fetchAll();
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des ressources : " . $e->getMessage());
-        }
-    }
-
-    // Rechercher des ressources
-    public function search($hackathonId, $query) {
-        try {
-            $sql = "SELECT r.*, u.username as created_by_name
-                    FROM {$this->table} r
-                    INNER JOIN users u ON r.created_by = u.id
-                    WHERE r.hackathon_id = :hackathon_id
-                    AND (r.title LIKE :query 
-                    OR r.description LIKE :query)
-                    ORDER BY r.created_at DESC";
-
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                ':hackathon_id' => $hackathonId,
-                ':query' => "%{$query}%"
-            ]);
-            return $stmt->fetchAll();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             throw new Exception("Erreur lors de la recherche des ressources : " . $e->getMessage());
         }
     }
 
-    // Validation des données
     private function validate($data) {
-        if (empty($data['title'])) {
+        if (empty($data['titre'])) {
             throw new Exception("Le titre est obligatoire");
+        }
+
+        if (empty($data['description'])) {
+            throw new Exception("La description est obligatoire");
         }
 
         if (empty($data['type'])) {
             throw new Exception("Le type est obligatoire");
         }
 
-        if (!in_array($data['type'], ['document', 'video', 'image', 'code', 'other'])) {
+        $this->validateType($data['type']);
+
+        if (empty($data['hackathon_id'])) {
+            throw new Exception("L'ID du hackathon est obligatoire");
+        }
+
+        if (!is_numeric($data['hackathon_id'])) {
+            throw new Exception("L'ID du hackathon doit être un nombre");
+        }
+
+        // Vérifier si le hackathon existe
+        $sql = "SELECT id FROM hackathons WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $data['hackathon_id']]);
+        
+        if (!$stmt->fetch()) {
+            throw new Exception("Hackathon non trouvé");
+        }
+    }
+
+    private function validateType($type) {
+        if (!in_array($type, ['document', 'video', 'lien'])) {
             throw new Exception("Type de ressource invalide");
-        }
-
-        if (empty($data['url'])) {
-            throw new Exception("L'URL est obligatoire");
-        }
-
-        if (!filter_var($data['url'], FILTER_VALIDATE_URL)) {
-            throw new Exception("L'URL est invalide");
-        }
-
-        if (isset($data['hackathon_id'])) {
-            // Vérifier si le hackathon existe
-            $sql = "SELECT id FROM hackathons WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':id' => $data['hackathon_id']]);
-            
-            if (!$stmt->fetch()) {
-                throw new Exception("Hackathon non trouvé");
-            }
         }
     }
 }

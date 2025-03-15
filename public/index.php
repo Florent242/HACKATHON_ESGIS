@@ -58,6 +58,31 @@ switch ($url) {
         require_once '../frontend/admin/soumissions.php'; // Inclure la page "Admin"
         break;
 
+
+
+    // Page admin_test
+    case '/HACKATHON_ESGIS/public/admin_test':
+        require_once '../frontend/admin_test/home.php'; // Inclure la page "Admin"
+        break;
+    case '/HACKATHON_ESGIS/public/admin_test/challenges':
+        require_once '../frontend/admin_test/challenges.php'; // Inclure la page "Admin"
+        break;
+    case '/HACKATHON_ESGIS/public/admin_test/hackathon':
+        require_once '../frontend/admin_test/hackathons.php'; // Inclure la page "Admin"
+        break;
+    case '/HACKATHON_ESGIS/public/admin_test/leaderboard':
+        require_once '../frontend/admin_test/leaderboard.php'; // Inclure la page "Admin"
+        break;
+    case '/HACKATHON_ESGIS/public/admin_test/ressources':
+        require_once '../frontend/admin_test/ressources.php'; // Inclure la page "Admin"
+        break;
+    case '/HACKATHON_ESGIS/public/admin_test/soumissions':
+        require_once '../frontend/admin_test/soumissions.php'; // Inclure la page "Admin"
+        break;
+    case '/HACKATHON_ESGIS/public/admin_test/utilisateurs':
+        require_once '../frontend/admin_test/utilisateurs.php'; // Inclure la page "Admin"
+        break;
+
     // Page user
     case '/HACKATHON_ESGIS/public/user':
         require_once '../frontend/user/dashboard.php'; // Inclure la page "User"

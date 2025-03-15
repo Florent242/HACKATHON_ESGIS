@@ -4,6 +4,10 @@ RewriteEngine On
 # Définit le dossier de base pour les réécritures
 RewriteBase /HACKATHON_ESGIS/public/
 
+# Rediriger les requêtes API vers backend/api.php
+RewriteCond %{REQUEST_URI} ^/HACKATHON_ESGIS/public/api/ [NC]
+RewriteRule ^(.*)$ ../backend/api.php [QSA,L]
+
 # Si le fichier ou le répertoire existe, ne pas le réécrire
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
