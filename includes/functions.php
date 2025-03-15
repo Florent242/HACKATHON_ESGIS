@@ -9,12 +9,13 @@ function cleanInput($data) {
 }
 
 // Fonction pour générer une réponse JSON
+/*
 function jsonResponse($data, $statusCode = 200) {
     http_response_code($statusCode);
     header('Content-Type: application/json');
     echo json_encode($data);
     exit;
-}
+}*/
 
 // Fonction pour vérifier si l'utilisateur est connecté
 function isAuthenticated() {

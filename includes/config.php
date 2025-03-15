@@ -9,7 +9,7 @@ define('VIEWS_PATH', BASE_PATH . '/frontend');
 
 // Configuration de l'application
 define('APP_NAME', 'Plateforme de Hackathon');
-define('APP_URL', 'http://localhost/hackathon');
+define('APP_URL', 'http://localhost/HACKATHON_ESGIS/public');
 
 // Configuration de la base de données
 define('DB_HOST', 'localhost');
@@ -31,8 +31,8 @@ if (session_status() === PHP_SESSION_NONE) {
 // Fonction d'autoload des classes
 spl_autoload_register(function ($class) {
     // Conversion du namespace en chemin de fichier
-    $prefix = 'App\\';
-    $base_dir = BASE_PATH . '/';
+    $prefix = 'Auth\\';
+    $base_dir = BASE_PATH . '/backend/';
 
     $len = strlen($prefix);
     if (strncmp($prefix, $class, $len) !== 0) {
@@ -41,6 +41,8 @@ spl_autoload_register(function ($class) {
 
     $relative_class = substr($class, $len);
     $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+    error_log("Tentative de chargement de la classe: {$class}");
+    error_log("Chemin du fichier: {$file}");
 
     if (file_exists($file)) {
         require $file;
