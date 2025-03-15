@@ -1,9 +1,13 @@
 <?php
+namespace Auth\Controller;
 
-require_once __DIR__ . '/../../includes/config.php';
-require_once __DIR__ . '/../../includes/functions.php';
-require_once __DIR__ . '/../models/User.php';
+use Exception;
+use Auth\Model\User;
+
 require_once __DIR__ . '/Controller.php';
+require_once __DIR__ . '/../models/User.php';
+
+use Auth\Controller\Controller;
 
 class AuthController extends Controller {
     private $user;
@@ -15,17 +19,31 @@ class AuthController extends Controller {
         $this->user = new User($this->db);
     }
 
-    public function login() {
+    public function login(?array $credentials = null): void {
         try {
             $this->validateMethod('POST');
             
-            $requiredFields = ['email', 'password'];
-            $this->validateRequiredFields($_POST, $requiredFields);
+            if ($credentials === null) {
+                // Récupération des données JSON
+                $input = json_decode(file_get_contents('php://input'), true);
+                if ($input === null) {
+                    throw new Exception('Format JSON invalide');
+                }
 
-            $user = $this->user->findByEmail($_POST['email']);
-            if (!$user || !password_verify($_POST['password'], $user['password'])) {
+                $requiredFields = ['email', 'password'];
+                $this->validateRequiredFields($input, $requiredFields);
+                $credentials = [
+                    'email' => $input['email'],
+                    'password' => $input['password']
+                ];
+            }
+
+            $result = $this->user->authenticate($credentials['email'], $credentials['password']);
+            if (!$result) {
                 throw new Exception('Email ou mot de passe incorrect');
             }
+
+            $user = $this->user->getUserById($result['id']);
 
             // Créer la session
             $_SESSION['user_id'] = $user['id'];
@@ -34,20 +52,46 @@ class AuthController extends Controller {
             $_SESSION['user_nom'] = $user['nom'];
             $_SESSION['user_prenom'] = $user['prenom'];
 
-            // Ne pas renvoyer le mot de passe
-            unset($user['password']);
+            // Générer le JWT token
+            $jwt = $this->generateJWT($user);
 
-            $this->jsonResponse([
+            unset($user['password']); // Ne pas renvoyer le mot de passe
+
+            $response = [
                 'success' => true,
                 'message' => 'Connexion réussie',
-                'data' => $user
-            ]);
+                'data' => [
+                    'jwt' => $jwt,
+                    'user' => $user
+                ]
+            ];
+
+            $this->jsonResponse($response);
         } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
+            throw new Exception($e->getMessage());
         }
+    }
+
+    private function generateJWT(array $user): string {
+        $header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
+        $payload = json_encode([
+            'user_id' => $user['id'],
+            'email' => $user['email'],
+            'role' => $user['role'],
+            'exp' => time() + 3600 // Expiration dans 1 heure
+        ]);
+
+        $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
+        $base64UrlPayload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload));
+
+        $signature = hash_hmac('sha256', 
+            $base64UrlHeader . "." . $base64UrlPayload, 
+            $_ENV['JWT_SECRET'] ?? 'your-256-bit-secret', 
+            true
+        );
+        $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+
+        return $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
     }
 
     public function register() {
@@ -76,7 +120,8 @@ class AuthController extends Controller {
                 'created_at' => date('Y-m-d H:i:s')
             ];
 
-            $userId = $this->user->create($data);
+            $result = $this->user->createUser($data);
+            $userId = $result;
 
             $this->jsonResponse([
                 'success' => true,
@@ -88,6 +133,29 @@ class AuthController extends Controller {
                 'success' => false,
                 'error' => $e->getMessage()
             ], 400);
+        }
+    }
+
+    public function signup(array $userData): int {
+        try {
+            // Vérifier si l'email existe déjà
+            $existingUser = $this->user->findByEmail($userData['email']);
+            if ($existingUser) {
+                throw new Exception('Cet email est déjà utilisé');
+            }
+
+            // Hash du mot de passe
+            $userData['password'] = password_hash($userData['password'], PASSWORD_DEFAULT);
+            
+            // Création de l'utilisateur
+            $userId = $this->user->createUser($userData);
+            if (!$userId) {
+                throw new Exception('Erreur lors de la création du compte');
+            }
+
+            return $userId;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
         }
     }
 
@@ -127,7 +195,7 @@ class AuthController extends Controller {
             $expiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
 
             // Sauvegarder le token dans la base de données
-            $this->user->update($user['id'], [
+            $this->user->updateUser($user['id'], [
                 'reset_token' => $token,
                 'reset_token_expiry' => $expiry
             ]);
@@ -170,7 +238,7 @@ class AuthController extends Controller {
             }
 
             // Mettre à jour le mot de passe
-            $this->user->update($user['id'], [
+            $this->user->updateUser($user['id'], [
                 'password' => password_hash($_POST['new_password'], PASSWORD_DEFAULT),
                 'reset_token' => null,
                 'reset_token_expiry' => null,
@@ -197,7 +265,7 @@ class AuthController extends Controller {
                 throw new Exception('Non authentifié');
             }
 
-            $user = $this->user->find($_SESSION['user_id']);
+            $user = $this->user->getUserById($_SESSION['user_id']);
             if (!$user) {
                 throw new Exception('Utilisateur non trouvé');
             }

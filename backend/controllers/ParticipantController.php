@@ -1,4 +1,7 @@
 <?php
+namespace Auth\Controller;
+
+use Exception;
 
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -33,28 +36,18 @@ class ParticipantController extends Controller {
             $participants = $this->participant->getByHackathon($hackathonId, $status);
             $counts = $this->participant->countByStatus($hackathonId);
 
-            // Si c'est une requête AJAX, renvoyer JSON
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->jsonResponse([
-                    'success' => true,
-                    'data' => [
-                        'participants' => $participants,
-                        'counts' => $counts
-                    ]
-                ]);
-            }
-
-            // Sinon, afficher la vue
-            require_once VIEWS_PATH . '/participant/index.php';
+            $this->jsonResponse([
+                'success' => true,
+                'data' => [
+                    'participants' => $participants,
+                    'counts' => $counts
+                ]
+            ]);
         } catch (Exception $e) {
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->jsonResponse([
-                    'success' => false,
-                    'error' => $e->getMessage()
-                ], 500);
-            }
-            setFlashMessage('error', $e->getMessage());
-            redirect("/hackathons/{$hackathonId}");
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -89,27 +82,18 @@ class ParticipantController extends Controller {
                 'type' => 'success'
             ]);
 
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->jsonResponse([
-                    'success' => true,
-                    'message' => 'Inscription réussie',
-                    'data' => [
-                        'participant_id' => $participantId
-                    ]
-                ]);
-            }
-
-            setFlashMessage('success', 'Inscription réussie');
-            redirect("/hackathons/{$hackathonId}");
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Inscription réussie',
+                'data' => [
+                    'participant_id' => $participantId
+                ]
+            ]);
         } catch (Exception $e) {
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->jsonResponse([
-                    'success' => false,
-                    'error' => $e->getMessage()
-                ], 400);
-            }
-            setFlashMessage('error', $e->getMessage());
-            redirect("/hackathons/{$hackathonId}");
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 
@@ -147,15 +131,10 @@ class ParticipantController extends Controller {
                 'type' => 'success'
             ]);
 
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->jsonResponse([
-                    'success' => true,
-                    'message' => 'Inscription approuvée'
-                ]);
-            }
-
-            setFlashMessage('success', 'Inscription approuvée');
-            redirect("/hackathons/{$participant['hackathon_id']}/participants");
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Inscription approuvée'
+            ]);
         } catch (Exception $e) {
             if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
                 $this->jsonResponse([
@@ -254,24 +233,15 @@ class ParticipantController extends Controller {
             // Annuler l'inscription
             $this->participant->cancel($id);
 
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->jsonResponse([
-                    'success' => true,
-                    'message' => 'Inscription annulée'
-                ]);
-            }
-
-            setFlashMessage('success', 'Inscription annulée');
-            redirect("/hackathons/{$participant['hackathon_id']}");
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Inscription annulée'
+            ]);
         } catch (Exception $e) {
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->jsonResponse([
-                    'success' => false,
-                    'error' => $e->getMessage()
-                ], 400);
-            }
-            setFlashMessage('error', $e->getMessage());
-            redirect("/hackathons/{$participant['hackathon_id']}");
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 
@@ -286,27 +256,17 @@ class ParticipantController extends Controller {
             // Récupérer les participations
             $participations = $this->participant->getByUser($_SESSION['user_id']);
 
-            // Si c'est une requête AJAX, renvoyer JSON
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->jsonResponse([
-                    'success' => true,
-                    'data' => [
-                        'participations' => $participations
-                    ]
-                ]);
-            }
-
-            // Sinon, afficher la vue
-            require_once VIEWS_PATH . '/participant/my-participations.php';
+            $this->jsonResponse([
+                'success' => true,
+                'data' => [
+                    'participations' => $participations
+                ]
+            ]);
         } catch (Exception $e) {
-            if (isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->jsonResponse([
-                    'success' => false,
-                    'error' => $e->getMessage()
-                ], 500);
-            }
-            setFlashMessage('error', $e->getMessage());
-            redirect('/dashboard');
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 

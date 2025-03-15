@@ -1,4 +1,8 @@
 <?php
+namespace Auth\Controller;
+
+use Exception;
+use Auth\Model\Equipe;
 
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -33,7 +37,7 @@ class EquipeController extends Controller {
 
             // Ajouter automatiquement le créateur comme leader
             if ($data['created_by']) {
-                $this->equipe->addMember($equipeId, $data['created_by'], 'leader');
+                $this->equipe->addMembre($equipeId, $data['created_by'], 'leader');
             }
 
             $this->jsonResponse([
@@ -59,7 +63,7 @@ class EquipeController extends Controller {
             }
             
             // Récupérer les membres de l'équipe
-            $membres = $this->equipe->getMembers($id);
+            $membres = $this->equipe->getMembres($id);
             $equipe['membres'] = $membres;
             
             $this->jsonResponse([
@@ -151,7 +155,7 @@ class EquipeController extends Controller {
                 throw new Exception('Rôle invalide');
             }
 
-            $this->equipe->addMember(
+            $this->equipe->addMembre(
                 $equipeId,
                 (int)$_POST['user_id'],
                 $_POST['role']
@@ -177,7 +181,7 @@ class EquipeController extends Controller {
                 throw new Exception('ID utilisateur requis');
             }
 
-            $this->equipe->removeMember($equipeId, (int)$_POST['user_id']);
+            $this->equipe->removeMembre($equipeId, (int)$_POST['user_id']);
 
             $this->jsonResponse([
                 'success' => true,

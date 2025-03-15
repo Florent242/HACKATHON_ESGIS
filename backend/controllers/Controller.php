@@ -1,10 +1,13 @@
 <?php
+namespace Auth\Controller;
+
+use Exception;
 
 class Controller {
     public function __construct() {
         // Vérification de l'authentification si nécessaire
-        $publicRoutes = ['/login', '/register', '/forgot-password'];
-        if (!in_array($_SERVER['REQUEST_URI'], $publicRoutes) && !isAuthenticated()) {
+        $publicRoutes = ['/auth/login', '/auth/signup', '/auth/forgot-password'];
+        if (isset($_SERVER['REQUEST_URI']) && !in_array($_SERVER['REQUEST_URI'], $publicRoutes) && !$this->isAuthenticated()) {
             $this->jsonResponse([
                 'success' => false,
                 'error' => 'Non authentifié'
@@ -46,5 +49,9 @@ class Controller {
 
     protected function filterData($data, $allowedFields) {
         return array_intersect_key($data, array_flip($allowedFields));
+    }
+
+    protected function isAuthenticated() {
+        return isset($_SESSION['user_id']);
     }
 }
