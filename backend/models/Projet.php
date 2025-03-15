@@ -1,4 +1,7 @@
 <?php
+namespace Auth\Model;
+
+use Exception;
 
 class Projet {
     private $db;

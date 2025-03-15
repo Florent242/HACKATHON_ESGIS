@@ -1,4 +1,7 @@
 <?php
+namespace Auth\Model;
+
+use Exception;
 
 class Evaluation {
     private $db;

@@ -3,6 +3,7 @@ namespace Auth\Controller;
 
 use Exception;
 
+
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../models/User.php';
@@ -42,7 +43,7 @@ class UserController extends Controller {
                 'created_at' => date('Y-m-d H:i:s')
             ];
 
-            $result = $this->user->createUser($data);
+            $result = $this->user->create($data);
             $userId = $result;
 
             $this->jsonResponse([
@@ -71,7 +72,7 @@ class UserController extends Controller {
             }
 
             // Créer la session
-            $user = $this->user->getUserById($result['id']);
+            $user = $this->user->find($result['id']);
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_role'] = $user['role'];
             $_SESSION['user_email'] = $user['email'];
@@ -113,7 +114,7 @@ class UserController extends Controller {
         try {
             $this->validateMethod('GET');
             
-            $user = $this->user->getUserById($id);
+            $user = $this->user->find($id);
             if (!$user) {
                 throw new Exception('Utilisateur non trouvé');
             }
@@ -162,7 +163,7 @@ class UserController extends Controller {
             }
 
             $data['updated_at'] = date('Y-m-d H:i:s');
-            $this->user->updateUser($id, $data);
+            $this->user->update($id, $data);
             
             $this->jsonResponse([
                 'success' => true,
@@ -189,7 +190,7 @@ class UserController extends Controller {
             $this->validateRequiredFields($_POST, $requiredFields);
 
             // Vérifier l'ancien mot de passe
-            $user = $this->user->getUserById($id);
+            $user = $this->user->find($id);
             if (!password_verify($_POST['old_password'], $user['password'])) {
                 throw new Exception('Ancien mot de passe incorrect');
             }
@@ -197,7 +198,7 @@ class UserController extends Controller {
             // Hasher le nouveau mot de passe
             $hashedPassword = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
 
-            $this->user->updateUser($id, [
+            $this->user->update($id, [
                 'password' => $hashedPassword,
                 'updated_at' => date('Y-m-d H:i:s')
             ]);
@@ -222,7 +223,7 @@ class UserController extends Controller {
                 throw new Exception('Non autorisé');
             }
 
-            if (!$this->user->deleteUser($id)) {
+            if (!$this->user->delete($id)) {
                 throw new Exception('Erreur lors de la suppression de l\'utilisateur');
             }
             
@@ -264,7 +265,7 @@ class UserController extends Controller {
                 throw new Exception('Non autorisé');
             }
 
-            $user = $this->user->getUserById($_SESSION['user_id']);
+            $user = $this->user->find($_SESSION['user_id']);
             unset($user['password']);
             
             $this->jsonResponse([
