@@ -181,4 +181,15 @@ class User {
             throw new Exception("Erreur lors du comptage des utilisateurs : " . $e->getMessage());
         }
     }
+    public function getByRole($role) {
+        try {
+            $sql = "SELECT * FROM {$this->table} WHERE role = :role";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':role' => $role]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la récupération des utilisateurs par rôle : " . $e->getMessage());
+        }
+    }
+
 }
