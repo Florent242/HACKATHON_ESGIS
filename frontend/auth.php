@@ -1,3 +1,7 @@
+<?php
+session_start();
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,9 +15,6 @@
     <script defer src="/HACKATHON_ESGIS/public/js/auth.js"></script>
     <!-- Lucide Icons -->
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.280.0/dist/umd/lucide.min.js"></script>
-
-
-
 </head>
 
 <body>
@@ -24,18 +25,28 @@
             <button class="auth-tab" id="tab-register">Inscription</button>
         </div>
 
+        <!-- Message d'erreur -->
+        <?php if (isset($_SESSION['error'])): ?>
+        <div class="error-message">
+            <?php 
+            echo $_SESSION['error'];
+            unset($_SESSION['error']); 
+            ?>
+        </div>
+        <?php endif; ?>
+
         <!-- Formulaires -->
         <div class="auth-card">
             <div class="auth-form" id="loginForm">
                 <h1>Espace Utilisateur</h1>
-                <p>Connectez-vous à votre compte étudiant</p> <br><br>
-                <form>
-                    
+                <p>Connectez-vous à votre compte étudiant</p> <br><br>                    
+                <form action="/HACKATHON_ESGIS/public/api/auth/login" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="form-group">
                         <label for="email_user">Email</label>
                         <div class="display">
                             <i data-lucide="mail"></i>
-                            <input type="email" id="email_user" placeholder="etudiant@esgis.bj">
+                            <input type="email" id="email_user" name="email" placeholder="etudiant@esgis.bj" required>
                         </div>
                     </div>
 
@@ -43,7 +54,7 @@
                         <label for="password_user">Mot de passe</label>
                         <div class="display">
                             <i data-lucide="key"></i>
-                            <input type="password" id="password_user" placeholder="............">
+                            <input type="password" id="password_user" name="password" placeholder="............" required>
                         </div>
                     </div>
 
@@ -60,41 +71,41 @@
                 <p>Créez votre compte EsgisHub</p>
                 <br>
                 <br>
-                <form>
+                <form action="/HACKATHON_ESGIS/public/api/auth/register" method="POST">
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="form-group">
                         <label for="fullName">Nom complet</label>
                         <div class="display">
                             <i data-lucide="user"></i>
-                            <input type="text" id="fullName" placeholder="Votre nom">
+                            <input type="text" id="fullName" name="fullName" placeholder="Votre nom" required>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="username">Nom d'utilisateur</label>
                         <div class="display">
                             <i data-lucide="user"></i>
-                            <input type="text" id="username" placeholder="Votre nom d'utilisateur">
+                            <input type="text" id="username" name="username" placeholder="Votre nom d'utilisateur" required>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="email_user">Email</label>
+                        <label for="email">Email</label>
                         <div class="display">
                             <i data-lucide="mail"></i>
-                            <input type="email" id="email" placeholder="etudiant@esgis.bj">
+                            <input type="email" id="email" name="email" placeholder="etudiant@esgis.bj" required>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="password">Mot de passe</label>
                         <div class="display">
                             <i data-lucide="key"></i>
-                            <input type="password" id="password" placeholder="............">
+                            <input type="password" id="password" name="password" placeholder="............" required>
                         </div>
-
                     </div>
                     <div class="form-group">
                         <label for="confirmPassword">Confirmer le mot de passe</label>
                         <div class="display">
                             <i data-lucide="key"></i>
-                            <input type="password" id="confirmPassword" placeholder="............">
+                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="............" required>
                         </div>
                     </div>
                     <button type="submit" class="submit-btn"> <i data-lucide="send"></i>S'inscrire</button>
@@ -109,7 +120,18 @@
         });
     </script>
 
-
+    <style>
+    .error-message {
+        background-color: #fee2e2;
+        border: 1px solid #ef4444;
+        color: #dc2626;
+        padding: 1rem;
+        margin: 1rem auto;
+        border-radius: 0.5rem;
+        max-width: 80%;
+        text-align: center;
+    }
+    </style>
 </body>
 
 </html>
