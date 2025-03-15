@@ -4,6 +4,8 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+use Auth\Model\Database;
+
 require_once __DIR__ . '/includes/config.php';
 require_once __DIR__ . '/database/database.php';
 require_once __DIR__ . '/models/Database.php';

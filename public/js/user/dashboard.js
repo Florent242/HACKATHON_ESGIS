@@ -28,7 +28,7 @@ function initializeDashboard() {
 
 // Fonction pour récupérer les informations de l'utilisateur
 function getUserInfo() {
-    fetch('/HACKATHON_ESGIS/public/api/users/2', {
+    fetch('/HACKATHON_ESGIS/public/api/users', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
