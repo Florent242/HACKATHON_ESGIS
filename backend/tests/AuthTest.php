@@ -3,6 +3,7 @@ namespace Tests;
 
 use PHPUnit\Framework\TestCase;
 use Auth\Model\User;
+use Auth\Model\UserModel;
 use Auth\Controller\AuthController;
 use Auth\Controller\SignupController;
 use Auth\Controller\ResetPasswordController;

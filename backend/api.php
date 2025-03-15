@@ -22,6 +22,7 @@ require_once __DIR__ . '/models/Evaluation.php';
 use Auth\Controller\AuthController;
 use Auth\Controller\SignupController;
 use Auth\Controller\ResetPasswordController;
+use Auth\Model\Hackathon;
 
 // Initialisation de la base de données
 $db = new PDO('sqlite:' . DB_FILE, null, null, [
