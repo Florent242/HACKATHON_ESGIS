@@ -70,6 +70,21 @@ class NotificationController extends Controller {
             ], 400);
         }
     }
+    public function getUnreadCount($userId) {
+        try {
+            $this->validateMethod('GET');
+            $count = $this->notification->getUnreadCount($userId);            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => ['unread_count' => $count]
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
 
     public function markAsRead($id) {
         try {

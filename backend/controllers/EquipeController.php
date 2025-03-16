@@ -143,6 +143,22 @@ class EquipeController extends Controller {
             ], 400);
         }
     }
+    public function index() {
+        try {
+            $this->validateMethod('GET');
+            $equipes = $this->equipe->getAll(); // Assurez-vous que cette méthode existe dans votre modèle
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $equipes
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
 
     public function addMember($equipeId) {
         try {
