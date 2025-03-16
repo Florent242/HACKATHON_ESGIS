@@ -3,8 +3,9 @@
 use Auth\Controller\AuthController;
 use Auth\Controller\HackathonController;
 use Auth\Controller\EquipeController;
-use Auth\Controller\EquipeMembreController;
 use Auth\Controller\NotificationController;
+use Auth\Controller\ParticipantController;
+use Auth\Controller\EquipeMembreController;
 
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
@@ -91,11 +92,11 @@ try {
 
         case 'hackathons':
             require_once __DIR__ . '/../../backend/controllers/HackathonController.php';
-            $controller = new HackathonController();
+            $controller = new HackathonController($db);
 
             if (empty($segments[1])) {
                 if ($method === 'GET') {
-                    $controller->index();
+                    $controller->getAll();
                 } elseif ($method === 'POST') {
                     $controller->create();
                 }
@@ -104,7 +105,7 @@ try {
                 switch ($segments[2] ?? '') {
                     case '':
                         if ($method === 'GET') {
-                            $controller->show($id);
+                            $controller->get($id);
                         } elseif ($method === 'PUT') {
                             $controller->update($id);
                         } elseif ($method === 'DELETE') {
@@ -114,7 +115,7 @@ try {
 
                     case 'participants':
                         require_once __DIR__ . '/../../backend/controllers/ParticipantController.php';
-                        $participantController = new ParticipantController();
+                        $participantController = new ParticipantController($db);
                         
                         if ($method === 'GET') {
                             $participantController->index($id);
@@ -128,10 +129,10 @@ try {
                 }
             }
             break;
-
+ 
         case 'equipes':
             require_once __DIR__ . '/../../backend/controllers/EquipeController.php';
-            $controller = new EquipeController();
+            $controller = new EquipeController($db);
 
             if (empty($segments[1])) {
                 if ($method === 'GET') {
@@ -144,7 +145,7 @@ try {
                 switch ($segments[2] ?? '') {
                     case '':
                         if ($method === 'GET') {
-                            $controller->show($id);
+                            $controller->get($id);
                         } elseif ($method === 'PUT') {
                             $controller->update($id);
                         } elseif ($method === 'DELETE') {
@@ -154,7 +155,7 @@ try {
 
                     case 'membres':
                         require_once __DIR__ . '/../../backend/controllers/EquipeMembreController.php';
-                        $membreController = new EquipeMembreController();
+                        $membreController = new EquipeMembreController($db);
                         
                         if ($method === 'GET') {
                             $membreController->index($id);
@@ -171,23 +172,23 @@ try {
 
         case 'notifications':
             require_once __DIR__ . '/../../backend/controllers/NotificationController.php';
-            $controller = new NotificationController();
+            $controller = new NotificationController($db);
 
             if (empty($segments[1])) {
                 if ($method === 'GET') {
-                    $controller->index();
+                    $controller->getByUser($userId);
                 }
             } else {
                 switch ($segments[1]) {
                     case 'unread-count':
                         if ($method === 'GET') {
-                            $controller->getUnreadCount();
+                            $controller->getUnreadCount($_SESSION['user_id']);
                         }
                         break;
 
                     case 'mark-all-read':
                         if ($method === 'POST') {
-                            $controller->markAllAsRead();
+                            $controller->markAllAsRead($_SESSION['user_id']);
                         }
                         break;
 

@@ -2,10 +2,10 @@
 namespace Auth\Controller;
 
 use Exception;
+use Auth\Model\Notification;
 
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
-require_once __DIR__ . '/../models/Notification.php';
 require_once __DIR__ . '/Controller.php';
 
 class NotificationController extends Controller {
@@ -62,6 +62,21 @@ class NotificationController extends Controller {
             $this->jsonResponse([
                 'success' => true,
                 'data' => $notifications
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+    public function getUnreadCount($userId) {
+        try {
+            $this->validateMethod('GET');
+            $count = $this->notification->getUnreadCount($userId);            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => ['unread_count' => $count]
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([
