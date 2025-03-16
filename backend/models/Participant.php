@@ -1,5 +1,8 @@
 <?php
-
+namespace Auth\Model;
+use Exception;
+use PDOException;
+use PDO;
 class Participant {
     private $db;
     private $table = 'participants';

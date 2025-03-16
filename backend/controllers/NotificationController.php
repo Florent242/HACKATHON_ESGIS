@@ -2,10 +2,10 @@
 namespace Auth\Controller;
 
 use Exception;
+use Auth\Model\Notification;
 
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
-require_once __DIR__ . '/../models/Notification.php';
 require_once __DIR__ . '/Controller.php';
 
 class NotificationController extends Controller {
