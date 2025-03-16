@@ -278,7 +278,7 @@ try {
                 }
             }
             break;
-
+ 
         case 'equipes':
             require_once __DIR__ . '/../../backend/controllers/EquipeController.php';
             $controller = new EquipeController($db);
