@@ -5,7 +5,7 @@ define('DB_FILE', __DIR__ . '/../database/hackathon.db');
 
 // Configuration de l'application
 define('APP_NAME', 'Hackathon Platform');
-define('APP_URL', 'http://localhost:8000');
+define('APP_URL', 'http://localhost');
 define('APP_VERSION', '1.0.0');
 
 // Configuration des sessions

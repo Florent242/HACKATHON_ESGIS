@@ -22,12 +22,12 @@ class User {
             // Hashage du mot de passe
             $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 
-            $sql = "INSERT INTO {$this->table} (nom, email, mot_de_passe, role) 
-                    VALUES (:nom, :email, :mot_de_passe, :role)";
+            $sql = "INSERT INTO {$this->table} (nom_complet, email, mot_de_passe, role) 
+                    VALUES (:nom_complet, :email, :mot_de_passe, :role)";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
-                ':nom' => $data['username'],
+                ':nom_complet' => $data['username'],
                 ':email' => $data['email'],
                 ':mot_de_passe' => $data['password'],
                 ':role' => $data['role'] ?? 'participant'

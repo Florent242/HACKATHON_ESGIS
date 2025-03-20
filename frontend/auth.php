@@ -122,6 +122,8 @@ $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 
     <style>
     .error-message {
+        position: fixed;
+        top: 2rem;
         background-color: #fee2e2;
         border: 1px solid #ef4444;
         color: #dc2626;

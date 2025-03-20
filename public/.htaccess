@@ -6,7 +6,7 @@ RewriteBase /HACKATHON_ESGIS/public/
 
 # Rediriger les requêtes API vers backend/api.php
 RewriteCond %{REQUEST_URI} ^/HACKATHON_ESGIS/public/api/ [NC]
-RewriteRule ^(.*)$ ../backend/api.php [QSA,L]
+RewriteRule ^(.*)$ api/index.php [QSA,L]
 
 # Si le fichier ou le répertoire existe, ne pas le réécrire
 RewriteCond %{REQUEST_FILENAME} !-f

@@ -40,7 +40,7 @@ class SignupController extends Controller
                 ];
 
                 // Création de l'utilisateur
-                $userId = $this->authController->signup($userData);
+                $userId = $this->authController->register($userData);
 
                 if ($userId) {
                     // Connexion automatique après inscription

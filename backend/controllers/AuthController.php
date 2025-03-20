@@ -9,7 +9,7 @@ require_once __DIR__ . '/../models/Database.php';
 require_once __DIR__ . '/../models/User.php';
 
 class AuthController {
-    private const BASE_URL = 'http://localhost:222/HACKATHON_ESGIS/public';
+    private const BASE_URL = '/HACKATHON_ESGIS/public';
     private $user;
     private $db;
 
@@ -76,9 +76,9 @@ class AuthController {
                 
                 // Redirection selon le rôle
                 if ($data['role'] === 'organisateur') {
-                    header("Location: " . self::BASE_URL . "/admin");
+                    header("Location: " . self::BASE_URL . "/auth_admin");
                 } else {
-                    header("Location: " . self::BASE_URL . "/user");
+                    header("Location: " . self::BASE_URL . "/auth");
                 }
                 exit();
             } else {
@@ -120,7 +120,7 @@ class AuthController {
                 }
                 exit();
             } else {
-                throw new Exception('Email ou mot de passe incorrect');
+                throw new Exception('Email ou mot de passe incorrect.'. $email .' - '. $password .' - '. $user['mot_de_passe']);
             }
         } catch (Exception $e) {
             error_log("Erreur de connexion : " . $e->getMessage());
