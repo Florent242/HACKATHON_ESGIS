@@ -41,15 +41,16 @@ class AuthController {
 
             $data = [
                 'username' => $_POST['username'] ?? '',
+                'nom_complet' => $_POST['fullName'] ?? '',
                 'email' => $_POST['email'] ?? '',
-                'password' => $_POST['password'] ?? '',
+                'mot_de_passe' => $_POST['password'] ?? '',
                 'role' => 'participant'
             ];
             
             error_log("Tentative d'inscription avec les données : " . json_encode($data));
             
             // Validation des données
-            if (empty($data['username']) || empty($data['email']) || empty($data['password'])) {
+            if (empty($data['username']) || empty($data['email']) || empty($data['mot_de_passe'])) {
                 throw new Exception("Tous les champs sont obligatoires");
             }
 
@@ -59,7 +60,7 @@ class AuthController {
             }
 
             // Validation du mot de passe
-            if (strlen($data['password']) < 8) {
+            if (strlen($data['mot_de_passe']) < 8) {
                 throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
             }
 
@@ -134,7 +135,7 @@ class AuthController {
                 
                 exit();
             } else {
-                throw new Exception('Email ou mot de passe incorrect.'. $email .' - '. $password .' - '. $user['mot_de_passe']);
+                throw new Exception('Email ou mot de passe incorrect.');
             }
         } catch (Exception $e) {
             error_log("Erreur de connexion : " . $e->getMessage());

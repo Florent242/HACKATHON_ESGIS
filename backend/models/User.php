@@ -21,16 +21,17 @@ class User {
             $this->validate($data);
 
             // Hashage du mot de passe
-            $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+            $data['mot_de_passe'] = password_hash($data['mot_de_passe'], PASSWORD_DEFAULT);
 
-            $sql = "INSERT INTO {$this->table} (nom, email, {$this->passwordColumn}, role) 
-                    VALUES (:nom, :email, :mot_de_passe, :role)";
+            $sql = "INSERT INTO {$this->table} (username, nom_complet, email, {$this->passwordColumn}, role) 
+                    VALUES (:username, :nom_complet, :email, :mot_de_passe, :role)";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
-                ':nom_complet' => $data['username'],
+                ':username' => $data['username'],
+                ':nom_complet' => $data['nom_complet'],
                 ':email' => $data['email'],
-                ':mot_de_passe' => $data['password'],
+                ':mot_de_passe' => $data['mot_de_passe'],
                 ':role' => $data['role'] ?? 'participant'
             ]);
 
@@ -146,7 +147,7 @@ class User {
     // Valider les données de l'utilisateur
     private function validate($data) {
         // Vérifier que les champs requis sont présents
-        if (empty($data['username']) || empty($data['email']) || empty($data['password'])) {
+        if (empty($data['username']) || empty($data['email']) || empty($data['mot_de_passe'])) {
             throw new Exception("Tous les champs requis doivent être remplis");
         }
 
@@ -162,7 +163,7 @@ class User {
         }
 
         // Valider le mot de passe
-        if (strlen($data['password']) < 8) {
+        if (strlen($data['mot_de_passe']) < 8) {
             throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
         }
 
