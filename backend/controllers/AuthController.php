@@ -63,9 +63,7 @@ class AuthController {
                 throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
             }
 
-            // Hash du mot de passe avant création
-            $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-            
+            // Hash du mot de passe avant création            
             $userId = $this->user->create($data);
             
             if ($userId) {
@@ -107,7 +105,11 @@ class AuthController {
 
             $user = $this->user->findByEmail($email);
             
-            if ($user && password_verify($password, $user['mot_de_passe'])) {
+            if ($user && password_verify($password, $user['hashed_password'])) {
+                // Créer un token JWT
+                $jwt = $this->generateToken($user['id']);
+                
+                // Stocker les informations de session
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['nom'];
                 $_SESSION['role'] = $user['role'];
@@ -118,6 +120,18 @@ class AuthController {
                 } else {
                     header("Location: " . self::BASE_URL . "/user");
                 }
+                
+                // Envoyer le token dans un cookie sécurisé
+                setcookie(
+                    'jwt',
+                    $jwt,
+                    time() + (60 * 60 * 24), // 24 heures
+                    '/',
+                    '',
+                    true, // Secure (HTTPS)
+                    true // HttpOnly
+                );
+                
                 exit();
             } else {
                 throw new Exception('Email ou mot de passe incorrect.'. $email .' - '. $password .' - '. $user['mot_de_passe']);
