@@ -8,6 +8,7 @@ use Exception;
 class User {
     private $db;
     private $table = 'users';
+    private $passwordColumn = 'hashed_password'; // Renommer la colonne pour plus de sécurité
 
     public function __construct($db) {
         $this->db = $db;
@@ -22,14 +23,14 @@ class User {
             // Hashage du mot de passe
             $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 
-            $sql = "INSERT INTO {$this->table} (nom, email, mot_de_passe, role) 
-                    VALUES (:nom, :email, :mot_de_passe, :role)";
+            $sql = "INSERT INTO {$this->table} (nom, email, {$this->passwordColumn}, role) 
+                    VALUES (:nom, :email, :hashed_password, :role)";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':nom' => $data['username'],
                 ':email' => $data['email'],
-                ':mot_de_passe' => $data['password'],
+                ':hashed_password' => $data['password'],
                 ':role' => $data['role'] ?? 'participant'
             ]);
 
@@ -54,7 +55,7 @@ class User {
     // Trouver un utilisateur par son email
     public function findByEmail($email) {
         try {
-            $sql = "SELECT * FROM {$this->table} WHERE email = :email";
+            $sql = "SELECT id, nom, email, {$this->passwordColumn}, role FROM {$this->table} WHERE email = :email";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':email' => $email]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -102,14 +103,38 @@ class User {
         try {
             $user = $this->findByEmail($email);
             
-            if ($user && password_verify($password, $user['mot_de_passe'])) {
-                unset($user['mot_de_passe']); // Ne pas retourner le mot de passe
-                return [
-                    'id' => $user['id'],
-                    'username' => $user['nom'],
-                    'email' => $user['email'],
-                    'role' => $user['role']
-                ];
+            if ($user) {
+                // Vérifier la force du mot de passe avant l'authentification
+                if (strlen($password) < 8) {
+                    throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
+                }
+
+                if (!preg_match('/[A-Z]/', $password)) {
+                    throw new Exception("Le mot de passe doit contenir au moins une majuscule");
+                }
+
+                if (!preg_match('/[a-z]/', $password)) {
+                    throw new Exception("Le mot de passe doit contenir au moins une minuscule");
+                }
+
+                if (!preg_match('/[0-9]/', $password)) {
+                    throw new Exception("Le mot de passe doit contenir au moins un chiffre");
+                }
+
+                if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) {
+                    throw new Exception("Le mot de passe doit contenir au moins un caractère spécial");
+                }
+
+                // Vérifier le hash
+                if (password_verify($password, $user[$this->passwordColumn])) {
+                    unset($user[$this->passwordColumn]); // Ne pas retourner le hash
+                    return [
+                        'id' => $user['id'],
+                        'username' => $user['nom'],
+                        'email' => $user['email'],
+                        'role' => $user['role']
+                    ];
+                }
             }
             
             return false;
