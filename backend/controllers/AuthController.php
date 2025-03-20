@@ -105,13 +105,13 @@ class AuthController {
 
             $user = $this->user->findByEmail($email);
             
-            if ($user && password_verify($password, $user['hashed_password'])) {
+            if ($user && password_verify($password, $user['mot_de_passe'])) {
                 // Créer un token JWT
                 $jwt = $this->generateToken($user['id']);
                 
                 // Stocker les informations de session
                 $_SESSION['user_id'] = $user['id'];
-                $_SESSION['username'] = $user['nom'];
+                $_SESSION['username'] = $user['username'];
                 $_SESSION['role'] = $user['role'];
 
                 // Redirection selon le rôle

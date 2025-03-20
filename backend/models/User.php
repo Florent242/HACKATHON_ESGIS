@@ -8,7 +8,7 @@ use Exception;
 class User {
     private $db;
     private $table = 'users';
-    private $passwordColumn = 'hashed_password'; // Renommer la colonne pour plus de sécurité
+    private $passwordColumn = 'mot_de_passe'; // Renommer la colonne pour plus de sécurité
 
     public function __construct($db) {
         $this->db = $db;
@@ -24,13 +24,13 @@ class User {
             $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
 
             $sql = "INSERT INTO {$this->table} (nom, email, {$this->passwordColumn}, role) 
-                    VALUES (:nom, :email, :hashed_password, :role)";
+                    VALUES (:nom, :email, :mot_de_passe, :role)";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':nom' => $data['username'],
                 ':email' => $data['email'],
-                ':hashed_password' => $data['password'],
+                ':mot_de_passe' => $data['password'],
                 ':role' => $data['role'] ?? 'participant'
             ]);
 
@@ -55,7 +55,7 @@ class User {
     // Trouver un utilisateur par son email
     public function findByEmail($email) {
         try {
-            $sql = "SELECT id, nom, email, {$this->passwordColumn}, role FROM {$this->table} WHERE email = :email";
+            $sql = "SELECT id, username, email, {$this->passwordColumn}, role FROM {$this->table} WHERE email = :email";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':email' => $email]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
