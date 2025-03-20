@@ -63,9 +63,7 @@ class AuthController {
                 throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
             }
 
-            // Hash du mot de passe avant création
-            $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-            
+            // Hash du mot de passe avant création            
             $userId = $this->user->create($data);
             
             if ($userId) {
