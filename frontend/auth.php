@@ -3,12 +3,12 @@ session_start();
 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EsgisHub - Sign up</title>
+    <title>EsgisHub - Authentification</title>
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/auth.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
@@ -18,6 +18,7 @@ $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 </head>
 
 <body>
+    <div id="notification-data" data-notification='<?= json_encode($_SESSION['notification'] ?? null) ?>'></div>
     <div class="auth-container">
         <!-- Onglets pour basculer entre connexion et inscription -->
         <div class="auth-tabs">
@@ -25,21 +26,11 @@ $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
             <button class="auth-tab" id="tab-register">Inscription</button>
         </div>
 
-        <!-- Message d'erreur -->
-        <?php if (isset($_SESSION['error'])): ?>
-        <div class="error-message">
-            <?php 
-            echo $_SESSION['error'];
-            unset($_SESSION['error']); 
-            ?>
-        </div>
-        <?php endif; ?>
-
         <!-- Formulaires -->
-        <div class="auth-card">
+        <div class="auth-card bg">
             <div class="auth-form" id="loginForm">
                 <h1>Espace Utilisateur</h1>
-                <p>Connectez-vous à votre compte étudiant</p> <br><br>                    
+                <p>Connectez-vous à votre compte étudiant</p> <br><br>
                 <form action="/HACKATHON_ESGIS/public/api/auth/login" method="POST">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="form-group">
@@ -121,18 +112,18 @@ $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     </script>
 
     <style>
-    .error-message {
-        position: fixed;
-        top: 2rem;
-        background-color: #fee2e2;
-        border: 1px solid #ef4444;
-        color: #dc2626;
-        padding: 1rem;
-        margin: 1rem auto;
-        border-radius: 0.5rem;
-        max-width: 80%;
-        text-align: center;
-    }
+        .error-message {
+            position: fixed;
+            top: 2rem;
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #dc2626;
+            padding: 1rem;
+            margin: 1rem auto;
+            border-radius: 0.5rem;
+            max-width: 80%;
+            text-align: center;
+        }
     </style>
 </body>
 

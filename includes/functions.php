@@ -79,9 +79,10 @@ function setFlashMessage($type, $message) {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
-    $_SESSION['flash'] = [
-        'type' => $type,
-        'message' => $message
+    $_SESSION['notification'] = [
+        'message' => $message,
+        'details' => $message,
+        'type' => $type
     ];
 }
 
@@ -90,10 +91,10 @@ function getFlashMessage() {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
-    if (isset($_SESSION['flash'])) {
-        $flash = $_SESSION['flash'];
-        unset($_SESSION['flash']);
-        return $flash;
+    if (isset($_SESSION['notification'])) {
+        $notification = $_SESSION['notification'];
+        unset($_SESSION['notification']);
+        return $notification;
     }
     return null;
 }

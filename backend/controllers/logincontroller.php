@@ -45,7 +45,11 @@ class LoginController
                 header('Location: profil.php');
                 exit();
             } catch (\Exception $e) {
-                $_SESSION['error'] = $e->getMessage();
+                $_SESSION['notification'] = [
+                    'message' => "Erreur de connexion",
+                    'details' => $e->getMessage(),
+                    'type' => 'error'
+                ];
             }
         }
     }

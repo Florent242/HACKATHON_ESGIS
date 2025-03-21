@@ -11,8 +11,6 @@
 }
 
 * {
-    margin: 0;
-    padding: 0;
     box-sizing: border-box;
     font-family: 'Inter', sans-serif;
 }
@@ -26,7 +24,7 @@ body {
     padding: 10px;
 }
 
-p {
+.auth-container p {
     color: var(--text-secondary);
     text-align: left;
     margin-top: 1%;
@@ -151,8 +149,7 @@ p {
     transition: border 0.3s ease-in-out;
 }
 
-.form-group input::placeholder,
-svg {
+.form-group input::placeholder {
     color: var(--text-secondary);
 }
 
@@ -195,4 +192,37 @@ svg {
     .auth-container {
         max-width: 90%;
     }
+}
+
+/* ANIMATION */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateX(100%) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+@keyframes fade-out {
+    from {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%) scale(0.95);
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+    transform-origin: right center;
+}
+
+.animate-fade-out {
+    animation: fade-out 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) both;
+    transform-origin: right center;
 }

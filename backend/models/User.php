@@ -44,7 +44,7 @@ class User {
     // Trouver un utilisateur par son ID
     public function find($id) {
         try {
-            $sql = "SELECT * FROM {$this->table} WHERE id = :id";
+            $sql = "SELECT id, username, email, role, nom_complet FROM {$this->table} WHERE id = :id";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':id' => $id]);
             return $stmt->fetch(PDO::FETCH_ASSOC);

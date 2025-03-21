@@ -1,9 +1,15 @@
+<?php
+session_start();
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+?>
 <script defer src="/HACKATHON_ESGIS/public/js/lucide.js"></script>
 <script defer src="/HACKATHON_ESGIS/public/js/admin/header.js"></script>
 <script defer src="/HACKATHON_ESGIS/public/js/admin/main.js"></script>
 
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,7 +18,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
+    <div id="notification-data" data-notification='<?= json_encode($_SESSION['notification'] ?? null) ?>'></div>
     <header class="header">
         <div class="container">
             <nav class="nav">
@@ -48,4 +56,5 @@
         </div>
     </main>
 </body>
+
 </html>
