@@ -12,7 +12,7 @@
 </head>
 <body>
     <!-- Header -->
-    <?php require_once '../includes/user/header.php'; ?>
+    <?php require_once '../../includes/user/header.php'; ?>
 
     <main>
         <div class="leaderboard-header">
