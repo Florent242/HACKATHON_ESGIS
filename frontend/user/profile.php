@@ -43,10 +43,8 @@
                 <div class="space-y-4 w-full flex flex-col gap-4 border border-gray-700 p-5 rounded-2xl shadow-lg card-bg">
                     <h3 class="text-lg font-semibold m-0">Personal Information</h3>
                     <ul class="space-y-2 text-sm text-gray-400">
-                        <li id="mail" class="flex flex-row items-cente gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="mail"></i>john.doe@example.com</li>
-                        <li id="age" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="cake"></i>27 years old</li>
+                        <li id="mail" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="mail"></i>john.doe@example.com</li>
                         <li id="university" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="university"></i>ESGIS University</li>
-                        <li id="city" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="map"></i>Paris, France</li>
                         <li id="web-security" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="shield"></i>Web Security</li>
                         <li id="languages" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="globe"></i>English, French</li>
                     </ul>

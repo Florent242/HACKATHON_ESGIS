@@ -181,3 +181,26 @@ function verifyJwtToken($token) {
 
     return $payload['data'];
 }
+
+// Fonction pour afficher un message flash
+function setFlashMessage($type, $message,$details = null) {
+    session_start();
+    $_SESSION['notification'] = [
+        'message' => $message,
+        'details' => $details,
+        'type' => $type
+    ];
+}
+
+// Fonction pour récupérer et effacer le message flash
+function getFlashMessage() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (isset($_SESSION['notification'])) {
+        $notification = $_SESSION['notification'];
+        unset($_SESSION['notification']);
+        return $notification;
+    }
+    return null;
+}

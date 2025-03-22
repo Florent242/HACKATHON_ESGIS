@@ -26,12 +26,12 @@ function configureCors() {
 }
 
 // Fonction pour envoyer une réponse JSON
-function jsonResponse($data, $statusCode = 200) {
-    http_response_code($statusCode);
-    header('Content-Type: application/json');
-    echo json_encode($data);
-    exit();
-}
+// function jsonResponse($data, $statusCode = 200) {
+//     http_response_code($statusCode);
+//     header('Content-Type: application/json');
+//     echo json_encode($data);
+//     exit();
+// }
 
 // Fonction pour vérifier si c'est une requête API
 function isApiRequest() {

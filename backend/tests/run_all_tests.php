@@ -6,7 +6,7 @@ require_once __DIR__ . '/../database/database.php';
 // Configuration pour les tests
 $config = [
     'db_file' => __DIR__ . '/test_database.json',
-    'base_url' => 'http://localhost:8000'
+    'base_url' => 'http://localhost'
 ];
 
 // Classe de base pour les tests

@@ -15,15 +15,14 @@ require_once __DIR__ . '/../../includes/cors.php';
 configureCors();
 
 // Définir la base URL de l'application (à adapter selon la structure de votre projet)
-define('BASE_URL', '/HACKATHON_ESGIS/public'); // Modifiez en fonction du chemin d'accès à votre application
+const BASE_URL = '/HACKATHON_ESGIS/public';
 
 // Récupérer la méthode HTTP et l'URL
 $method = $_SERVER['REQUEST_METHOD']; // Récupère la méthode HTTP (GET, POST, PUT, DELETE)
 $uri = $_SERVER['REQUEST_URI']; // Récupère l'URI complète
-$scriptName = dirname($_SERVER['SCRIPT_NAME']); // Chemin du script
 
 // Nettoyage de l'URI pour enlever le chemin du script
-$uri = str_replace($scriptName, '', $uri);
+$uri = str_replace(BASE_URL . '/api_auth', '', $uri);
 $uri = trim($uri, '/');
 
 // Découpage en segments
@@ -31,6 +30,7 @@ $segments = explode('/', $uri);
 
 // Debug pour voir les segments
 // var_dump($segments);
+// exit();
 
 // Router API
 try {
@@ -86,7 +86,7 @@ try {
                     break;
 
                 default:
-                    throw new Exception('Endpoint non trouvé', 404);
+                    throw new Exception('Endpoint non trouvé. - ' . $uri, 404);
             }
             break;
 

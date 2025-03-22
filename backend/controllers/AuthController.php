@@ -9,7 +9,7 @@ require_once __DIR__ . '/../models/Database.php';
 require_once __DIR__ . '/../models/User.php';
 
 class AuthController {
-    private const BASE_URL = 'http://localhost:222/HACKATHON_ESGIS/public';
+    private const BASE_URL = '/HACKATHON_ESGIS/public';
     private $user;
     private $db;
 
@@ -41,15 +41,16 @@ class AuthController {
 
             $data = [
                 'username' => $_POST['username'] ?? '',
+                'nom_complet' => $_POST['fullName'] ?? '',
                 'email' => $_POST['email'] ?? '',
-                'password' => $_POST['password'] ?? '',
+                'mot_de_passe' => $_POST['password'] ?? '',
                 'role' => 'participant'
             ];
             
             error_log("Tentative d'inscription avec les données : " . json_encode($data));
             
             // Validation des données
-            if (empty($data['username']) || empty($data['email']) || empty($data['password'])) {
+            if (empty($data['username']) || empty($data['email']) || empty($data['mot_de_passe'])) {
                 throw new Exception("Tous les champs sont obligatoires");
             }
 
@@ -59,13 +60,11 @@ class AuthController {
             }
 
             // Validation du mot de passe
-            if (strlen($data['password']) < 8) {
+            if (strlen($data['mot_de_passe']) < 8) {
                 throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
             }
 
-            // Hash du mot de passe avant création
-            $data['password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-            
+            // Hash du mot de passe avant création            
             $userId = $this->user->create($data);
             
             if ($userId) {
@@ -73,12 +72,13 @@ class AuthController {
                 $_SESSION['user_id'] = $userId;
                 $_SESSION['username'] = $data['username'];
                 $_SESSION['role'] = $data['role'];
+                setFlashMessage('success', 'Inscription réussie');
                 
                 // Redirection selon le rôle
                 if ($data['role'] === 'organisateur') {
-                    header("Location: " . self::BASE_URL . "/admin");
+                    header("Location: " . self::BASE_URL . "/auth_admin");
                 } else {
-                    header("Location: " . self::BASE_URL . "/user");
+                    header("Location: " . self::BASE_URL . "/auth");
                 }
                 exit();
             } else {
@@ -86,7 +86,11 @@ class AuthController {
             }
         } catch (Exception $e) {
             error_log("Erreur d'inscription : " . $e->getMessage());
-            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['notification'] = [
+                'message' => `Erreur d'inscription`,
+                'details' => $e->getMessage(),
+                'type' => 'error'
+            ];
             header("Location: " . self::BASE_URL . "/auth");
             exit();
         }
@@ -108,9 +112,14 @@ class AuthController {
             $user = $this->user->findByEmail($email);
             
             if ($user && password_verify($password, $user['mot_de_passe'])) {
+                // Créer un token JWT
+                $jwt = $this->generateToken($user['id']);
+                
+                // Stocker les informations de session
                 $_SESSION['user_id'] = $user['id'];
-                $_SESSION['username'] = $user['nom'];
+                $_SESSION['username'] = $user['username'];
                 $_SESSION['role'] = $user['role'];
+                setFlashMessage('success', 'Connexion réussie');
 
                 // Redirection selon le rôle
                 if ($user['role'] === 'organisateur') {
@@ -118,13 +127,29 @@ class AuthController {
                 } else {
                     header("Location: " . self::BASE_URL . "/user");
                 }
+                
+                // Envoyer le token dans un cookie sécurisé
+                setcookie(
+                    'jwt',
+                    $jwt,
+                    time() + (60 * 60 * 24), // 24 heures
+                    '/',
+                    '',
+                    true, // Secure (HTTPS)
+                    true // HttpOnly
+                );
+                
                 exit();
             } else {
-                throw new Exception('Email ou mot de passe incorrect');
+                throw new Exception('Email ou mot de passe incorrect.');
             }
         } catch (Exception $e) {
             error_log("Erreur de connexion : " . $e->getMessage());
-            $_SESSION['error'] = $e->getMessage();
+            $_SESSION['notification'] = [
+                'message' => `Erreur de connexion`,
+                'details' => $e->getMessage(),
+                'type' => 'error'
+            ];
             header("Location: " . self::BASE_URL . "/auth");
             exit();
         }
@@ -143,12 +168,21 @@ class AuthController {
             session_destroy();
 
             // Rediriger vers la page d'accueil
-            setFlashMessage('success', 'Vous avez été déconnecté avec succès.');
-            redirect('/');
+            $_SESSION['notification'] = [
+                'message' => `Vous avez été déconnecté avec succès.`,
+                'type' => 'success'
+            ];
+            header("Location: " . self::BASE_URL . "/");
+            exit();
 
         } catch (Exception $e) {
-            setFlashMessage('error', $e->getMessage());
-            redirect('/');
+            $_SESSION['notification'] = [
+                'message' => `Erreur de déconnexion`,
+                'details' => $e->getMessage(),
+                'type' => 'error'
+            ];
+            header("Location: " . self::BASE_URL . "/");
+            exit();
         }
     }
 
@@ -169,8 +203,13 @@ class AuthController {
             require_once VIEWS_PATH . '/profile.php';
 
         } catch (Exception $e) {
-            setFlashMessage('error', $e->getMessage());
-            redirect('/');
+            $_SESSION['notification'] = [
+                'message' => `Erreur de profil`,
+                'details' => $e->getMessage(),
+                'type' => 'error'
+            ];
+            header("Location: " . self::BASE_URL . "/profile");
+            exit();
         }
     }
 
@@ -205,12 +244,22 @@ class AuthController {
             // Mettre à jour l'utilisateur
             $this->user->update($_SESSION['user_id'], $data);
 
-            setFlashMessage('success', 'Profil mis à jour avec succès !');
-            redirect('/profile');
+            $_SESSION['notification'] = [
+                'message' => `Profil mis à jour avec succès !`,
+                'details' => 'Profil mis à jour avec succès !',
+                'type' => 'success'
+            ];
+            header("Location: " . self::BASE_URL . "/profile");
+            exit();
 
         } catch (Exception $e) {
-            setFlashMessage('error', $e->getMessage());
-            redirect('/profile');
+            $_SESSION['notification'] = [
+                'message' => `Erreur de profil`,
+                'details' => $e->getMessage(),
+                'type' => 'error'
+            ];
+            header("Location: " . self::BASE_URL . "/profile");
+            exit();
         }
     }
 
@@ -230,12 +279,21 @@ class AuthController {
                     // Envoyer l'email de réinitialisation
                     // Note : À implémenter selon vos besoins
 
-                    setFlashMessage('success', 'Si votre email existe dans notre base de données, vous recevrez les instructions de réinitialisation.');
-                    redirect('/login');
+                    $_SESSION['notification'] = [
+                        'message' => `Si votre email existe dans notre base de données, vous recevrez les instructions de réinitialisation.`,
+                    ];
+                    header("Location: " . self::BASE_URL . "/login");
+                    exit();
                 }
 
             } catch (Exception $e) {
-                setFlashMessage('error', $e->getMessage());
+                $_SESSION['notification'] = [
+                    'message' => `Erreur de réinitialisation du mot de passe`,
+                    'details' => $e->getMessage(),
+                    'type' => 'error'
+                ];
+                header("Location: " . self::BASE_URL . "/login");
+                exit();
             }
         }
 

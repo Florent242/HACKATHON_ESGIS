@@ -1,7 +1,7 @@
 <?php
 
 // Configuration
-$baseUrl = 'http://localhost:8000/api.php';
+$baseUrl = 'http://localhost/api.php';
 
 // Fonction pour faire une requête HTTP
 function makeRequest($endpoint, $method = 'GET', $data = null) {

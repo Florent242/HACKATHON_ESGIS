@@ -5,7 +5,7 @@ define('DB_FILE', __DIR__ . '/../database/hackathon.db');
 
 // Configuration de l'application
 define('APP_NAME', 'Hackathon Platform');
-define('APP_URL', 'http://localhost:8000');
+define('APP_URL', 'http://localhost');
 define('APP_VERSION', '1.0.0');
 
 // Configuration des sessions
@@ -55,3 +55,38 @@ function jsonResponse($data, $statusCode = 200) {
     echo json_encode($data);
     exit();
 }
+// Elements de cors.php
+    // Configuration CORS
+function configureCors() {
+    // Autoriser l'origine spécifique de votre frontend
+    // En développement, vous pouvez utiliser '*' mais en production, spécifiez l'origine exacte
+    header('Access-Control-Allow-Origin: *');
+    
+    // Autoriser les méthodes HTTP
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    
+    // Autoriser les en-têtes personnalisés
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+    
+    // Autoriser l'envoi des credentials (cookies, en-têtes d'autorisation)
+    header('Access-Control-Allow-Credentials: true');
+    
+    // Durée de mise en cache des résultats du pre-flight
+    header('Access-Control-Max-Age: 86400'); // 24 heures
+
+    // Pour les requêtes OPTIONS (pre-flight)
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(204);
+        exit();
+    }
+}
+
+// Fonction pour gérer les erreurs API
+function handleApiError($error, $statusCode = 400) {
+    jsonResponse([
+        'error' => true,
+        'message' => $error instanceof Exception ? $error->getMessage() : $error
+    ], $statusCode);
+}
+
+
