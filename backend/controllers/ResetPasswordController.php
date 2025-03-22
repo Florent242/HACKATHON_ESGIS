@@ -68,7 +68,7 @@ class ResetPasswordController extends Controller {
                 'reset_token_expiry' => $expiry
             ]);
 
-            $resetLink = "http://localhost:8080/reset-password?token=" . $token;
+            $resetLink = "http://localhost/reset-password?token=" . $token;
             
             $this->mailer->addAddress($email);
             $this->mailer->Subject = 'Réinitialisation de votre mot de passe - ESGIS Hackathon';

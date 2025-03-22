@@ -1,18 +1,27 @@
 <?php
+namespace Auth\Model;
+
+use PDO;
+use PDOException;
+use Exception;
 
 class Database {
     private static $instance = null;
     private $connection = null;
 
-    private $host = 'localhost';
+    private $host = '127.0.0.1';
     private $dbname = 'hackathon_db';
     private $username = 'root';
     private $password = '';
 
     private function __construct() {
         try {
+            error_log("Tentative de connexion à la base de données - Host: {$this->host}, DB: {$this->dbname}");
+            $dsn = "mysql:host={$this->host};dbname={$this->dbname};charset=utf8";
+            error_log("DSN: {$dsn}");
+
             $this->connection = new PDO(
-                "mysql:host={$this->host};dbname={$this->dbname};charset=utf8",
+                $dsn,
                 $this->username,
                 $this->password,
                 [
@@ -21,8 +30,11 @@ class Database {
                     PDO::ATTR_EMULATE_PREPARES => false
                 ]
             );
+            error_log("Connexion à la base de données établie avec succès");
         } catch(PDOException $e) {
-            die("Erreur de connexion : " . $e->getMessage());
+            $error = "Erreur de connexion à la base de données: " . $e->getMessage();
+            error_log($error);
+            die($error);
         }
     }
 

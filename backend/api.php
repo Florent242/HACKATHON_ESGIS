@@ -1,10 +1,25 @@
 <?php
+
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
+use Auth\Model\Database;
+use Auth\Model\Hackathon;
+use Auth\Model\Equipe;
+use Auth\Model\Projet;
+use Auth\Model\Evaluation;
+use Auth\Model\User;
+use Auth\Controller\AuthController;
+use Auth\Controller\HackathonController;
+use Auth\Controller\EquipeController;
+use Auth\Controller\NotificationController;
+use Auth\Controller\ParticipantController;
+use Auth\Controller\EquipeMembreController;
+
 require_once __DIR__ . '/includes/config.php';
+require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/database/database.php';
 require_once __DIR__ . '/models/Database.php';
 require_once __DIR__ . '/models/Hackathon.php';
@@ -12,6 +27,9 @@ require_once __DIR__ . '/models/Equipe.php';
 require_once __DIR__ . '/models/Projet.php';
 require_once __DIR__ . '/models/Evaluation.php';
 require_once __DIR__ . '/models/User.php';
+
+// Configurer CORS pour toutes les requêtes API
+configureCors();
 
 // Initialisation de la base de données
 $db = Database::getInstance()->getConnection();
@@ -41,6 +59,61 @@ if ($input === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 try {
     switch ($endpoint) {
+        case 'auth':
+            require_once __DIR__ . '/controllers/AuthController.php';
+            if (!file_exists(__DIR__ . '/controllers/AuthController.php')) {
+                die(json_encode(["error" => true, "message" => "Fichier AuthController introuvable"]));
+            }
+            
+            $controller = new AuthController();
+
+            switch ($request[1] ?? '') {
+                case 'login':
+                    if ($method === 'POST') {
+                        try {
+                            $controller->login();
+                            // La redirection est gérée dans le contrôleur
+                            exit();
+                        } catch (Exception $e) {
+                            // Gérer l'erreur, par exemple en affichant un message d'erreur
+                            error_log($e->getMessage());
+                            // Rediriger vers la page de connexion avec un message d'erreur
+                            header("Location: " . BASE_URL . "/auth?error=" . urlencode($e->getMessage()));
+                            exit();
+                        }
+                    }
+                    break;
+
+                case 'register':
+                    if ($method === 'POST') {
+                        try {
+                            $controller->register();
+                            // Rediriger vers le profil après l'inscription
+                            header("Location: " . BASE_URL . "/profile");
+                            exit();
+                        } catch (Exception $e) {
+                            error_log($e->getMessage());
+                            // Rediriger vers la page d'inscription avec un message d'erreur
+                            header("Location: " . BASE_URL . "/auth?error=" . urlencode($e->getMessage()));
+                            exit();
+                        }
+                    }
+                    break;
+
+                case 'logout':
+                    if ($method === 'POST') {
+                        $controller->logout();
+                        // Rediriger vers la page de connexion après la déconnexion
+                        header("Location: " . BASE_URL);
+                        exit();
+                    }
+                    break;
+
+                default:
+                    throw new Exception('Endpoint non trouvé. - api' . $uri, 404);
+            }
+            break;
+
         case 'hackathons':
             $controller = new Hackathon($db);
             handleRequest($method, $controller, $id, $input);
@@ -78,7 +151,7 @@ try {
             break;
 
         default:
-            sendResponse(404, ['error' => 'Endpoint non trouvé']);
+            sendResponse(404, ['error' => 'Endpoint non trouvé. - api.']);
     }
 } catch (Exception $e) {
     sendResponse(500, ['error' => $e->getMessage()]);

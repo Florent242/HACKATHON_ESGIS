@@ -1,5 +1,8 @@
 <?php
+namespace Auth\Model;
 
+use Exception;
+use PDOException;
 class Notification {
     private $db;
     private $table = 'notifications';

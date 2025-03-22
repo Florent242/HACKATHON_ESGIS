@@ -1,3 +1,7 @@
+<?php
+session_start();
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+?>
 <script defer src="/HACKATHON_ESGIS/public/js/lucide.js"></script>
 <script defer src="/HACKATHON_ESGIS/public/js/header.js"></script>
 <header>
@@ -20,3 +24,4 @@
         </div>
     </div>
 </header>
+<div id="notification-data" data-notification='<?= json_encode($_SESSION['notification'] ?? null) ?>'></div>
