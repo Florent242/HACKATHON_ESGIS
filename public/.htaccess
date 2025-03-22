@@ -1,20 +1,14 @@
-# Active la réécriture d'URL
+# 🔹 Active la réécriture d'URL
 RewriteEngine On
-
-# Définit le dossier de base pour les réécritures
 RewriteBase /HACKATHON_ESGIS/public/
 
-# Redirige les requêtes d'inscription et de connexion vers index.php
-RewriteCond %{REQUEST_URI} ^/HACKATHON_ESGIS/public/api/auth/ [NC]
-RewriteRule ^api/auth/(.*)$ /HACKATHON_ESGIS/public/api/index.php [QSA,L]
+# 🔹 Rediriger toutes les requêtes API vers backend/api.php
+RewriteCond %{REQUEST_URI} ^/HACKATHON_ESGIS/public/api/ [NC]
+RewriteRule ^api/(.*)$ ../backend/api.php [QSA,L]
 
-# Rediriger les requêtes API vers backend/api.php
-# RewriteCond %{REQUEST_URI} ^/HACKATHON_ESGIS/public/api/ [NC]
-# RewriteRule ^api/(.*)$ /HACKATHON_ESGIS/backend/api.php [QSA,L]
-
-# Si le fichier ou le répertoire existe, ne pas le réécrire
+# 🔹 Ne pas réécrire les fichiers et dossiers existants
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
-# Redirige toutes les autres requêtes vers index.php
+# 🔹 Rediriger toutes les autres requêtes vers index.php (pour le frontend)
 RewriteRule ^(.*)$ index.php [QSA,L]

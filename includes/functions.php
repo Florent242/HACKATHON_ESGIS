@@ -18,9 +18,9 @@ function jsonResponse($data, $statusCode = 200) {
 }*/
 
 // Fonction pour vérifier si l'utilisateur est connecté
-function isAuthenticated() {
-    return isset($_SESSION['user_id']);
-}
+// function isAuthenticated() {
+//     return isset($_SESSION['user_id']);
+// }
 
 // Fonction pour obtenir l'utilisateur connecté
 function getCurrentUser() {
@@ -38,32 +38,32 @@ function getCurrentUser() {
 }
 
 // Fonction pour vérifier le rôle de l'utilisateur
-function hasRole($role) {
-    $user = getCurrentUser();
-    if (!$user) {
-        return false;
-    }
-    return isset($user['role']) && $user['role'] === $role;
-}
+// function hasRole($role) {
+//     $user = getCurrentUser();
+//     if (!$user) {
+//         return false;
+//     }
+//     return isset($user['role']) && $user['role'] === $role;
+// }
 
 // Fonction pour générer un token CSRF
-function generateCsrfToken() {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    if (empty($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
-    return $_SESSION['csrf_token'];
-}
+// function generateCsrfToken() {
+//     if (session_status() === PHP_SESSION_NONE) {
+//         session_start();
+//     }
+//     if (empty($_SESSION['csrf_token'])) {
+//         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+//     }
+//     return $_SESSION['csrf_token'];
+// }
 
 // Fonction pour vérifier le token CSRF
-function verifyCsrfToken($token) {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
-    }
-    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
-}
+// function verifyCsrfToken($token) {
+//     if (session_status() === PHP_SESSION_NONE) {
+//         session_start();
+//     }
+//     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+// }
 
 // Fonction pour rediriger
 function redirect($path) {
