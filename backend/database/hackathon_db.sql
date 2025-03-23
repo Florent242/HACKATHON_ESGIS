@@ -278,7 +278,7 @@ INSERT INTO `technologies` (`id`, `name`) VALUES
 
 CREATE TABLE `users` (
   `id` int(11) NOT NULL,
-  `username` varchar(255) NOT NULL
+  `username` varchar(255) NOT NULL,
   `nom_complet` varchar(100) NOT NULL,
   `nom` varchar(100) NOT NULL,
   `email` varchar(255) NOT NULL,
@@ -289,9 +289,7 @@ CREATE TABLE `users` (
   `deux_fa_enabled` tinyint(1) DEFAULT 0,
   `reset_token` varchar(64) DEFAULT NULL,
   `reset_token_expiry` datetime DEFAULT NULL,
-  `profile_picture` varchar(255) NOT NULL,
-  
-  `reset_token_expiry` datetime DEFAULT NULL
+  `profile_picture` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
