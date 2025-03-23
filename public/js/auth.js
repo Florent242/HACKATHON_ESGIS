@@ -111,7 +111,7 @@ function showNotification(message, details = null, type = 'success', duration = 
 
 function hideNotification(notification) {
     notification.classList.add('animate-fade-out');
-    // notification.addEventListener('animationend', () => notification.remove(), { once: true });
+    notification.addEventListener('animationend', () => notification.remove(), { once: true });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
