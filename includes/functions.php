@@ -75,13 +75,13 @@ function redirect($path) {
 }
 
 // Fonction pour afficher un message flash
-function setFlashMessage($type, $message) {
+function setFlashMessage($type, $message,$details = null) {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
     $_SESSION['notification'] = [
         'message' => $message,
-        'details' => $message,
+        'details' => $details,
         'type' => $type
     ];
 }

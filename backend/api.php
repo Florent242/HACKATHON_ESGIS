@@ -77,6 +77,7 @@ try {
                         } catch (Exception $e) {
                             // Gérer l'erreur, par exemple en affichant un message d'erreur
                             error_log($e->getMessage());
+                            setFlashMessage('error', $e->getMessage());
                             // Rediriger vers la page de connexion avec un message d'erreur
                             header("Location: " . BASE_URL . "/auth?error=" . urlencode($e->getMessage()));
                             exit();
@@ -93,6 +94,7 @@ try {
                             exit();
                         } catch (Exception $e) {
                             error_log($e->getMessage());
+                            setFlashMessage('error', $e->getMessage());
                             // Rediriger vers la page d'inscription avec un message d'erreur
                             header("Location: " . BASE_URL . "/auth?error=" . urlencode($e->getMessage()));
                             exit();
@@ -103,6 +105,7 @@ try {
                 case 'logout':
                     if ($method === 'POST') {
                         $controller->logout();
+                        setFlashMessage('success', 'Vous avez été déconnecté avec succès');
                         // Rediriger vers la page de connexion après la déconnexion
                         header("Location: " . BASE_URL);
                         exit();
