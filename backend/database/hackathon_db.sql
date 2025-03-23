@@ -209,8 +209,7 @@ CREATE TABLE `participants_hackathon` (
 --
 
 INSERT INTO `participants_hackathon` (`id`, `hackathon_id`, `user_id`, `equipe_id`) VALUES
-(15, 2, 3, 2),
-(16, 2, 3, 2);
+(15, 2, 3, 2);
 
 -- --------------------------------------------------------
 
@@ -280,7 +279,6 @@ CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `username` varchar(255) NOT NULL,
   `nom_complet` varchar(100) NOT NULL,
-  `nom` varchar(100) NOT NULL,
   `email` varchar(255) NOT NULL,
   `mot_de_passe` varchar(255) NOT NULL,
   `role` enum('participant','organisateur','jury') NOT NULL,
@@ -289,7 +287,7 @@ CREATE TABLE `users` (
   `deux_fa_enabled` tinyint(1) DEFAULT 0,
   `reset_token` varchar(64) DEFAULT NULL,
   `reset_token_expiry` datetime DEFAULT NULL,
-  `profile_picture` varchar(255) NOT NULL
+  `profile_picture` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -318,25 +316,6 @@ INSERT INTO `users` (`id`, `nom_complet`, `email`, `mot_de_passe`, `role`, `date
 (47, 'mhd', 'babaokechia@gmail.com', '$2y$12$0zlS8eALTEN/J88FLfuJxO6p3ceQwcGbEPTVgOWKRD2PDw6Cq.BVe', 'participant', '2025-03-18 16:21:15', 0, 0, NULL, NULL, '', 'rtyuio'),
 (48, 'dfghj', 'ghjfrh@bhr.com', '$2y$12$we4cac3RFqHsHDoPBPpTteJWhHVFvfZA8T1xPlHsYQzG8rAkZ2a8W', 'participant', '2025-03-20 07:08:31', 0, 0, NULL, NULL, '', 'fgjghvcchjk'),
 (49, 'florent test 01', 'florenttest@test.com', '$2y$12$.etbp5LQ1zmSLyMCwXM4k.QVF2oL.yXdeoVWdZ2QGNlv7uMCivma2', 'participant', '2025-03-20 09:26:16', 0, 0, NULL, NULL, '', 'ytfdfgh');
-
-INSERT INTO `users` (`id`, `nom`, `email`, `mot_de_passe`, `role`, `date_inscription`, `email_verifie`, `deux_fa_enabled`, `reset_token`, `reset_token_expiry`) VALUES
-(1, 'Admin Test', 'admin@test.com', '$2y$12$vex/rsTWMaIUHOZt489e5uR6ZfWwfqIyUUINJQ0PF7cD9bIkCu4QC', 'organisateur', '2025-02-23 05:09:06', 0, 0, NULL, NULL),
-(2, 'Test User', 'testuser@example.com', '$2y$10$7NcCUnEnS5os9hZs5maaFekZLyyikWLVIXLfQLJwvKPUcDMtwepxG', 'participant', '2025-02-23 09:50:14', 0, 0, NULL, NULL),
-(3, 'Nom de l\'utilisateur', 'email@example.com', 'votre_mot_de_passe', 'participant', '2025-02-23 13:59:59', 0, 0, NULL, NULL),
-(28, 'Alice Dupont', 'alice@example.com', 'hashed_password', 'participant', '2025-02-23 12:41:03', 0, 0, NULL, NULL),
-(29, 'Bob Martin', 'bob@example.com', 'hashed_password', 'participant', '2025-02-23 12:41:03', 0, 0, NULL, NULL),
-(30, 'Charlie Durand', 'charlie@example.com', 'hashed_password', 'participant', '2025-02-23 12:41:03', 0, 0, NULL, NULL),
-(31, 'David Lefevre', 'david@example.com', 'hashed_password', 'participant', '2025-02-23 12:41:03', 0, 0, NULL, NULL),
-(32, 'Emma Morel', 'emma@example.com', 'hashed_password', 'participant', '2025-02-23 12:41:03', 0, 0, NULL, NULL),
-(33, 'Franck Simon', 'franck@example.com', 'hashed_password', 'participant', '2025-02-23 12:41:03', 0, 0, NULL, NULL),
-(38, 'TestUser', 'test@example.com', '$2y$12$u8w269/qwS43diXe5O0HCOdRszW/V6AgTXWyj0eCN9IdYKU23tq1u', 'participant', '2025-03-15 17:07:26', 0, 0, NULL, NULL),
-(39, 'lolo', 'galigom995@opposir.com', '$2y$12$2QRU0hqRKlXwofxYHq56MuimqyWcEFii/bGvaIwD4d4c1U.4a2hN6', 'participant', '2025-03-15 17:37:51', 0, 0, NULL, NULL),
-(40, 'lolo', 'floflo@gmioal.com', '$2y$12$lUD7det3EqnbGqHedXMA6uMrX4HkDDmpiZ21sXbAUYKE42TNU2/QC', 'participant', '2025-03-15 17:39:58', 0, 0, NULL, NULL),
-(41, 'baba OKECHI', 'babaokechi@gmail.com', '$2y$12$TD75jYwSyEloaEE1I.UIS.XuWfQgMkvMST/yGRY3/vzzFyD3XlJHq', 'participant', '2025-03-15 17:43:07', 0, 0, NULL, NULL),
-(42, 'yayano', 'darkvader807@gmail.com', '$2y$12$bLTQdKQlNEsWz1B4Gj43MuiRTw/8i7.CObNBxJHt.aSB784fLGR8q', 'participant', '2025-03-15 18:54:39', 0, 0, NULL, NULL),
-(43, 'gogeta', 'gogeta@gmail.com', '$2y$12$iLbXr4BN5qWk.PDEUQLXD.IrxEF8SCrlfcMnJnA/84HdiKWGXieO.', 'participant', '2025-03-15 21:54:48', 0, 0, NULL, NULL),
-(44, 'hy', 'hy@gmail.com', '$2y$12$31z7shxA8sTgAF9kS2q7HeY57wjCk6zCeOgRTFynUKK/UYwFA1f8G', 'participant', '2025-03-15 21:56:20', 0, 0, NULL, NULL),
-(45, 'fd', 'jhbhbhrv@gmail.com', '$2y$12$FtXYTevKe8/CmgXJiw8WVevpcMuOY7FSgtBr/zM86Ow81sWujyDNK', 'participant', '2025-03-16 00:20:48', 0, 0, NULL, NULL);
 
 --
 -- Index pour les tables déchargées
@@ -517,7 +496,6 @@ ALTER TABLE `technologies`
 --
 ALTER TABLE `users`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
 
 --
 -- Contraintes pour les tables déchargées

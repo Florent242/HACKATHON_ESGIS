@@ -1,6 +1,7 @@
 <?php
 session_start();
-$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+// $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+$errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -18,8 +19,13 @@ $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 </head>
 
 <body>
-    <div id="notification-data" data-notification='<?= json_encode($_SESSION['notification'] ?? null) ?>'></div>
+    <div id="notification-data" data-notification='<?= htmlspecialchars(json_encode($_SESSION['notification'] ?? null)) ?>'></div>
     <div class="auth-container">
+        <?php if ($errorMessage): ?>
+            <div class="notification error">
+                <?= $errorMessage ?>
+            </div>
+        <?php endif; ?>
         <!-- Onglets pour basculer entre connexion et inscription -->
         <div class="auth-tabs">
             <button class="auth-tab active" id="tab-login">Utilisateur</button>
