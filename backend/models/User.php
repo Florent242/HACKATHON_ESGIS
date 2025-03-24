@@ -1,221 +1,333 @@
 <?php
 namespace Auth\Model;
 
+use Exception;
 use PDO;
 use PDOException;
-use Exception;
 
 class User {
     private $db;
     private $table = 'users';
-    private $passwordColumn = 'mot_de_passe'; // Renommer la colonne pour plus de sécurité
 
     public function __construct($db) {
         $this->db = $db;
     }
 
-    // Créer un nouvel utilisateur
-    public function create($data) {
-        try {
-            // Validation des données
-            $this->validate($data);
-
-            // Hashage du mot de passe
-            $data['mot_de_passe'] = password_hash($data['mot_de_passe'], PASSWORD_DEFAULT);
-
-            $sql = "INSERT INTO {$this->table} (username, nom_complet, email, {$this->passwordColumn}, role) 
-                    VALUES (:username, :nom_complet, :email, :mot_de_passe, :role)";
-
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                ':username' => $data['username'],
-                ':nom_complet' => $data['nom_complet'],
-                ':email' => $data['email'],
-                ':mot_de_passe' => $data['mot_de_passe'],
-                ':role' => $data['role'] ?? 'participant'
-            ]);
-
-            return $this->db->lastInsertId();
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la création de l'utilisateur : " . $e->getMessage());
-        }
-    }
-
-    // Trouver un utilisateur par son ID
-    public function find($id) {
-        try {
-            $sql = "SELECT id, username, email, role, nom_complet FROM {$this->table} WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':id' => $id]);
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la recherche de l'utilisateur : " . $e->getMessage());
-        }
-    }
-
-    // Trouver un utilisateur par son email
-    public function findByEmail($email) {
-        try {
-            $sql = "SELECT id, username, email, {$this->passwordColumn}, role FROM {$this->table} WHERE email = :email";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':email' => $email]);
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la recherche de l'utilisateur : " . $e->getMessage());
-        }
-    }
-
-    // Mettre à jour un utilisateur
-    public function update($id, $data) {
-        try {
-            // Construire la requête de mise à jour dynamiquement
-            $fields = [];
-            $params = [':id' => $id];
-            
-            foreach ($data as $key => $value) {
-                if ($key !== 'id') {
-                    $fields[] = "{$key} = :{$key}";
-                    $params[":{$key}"] = $value;
-                }
-            }
-            
-            $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
-            
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute($params);
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la mise à jour de l'utilisateur : " . $e->getMessage());
-        }
-    }
-
-    // Supprimer un utilisateur
-    public function delete($id) {
-        try {
-            $sql = "DELETE FROM {$this->table} WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([':id' => $id]);
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la suppression de l'utilisateur : " . $e->getMessage());
-        }
-    }
-
-    // Authentifier un utilisateur
+    /**
+     * Vérifie les identifiants d'un utilisateur
+     * @param string $email Email de l'utilisateur
+     * @param string $password Mot de passe non hashé
+     * @return array|bool Les données de l'utilisateur ou false si non trouvé
+     */
     public function authenticate($email, $password) {
         try {
-            $user = $this->findByEmail($email);
-            
-            if ($user) {
-                // Vérifier la force du mot de passe avant l'authentification
-                if (strlen($password) < 8) {
-                    throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
-                }
+            $query = "SELECT * FROM {$this->table} WHERE email = :email LIMIT 1";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':email', $email);
+            $stmt->execute();
 
-                if (!preg_match('/[A-Z]/', $password)) {
-                    throw new Exception("Le mot de passe doit contenir au moins une majuscule");
-                }
-
-                if (!preg_match('/[a-z]/', $password)) {
-                    throw new Exception("Le mot de passe doit contenir au moins une minuscule");
-                }
-
-                if (!preg_match('/[0-9]/', $password)) {
-                    throw new Exception("Le mot de passe doit contenir au moins un chiffre");
-                }
-
-                if (!preg_match('/[!@#$%^&*(),.?":{}|<>]/', $password)) {
-                    throw new Exception("Le mot de passe doit contenir au moins un caractère spécial");
-                }
-
-                // Vérifier le hash
-                if (password_verify($password, $user[$this->passwordColumn])) {
-                    unset($user[$this->passwordColumn]); // Ne pas retourner le hash
-                    return [
-                        'id' => $user['id'],
-                        'username' => $user['nom'],
-                        'email' => $user['email'],
-                        'role' => $user['role']
-                    ];
-                }
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$user) {
+                return false;
             }
-            
+
+            // Vérifier le statut de l'utilisateur
+            if (isset($user['status']) && $user['status'] === 'inactive') {
+                throw new Exception('Votre compte est désactivé. Veuillez contacter un administrateur.');
+            }
+
+            if (password_verify($password, $user['password'])) {
+                unset($user['password']); // Ne pas renvoyer le mot de passe
+                return $user;
+            }
+
             return false;
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de l'authentification : " . $e->getMessage());
+            error_log('Erreur d\'authentification: ' . $e->getMessage());
+            return false;
         }
     }
 
-    // Valider les données de l'utilisateur
-    private function validate($data) {
-        // Vérifier que les champs requis sont présents
-        if (empty($data['username']) || empty($data['email']) || empty($data['mot_de_passe'])) {
-            throw new Exception("Tous les champs requis doivent être remplis");
-        }
-
-        // Valider l'email
-        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            throw new Exception("L'adresse email n'est pas valide");
-        }
-
-        // Vérifier que l'email n'est pas déjà utilisé
-        $existingUser = $this->findByEmail($data['email']);
-        if ($existingUser) {
-            throw new Exception("Cette adresse email est déjà utilisée");
-        }
-
-        // Valider le mot de passe
-        if (strlen($data['mot_de_passe']) < 8) {
-            throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
-        }
-
-        // Valider le rôle
-        $validRoles = ['participant', 'organisateur', 'juge', 'admin'];
-        if (!empty($data['role']) && !in_array($data['role'], $validRoles)) {
-            throw new Exception("Le rôle spécifié n'est pas valide");
-        }
-
-        return true;
-    }
-
-    // Récupérer tous les utilisateurs
-    public function getAll($page = 1, $limit = 10) {
+    /**
+     * Crée un nouvel utilisateur
+     * @param array $data Les données de l'utilisateur
+     * @return int|bool L'ID du nouvel utilisateur ou false si erreur
+     */
+    public function create($data) {
         try {
-            $offset = ($page - 1) * $limit;
-            $sql = "SELECT * FROM {$this->table} LIMIT :limit OFFSET :offset";
-            
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            // Vérification si l'email existe déjà
+            $query = "SELECT COUNT(*) FROM {$this->table} WHERE email = :email";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':email', $data['email']);
             $stmt->execute();
-            
-            return [
-                'users' => $stmt->fetchAll(),
-                'page' => $page,
-                'limit' => $limit,
-                'total' => $this->count()
-            ];
+
+            if ($stmt->fetchColumn() > 0) {
+                throw new Exception('Cet email est déjà utilisé');
+            }
+
+            // Hash du mot de passe
+            $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
+
+            // Préparation de la requête
+            $query = "INSERT INTO {$this->table} (first_name, last_name, email, password, role, status, github_url, linkedin_url, bio, profile_picture)
+                    VALUES (:first_name, :last_name, :email, :password, :role, :status, :github_url, :linkedin_url, :bio, :profile_picture)";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':first_name', $data['first_name']);
+            $stmt->bindParam(':last_name', $data['last_name']);
+            $stmt->bindParam(':email', $data['email']);
+            $stmt->bindParam(':password', $hashedPassword);
+            $stmt->bindParam(':role', $data['role'] ?? 'participant');
+            $stmt->bindParam(':status', $data['status'] ?? 'active');
+            $stmt->bindParam(':github_url', $data['github_url'] ?? null);
+            $stmt->bindParam(':linkedin_url', $data['linkedin_url'] ?? null);
+            $stmt->bindParam(':bio', $data['bio'] ?? null);
+            $stmt->bindParam(':profile_picture', $data['profile_picture'] ?? null);
+
+            $stmt->execute();
+            return $this->db->lastInsertId();
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des utilisateurs : " . $e->getMessage());
+            error_log('Erreur lors de la création de l\'utilisateur: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la création de l\'utilisateur: ' . $e->getMessage());
         }
     }
 
-    // Compter le nombre total d'utilisateurs
-    private function count() {
+    /**
+     * Met à jour un utilisateur
+     * @param int $id ID de l'utilisateur
+     * @param array $data Les données à mettre à jour
+     * @return bool true si succès, sinon false
+     */
+    public function update($id, $data) {
         try {
-            $sql = "SELECT COUNT(*) FROM {$this->table}";
-            return $this->db->query($sql)->fetchColumn();
+            // Vérification si l'utilisateur existe
+            $user = $this->find($id);
+            if (!$user) {
+                throw new Exception('Utilisateur non trouvé');
+            }
+
+            // Construction de la requête
+            $fields = [];
+            $params = [];
+
+            // Champs à mettre à jour
+            $allowedFields = ['first_name', 'last_name', 'email', 'role', 'status', 'github_url', 'linkedin_url', 'bio', 'profile_picture'];
+
+            foreach ($allowedFields as $field) {
+                if (isset($data[$field])) {
+                    $fields[] = "{$field} = :{$field}";
+                    $params[":{$field}"] = $data[$field];
+                }
+            }
+
+            // Gestion spéciale du mot de passe
+            if (isset($data['password']) && !empty($data['password'])) {
+                $fields[] = "password = :password";
+                $params[':password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+            }
+
+            if (empty($fields)) {
+                throw new Exception('Aucune donnée à mettre à jour');
+            }
+
+            $query = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
+            $params[':id'] = $id;
+
+            $stmt = $this->db->prepare($query);
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+
+            return $stmt->execute();
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors du comptage des utilisateurs : " . $e->getMessage());
+            error_log('Erreur lors de la mise à jour de l\'utilisateur: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la mise à jour de l\'utilisateur: ' . $e->getMessage());
         }
     }
-    public function getByRole($role) {
+
+    /**
+     * Récupère un utilisateur par son ID
+     * @param int $id ID de l'utilisateur
+     * @return array|bool Les données de l'utilisateur ou false si non trouvé
+     */
+    public function find($id) {
         try {
-            $sql = "SELECT * FROM {$this->table} WHERE role = :role";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':role' => $role]);
+            $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($user) {
+                unset($user['password']); // Ne pas renvoyer le mot de passe
+            }
+
+            return $user;
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération de l\'utilisateur: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Récupère un utilisateur par son email
+     * @param string $email Email de l'utilisateur
+     * @return array|bool Les données de l'utilisateur ou false si non trouvé
+     */
+    public function findByEmail($email) {
+        try {
+            $query = "SELECT * FROM {$this->table} WHERE email = :email LIMIT 1";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':email', $email);
+            $stmt->execute();
+
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($user) {
+                unset($user['password']); // Ne pas renvoyer le mot de passe
+            }
+
+            return $user;
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération de l\'utilisateur par email: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Récupère tous les utilisateurs
+     * @return array Liste des utilisateurs
+     */
+    public function getAll() {
+        try {
+            $query = "SELECT id, first_name, last_name, email, role, status, github_url, linkedin_url, bio, profile_picture, created_at, updated_at FROM {$this->table}";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des utilisateurs par rôle : " . $e->getMessage());
+            error_log('Erreur lors de la récupération des utilisateurs: ' . $e->getMessage());
+            return [];
         }
     }
 
+    /**
+     * Supprime un utilisateur
+     * @param int $id ID de l'utilisateur
+     * @return bool true si succès, sinon false
+     */
+    public function delete($id) {
+        try {
+            $query = "DELETE FROM {$this->table} WHERE id = :id";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la suppression de l\'utilisateur: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Change le statut d'un utilisateur
+     * @param int $id ID de l'utilisateur
+     * @param string $status Nouveau statut ('active' ou 'inactive')
+     * @return bool true si succès, sinon false
+     */
+    public function updateStatus($id, $status) {
+        try {
+            if (!in_array($status, ['active', 'inactive'])) {
+                throw new Exception('Statut invalide');
+            }
+
+            $query = "UPDATE {$this->table} SET status = :status WHERE id = :id";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':status', $status);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la mise à jour du statut de l\'utilisateur: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Obtient des statistiques sur les utilisateurs
+     * @return array Statistiques des utilisateurs
+     */
+    public function getStats() {
+        try {
+            $stats = [
+                'total' => 0,
+                'active' => 0,
+                'inactive' => 0,
+                'roles' => [
+                    'admin' => 0,
+                    'organizer' => 0,
+                    'judge' => 0,
+                    'participant' => 0
+                ]
+            ];
+
+            // Total des utilisateurs
+            $query = "SELECT COUNT(*) as total FROM {$this->table}";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+            $stats['total'] = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
+
+            // Utilisateurs par statut
+            $query = "SELECT status, COUNT(*) as count FROM {$this->table} GROUP BY status";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+            $statusStats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($statusStats as $stat) {
+                if ($stat['status'] === 'active' || $stat['status'] === null) {
+                    $stats['active'] += (int)$stat['count'];
+                } else if ($stat['status'] === 'inactive') {
+                    $stats['inactive'] += (int)$stat['count'];
+                }
+            }
+
+            // Utilisateurs par rôle
+            $query = "SELECT role, COUNT(*) as count FROM {$this->table} GROUP BY role";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+            $roleStats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($roleStats as $stat) {
+                if (isset($stats['roles'][$stat['role']])) {
+                    $stats['roles'][$stat['role']] = (int)$stat['count'];
+                }
+            }
+
+            return $stats;
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération des statistiques utilisateurs: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Récupère les utilisateurs par rôle
+     * @param string $role Rôle des utilisateurs à récupérer
+     * @return array Liste des utilisateurs ayant le rôle spécifié
+     */
+    public function getByRole($role) {
+        try {
+            $query = "SELECT id, first_name, last_name, email, role, status, github_url, linkedin_url, bio, profile_picture, created_at, updated_at
+                     FROM {$this->table}
+                     WHERE role = :role
+                     ORDER BY first_name, last_name";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':role', $role);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération des utilisateurs par rôle: ' . $e->getMessage());
+            return [];
+        }
+    }
 }

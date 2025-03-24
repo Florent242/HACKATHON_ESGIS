@@ -26,14 +26,14 @@ class ChallengeController extends Controller {
     public function index($hackathonId) {
         try {
             $this->validateMethod('GET');
-            
+
             $hackathon = $this->hackathon->find($hackathonId);
             if (!$hackathon) {
                 throw new Exception('Hackathon non trouvé');
             }
 
             $challenges = $this->challenge->getByHackathon($hackathonId);
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => [
@@ -49,10 +49,31 @@ class ChallengeController extends Controller {
         }
     }
 
+    /**
+     * Récupère tous les challenges
+     */
+    public function getAll() {
+        try {
+            $this->validateMethod('GET');
+
+            $challenges = $this->challenge->getAll();
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $challenges
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
     public function create() {
         try {
             $this->validateMethod('POST');
-            
+
             if (!hasRole('organisateur')) {
                 throw new Exception('Non autorisé');
             }
@@ -91,7 +112,7 @@ class ChallengeController extends Controller {
     public function update($id) {
         try {
             $this->validateMethod('POST');
-            
+
             if (!hasRole('organisateur')) {
                 throw new Exception('Non autorisé');
             }
@@ -125,7 +146,7 @@ class ChallengeController extends Controller {
     public function delete($id) {
         try {
             $this->validateMethod('POST');
-            
+
             if (!hasRole('organisateur')) {
                 throw new Exception('Non autorisé');
             }
@@ -147,7 +168,7 @@ class ChallengeController extends Controller {
     public function get($id) {
         try {
             $this->validateMethod('GET');
-            
+
             $challenge = $this->challenge->find($id);
             if (!$challenge) {
                 throw new Exception('Challenge non trouvé');
@@ -162,6 +183,28 @@ class ChallengeController extends Controller {
                 'success' => false,
                 'error' => $e->getMessage()
             ], 404);
+        }
+    }
+
+    /**
+     * Récupère les challenges d'un hackathon
+     * @param int $id ID du hackathon
+     */
+    public function getByHackathon($id) {
+        try {
+            $this->validateMethod('GET');
+
+            $challenges = $this->challenge->getByHackathon($id);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $challenges
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
         }
     }
 }

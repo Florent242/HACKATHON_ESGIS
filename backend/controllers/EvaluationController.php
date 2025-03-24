@@ -6,30 +6,30 @@ use Exception;
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../models/Evaluation.php';
-require_once __DIR__ . '/../models/Projet.php';
+require_once __DIR__ . '/../models/Project.php';
 require_once __DIR__ . '/Controller.php';
 
 class EvaluationController extends Controller {
     private $evaluation;
-    private $projet;
+    private $project;
     private $db;
 
     public function __construct($db) {
         parent::__construct();
         $this->db = $db;
-        $this->evaluation = new Evaluation($this->db);
-        $this->projet = new Projet($this->db);
+        $this->evaluation = new \Auth\Model\Evaluation($this->db);
+        $this->project = new \Auth\Model\Project($this->db);
     }
 
     public function create() {
         try {
             $this->validateMethod('POST');
-            
+
             if (!hasRole('jury')) {
                 throw new Exception('Non autorisé - Réservé aux membres du jury');
             }
 
-            $requiredFields = ['projet_id', 'jury_id', 'note', 'commentaire'];
+            $requiredFields = ['project_id', 'jury_id', 'note', 'commentaire'];
             $this->validateRequiredFields($_POST, $requiredFields);
 
             $note = (float)$_POST['note'];
@@ -38,7 +38,7 @@ class EvaluationController extends Controller {
             }
 
             $data = [
-                'projet_id' => (int)$_POST['projet_id'],
+                'project_id' => (int)$_POST['project_id'],
                 'jury_id' => (int)$_POST['jury_id'],
                 'note' => $note,
                 'commentaire' => $_POST['commentaire'],
@@ -60,33 +60,20 @@ class EvaluationController extends Controller {
         }
     }
 
-    public function get($id) {
+    /**
+     * Récupère toutes les évaluations
+     */
+    public function getAll() {
         try {
             $this->validateMethod('GET');
-            
-            $evaluation = $this->evaluation->find($id);
-            if (!$evaluation) {
-                throw new Exception('Évaluation non trouvée');
-            }
-            
-            $this->jsonResponse([
-                'success' => true,
-                'data' => $evaluation
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 404);
-        }
-    }
 
-    public function getByProjet($projetId) {
-        try {
-            $this->validateMethod('GET');
-            
-            $evaluations = $this->evaluation->getByProjet($projetId);
-            
+            // Vérifier si l'utilisateur a les droits
+            if (!hasRole('admin') && !hasRole('jury')) {
+                throw new Exception('Non autorisé');
+            }
+
+            $evaluations = $this->evaluation->getAll();
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $evaluations
@@ -99,12 +86,51 @@ class EvaluationController extends Controller {
         }
     }
 
-    public function getByJury($juryId) {
+    public function get($id) {
         try {
             $this->validateMethod('GET');
-            
-            $evaluations = $this->evaluation->getByJury($juryId);
-            
+
+            $evaluation = $this->evaluation->find($id);
+            if (!$evaluation) {
+                throw new Exception('Évaluation non trouvée');
+            }
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $evaluation
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 404);
+        }
+    }
+
+    public function getByProject($projectId) {
+        try {
+            $this->validateMethod('GET');
+
+            $evaluations = $this->evaluation->getByProject($projectId);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $evaluations
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function getByJudge($juryId) {
+        try {
+            $this->validateMethod('GET');
+
+            $evaluations = $this->evaluation->getByJudge($juryId);
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $evaluations
@@ -120,14 +146,14 @@ class EvaluationController extends Controller {
     public function update($id) {
         try {
             $this->validateMethod('POST');
-            
+
             if (!hasRole('jury')) {
                 throw new Exception('Non autorisé - Réservé aux membres du jury');
             }
 
             $updatableFields = ['note', 'commentaire'];
             $data = $this->filterData($_POST, $updatableFields);
-            
+
             if (empty($data)) {
                 throw new Exception('Aucune donnée à mettre à jour');
             }
@@ -142,7 +168,7 @@ class EvaluationController extends Controller {
 
             $data['updated_at'] = date('Y-m-d H:i:s');
             $this->evaluation->update($id, $data);
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Évaluation mise à jour avec succès'
@@ -158,13 +184,13 @@ class EvaluationController extends Controller {
     public function delete($id) {
         try {
             $this->validateMethod('POST');
-            
+
             if (!hasRole('admin')) {
                 throw new Exception('Non autorisé');
             }
 
             $this->evaluation->delete($id);
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Évaluation supprimée avec succès'
@@ -177,12 +203,12 @@ class EvaluationController extends Controller {
         }
     }
 
-    public function getAverageScore($projetId) {
+    public function getAverageScore($projectId) {
         try {
             $this->validateMethod('GET');
-            
-            $average = $this->evaluation->getAverageScore($projetId);
-            
+
+            $average = $this->evaluation->getAverageScore($projectId);
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => ['moyenne' => $average]
@@ -198,14 +224,14 @@ class EvaluationController extends Controller {
     public function getStats($hackathonId) {
         try {
             $this->validateMethod('GET');
-            
+
             $stats = [
                 'total_evaluations' => $this->evaluation->countByHackathon($hackathonId),
                 'moyenne_generale' => $this->evaluation->getAverageScoreByHackathon($hackathonId),
                 'projets_evalues' => $this->evaluation->countEvaluatedProjects($hackathonId),
                 'projets_non_evalues' => $this->evaluation->countNonEvaluatedProjects($hackathonId)
             ];
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $stats
@@ -218,22 +244,22 @@ class EvaluationController extends Controller {
         }
     }
 
-    public function getMoyenneProjet($projetId) {
+    public function getMoyenneProjet($projectId) {
         try {
             $this->validateMethod('GET');
-            
+
             // Vérifier si le projet existe
-            $projet = $this->projet->find($projetId);
-            if (!$projet) {
+            $project = $this->project->find($projectId);
+            if (!$project) {
                 throw new Exception('Projet non trouvé');
             }
 
-            $stats = $this->evaluation->getMoyenneProjet($projetId);
-            
+            $stats = $this->evaluation->getMoyenneProjet($projectId);
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => [
-                    'projet_id' => (int)$projetId,
+                    'project_id' => (int)$projectId,
                     'moyenne' => $stats ? $stats['moyenne_score'] : 0
                 ]
             ]);
