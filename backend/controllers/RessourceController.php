@@ -1,12 +1,13 @@
 <?php
-namespace Auth\Controller;
+namespace Auth\Controller; // Cela doit être le namespace correct pour RessourceController
 
 use Exception;
+use Auth\Model\Ressource;
+use Auth\Controller\Controller;
 
 require_once __DIR__ . '/../../includes/config.php';
 require_once __DIR__ . '/../../includes/functions.php';
 require_once __DIR__ . '/../models/Ressource.php';
-require_once __DIR__ . '/Controller.php';
 
 class RessourceController extends Controller {
     private $ressource;
