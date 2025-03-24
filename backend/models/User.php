@@ -112,7 +112,7 @@ class User {
             $params = [];
 
             // Champs à mettre à jour
-            $allowedFields = ['first_name', 'last_name', 'email', 'role', 'status', 'github_url', 'linkedin_url', 'bio', 'profile_picture'];
+            $allowedFields = ['username', 'fullname', 'school', 'email', 'role', 'status', 'github_url', 'linkedin_url', 'bio', 'profile_picture'];
 
             foreach ($allowedFields as $field) {
                 if (isset($data[$field])) {
@@ -200,7 +200,7 @@ class User {
      */
     public function getAll() {
         try {
-            $query = "SELECT id, first_name, last_name, email, role, status, github_url, linkedin_url, bio, profile_picture, created_at, updated_at FROM {$this->table}";
+            $query = "SELECT id, username, fullname, school, email, role, status, github_url, linkedin_url, bio, profile_picture, created_at, updated_at FROM {$this->table}";
             $stmt = $this->db->prepare($query);
             $stmt->execute();
 
@@ -317,10 +317,10 @@ class User {
      */
     public function getByRole($role) {
         try {
-            $query = "SELECT id, first_name, last_name, email, role, status, github_url, linkedin_url, bio, profile_picture, created_at, updated_at
+            $query = "SELECT id, username, fullname, school, email, role, status, github_url, linkedin_url, bio, profile_picture, created_at, updated_at
                      FROM {$this->table}
                      WHERE role = :role
-                     ORDER BY first_name, last_name";
+                     ORDER BY fullname";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':role', $role);
             $stmt->execute();

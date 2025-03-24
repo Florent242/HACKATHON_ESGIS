@@ -393,7 +393,7 @@ class Team {
                       FROM team_members tm
                       JOIN users u ON tm.user_id = u.id
                       WHERE tm.team_id = :team_id
-                      ORDER BY tm.is_leader DESC, u.first_name, u.last_name";
+                      ORDER BY tm.is_leader DESC, u.fullname";
 
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':team_id', $teamId, PDO::PARAM_INT);

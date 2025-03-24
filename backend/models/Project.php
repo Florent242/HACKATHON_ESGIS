@@ -338,7 +338,7 @@ class Project {
      */
     public function getEvaluations($id) {
         try {
-            $query = "SELECT e.*, u.first_name, u.last_name, u.email
+            $query = "SELECT e.*, u.username, u.fullname, u.school, u.email
                      FROM evaluations e
                      JOIN users u ON e.judge_id = u.id
                      WHERE e.project_id = :project_id

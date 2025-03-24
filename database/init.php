@@ -48,7 +48,7 @@ try {
         $hashedPassword = password_hash('admin123', PASSWORD_DEFAULT);
 
         // Insertion de l'utilisateur admin
-        $stmt = $pdo->prepare("INSERT INTO users (first_name, last_name, email, password, role, bio) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO users (username, fullname, school, email, password, role, bio) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute(['Admin', 'User', 'admin@example.com', $hashedPassword, 'admin', 'Administrateur du système']);
 
         echo "Utilisateur admin créé avec succès :\n";
