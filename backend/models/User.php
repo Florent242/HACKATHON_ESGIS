@@ -75,7 +75,7 @@ class User {
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':username', $data['username']);
             $stmt->bindParam(':fullname', $data['fullname']);
-            $stmt->bindParam(':school', $data['school']);
+            $stmt->bindParam(':school', $data['school'] ?? null);
             $stmt->bindParam(':email', $data['email']);
             $stmt->bindParam(':password', $hashedPassword);
             $stmt->bindParam(':role', $data['role'] ?? 'participant');
