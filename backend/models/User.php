@@ -69,12 +69,13 @@ class User {
             $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
 
             // Préparation de la requête
-            $query = "INSERT INTO {$this->table} (first_name, last_name, email, password, role, status, github_url, linkedin_url, bio, profile_picture)
-                    VALUES (:first_name, :last_name, :email, :password, :role, :status, :github_url, :linkedin_url, :bio, :profile_picture)";
+            $query = "INSERT INTO {$this->table} (username, fullname, school, email, password, role, status, github_url, linkedin_url, bio, profile_picture)
+                    VALUES (:username, :fullname, :school, :email, :password, :role, :status, :github_url, :linkedin_url, :bio, :profile_picture)";
 
             $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':first_name', $data['first_name']);
-            $stmt->bindParam(':last_name', $data['last_name']);
+            $stmt->bindParam(':username', $data['username']);
+            $stmt->bindParam(':fullname', $data['fullname']);
+            $stmt->bindParam(':school', $data['school']);
             $stmt->bindParam(':email', $data['email']);
             $stmt->bindParam(':password', $hashedPassword);
             $stmt->bindParam(':role', $data['role'] ?? 'participant');

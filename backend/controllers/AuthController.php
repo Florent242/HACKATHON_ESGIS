@@ -48,6 +48,7 @@ class AuthController {
                 'username' => $_POST['username'] ?? '',
                 'nom_complet' => $_POST['fullName'] ?? '',
                 'email' => $_POST['email'] ?? '',
+                'school' => $_POST['school'] ?? '',
                 'mot_de_passe' => $_POST['password'] ?? '',
                 'role' => 'participant'
             ];
