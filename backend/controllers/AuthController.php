@@ -14,7 +14,9 @@ class AuthController {
     private $db;
 
     public function __construct() {
-        session_start();
+        if (!isset($_SESSION) || !is_array($_SESSION)) {
+            session_start();
+        }
         $database = Database::getInstance();
         $this->db = $database->getConnection();
         $this->user = new User($this->db);
@@ -40,10 +42,10 @@ class AuthController {
             $this->validateCsrfToken();
 
             $data = [
-                'username' => $_POST['username'] ?? '',
-                'nom_complet' => $_POST['fullName'] ?? '',
-                'email' => $_POST['email'] ?? '',
-                'mot_de_passe' => $_POST['password'] ?? '',
+                'username' => htmlspecialchars($_POST['username'] ?? ''),
+                'nom_complet' => htmlspecialchars($_POST['fullName'] ?? ''),
+                'email' => htmlspecialchars($_POST['email'] ?? ''),
+                'mot_de_passe' => htmlspecialchars($_POST['password'] ?? ''),
                 'role' => 'participant'
             ];
             
@@ -86,13 +88,9 @@ class AuthController {
             }
         } catch (Exception $e) {
             error_log("Erreur d'inscription : " . $e->getMessage());
-            $_SESSION['notification'] = [
-                'message' => `Erreur d'inscription`,
-                'details' => $e->getMessage(),
-                'type' => 'error'
-            ];
-            header("Location: " . self::BASE_URL . "/auth");
-            exit();
+            setFlashMessage('error', "Erreur d'inscription", $e->getMessage());
+            throw new Exception($e->getMessage());
+            // header("Location: " . self::BASE_URL . "/auth");
         }
     }
 
@@ -102,8 +100,8 @@ class AuthController {
             // Vérifier le token CSRF
             $this->validateCsrfToken();
 
-            $email = $_POST['email'] ?? '';
-            $password = $_POST['password'] ?? '';
+            $email = htmlspecialchars($_POST['email'] ?? '');
+            $password = htmlspecialchars($_POST['password'] ?? '');
 
             if (empty($email) || empty($password)) {
                 throw new Exception('Email et mot de passe requis');
@@ -116,9 +114,9 @@ class AuthController {
                 $jwt = $this->generateToken($user['id']);
                 
                 // Stocker les informations de session
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['username'] = $user['username'];
-                $_SESSION['role'] = $user['role'];
+                $_SESSION['user_id'] = htmlspecialchars($user['id']);
+                $_SESSION['username'] = htmlspecialchars($user['username']);
+                $_SESSION['role'] = htmlspecialchars($user['role']);
                 setFlashMessage('success', 'Connexion réussie');
 
                 // Redirection selon le rôle
@@ -145,13 +143,10 @@ class AuthController {
             }
         } catch (Exception $e) {
             error_log("Erreur de connexion : " . $e->getMessage());
-            $_SESSION['notification'] = [
-                'message' => `Erreur de connexion`,
-                'details' => $e->getMessage(),
-                'type' => 'error'
-            ];
-            header("Location: " . self::BASE_URL . "/auth");
-            exit();
+            setFlashMessage('error', "Erreur de connexion", $e->getMessage());
+            throw new Exception($e->getMessage());
+            // header("Location: " . self::BASE_URL . "/auth");
+            // exit();
         }
     }
 
@@ -169,7 +164,7 @@ class AuthController {
 
             // Rediriger vers la page d'accueil
             $_SESSION['notification'] = [
-                'message' => `Vous avez été déconnecté avec succès.`,
+                'message' => "Vous avez été déconnecté avec succès.",
                 'type' => 'success'
             ];
             header("Location: " . self::BASE_URL . "/");
@@ -177,7 +172,7 @@ class AuthController {
 
         } catch (Exception $e) {
             $_SESSION['notification'] = [
-                'message' => `Erreur de déconnexion`,
+                'message' => "Erreur de déconnexion",
                 'details' => $e->getMessage(),
                 'type' => 'error'
             ];
@@ -204,7 +199,7 @@ class AuthController {
 
         } catch (Exception $e) {
             $_SESSION['notification'] = [
-                'message' => `Erreur de profil`,
+                'message' => "Erreur de profil",
                 'details' => $e->getMessage(),
                 'type' => 'error'
             ];
@@ -231,21 +226,21 @@ class AuthController {
 
             // Récupérer et valider les données
             $data = [
-                'username' => $_POST['username'] ?? '',
-                'email' => $_POST['email'] ?? '',
-                'full_name' => $_POST['full_name'] ?? null
+                'username' => htmlspecialchars($_POST['username'] ?? ''),
+                'email' => htmlspecialchars($_POST['email'] ?? ''),
+                'full_name' => htmlspecialchars($_POST['full_name'] ?? null)
             ];
 
             // Ajouter le mot de passe s'il est fourni
             if (!empty($_POST['password'])) {
-                $data['password'] = $_POST['password'];
+                $data['password'] = htmlspecialchars($_POST['password']);
             }
 
             // Mettre à jour l'utilisateur
             $this->user->update($_SESSION['user_id'], $data);
 
             $_SESSION['notification'] = [
-                'message' => `Profil mis à jour avec succès !`,
+                'message' => "Profil mis à jour avec succès !",
                 'details' => 'Profil mis à jour avec succès !',
                 'type' => 'success'
             ];
@@ -254,7 +249,7 @@ class AuthController {
 
         } catch (Exception $e) {
             $_SESSION['notification'] = [
-                'message' => `Erreur de profil`,
+                'message' => "Erreur de profil",
                 'details' => $e->getMessage(),
                 'type' => 'error'
             ];
@@ -267,7 +262,7 @@ class AuthController {
     public function forgotPassword() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
-                $email = cleanInput($_POST['email']);
+                $email = htmlspecialchars($_POST['email'] ?? '');
                 $user = $this->user->findByEmail($email);
 
                 if ($user) {
@@ -280,7 +275,7 @@ class AuthController {
                     // Note : À implémenter selon vos besoins
 
                     $_SESSION['notification'] = [
-                        'message' => `Si votre email existe dans notre base de données, vous recevrez les instructions de réinitialisation.`,
+                        'message' => "Si votre email existe dans notre base de données, vous recevrez les instructions de réinitialisation.",
                     ];
                     header("Location: " . self::BASE_URL . "/login");
                     exit();
@@ -288,7 +283,7 @@ class AuthController {
 
             } catch (Exception $e) {
                 $_SESSION['notification'] = [
-                    'message' => `Erreur de réinitialisation du mot de passe`,
+                    'message' => "Erreur de réinitialisation du mot de passe",
                     'details' => $e->getMessage(),
                     'type' => 'error'
                 ];
@@ -299,6 +294,48 @@ class AuthController {
 
         // Afficher le formulaire
         require_once VIEWS_PATH . '/auth/forgot-password.php';
+    }
+
+    public function checkEmail(string $email) {
+        try {
+            // Vérifier si l'email est vide
+            if (!isset($email) || empty($email)) {
+                sendResponse(400, ['error' => 'Email requis']);
+                return;
+            }
+
+            // Vérifier si l'email existe déjà
+            $user = $this->user->findByEmail($email);
+            
+            sendResponse(200, [
+                'exists' => $user !== false
+            ]);
+            
+        } catch (Exception $e) {
+            error_log("Erreur de vérification de l'email : " . $e->getMessage());
+            sendResponse(500, ['error' => 'Erreur serveur']);
+        }
+    }
+
+    public function checkUsername(string $username) {
+        try {
+            // Vérifier si le nom d'utilisateur est vide
+            if (empty($username)) {
+                sendResponse(400, ['error' => 'Nom d\'utilisateur requis']);
+                return;
+            }
+
+            // Vérifier si le nom d'utilisateur existe déjà
+            $user = $this->user->findByUsername($username);
+            
+            sendResponse(200, [
+                'exists' => $user !== false
+            ]);
+            
+        } catch (Exception $e) {
+            error_log("Erreur de vérification du nom d'utilisateur : " . $e->getMessage());
+            sendResponse(500, ['error' => 'Erreur serveur']);
+        }
     }
 
     private function generateToken($userId) {

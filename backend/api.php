@@ -40,6 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// 
+const BASE_URL = '/HACKATHON_ESGIS/public';
+
 // Récupération de la méthode HTTP et de l'URL
 $method = $_SERVER['REQUEST_METHOD'];
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -52,7 +55,10 @@ $id = $request[1] ?? null;
 $action = $request[2] ?? null;
 
 // Lecture des données du corps de la requête
-$input = json_decode(file_get_contents('php://input'), true);
+$rawInput = file_get_contents('php://input');
+$input = json_decode($rawInput, true);
+
+// Si c'est une requête POST et que le JSON n'est pas valide, utiliser $_POST
 if ($input === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = $_POST;
 }
@@ -66,8 +72,19 @@ try {
             }
             
             $controller = new AuthController();
-
-            switch ($request[1] ?? '') {
+            switch ($request[1]) {
+                case 'check-email':
+                    if ($method === 'POST') {
+                        $email = $input['email'] ?? '';
+                        $controller->checkEmail($email);
+                    }
+                    break;
+                case 'check-username':
+                    if ($method === 'POST') {
+                        $username = $input['username'] ?? '';
+                        $controller->checkUsername($username);
+                    }
+                    break;
                 case 'login':
                     if ($method === 'POST') {
                         try {
@@ -77,9 +94,9 @@ try {
                         } catch (Exception $e) {
                             // Gérer l'erreur, par exemple en affichant un message d'erreur
                             error_log($e->getMessage());
-                            setFlashMessage('error', $e->getMessage());
+                            // setFlashMessage('error', $e->getMessage());
                             // Rediriger vers la page de connexion avec un message d'erreur
-                            header("Location: " . BASE_URL . "/auth?error=" . urlencode($e->getMessage()));
+                            header("Location: " . BASE_URL . "/auth");
                             exit();
                         }
                     }
@@ -90,13 +107,13 @@ try {
                         try {
                             $controller->register();
                             // Rediriger vers le profil après l'inscription
-                            header("Location: " . BASE_URL . "/profile");
+                            header("Location: " . BASE_URL . "/user");
                             exit();
                         } catch (Exception $e) {
                             error_log($e->getMessage());
-                            setFlashMessage('error', $e->getMessage());
+                            // setFlashMessage('error', $e->getMessage());
                             // Rediriger vers la page d'inscription avec un message d'erreur
-                            header("Location: " . BASE_URL . "/auth?error=" . urlencode($e->getMessage()));
+                            header("Location: " . BASE_URL . "/auth");
                             exit();
                         }
                     }
@@ -113,7 +130,7 @@ try {
                     break;
 
                 default:
-                    throw new Exception('Endpoint non trouvé. - api' . $uri, 404);
+                    throw new Exception('Endpoint non trouvé. - api ' . var_dump($uri), 404);
             }
             break;
 
@@ -154,7 +171,7 @@ try {
             break;
 
         default:
-            sendResponse(404, ['error' => 'Endpoint non trouvé. - api.']);
+            sendResponse(404, ['error' => 'Endpoint non trouvé. - api.php.']);
     }
 } catch (Exception $e) {
     sendResponse(500, ['error' => $e->getMessage()]);

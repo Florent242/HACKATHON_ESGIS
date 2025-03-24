@@ -28,7 +28,7 @@ class UserController extends Controller {
 
             // Vérifier si l'email existe déjà
             if ($this->user->findByEmail($_POST['email'])) {
-                throw new Exception('Cette adresse email est déjà utilisée');
+                throw new Exception('Cette adresse email est déjà utilisée userController');
             }
 
             // Hasher le mot de passe
@@ -153,7 +153,7 @@ class UserController extends Controller {
             if (isset($data['email'])) {
                 $existingUser = $this->user->findByEmail($data['email']);
                 if ($existingUser && $existingUser['id'] != $id) {
-                    throw new Exception('Cette adresse email est déjà utilisée');
+                    throw new Exception('Cette adresse email est déjà utilisée. Mise à jour annulée !');
                 }
             }
 

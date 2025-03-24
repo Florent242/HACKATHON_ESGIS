@@ -28,15 +28,15 @@ class User {
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
-                ':username' => $data['username'],
-                ':nom_complet' => $data['nom_complet'],
-                ':email' => $data['email'],
-                ':mot_de_passe' => $data['mot_de_passe'],
+                ':username' => htmlspecialchars($data['username']),
+                ':nom_complet' => htmlspecialchars($data['nom_complet']),
+                ':email' => htmlspecialchars($data['email']),
+                ':mot_de_passe' => htmlspecialchars($data['mot_de_passe']),
                 ':role' => $data['role'] ?? 'participant'
             ]);
 
             return $this->db->lastInsertId();
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             throw new Exception("Erreur lors de la création de l'utilisateur : " . $e->getMessage());
         }
     }
@@ -46,9 +46,9 @@ class User {
         try {
             $sql = "SELECT id, username, email, role, nom_complet FROM {$this->table} WHERE id = :id";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([':id' => $id]);
+            $stmt->execute([':id' => htmlspecialchars($id)]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             throw new Exception("Erreur lors de la recherche de l'utilisateur : " . $e->getMessage());
         }
     }
@@ -58,9 +58,21 @@ class User {
         try {
             $sql = "SELECT id, username, email, {$this->passwordColumn}, role FROM {$this->table} WHERE email = :email";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([':email' => $email]);
+            $stmt->execute([':email' => htmlspecialchars($email)]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
+            throw new Exception("Erreur lors de la recherche de l'utilisateur : " . $e->getMessage());
+        }
+    }
+
+    // Trouver un utilisateur par son nom d'utilisateur
+    public function findByUsername($username) {
+        try {
+            $sql = "SELECT id, username, email, {$this->passwordColumn}, role FROM {$this->table} WHERE username = :username";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':username' => htmlspecialchars($username)]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
             throw new Exception("Erreur lors de la recherche de l'utilisateur : " . $e->getMessage());
         }
     }
@@ -70,12 +82,12 @@ class User {
         try {
             // Construire la requête de mise à jour dynamiquement
             $fields = [];
-            $params = [':id' => $id];
+            $params = [':id' => htmlspecialchars($id)];
             
             foreach ($data as $key => $value) {
                 if ($key !== 'id') {
                     $fields[] = "{$key} = :{$key}";
-                    $params[":{$key}"] = $value;
+                    $params[":{$key}"] = htmlspecialchars($value);
                 }
             }
             
@@ -83,7 +95,7 @@ class User {
             
             $stmt = $this->db->prepare($sql);
             return $stmt->execute($params);
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             throw new Exception("Erreur lors de la mise à jour de l'utilisateur : " . $e->getMessage());
         }
     }
@@ -93,8 +105,8 @@ class User {
         try {
             $sql = "DELETE FROM {$this->table} WHERE id = :id";
             $stmt = $this->db->prepare($sql);
-            return $stmt->execute([':id' => $id]);
-        } catch (PDOException $e) {
+            return $stmt->execute([':id' => htmlspecialchars($id)]);
+        } catch (Exception $e) {
             throw new Exception("Erreur lors de la suppression de l'utilisateur : " . $e->getMessage());
         }
     }
@@ -131,7 +143,7 @@ class User {
                     unset($user[$this->passwordColumn]); // Ne pas retourner le hash
                     return [
                         'id' => $user['id'],
-                        'username' => $user['nom'],
+                        'username' => $user['username'],
                         'email' => $user['email'],
                         'role' => $user['role']
                     ];
@@ -139,7 +151,7 @@ class User {
             }
             
             return false;
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             throw new Exception("Erreur lors de l'authentification : " . $e->getMessage());
         }
     }
@@ -159,7 +171,7 @@ class User {
         // Vérifier que l'email n'est pas déjà utilisé
         $existingUser = $this->findByEmail($data['email']);
         if ($existingUser) {
-            throw new Exception("Cette adresse email est déjà utilisée");
+            throw new Exception("Cette adresse email est déjà utilisée. User");
         }
 
         // Valider le mot de passe
@@ -183,8 +195,8 @@ class User {
             $sql = "SELECT * FROM {$this->table} LIMIT :limit OFFSET :offset";
             
             $stmt = $this->db->prepare($sql);
-            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->bindValue(':limit', htmlspecialchars($limit), PDO::PARAM_INT);
+            $stmt->bindValue(':offset', htmlspecialchars($offset), PDO::PARAM_INT);
             $stmt->execute();
             
             return [
@@ -193,7 +205,7 @@ class User {
                 'limit' => $limit,
                 'total' => $this->count()
             ];
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             throw new Exception("Erreur lors de la récupération des utilisateurs : " . $e->getMessage());
         }
     }
@@ -203,7 +215,7 @@ class User {
         try {
             $sql = "SELECT COUNT(*) FROM {$this->table}";
             return $this->db->query($sql)->fetchColumn();
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             throw new Exception("Erreur lors du comptage des utilisateurs : " . $e->getMessage());
         }
     }
@@ -211,9 +223,9 @@ class User {
         try {
             $sql = "SELECT * FROM {$this->table} WHERE role = :role";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([':role' => $role]);
+            $stmt->execute([':role' => htmlspecialchars($role)]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             throw new Exception("Erreur lors de la récupération des utilisateurs par rôle : " . $e->getMessage());
         }
     }

@@ -21,11 +21,6 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
 <body>
     <div id="notification-data" data-notification='<?= htmlspecialchars(json_encode($_SESSION['notification'] ?? null)) ?>'></div>
     <div class="auth-container">
-        <?php if ($errorMessage): ?>
-            <div class="notification error">
-                <?= $errorMessage ?>
-            </div>
-        <?php endif; ?>
         <!-- Onglets pour basculer entre connexion et inscription -->
         <div class="auth-tabs">
             <button class="auth-tab active" id="tab-login">Utilisateur</button>
@@ -33,7 +28,7 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
         </div>
 
         <!-- Formulaires -->
-        <div class="auth-card bg">
+        <div class="auth-card">
             <div class="auth-form" id="loginForm">
                 <h1>Espace Utilisateur</h1>
                 <p>Connectez-vous à votre compte étudiant</p> <br><br>
@@ -68,44 +63,49 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
                 <p>Créez votre compte EsgisHub</p>
                 <br>
                 <br>
-                <form action="/HACKATHON_ESGIS/public/api/auth/register" method="POST">
+                <form action="/HACKATHON_ESGIS/public/api/auth/register" method="POST" id="registrationForm">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="form-group">
-                        <label for="fullName">Nom complet</label>
+                        <label for="fullName" class="label after:ml-1 after:text-red-500 after:content-['*']">Nom complet</label>
                         <div class="display">
                             <i data-lucide="user"></i>
                             <input type="text" id="fullName" name="fullName" placeholder="Votre nom" required>
                         </div>
+                        <span class="error-message position-absolute text-red-500 text-xs mt-1 hidden" id="fullNameError"></span>
                     </div>
                     <div class="form-group">
-                        <label for="username">Nom d'utilisateur</label>
+                        <label for="username" class="label after:ml-1 after:text-red-500 after:content-['*']">Nom d'utilisateur</label>
                         <div class="display">
                             <i data-lucide="user"></i>
                             <input type="text" id="username" name="username" placeholder="Votre nom d'utilisateur" required>
                         </div>
+                        <span class="error-message position-absolute text-red-500 text-xs mt-1 hidden" id="usernameError"></span>
                     </div>
                     <div class="form-group">
-                        <label for="email">Email</label>
+                        <label for="email" class="label after:ml-1 after:text-red-500 after:content-['*']">Email</label>
                         <div class="display">
                             <i data-lucide="mail"></i>
                             <input type="email" id="email" name="email" placeholder="etudiant@esgis.bj" required>
                         </div>
+                        <span class="error-message position-absolute text-red-500 text-xs mt-1 hidden" id="emailError"></span>
                     </div>
                     <div class="form-group">
-                        <label for="password">Mot de passe</label>
+                        <label for="password" class="label after:ml-1 after:text-red-500 after:content-['*']">Mot de passe</label>
                         <div class="display">
                             <i data-lucide="key"></i>
                             <input type="password" id="password" name="password" placeholder="............" required>
                         </div>
+                        <span class="error-message position-absolute text-red-500 text-xs mt-1 hidden" id="passwordError"></span>
                     </div>
                     <div class="form-group">
-                        <label for="confirmPassword">Confirmer le mot de passe</label>
+                        <label for="confirmPassword" class="label after:ml-1 after:text-red-500 after:content-['*']">Confirmer le mot de passe</label>
                         <div class="display">
                             <i data-lucide="key"></i>
                             <input type="password" id="confirmPassword" name="confirmPassword" placeholder="............" required>
                         </div>
+                        <span class="error-message position-absolute text-red-500 text-xs mt-1 hidden" id="confirmPasswordError"></span>
                     </div>
-                    <button type="submit" class="submit-btn"> <i data-lucide="send"></i>S'inscrire</button>
+                    <button type="submit" class="submit-btn"><i data-lucide="send"></i>S'inscrire</button>
                 </form>
             </div>
         </div>
@@ -117,20 +117,6 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
         });
     </script>
 
-    <style>
-        .error-message {
-            position: fixed;
-            top: 2rem;
-            background-color: #fee2e2;
-            border: 1px solid #ef4444;
-            color: #dc2626;
-            padding: 1rem;
-            margin: 1rem auto;
-            border-radius: 0.5rem;
-            max-width: 80%;
-            text-align: center;
-        }
-    </style>
 </body>
 
 </html>
