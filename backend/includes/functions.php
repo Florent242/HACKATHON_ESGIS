@@ -1,4 +1,7 @@
 <?php
+if (!defined('FUNCTIONS_INCLUDED')) {
+    define('FUNCTIONS_INCLUDED', true);
+}
 
 // Fonction pour valider une adresse email
 function validateEmail($email) {
@@ -184,7 +187,9 @@ function verifyJwtToken($token) {
 
 // Fonction pour afficher un message flash
 function setFlashMessage($type, $message,$details = null) {
-    session_start();
+    if(session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
     $_SESSION['notification'] = [
         'message' => $message,
         'details' => $details,

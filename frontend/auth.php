@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 // $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
 ?>
@@ -71,10 +73,10 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
                 <form action="/HACKATHON_ESGIS/public/api/auth/register" method="POST">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="form-group">
-                        <label for="fullName">Nom complet</label>
+                        <label for="fullname">Nom complet</label>
                         <div class="display">
                             <i data-lucide="user"></i>
-                            <input type="text" id="fullName" name="fullName" placeholder="Votre nom" required>
+                            <input type="text" id="fullname" name="fullname" placeholder="Votre nom" required>
                         </div>
                     </div>
                     <div class="form-group">

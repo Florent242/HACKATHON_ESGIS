@@ -1,4 +1,7 @@
 <?php
+if (!defined('CONFIG_INCLUDED')) {
+    define('CONFIG_INCLUDED', true);
+}
 
 // Configuration de la base de données SQLite
 define('DB_FILE', __DIR__ . '/../database/hackathon.db');

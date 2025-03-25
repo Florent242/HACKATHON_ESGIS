@@ -10,7 +10,7 @@ class Database {
     private $connection = null;
 
     private $host = '127.0.0.1';
-    private $dbname = 'new_db';
+    private $dbname = 'hackathon_db';
     private $username = 'root';
     private $password = '';
 
