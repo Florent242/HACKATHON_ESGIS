@@ -36,6 +36,7 @@ class TokenManager
         ];
     }
 
+
     public function verifyToken(string $token): bool
     {
         try {
@@ -45,4 +46,20 @@ class TokenManager
             return false;
         }
     }
+
+    public function validateToken($token) {
+        try {
+            $decoded = JWT::decode($token, new Key($this->jwt_secret, 'HS256'));
+            return [
+                'valid' => true,
+                'user_id' => $decoded->user_id
+            ];
+        } catch (Exception $e) {
+            return [
+                'valid' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
 }
