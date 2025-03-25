@@ -5,11 +5,21 @@ use Exception;
 use Auth\Model\Challenge;
 use Auth\Model\Hackathon;
 
-require_once __DIR__ . '/../../includes/config.php';
-require_once __DIR__ . '/../../includes/functions.php';
-require_once __DIR__ . '/../models/Challenge.php';
-require_once __DIR__ . '/../models/Hackathon.php';
-require_once __DIR__ . '/Controller.php';
+if(!defined('CONFIG_INCLUDED')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
+if(!defined('FUNCTIONS_INCLUDED')) {
+    require_once __DIR__ . '/../includes/functions.php';
+}
+if(!class_exists('Challenge')) {
+    require_once __DIR__ . '/../models/Challenge.php';
+}
+if(!class_exists('Hackathon')) {
+    require_once __DIR__ . '/../models/Hackathon.php';
+}
+if(!class_exists('Controller')) {
+    require_once __DIR__ . '/Controller.php';
+}
 
 class ChallengeController extends Controller {
     private $challenge;

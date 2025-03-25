@@ -3,8 +3,8 @@ namespace Auth\Controller;
 
 use Exception;
 
-require_once __DIR__ . '/../../includes/config.php';
-require_once __DIR__ . '/../../includes/functions.php';
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../models/Evaluation.php';
 require_once __DIR__ . '/../models/Project.php';
 require_once __DIR__ . '/Controller.php';

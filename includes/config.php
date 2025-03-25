@@ -25,7 +25,9 @@ ini_set('display_errors', 1);
 if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
-    session_start();
+    if(session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
 }
 
 // Fonction d'autoload des classes

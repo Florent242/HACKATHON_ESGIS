@@ -5,9 +5,18 @@ use Exception;
 use Auth\Model\Ressource;
 use Auth\Controller\Controller;
 
-require_once __DIR__ . '/../../includes/config.php';
-require_once __DIR__ . '/../../includes/functions.php';
-require_once __DIR__ . '/../models/Ressource.php';
+if(!defined('CONFIG_INCLUDED')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
+if(!defined('FUNCTIONS_INCLUDED')) {
+    require_once __DIR__ . '/../includes/functions.php';
+}
+if(!class_exists('Ressource')) {
+    require_once __DIR__ . '/../models/Ressource.php';
+}
+if(!class_exists('Controller')) {
+    require_once __DIR__ . '/Controller.php';
+}
 
 class RessourceController extends Controller {
     private $ressource;

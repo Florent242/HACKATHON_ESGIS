@@ -15,18 +15,49 @@ use Auth\Controller\NotificationController;
 use Auth\Controller\ChallengeController;
 use Auth\Controller\EvaluationController;
 
+// ✅ Inclure une seule fois le fichier de configuration
+if (!defined('CONFIG_INCLUDED')) {
+    require_once __DIR__ . '/includes/config.php';
+}
 
-require_once __DIR__ . '/includes/config.php';
-require_once __DIR__ . '/includes/functions.php';
-require_once __DIR__ . '/models/Database.php';
-require_once __DIR__ . '/controllers/Controller.php';
-require_once __DIR__ . '/controllers/AuthController.php';
-require_once __DIR__ . '/controllers/UserController.php';
-require_once __DIR__ . '/controllers/HackathonController.php';
-require_once __DIR__ . '/controllers/TeamController.php';
-require_once __DIR__ . '/controllers/ProjectController.php';
-require_once __DIR__ . '/controllers/ChallengeController.php';
-require_once __DIR__ . '/controllers/EvaluationController.php';
+// ✅ Inclure les fichiers contenant des fonctions
+if (!defined('FUNCTIONS_INCLUDED')) {
+    require_once __DIR__ . '/includes/functions.php';
+}
+
+
+// ✅ Inclure les classes seulement si elles n'existent pas déjà
+$files = [
+    'Database'            => '/models/Database.php',
+    'Controller'          => '/controllers/Controller.php',
+    'AuthController'      => '/controllers/AuthController.php',
+    'UserController'      => '/controllers/UserController.php',
+    'HackathonController' => '/controllers/HackathonController.php',
+    'TeamController'      => '/controllers/TeamController.php',
+    'ProjectController'   => '/controllers/ProjectController.php',
+    'ChallengeController' => '/controllers/ChallengeController.php',
+    'EvaluationController'=> '/controllers/EvaluationController.php',
+];
+
+foreach ($files as $class => $path) {
+    if (!class_exists($class)) {
+        require_once __DIR__ . $path;
+    }
+}
+
+
+// require_once __DIR__ . '/models/Database.php';
+// require_once __DIR__ . '/controllers/Controller.php';
+// require_once __DIR__ . '/controllers/AuthController.php';
+// require_once __DIR__ . '/controllers/UserController.php';
+// require_once __DIR__ . '/controllers/HackathonController.php';
+// require_once __DIR__ . '/controllers/TeamController.php';
+// require_once __DIR__ . '/controllers/ProjectController.php';
+// require_once __DIR__ . '/controllers/ChallengeController.php';
+// require_once __DIR__ . '/controllers/EvaluationController.php';
+
+// chemin de base
+const BASE_URL = '/HACKATHON_ESGIS/public';
 
 // Configurer CORS pour toutes les requêtes API
 configureCors();
@@ -43,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Récupération de la méthode HTTP et de l'URL
 $method = $_SERVER['REQUEST_METHOD'];
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$uri = str_replace('/api/', '/', $uri); // Nettoyer l'URI
+$uri = str_replace(BASE_URL . '/api/', '/', $uri); // Nettoyer l'URI
 $request = explode('/', trim($uri, '/'));
 
 // Extraction des composants de l'URL
@@ -61,12 +92,32 @@ try {
     switch ($endpoint) {
         case 'auth':
             $controller = new AuthController($db);
-            switch ($action ?? '') {
+            switch ($request[1] ?? '') {
                 case 'login':
-                    $controller->login();
+                    try {
+                        $controller->login();
+                    } catch (Exception $e) {
+                        setFlashMessage('error', 'Connexion echouée', $e->getMessage());
+
+                        // un echo pour les requetes frontend
+                        echo json_encode(['error' => $e->getMessage()]);
+                        //redirection vers la page de connexion
+                        header('Location: ' . BASE_URL . '/auth');
+                        exit();
+                    }
                     break;
                 case 'register':
-                    $controller->register();
+                    try {
+                        $controller->register();
+                    } catch (Exception $e) {
+                        setFlashMessage('error', 'Inscription echouée', $e->getMessage());
+                        
+                        // un echo pour les requetes frontend
+                        echo json_encode(['error' => $e->getMessage()]);
+                        //redirection vers la page d'inscription
+                        header('Location: ' . BASE_URL . '/auth');
+                        exit();
+                    }
                     break;
                 case 'logout':
                     $controller->logout();
@@ -89,7 +140,7 @@ try {
                 if ($method === 'GET') {
                     $controller->get($id);
                 } elseif ($method === 'POST') {
-                    $controller->create();
+                    $controller->register();
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
                 }
@@ -380,6 +431,7 @@ try {
     http_response_code($statusCode);
     echo json_encode([
         'success' => false,
-        'error' => $e->getMessage()
+        'error' => $e->getMessage(),
+        'debug' => print_r($request, true)
     ]);
 }

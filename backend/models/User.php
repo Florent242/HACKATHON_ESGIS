@@ -53,41 +53,104 @@ class User {
      * @param array $data Les données de l'utilisateur
      * @return int|bool L'ID du nouvel utilisateur ou false si erreur
      */
-    public function create($data) {
+    public function create($Data) {
+        $data= $Data;
         try {
-            // Vérification si l'email existe déjà
-            $query = "SELECT COUNT(*) FROM {$this->table} WHERE email = :email";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':email', $data['email']);
-            $stmt->execute();
+            if (!isset($data) || !is_array($data)) {
+                throw new Exception("Donnes d'inscription innexistante");
+            }
 
-            if ($stmt->fetchColumn() > 0) {
-                throw new Exception('Cet email est déjà utilisé');
+            // Verification si le username existe déjà
+            if (isset($data['username']) && $data['username']) {
+                $query = "SELECT COUNT(*) FROM {$this->table} WHERE username = :username";
+                $stmt = $this->db->prepare($query);
+                $stmt->bindValue(':username', $data['username']);
+                $stmt->execute();
+
+                if ($stmt->fetchColumn() > 0) {
+                    throw new Exception('Cet nom d\'utilisateur est déjà utilisé');
+                }
+            }
+
+            // Verification pour le fullname
+            if (empty($data['fullname'])) {
+                throw new Exception("Le nom complet est requis");
+            }
+
+            // Vérification si l'email existe déjà
+            if (isset($data['email']) && $data['email']) {
+                $query = "SELECT COUNT(*) FROM {$this->table} WHERE email = :email";
+                $stmt = $this->db->prepare($query);
+                $stmt->bindValue(':email', $data['email']);
+                $stmt->execute();
+
+                if ($stmt->fetchColumn() > 0) {
+                    throw new Exception('Cet email est déjà utilisé');
+                }
+            }
+
+            // Vérification des champs obligatoires
+            if (empty($data['username']) || empty($data['fullname']) || empty($data['email']) || empty($data['password'])) {
+                throw new Exception("Tous les champs sont obligatoires");
+            }
+
+            // Vérification du mot de passe
+            if (strlen($data['password']) < 8) {
+                throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
             }
 
             // Hash du mot de passe
             $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
 
             // Préparation de la requête
-            $query = "INSERT INTO {$this->table} (username, fullname, school, email, password, role, status, github_url, linkedin_url, bio, profile_picture)
-                    VALUES (:username, :fullname, :school, :email, :password, :role, :status, :github_url, :linkedin_url, :bio, :profile_picture)";
+            $query = "INSERT INTO {$this->table} (
+            username, 
+            fullname, 
+            school, 
+            email, 
+            password, 
+            role, 
+            status, 
+            github_url, 
+            linkedin_url, 
+            bio, 
+            profile_picture
+            )
+                    VALUES (
+                    :username, 
+                    :fullname, 
+                    :school, 
+                    :email, 
+                    :password, 
+                    :role, 
+                    :status, 
+                    :github_url, 
+                    :linkedin_url, 
+                    :bio, 
+                    :profile_picture
+                    )";
 
+            // ici j'ai du utilise bindValue parce que bindParam exige une variable passée par référence, ce qui cause une erreur quand tu utilises des expressions comme $data['email'] ?? null de plus bindParam n'accepte pas les valeurs null et data est un array
             $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':username', $data['username']);
-            $stmt->bindParam(':fullname', $data['fullname']);
-            $stmt->bindParam(':school', $data['school'] ?? null);
-            $stmt->bindParam(':email', $data['email']);
-            $stmt->bindParam(':password', $hashedPassword);
-            $stmt->bindParam(':role', $data['role'] ?? 'participant');
-            $stmt->bindParam(':status', $data['status'] ?? 'active');
-            $stmt->bindParam(':github_url', $data['github_url'] ?? null);
-            $stmt->bindParam(':linkedin_url', $data['linkedin_url'] ?? null);
-            $stmt->bindParam(':bio', $data['bio'] ?? null);
-            $stmt->bindParam(':profile_picture', $data['profile_picture'] ?? null);
+            $stmt->bindValue(':username', $data['username']);
+            $stmt->bindValue(':fullname', $data['fullname']);
+            $stmt->bindValue(':school', $data['school'] ?? null);
+            $stmt->bindValue(':email', $data['email']);
+            $stmt->bindValue(':password', $hashedPassword);
+            $stmt->bindValue(':role', $data['role'] ?? 'participant');
+            $stmt->bindValue(':status', $data['status'] ?? 'active');
+            $stmt->bindValue(':github_url', $data['github_url'] ?? null);
+            $stmt->bindValue(':linkedin_url', $data['linkedin_url'] ?? null);
+            $stmt->bindValue(':bio', $data['bio'] ?? null);
+            $stmt->bindValue(':profile_picture', $data['profile_picture'] ?? null);
 
             $stmt->execute();
             return $this->db->lastInsertId();
         } catch (PDOException $e) {
+            logActivity('create_error', $e->getMessage(), [
+                'email' => $data['email'] ?? 'non fourni',
+                'error' => $e->getMessage()
+            ], 'error');
             error_log('Erreur lors de la création de l\'utilisateur: ' . $e->getMessage());
             throw new Exception('Erreur lors de la création de l\'utilisateur: ' . $e->getMessage());
         }

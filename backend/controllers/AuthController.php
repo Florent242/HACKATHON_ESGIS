@@ -1,21 +1,34 @@
 <?php
+
 namespace Auth\Controller;
 
 use Exception;
 use Auth\Model\Database;
 use Auth\Model\User;
+use PDO;
+use PDOException;
 
-require_once __DIR__ . '/../models/Database.php';
-require_once __DIR__ . '/../models/User.php';
-require_once __DIR__ . '/../../includes/functions.php';
+if (!class_exists('Database')) {
+    require_once __DIR__ . '/../models/Database.php';
+}
+if (!class_exists('User')) {
+    require_once __DIR__ . '/../models/User.php';
+}
+if (!defined('FUNCTIONS_INCLUDED')) {
+    require_once __DIR__ . '/includes/functions.php';
+}
 
-class AuthController {
+class AuthController
+{
     private const BASE_URL = '/HACKATHON_ESGIS/public';
     private $user;
     private $db;
 
-    public function __construct($db = null) {
-        session_start();
+    public function __construct($db = null)
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
         if ($db) {
             $this->db = $db;
         } else {
@@ -30,9 +43,12 @@ class AuthController {
         }
     }
 
-    private function validateCsrfToken() {
-        if (!isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) ||
-            !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+    private function validateCsrfToken()
+    {
+        if (
+            !isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) ||
+            !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])
+        ) {
             throw new Exception('Token CSRF invalide');
         }
     }
@@ -44,19 +60,25 @@ class AuthController {
             // Vérifier le token CSRF
             $this->validateCsrfToken();
 
+            // Récupération et nettoyage des données
             $data = [
-                'username' => $_POST['username'] ?? '',
-                'nom_complet' => $_POST['fullName'] ?? '',
-                'email' => $_POST['email'] ?? '',
-                'school' => $_POST['school'] ?? '',
-                'mot_de_passe' => $_POST['password'] ?? '',
-                'role' => 'participant'
+                'username'    => trim(filter_input(INPUT_POST, 'username', FILTER_DEFAULT) ?: ''),
+                'fullname'    => trim(filter_input(INPUT_POST, 'fullname', FILTER_DEFAULT) ?: ''),
+                'email'       => trim(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?: ''),
+                'school'      => trim(filter_input(INPUT_POST, 'school', FILTER_DEFAULT) ?: ''),
+                'password'    => trim(filter_input(INPUT_POST, 'password', FILTER_UNSAFE_RAW) ?: ''), // Ne pas filtrer le mot de passe
+                'role'        => 'participant'
             ];
+
+            error_log("Tentative d'inscription avec les données : " . json_encode($data));
+            if (!$data && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                $data = $_POST;
+            }
 
             error_log("Tentative d'inscription avec les données : " . json_encode($data));
 
             // Validation des données
-            if (empty($data['username']) || empty($data['email']) || empty($data['mot_de_passe'])) {
+            if (empty($data['username']) || empty($data['email']) || empty($data['password'])) {
                 throw new Exception("Tous les champs sont obligatoires");
             }
 
@@ -66,7 +88,7 @@ class AuthController {
             }
 
             // Validation du mot de passe
-            if (strlen($data['mot_de_passe']) < 8) {
+            if (strlen($data['password']) < 8) {
                 throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
             }
 
@@ -81,35 +103,41 @@ class AuthController {
                 setFlashMessage('success', 'Inscription réussie');
 
                 // Redirection selon le rôle
-                if ($data['role'] === 'organisateur') {
-                    header("Location: " . self::BASE_URL . "/auth_admin");
-                } else {
-                    header("Location: " . self::BASE_URL . "/auth");
-                }
+
+                header("Location: " . self::BASE_URL . "/auth");
+
                 exit();
             } else {
                 throw new Exception("Erreur lors de la création de l'utilisateur");
             }
         } catch (Exception $e) {
             error_log("Erreur d'inscription : " . $e->getMessage());
-            $_SESSION['notification'] = [
-                'message' => 'Erreur d\'inscription',
-                'details' => $e->getMessage(),
-                'type' => 'error'
-            ];
-            header("Location: " . self::BASE_URL . "/auth");
-            exit();
+
+            logActivity('register_error', $e->getMessage(), [
+                'email' => $data['email'] ?? 'non fourni',
+                'error' => $e->getMessage()
+            ], 'error');
+            // un echo pour les requetes frontend
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage()
+            ]);
+            throw new Exception($e->getMessage());
         }
     }
 
     // Traiter la connexion
-    public function login() {
+    public function login()
+    {
         try {
             // Get JSON data
             $data = json_decode(file_get_contents("php://input"), true);
+            if ($data === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
+                $data = $_POST;
+            }
 
             if (!isset($data['email']) || !isset($data['password'])) {
-                throw new Exception('Email et mot de passe requis');
+                throw new Exception('Email et mot de passe requis' . print_r($data, true) . 'auth');
             }
 
             $email = $data['email'];
@@ -131,10 +159,14 @@ class AuthController {
                     'role' => $user['role']
                 ], 'info');
 
+                // un echo pour les requetes frontend
                 echo json_encode([
                     'success' => true,
                     'user' => $user
                 ]);
+                setFlashMessage('success', 'Connexion réussie');
+                header("Location: " . self::BASE_URL . "/user");
+                exit();
             } else {
                 // Log failed login
                 logActivity('login_failed', 'Échec de connexion', ['email' => $email], 'warning');
@@ -148,15 +180,18 @@ class AuthController {
                 'error' => $e->getMessage()
             ], 'error');
 
+            // un echo pour les requetes frontend
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
             ]);
+            throw new Exception($e->getMessage());
         }
     }
 
     // Traiter la déconnexion
-    public function logout() {
+    public function logout()
+    {
         try {
             // Log user logout before clearing session
             if (isset($_SESSION['user'])) {
@@ -181,11 +216,13 @@ class AuthController {
                 'success' => false,
                 'message' => $e->getMessage()
             ]);
+            throw new Exception($e->getMessage());
         }
     }
 
     // Afficher le profil
-    public function profile() {
+    public function profile()
+    {
         try {
             // Vérifier si l'utilisateur est connecté
             if (!isAuthenticated()) {
@@ -199,7 +236,6 @@ class AuthController {
 
             // Inclure la vue du profil
             require_once VIEWS_PATH . '/profile.php';
-
         } catch (Exception $e) {
             $_SESSION['notification'] = [
                 'message' => 'Erreur de profil',
@@ -207,12 +243,13 @@ class AuthController {
                 'type' => 'error'
             ];
             header("Location: " . self::BASE_URL . "/profile");
-            exit();
+            throw new Exception($e->getMessage());
         }
     }
 
     // Mettre à jour le profil
-    public function updateProfile() {
+    public function updateProfile()
+    {
         try {
             // Vérifier si l'utilisateur est connecté
             if (!isAuthenticated()) {
@@ -229,15 +266,19 @@ class AuthController {
 
             // Récupérer et valider les données
             $data = [
-                'username' => $_POST['username'] ?? '',
-                'email' => $_POST['email'] ?? '',
-                'full_name' => $_POST['full_name'] ?? null
+                'username' => filter_input(INPUT_POST, 'username', FILTER_DEFAULT) ?? '',
+                'email' => filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?? '',
+                'fullname' => filter_input(INPUT_POST, 'fullname', FILTER_DEFAULT) ?? null
             ];
 
             // Ajouter le mot de passe s'il est fourni
-            if (!empty($_POST['password'])) {
-                $data['password'] = $_POST['password'];
+            if (!empty(filter_input(INPUT_POST, 'password', FILTER_DEFAULT))) {
+                $data['password'] = filter_input(INPUT_POST, 'password', FILTER_DEFAULT);
             }
+
+            // Décode les entités HTML si présentes
+            $data['fullnname'] = html_entity_decode($data['fullnname'], ENT_QUOTES, 'UTF-8');
+            $data['username'] = html_entity_decode($data['username'], ENT_QUOTES, 'UTF-8');
 
             // Mettre à jour l'utilisateur
             $this->user->update($_SESSION['user_id'], $data);
@@ -249,7 +290,6 @@ class AuthController {
             ];
             header("Location: " . self::BASE_URL . "/profile");
             exit();
-
         } catch (Exception $e) {
             $_SESSION['notification'] = [
                 'message' => 'Erreur de profil',
@@ -257,120 +297,131 @@ class AuthController {
                 'type' => 'error'
             ];
             header("Location: " . self::BASE_URL . "/profile");
-            exit();
+            throw new Exception($e->getMessage());
         }
     }
 
     // Afficher le formulaire de réinitialisation du mot de passe
-    public function forgotPassword() {
-        // Si c'est une requête API avec des données JSON
-        $jsonData = json_decode(file_get_contents('php://input'), true);
-        if ($jsonData && isset($jsonData['email'])) {
-            try {
-                $email = filter_var($jsonData['email'], FILTER_VALIDATE_EMAIL);
-                if (!$email) {
-                    throw new Exception('Adresse email invalide');
-                }
+    public function forgotPassword()
+    {
+        try {
 
-                $user = $this->user->findByEmail($email);
-                if ($user) {
-                    // Générer un token de réinitialisation
-                    $token = bin2hex(random_bytes(32));
-                    $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
+            // Si c'est une requête API avec des données JSON
+            $jsonData = json_decode(file_get_contents('php://input'), true);
+            if ($jsonData && isset($jsonData['email'])) {
+                try {
+                    $email = filter_var($jsonData['email'], FILTER_VALIDATE_EMAIL);
+                    if (!$email) {
+                        throw new Exception('Adresse email invalide');
+                    }
 
-                    // Enregistrer le token dans la base de données
-                    $query = "INSERT INTO password_resets (user_id, token, expiry) VALUES (:user_id, :token, :expiry)";
-                    $stmt = $this->db->prepare($query);
-                    $stmt->bindParam(':user_id', $user['id'], \PDO::PARAM_INT);
-                    $stmt->bindParam(':token', $token);
-                    $stmt->bindParam(':expiry', $expiry);
-                    $stmt->execute();
+                    $user = $this->user->findByEmail($email);
+                    if ($user) {
+                        // Générer un token de réinitialisation
+                        $token = bin2hex(random_bytes(32));
+                        $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
-                    // En production, envoi d'email
-                    // sendResetPasswordEmail($email, $token);
+                        // Enregistrer le token dans la base de données
+                        $query = "INSERT INTO password_resets (user_id, token, expiry) VALUES (:user_id, :token, :expiry)";
+                        $stmt = $this->db->prepare($query);
+                        $stmt->bindParam(':user_id', $user['id'], \PDO::PARAM_INT);
+                        $stmt->bindParam(':token', $token);
+                        $stmt->bindParam(':expiry', $expiry);
+                        $stmt->execute();
 
-                    // Pour des fins de test, on affiche le token
-                    $resetLink = self::BASE_URL . '/reset-password?token=' . $token;
+                        // En production, envoi d'email
+                        // sendResetPasswordEmail($email, $token);
 
+                        // Pour des fins de test, on affiche le token
+                        $resetLink = self::BASE_URL . '/reset-password?token=' . $token;
+
+                        $this->jsonResponse([
+                            'success' => true,
+                            'message' => 'Si votre email existe dans notre base de données, vous recevrez les instructions de réinitialisation.',
+                            // En production, ne pas envoyer le token dans la réponse
+                            'debug' => [
+                                'token' => $token,
+                                'reset_link' => $resetLink
+                            ]
+                        ]);
+                    } else {
+                        // Ne pas indiquer si l'email existe ou non pour des raisons de sécurité
+                        $this->jsonResponse([
+                            'success' => true,
+                            'message' => 'Si votre email existe dans notre base de données, vous recevrez les instructions de réinitialisation.'
+                        ]);
+                    }
+                } catch (Exception $e) {
                     $this->jsonResponse([
-                        'success' => true,
-                        'message' => 'Si votre email existe dans notre base de données, vous recevrez les instructions de réinitialisation.',
-                        // En production, ne pas envoyer le token dans la réponse
-                        'debug' => [
-                            'token' => $token,
-                            'reset_link' => $resetLink
-                        ]
-                    ]);
-                } else {
+                        'success' => false,
+                        'message' => $e->getMessage()
+                    ], 400);
+                    throw new Exception($e->getMessage());
+                }
+                return;
+            }
+
+            // Si c'est une requête POST formulaire
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                try {
+                    $email = filter_var(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL), FILTER_VALIDATE_EMAIL);
+                    if (!$email) {
+                        throw new Exception('Adresse email invalide');
+                    }
+
+                    $user = $this->user->findByEmail($email);
+                    if ($user) {
+                        // Générer un token de réinitialisation
+                        $token = bin2hex(random_bytes(32));
+                        $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+                        // Enregistrer le token dans la base de données
+                        $query = "INSERT INTO password_resets (user_id, token, expiry) VALUES (:user_id, :token, :expiry)";
+                        $stmt = $this->db->prepare($query);
+                        $stmt->bindParam(':user_id', $user['id'], \PDO::PARAM_INT);
+                        $stmt->bindParam(':token', $token);
+                        $stmt->bindParam(':expiry', $expiry);
+                        $stmt->execute();
+
+                        // En production, envoi d'email
+                        // sendResetPasswordEmail($email, $token);
+
+                        // Pour des fins de test/développement, stocker le lien dans la session
+                        $_SESSION['reset_link'] = self::BASE_URL . '/reset-password?token=' . $token;
+                    }
+
                     // Ne pas indiquer si l'email existe ou non pour des raisons de sécurité
-                    $this->jsonResponse([
-                        'success' => true,
-                        'message' => 'Si votre email existe dans notre base de données, vous recevrez les instructions de réinitialisation.'
-                    ]);
+                    $_SESSION['notification'] = [
+                        'message' => 'Si votre email existe dans notre base de données, vous recevrez les instructions de réinitialisation.',
+                        'type' => 'info'
+                    ];
+                    header("Location: " . self::BASE_URL . "/login");
+                    exit();
+                } catch (Exception $e) {
+                    $_SESSION['notification'] = [
+                        'message' => 'Erreur de réinitialisation du mot de passe',
+                        'details' => $e->getMessage(),
+                        'type' => 'error'
+                    ];
+                    header("Location: " . self::BASE_URL . "/forgot-password");
+                    exit();
                 }
-            } catch (Exception $e) {
-                $this->jsonResponse([
-                    'success' => false,
-                    'message' => $e->getMessage()
-                ], 400);
             }
-            return;
+
+            // Afficher le formulaire de demande de réinitialisation de mot de passe
+            require_once VIEWS_PATH . '/auth/forgot-password.php';
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+            throw new Exception($e->getMessage());
         }
-
-        // Si c'est une requête POST formulaire
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            try {
-                $email = filter_var($_POST['email'], FILTER_VALIDATE_EMAIL);
-                if (!$email) {
-                    throw new Exception('Adresse email invalide');
-                }
-
-                $user = $this->user->findByEmail($email);
-                if ($user) {
-                    // Générer un token de réinitialisation
-                    $token = bin2hex(random_bytes(32));
-                    $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
-
-                    // Enregistrer le token dans la base de données
-                    $query = "INSERT INTO password_resets (user_id, token, expiry) VALUES (:user_id, :token, :expiry)";
-                    $stmt = $this->db->prepare($query);
-                    $stmt->bindParam(':user_id', $user['id'], \PDO::PARAM_INT);
-                    $stmt->bindParam(':token', $token);
-                    $stmt->bindParam(':expiry', $expiry);
-                    $stmt->execute();
-
-                    // En production, envoi d'email
-                    // sendResetPasswordEmail($email, $token);
-
-                    // Pour des fins de test/développement, stocker le lien dans la session
-                    $_SESSION['reset_link'] = self::BASE_URL . '/reset-password?token=' . $token;
-                }
-
-                // Ne pas indiquer si l'email existe ou non pour des raisons de sécurité
-                $_SESSION['notification'] = [
-                    'message' => 'Si votre email existe dans notre base de données, vous recevrez les instructions de réinitialisation.',
-                    'type' => 'info'
-                ];
-                header("Location: " . self::BASE_URL . "/login");
-                exit();
-
-            } catch (Exception $e) {
-                $_SESSION['notification'] = [
-                    'message' => 'Erreur de réinitialisation du mot de passe',
-                    'details' => $e->getMessage(),
-                    'type' => 'error'
-                ];
-                header("Location: " . self::BASE_URL . "/forgot-password");
-                exit();
-            }
-        }
-
-        // Afficher le formulaire de demande de réinitialisation de mot de passe
-        require_once VIEWS_PATH . '/auth/forgot-password.php';
     }
 
     // Réinitialiser le mot de passe
-    public function resetPassword() {
+    public function resetPassword()
+    {
         try {
             // Récupérer les données du corps de la requête
             $data = json_decode(file_get_contents("php://input"), true);
@@ -441,10 +492,12 @@ class AuthController {
                 'success' => false,
                 'message' => $e->getMessage()
             ], 400);
+            throw new Exception($e->getMessage());
         }
     }
 
-    private function generateToken($userId) {
+    private function generateToken($userId)
+    {
         // En production, utilisez une bibliothèque JWT sécurisée
         $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
         $payload = base64_encode(json_encode([
@@ -457,10 +510,15 @@ class AuthController {
         return "$header.$payload.$signature";
     }
 
-    private function jsonResponse($data, $statusCode = 200) {
-        http_response_code($statusCode);
-        header('Content-Type: application/json');
-        echo json_encode($data);
-        exit;
+    private function jsonResponse($data, $statusCode = 200)
+    {
+        try {
+            http_response_code($statusCode);
+            header('Content-Type: application/json');
+            echo json_encode($data);
+            exit;
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
+        }
     }
 }
