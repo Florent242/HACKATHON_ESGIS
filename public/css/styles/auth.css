@@ -74,7 +74,9 @@ body {
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     border: 1px solid var(--text-secondary);
-    transition: height 2s ease-in-out;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    will-change: height;
 }
 
 .auth-form {
@@ -88,11 +90,11 @@ body {
 .auth-form h1 {
     font-size: 1.5rem;
     margin-bottom: 10px;
-
+ 
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 2rem;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -103,9 +105,10 @@ body {
 .form-group label {
     display: block;
     font-size: 0.9rem;
-    margin-bottom: 10px;
+    margin: 1% 0%;
     color: var(--text);
-    width: 180px;
+    width: 100%;
+    text-align: start;
     text-align: left;
     overflow: hidden;
 }
@@ -114,10 +117,9 @@ body {
     display: flex;
     align-items: center;
     border-radius: 10px;
-    /* padding: 5px; */
     background: linear-gradient(165deg, #070F2A 0%, #0D1A44 60%, #121D4C 100%);
-    /* border: 1px solid rgba(110, 120, 220, 0.2);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(150, 140, 255, 0.06); */
+    border: 1px solid rgba(110, 120, 220, 0.2);
+    /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(150, 140, 255, 0.06); */ 
     width: 100%;
     transition: border 0.3s ease-in-out;
     color: var(--text-secondary);
@@ -125,6 +127,7 @@ body {
 
 .form-group .display:focus-within {
     border: 1px solid var(--blue);
+    box-shadow: 0 0 0 1px var(--blue);
     /* Bordure bleue au focus */
 }
 
@@ -134,7 +137,9 @@ body {
 }
 
 
-.form-group input {
+.form-group input:not([type="checkbox"]),
+.form-group textarea,
+.form-group select {
     flex: 1;
     width: 100%;
     padding: 5px 5px 5px 15px;
@@ -147,12 +152,101 @@ body {
     transition: border 0.3s ease-in-out;
 }
 
+.form-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+    transform: scale(0.8);
+}
+
 .form-group input::placeholder {
     color: var(--text-secondary);
 }
 
 [data-icon="eye"] {
     color: var(--text-secondary);
+}
+
+.form-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #4f46e5;
+    margin-bottom: 1rem;
+}
+
+select[multiple] {
+    height: auto;
+    min-height: 100px;
+}
+
+textarea {
+    min-height: 80px;
+    width: 100%;
+    resize: vertical;
+}
+
+.custom-select-container {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select-container .display {
+    display: flex;
+    align-items: center;
+    background: rgba(15, 23, 74, 0.7);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.custom-select-container select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 100%;
+    padding: 0.5rem 2rem 0.5rem 2.5rem;
+    background: transparent;
+    border: none;
+    color: #E0E7FF;
+    font-size: 0.95rem;
+    cursor: pointer;
+    outline: none;
+}
+
+.custom-select-container select option {
+    background: #0F1B4A;
+    color: #E0E7FF;
+    padding: 10px;
+}
+
+.custom-select-container select:focus {
+    color: #FFFFFF;
+}
+
+.custom-select-container .select-arrow {
+    position: absolute;
+    right: 12px;
+    pointer-events: none;
+    color: #818CF8;
+    width: 18px;
+    height: 18px;
+}
+
+.custom-select-container select:focus + .display {
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Icône à gauche */
+.custom-select-container .display i:first-child {
+    position: absolute;
+    left: 12px;
+    color: #818CF8;
 }
 
 .submit-btn {
