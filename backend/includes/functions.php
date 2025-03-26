@@ -1,4 +1,7 @@
 <?php
+if (!defined('FUNCTIONS_INCLUDED')) {
+    define('FUNCTIONS_INCLUDED', true);
+}
 
 // Fonction pour valider une adresse email
 function validateEmail($email) {
@@ -184,7 +187,7 @@ function verifyJwtToken($token) {
 
 // Fonction pour afficher un message flash
 function setFlashMessage($type, $message,$details = null) {
-    if (!isset($_SESSION) || !is_array($_SESSION)) {
+    if(session_status() === PHP_SESSION_NONE) {
         session_start();
     }
     $_SESSION['notification'] = [
@@ -205,4 +208,78 @@ function getFlashMessage() {
         return $notification;
     }
     return null;
+}
+
+// Fonction pour enregistrer les activités
+function logActivity($action, $description, $data = [], $level = 'info') {
+    // Vérifier si la table existe
+    global $db;
+
+    // Si aucune connexion à la base de données n'est disponible, essayer d'en créer une
+    if (!isset($db)) {
+        try {
+            require_once __DIR__ . '/../models/Database.php';
+            $database = \Auth\Model\Database::getInstance();
+            $db = $database->getConnection();
+        } catch (Exception $e) {
+            error_log("Erreur de connexion à la base de données pour logActivity: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Données utilisateur
+    $userId = isset($_SESSION['user']) && isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
+    $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+
+    // Données sérialisées
+    $dataJson = json_encode($data, JSON_UNESCAPED_UNICODE);
+
+    try {
+        // Vérifier si la table activity_logs existe
+        $stmt = $db->prepare("SHOW TABLES LIKE 'activity_logs'");
+        $stmt->execute();
+        $tableExists = $stmt->rowCount() > 0;
+
+        // Si la table n'existe pas, on la crée
+        if (!$tableExists) {
+            $createTable = "CREATE TABLE activity_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NULL,
+                action VARCHAR(255) NOT NULL,
+                description TEXT,
+                data TEXT,
+                ip_address VARCHAR(45),
+                user_agent TEXT,
+                level VARCHAR(20) DEFAULT 'info',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )";
+            $db->exec($createTable);
+        }
+
+        // Insérer le log
+        $query = "INSERT INTO activity_logs (user_id, action, description, data, ip_address, user_agent, level)
+                  VALUES (:user_id, :action, :description, :data, :ip_address, :user_agent, :level)";
+
+        $stmt = $db->prepare($query);
+        $stmt->bindParam(':user_id', $userId);
+        $stmt->bindParam(':action', $action);
+        $stmt->bindParam(':description', $description);
+        $stmt->bindParam(':data', $dataJson);
+        $stmt->bindParam(':ip_address', $ipAddress);
+        $stmt->bindParam(':user_agent', $userAgent);
+        $stmt->bindParam(':level', $level);
+
+        $result = $stmt->execute();
+
+        // Également, enregistrer dans le fichier de log
+        $logMessage = date('Y-m-d H:i:s') . " [$level] - $action - $description - " .
+                     "User: $userId - IP: $ipAddress - Data: $dataJson";
+        error_log($logMessage);
+
+        return $result;
+    } catch (Exception $e) {
+        error_log("Erreur lors de l'enregistrement de l'activité: " . $e->getMessage());
+        return false;
+    }
 }

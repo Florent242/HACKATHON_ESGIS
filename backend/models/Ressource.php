@@ -1,4 +1,9 @@
 <?php
+namespace Auth\Model;
+
+use Exception;
+use PDOException;
+use PDO;
 
 class Ressource {
     private $db;
@@ -12,7 +17,7 @@ class Ressource {
         try {
             $this->validate($data);
 
-            $sql = "INSERT INTO {$this->table} (hackathon_id, titre, description, type, url, created_by, created_at) 
+            $sql = "INSERT INTO {$this->table} (hackathon_id, titre, description, type, url, created_by, created_at)
                     VALUES (:hackathon_id, :titre, :description, :type, :url, :created_by, :created_at)";
 
             $stmt = $this->db->prepare($sql);
@@ -105,7 +110,7 @@ class Ressource {
                     FROM {$this->table} r
                     INNER JOIN users u ON r.created_by = u.id
                     WHERE r.hackathon_id = :hackathon_id
-                    AND (r.titre LIKE :query 
+                    AND (r.titre LIKE :query
                     OR r.description LIKE :query)";
 
             if ($type) {
@@ -158,7 +163,7 @@ class Ressource {
         $sql = "SELECT id FROM hackathons WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id' => $data['hackathon_id']]);
-        
+
         if (!$stmt->fetch()) {
             throw new Exception("Hackathon non trouvé");
         }

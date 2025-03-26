@@ -3,11 +3,18 @@ namespace Auth\Controller;
 
 use Exception;
 
-
-require_once __DIR__ . '/../../includes/config.php';
-require_once __DIR__ . '/../../includes/functions.php';
-require_once __DIR__ . '/../models/User.php';
-require_once __DIR__ . '/Controller.php';
+if(!defined('CONFIG_INCLUDED')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
+if(!defined('FUNCTIONS_INCLUDED')) {
+    require_once __DIR__ . '/../includes/functions.php';
+}
+if(!class_exists('User')) {
+    require_once __DIR__ . '/../models/User.php';
+}
+if(!class_exists('Controller')) {
+    require_once __DIR__ . '/Controller.php';
+}
 
 class UserController extends Controller {
     private $user;
@@ -22,7 +29,7 @@ class UserController extends Controller {
     public function register() {
         try {
             $this->validateMethod('POST');
-            
+
             $requiredFields = ['nom', 'prenom', 'email', 'password'];
             $this->validateRequiredFields($_POST, $requiredFields);
 
@@ -62,7 +69,7 @@ class UserController extends Controller {
     public function login() {
         try {
             $this->validateMethod('POST');
-            
+
             $requiredFields = ['email', 'password'];
             $this->validateRequiredFields($_POST, $requiredFields);
 
@@ -95,9 +102,9 @@ class UserController extends Controller {
     public function logout() {
         try {
             $this->validateMethod('POST');
-            
+
             session_destroy();
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Déconnexion réussie'
@@ -113,14 +120,14 @@ class UserController extends Controller {
     public function get($id) {
         try {
             $this->validateMethod('GET');
-            
+
             $user = $this->user->find($id);
             if (!$user) {
                 throw new Exception('Utilisateur non trouvé');
             }
 
             unset($user['password']); // Ne pas renvoyer le mot de passe
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $user
@@ -136,7 +143,7 @@ class UserController extends Controller {
     public function update($id) {
         try {
             $this->validateMethod('POST');
-            
+
             // Vérifier si l'utilisateur modifie son propre profil ou est admin
             if ($_SESSION['user_id'] != $id && !hasRole('admin')) {
                 throw new Exception('Non autorisé');
@@ -144,7 +151,7 @@ class UserController extends Controller {
 
             $updatableFields = ['nom', 'prenom', 'email', 'role'];
             $data = $this->filterData($_POST, $updatableFields);
-            
+
             if (empty($data)) {
                 throw new Exception('Aucune donnée à mettre à jour');
             }
@@ -164,7 +171,7 @@ class UserController extends Controller {
 
             $data['updated_at'] = date('Y-m-d H:i:s');
             $this->user->update($id, $data);
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Profil mis à jour avec succès'
@@ -180,7 +187,7 @@ class UserController extends Controller {
     public function updatePassword($id) {
         try {
             $this->validateMethod('POST');
-            
+
             // Vérifier si l'utilisateur modifie son propre mot de passe
             if ($_SESSION['user_id'] != $id) {
                 throw new Exception('Non autorisé');
@@ -202,7 +209,7 @@ class UserController extends Controller {
                 'password' => $hashedPassword,
                 'updated_at' => date('Y-m-d H:i:s')
             ]);
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Mot de passe mis à jour avec succès'
@@ -218,7 +225,7 @@ class UserController extends Controller {
     public function delete($id) {
         try {
             $this->validateMethod('POST');
-            
+
             if (!hasRole('admin')) {
                 throw new Exception('Non autorisé');
             }
@@ -226,7 +233,7 @@ class UserController extends Controller {
             if (!$this->user->delete($id)) {
                 throw new Exception('Erreur lors de la suppression de l\'utilisateur');
             }
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Utilisateur supprimé avec succès'
@@ -239,12 +246,53 @@ class UserController extends Controller {
         }
     }
 
+    /**
+     * Met à jour le rôle d'un utilisateur
+     * @param int $id ID de l'utilisateur
+     */
+    public function updateRole($id) {
+        try {
+            $this->validateMethod('POST');
+
+            // Vérifier si l'utilisateur a les droits d'administrateur
+            if (!hasRole('admin')) {
+                throw new Exception('Non autorisé - Réservé aux administrateurs');
+            }
+
+            if (empty($_POST['role'])) {
+                throw new Exception('Le rôle est requis');
+            }
+
+            $role = $_POST['role'];
+            $allowedRoles = ['participant', 'organisateur', 'jury', 'admin'];
+
+            if (!in_array($role, $allowedRoles)) {
+                throw new Exception('Rôle non valide');
+            }
+
+            $this->user->update($id, [
+                'role' => $role,
+                'updated_at' => date('Y-m-d H:i:s')
+            ]);
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Rôle mis à jour avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
     public function getJuryList() {
         try {
             $this->validateMethod('GET');
-            
+
             $jurys = $this->user->getByRole('jury');
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $jurys
@@ -260,14 +308,14 @@ class UserController extends Controller {
     public function getProfile() {
         try {
             $this->validateMethod('GET');
-            
+
             if (!isAuthenticated()) {
                 throw new Exception('Non autorisé');
             }
 
             $user = $this->user->find($_SESSION['user_id']);
             unset($user['password']);
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $user

@@ -39,6 +39,36 @@ class Evaluation {
         return $this->db->query($this->table, ['juge_id' => $juryId]);
     }
 
+    /**
+     * Récupère les évaluations d'un projet (nouvelle méthode compatible avec le contrôleur)
+     * @param int $projectId ID du projet
+     * @return array
+     */
+    public function getByProject($projectId) {
+        // Vérifier si le schéma de la table utilise 'projet_id' ou 'project_id'
+        try {
+            return $this->db->query($this->table, ['project_id' => $projectId]);
+        } catch (Exception $e) {
+            // Si échoue avec 'project_id', essayer avec 'projet_id'
+            return $this->getByProjet($projectId);
+        }
+    }
+
+    /**
+     * Récupère les évaluations d'un juge (nouvelle méthode compatible avec le contrôleur)
+     * @param int $judgeId ID du juge
+     * @return array
+     */
+    public function getByJudge($judgeId) {
+        // Vérifier si le schéma de la table utilise 'juge_id' ou 'jury_id'
+        try {
+            return $this->db->query($this->table, ['jury_id' => $judgeId]);
+        } catch (Exception $e) {
+            // Si échoue avec 'jury_id', essayer avec 'juge_id'
+            return $this->getByJury($judgeId);
+        }
+    }
+
     public function getAverageScore($projetId) {
         $evaluations = $this->getByProjet($projetId);
         if (empty($evaluations)) {
@@ -128,7 +158,7 @@ class Evaluation {
 
         $evaluations = $this->getByProjet($projetId);
         $equipe = $this->db->find('equipes', $projet['equipe_id']);
-        
+
         $stats = [
             'projet_id' => $projetId,
             'projet_titre' => $projet['titre'],
