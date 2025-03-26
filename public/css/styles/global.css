@@ -68,6 +68,6 @@
 /* 🔹 Input en erreur */
 .input-error {
     border-color: rgb(239 68 68); /* Rouge Tailwind */
-    box-shadow: 0 0 0 1px rgb(239 68 68);
+    /* box-shadow: 0 0 0 1px rgb(239 68 68); */
 }
 /* npx tailwindcss -i ./public/css/styles/global.css -o ./public/css/dist/output.css --watch */

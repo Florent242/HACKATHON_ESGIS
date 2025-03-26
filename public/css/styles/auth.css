@@ -113,13 +113,11 @@ body {
 .display {
     display: flex;
     align-items: center;
-    /* Aligne l'icône et l'input */
-    border: 1px solid var(--text-secondary);
     border-radius: 10px;
-    padding: 5px;
+    /* padding: 5px; */
     background: linear-gradient(165deg, #070F2A 0%, #0D1A44 60%, #121D4C 100%);
-    border: 1px solid rgba(110, 120, 220, 0.2);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(150, 140, 255, 0.06);
+    /* border: 1px solid rgba(110, 120, 220, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(150, 140, 255, 0.06); */
     width: 100%;
     transition: border 0.3s ease-in-out;
     color: var(--text-secondary);

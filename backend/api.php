@@ -79,12 +79,14 @@ try {
                         $controller->checkEmail($email);
                     }
                     break;
+
                 case 'check-username':
                     if ($method === 'POST') {
                         $username = $input['username'] ?? '';
                         $controller->checkUsername($username);
                     }
                     break;
+                    
                 case 'login':
                     if ($method === 'POST') {
                         try {

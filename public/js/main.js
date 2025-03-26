@@ -1,3 +1,34 @@
+document.addEventListener('DOMContentLoaded', () => {
+    // Pour tester la notification qui correspond à l'image
+
+    const notificationElement = document.getElementById('notification-data');
+    if (notificationElement) {
+        try {
+            const notificationData = JSON.parse(notificationElement.getAttribute('data-notification'));
+            console.log(notificationData);
+            if (notificationData) {
+                showNotification(
+                    notificationData.message,
+                    notificationData.details || null,
+                    notificationData.type || 'info'
+                );
+                // Supprimer la notification de la session après affichage
+                fetch('clearNotification.php', { method: 'POST' })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erreur lors de la suppression de la notification');
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            }
+        } catch (e) {
+            console.error('Erreur lors du parsing des données de notification:', e);
+        }
+    }
+});
+
 /**
  * Affiche une notification.
  * @param {string} message - Le message à afficher.
@@ -90,33 +121,3 @@ function hideNotification(notification) {
     // notification.addEventListener('animationend', () => notification.remove(), { once: true });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Pour tester la notification qui correspond à l'image
-
-    const notificationElement = document.getElementById('notification-data');
-    if (notificationElement) {
-        try {
-            const notificationData = JSON.parse(notificationElement.getAttribute('data-notification'));
-            console.log(notificationData);
-            if (notificationData) {
-                showNotification(
-                    notificationData.message,
-                    notificationData.details || null,
-                    notificationData.type || 'info'
-                );
-                // Supprimer la notification de la session après affichage
-                fetch('clearNotification.php', { method: 'POST' })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Erreur lors de la suppression de la notification');
-                        }
-                    })
-                    .catch(error => {
-                        console.error(error);
-                    });
-            }
-        } catch (e) {
-            console.error('Erreur lors du parsing des données de notification:', e);
-        }
-    }
-});

@@ -8,7 +8,7 @@ use Exception;
 class User {
     private $db;
     private $table = 'users';
-    private $passwordColumn = 'mot_de_passe'; // Renommer la colonne pour plus de sécurité
+    private $passwordColumn = 'password'; // Renommer la colonne pour plus de sécurité
 
     public function __construct($db) {
         $this->db = $db;

@@ -313,7 +313,7 @@ class AuthController {
             
         } catch (Exception $e) {
             error_log("Erreur de vérification de l'email : " . $e->getMessage());
-            sendResponse(500, ['error' => 'Erreur serveur']);
+            sendResponse(500, ['error' => 'Erreur serveur: '. $e->getMessage()]);
         }
     }
 
@@ -334,7 +334,7 @@ class AuthController {
             
         } catch (Exception $e) {
             error_log("Erreur de vérification du nom d'utilisateur : " . $e->getMessage());
-            sendResponse(500, ['error' => 'Erreur serveur']);
+            sendResponse(500, ['error' => 'Erreur serveur: '. $e->getMessage()]);
         }
     }
 

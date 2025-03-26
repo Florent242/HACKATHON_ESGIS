@@ -37,6 +37,19 @@ document.addEventListener("DOMContentLoaded", function () {
     const emailError = document.getElementById('emailError');
     const passwordError = document.getElementById('passwordError');
     const confirmPasswordError = document.getElementById('confirmPasswordError');
+    
+    // Validation du nom complet
+    fullName.addEventListener('input', function () {
+        if (this.value.length < 3 && this.value.trim() !== '') {
+            showError(this, fullNameError, "Le nom complet doit contenir au moins 3 caractères");
+        } else if (!/^[a-zA-ZÀ-ÿ\s'-]+$/.test(this.value) && this.value.trim() !== '') {
+            showError(this, fullNameError, "Le nom ne peut contenir que des lettres");
+        } else if (this.value.trim() === '') {
+            hideError(this, fullNameError);
+        }else{
+            hideError(this, fullNameError);
+        }
+    });
 
     // Validation du nom d'utilisateur
     username.addEventListener('input', function () {
@@ -48,8 +61,8 @@ document.addEventListener("DOMContentLoaded", function () {
             checkUsername(username.value);
         } else {
             hideError(username, usernameError);
-        }
-    });
+        }    
+    });    
 
     // Validation de l'email
     email.addEventListener('input', function () {
@@ -60,17 +73,17 @@ document.addEventListener("DOMContentLoaded", function () {
             checkEmail(this.value);
         } else {
             hideError(this, emailError);
-        }
-    });
+        }    
+    });    
 
     // Validation du mot de passe
     password.addEventListener('input', function () {
         if (this.value.trim() === '') {
             hideError(this, passwordError);
             return;
-        }
+        }    
         validatePassword(this.value, this, passwordError);
-    });
+    });    
 
     // Validation de la confirmation du mot de passe
     confirmPassword.addEventListener('input', function () {
@@ -78,19 +91,8 @@ document.addEventListener("DOMContentLoaded", function () {
             showError(this, confirmPasswordError, "Les mots de passe ne correspondent pas");
         } else {
             hideError(this, confirmPasswordError);
-        }
-    });
-
-    // Validation du nom complet
-    fullName.addEventListener('input', function () {
-        if (this.value.length < 3 && this.value !== '') {
-            showError(this, fullNameError, "Le nom complet doit contenir au moins 3 caractères");
-        } else if (!/^[a-zA-ZÀ-ÿ\s'-]+$/.test(this.value) && this.value !== '') {
-            showError(this, fullNameError, "Le nom ne peut contenir que des lettres");
-        } else {
-            hideError(this, fullNameError);
-        }
-    });
+        }    
+    });    
 
     // Validation du formulaire à la soumission
     form.addEventListener('submit', async function (event) {
@@ -133,11 +135,11 @@ document.addEventListener("DOMContentLoaded", function () {
         if (isValid) {
             try {
                 const [usernameAvailable, emailAvailable] = await Promise.all([
-                    checkUsername(username.value, username, usernameError),
-                    checkEmail(email.value, email, emailError)
+                    checkUsername(username.value),
+                    checkEmail(email.value)
                 ]);
 
-                if (usernameAvailable && emailAvailable) {
+                if (!usernameAvailable && !emailAvailable) {
                     form.submit(); // Soumettre seulement si tout est valide
                 }
             } catch (error) {
@@ -208,15 +210,21 @@ function showError(inputElement, errorElement, message) {
 function hideError(inputElement, errorElement) {
     // Retirer la classe d'erreur de l'input
     inputElement.parentElement.classList.remove('input-error');
+
+    // Vérifier si l'erreur est déjà masquée
+    if (errorElement.classList.contains('hidden')) return;
+
+    // Supprimer l'ancienne animation si elle est encore en cours
+    errorElement.classList.remove('fade-in');
     
-    // Animer la disparition du message d'erreur
+    // Ajouter la classe de disparition
     errorElement.classList.add('fade-out');
-    
-    // Masquer complètement après l'animation
+
+    // Attendre la fin de l'animation avant de cacher complètement
     errorElement.addEventListener('animationend', function () {
         errorElement.classList.add('hidden');
+        errorElement.classList.remove('fade-out'); // Nettoyage après animation
     }, { once: true });
-    
 }
 
 // Validation du mot de passe
