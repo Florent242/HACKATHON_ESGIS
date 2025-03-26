@@ -71,6 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+// 
+const BASE_URL = '/HACKATHON_ESGIS/public';
+
 // Récupération de la méthode HTTP et de l'URL
 $method = $_SERVER['REQUEST_METHOD'];
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -83,7 +86,10 @@ $id = $request[1] ?? null;
 $action = $request[2] ?? null;
 
 // Lecture des données du corps de la requête
-$input = json_decode(file_get_contents('php://input'), true);
+$rawInput = file_get_contents('php://input');
+$input = json_decode($rawInput, true);
+
+// Si c'est une requête POST et que le JSON n'est pas valide, utiliser $_POST
 if ($input === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = $_POST;
 }
@@ -103,9 +109,27 @@ try {
                         echo json_encode(['error' => $e->getMessage()]);
                         //redirection vers la page de connexion
                         header('Location: ' . BASE_URL . '/auth');
-                        exit();
+                        exit();  
+                        }
+                    break;
+                
+               case 'check-email':
+                    if ($method === 'POST') {
+                        $email = $input['email'] ?? '';
+                        $controller->checkEmail($email);
                     }
                     break;
+
+                case 'check-username':
+                    if ($method === 'POST') {
+                        $username = $input['username'] ?? '';
+                        $controller->checkUsername($username);
+                    }
+                    break;
+                    
+
+
+                      
                 case 'register':
                     try {
                         $controller->register();
@@ -129,7 +153,7 @@ try {
                     $controller->resetPassword();
                     break;
                 default:
-                    throw new Exception('Action non reconnue', 404);
+                    throw new Exception('Endpoint non trouvé. - api ' . var_dump($uri), 404);
             }
             break;
 

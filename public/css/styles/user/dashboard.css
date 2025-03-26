@@ -3,7 +3,7 @@
    ================================================== */
 
 /* Variables globales */
-/* :root {
+:root {
     --background: hsl(222, 85%, 7%);
     --card: hsl(222, 65%, 12%);
     --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
@@ -19,7 +19,7 @@
     --green: #22C55E;
     --yellow: #EAB308;
     --red: #EF4444;
-} */
+}
 .card-bg {
     background: var(--card-bg);
   }
