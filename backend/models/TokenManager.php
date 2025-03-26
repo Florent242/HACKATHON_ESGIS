@@ -3,6 +3,7 @@ namespace Auth\Model;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use PDO;
 
 class TokenManager
 {
@@ -47,19 +48,36 @@ class TokenManager
         }
     }
 
-    public function validateToken($token) {
-        try {
-            $decoded = JWT::decode($token, new Key($this->jwt_secret, 'HS256'));
-            return [
-                'valid' => true,
-                'user_id' => $decoded->user_id
-            ];
-        } catch (Exception $e) {
-            return [
-                'valid' => false,
-                'error' => $e->getMessage()
-            ];
+    //Verifie si un token existe et est valide sur une page
+        public function validateToken($token) {
+            try {
+                $decoded = JWT::decode($token, new Key($this->key, 'HS256'));
+        
+                return [
+                    'valid' => true,
+                    'user_id' => $decoded->sub
+                ];
+            } catch (\Firebase\JWT\ExpiredException $e) {
+                return [
+                    'valid' => false,
+                    'error' => 'Token expiré'
+                ];
+            } catch (\Firebase\JWT\SignatureInvalidException $e) {
+                return [
+                    'valid' => false,
+                    'error' => 'Signature invalide'
+                ];
+            } catch (\UnexpectedValueException $e) {
+                return [
+                    'valid' => false,
+                    'error' => 'Token invalide'
+                ];
+            } catch (\Exception $e) { 
+                return [
+                    'valid' => false,
+                    'error' => 'Erreur inconnue: ' . $e->getMessage()
+                ];
+            }
         }
-    }
-
+    
 }
