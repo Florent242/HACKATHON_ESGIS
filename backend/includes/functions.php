@@ -3,6 +3,16 @@ if (!defined('FUNCTIONS_INCLUDED')) {
     define('FUNCTIONS_INCLUDED', true);
 }
 
+function sendResponse($statusCode, $data = [], $headers = []) {
+    http_response_code($statusCode);
+    header('Content-Type: application/json');
+    foreach ($headers as $key => $value) {
+        header("$key: $value");
+    }
+    echo json_encode($data);
+    exit;
+}
+
 // Fonction pour valider une adresse email
 function validateEmail($email) {
     return filter_var($email, FILTER_VALIDATE_EMAIL);

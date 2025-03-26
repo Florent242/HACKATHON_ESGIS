@@ -38,7 +38,7 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="form-group">
                         <label for="email_user">Email</label>
-                        <div class="display p-1 focus:border-blue-500 border border-indigo-400/40 shadow-lg shadow-indigo-300/10">
+                        <div class="display p-2 shadow-lg shadow-indigo-300/10">
                             <i data-lucide="mail"></i>
                             <input type="email" id="email_user" name="email" placeholder="etudiant@esgis.bj" required>
                         </div>
@@ -46,7 +46,7 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
 
                     <div class="form-group">
                         <label for="password_user">Mot de passe</label>
-                        <div class="display p-1 focus:border-blue-500 border border-indigo-400/40 shadow-lg shadow-indigo-300/10">
+                        <div class="display p-2 shadow-lg shadow-indigo-300/10">
                             <i data-lucide="key"></i>
                             <input type="password" id="password_user" name="password" placeholder="............" required>
                         </div>
@@ -70,7 +70,7 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
                     <div class="form-group">
 
                         <label for="fullName" class="label after:ml-1 after:text-red-500 after:content-['*']">Nom complet</label>
-                        <div class="display p-1 focus:border-blue-500 border border-indigo-400/40 shadow-lg shadow-indigo-300/10">
+                        <div class="display p-2 shadow-lg shadow-indigo-300/10">
                             <i data-lucide="user"></i>
                             <input type="text" id="fullname" name="fullname" placeholder="Votre nom" required>
                         </div>
@@ -78,7 +78,7 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
                     </div>
                     <div class="form-group">
                         <label for="username" class="label after:ml-1 after:text-red-500 after:content-['*']">Nom d'utilisateur</label>
-                        <div class="display p-1 focus:border-blue-500 border border-indigo-400/40 shadow-lg shadow-indigo-300/10">
+                        <div class="display p-2 shadow-lg shadow-indigo-300/10">
                             <i data-lucide="user"></i>
                             <input type="text" id="username" name="username" placeholder="Votre nom d'utilisateur" required>
                         </div>
@@ -86,7 +86,7 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
                     </div>
                     <div class="form-group">
                         <label for="email" class="label after:ml-1 after:text-red-500 after:content-['*']">Email</label>
-                        <div class="display p-1 focus:border-blue-500 border border-indigo-400/40 shadow-lg shadow-indigo-300/10">
+                        <div class="display p-2 shadow-lg shadow-indigo-300/10">
                             <i data-lucide="mail"></i>
                             <input type="email" id="email" name="email" placeholder="etudiant@esgis.bj" required>
                         </div>
@@ -94,7 +94,7 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
                     </div>
                     <div class="form-group">
                         <label for="password" class="label after:ml-1 after:text-red-500 after:content-['*']">Mot de passe</label>
-                        <div class="display p-1 focus:border-blue-500 border border-indigo-400/40 shadow-lg shadow-indigo-300/10">
+                        <div class="display p-2 shadow-lg shadow-indigo-300/10">
                             <i data-lucide="key"></i>
                             <input type="password" id="password" name="password" placeholder="............" required>
                         </div>
@@ -102,7 +102,7 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
                     </div>
                     <div class="form-group">
                         <label for="confirmPassword" class="label after:ml-1 after:text-red-500 after:content-['*']">Confirmer le mot de passe</label>
-                        <div class="display p-1 focus:border-blue-500 border border-indigo-400/40 shadow-lg shadow-indigo-300/10">
+                        <div class="display p-2 shadow-lg shadow-indigo-300/10">
                             <i data-lucide="key"></i>
                             <input type="password" id="confirmPassword" name="confirmPassword" placeholder="............" required>
                         </div>
