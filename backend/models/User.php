@@ -8,6 +8,7 @@ use PDOException;
 class User {
     private $db;
     private $table = 'users';
+    private $passwordColumn = 'password'; // Renommer la colonne pour plus de sécurité
 
     public function __construct($db) {
         $this->db = $db;
@@ -254,6 +255,23 @@ class User {
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération de l\'utilisateur par email: ' . $e->getMessage());
             return false;
+// =======
+//                 // Vérifier le hash
+//                 if (password_verify($password, $user[$this->passwordColumn])) {
+//                     unset($user[$this->passwordColumn]); // Ne pas retourner le hash
+//                     return [
+//                         'id' => $user['id'],
+//                         'username' => $user['username'],
+//                         'email' => $user['email'],
+//                         'role' => $user['role']
+//                     ];
+//                 }
+//             }
+            
+//             return false;
+//         } catch (Exception $e) {
+//             throw new Exception("Erreur lors de l'authentification : " . $e->getMessage());
+// >>>>>>> frontend
         }
     }
 
@@ -266,11 +284,12 @@ class User {
             $query = "SELECT id, username, fullname, school, email, role, status, github_url, linkedin_url, bio, profile_picture, created_at, updated_at FROM {$this->table}";
             $stmt = $this->db->prepare($query);
             $stmt->execute();
-
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des utilisateurs: ' . $e->getMessage());
             return [];
+
+            throw new Exception("Cette adresse email est déjà utilisée. User");
         }
     }
 

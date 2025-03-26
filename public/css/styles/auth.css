@@ -32,9 +32,9 @@ body {
 
 .auth-container {
     width: 100%;
-    max-width: 500px;
+    max-width: 600px;
     text-align: center;
-    margin: auto;
+    margin: 10% auto;
 }
 
 .auth-tabs {
@@ -113,13 +113,11 @@ body {
 .display {
     display: flex;
     align-items: center;
-    /* Aligne l'icône et l'input */
-    border: 1px solid var(--text-secondary);
     border-radius: 10px;
-    padding: 5px;
+    /* padding: 5px; */
     background: linear-gradient(165deg, #070F2A 0%, #0D1A44 60%, #121D4C 100%);
-    border: 1px solid rgba(110, 120, 220, 0.2);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(150, 140, 255, 0.06);
+    /* border: 1px solid rgba(110, 120, 220, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(150, 140, 255, 0.06); */
     width: 100%;
     transition: border 0.3s ease-in-out;
     color: var(--text-secondary);
@@ -192,37 +190,4 @@ body {
     .auth-container {
         max-width: 90%;
     }
-}
-
-/* ANIMATION */
-@keyframes fade-in {
-    from {
-        opacity: 0;
-        transform: translateX(100%) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0) scale(1);
-    }
-}
-
-@keyframes fade-out {
-    from {
-        opacity: 1;
-        transform: translateX(0) scale(1);
-    }
-    to {
-        opacity: 0;
-        transform: translateX(100%) scale(0.95);
-    }
-}
-
-.animate-fade-in {
-    animation: fade-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
-    transform-origin: right center;
-}
-
-.animate-fade-out {
-    animation: fade-out 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) both;
-    transform-origin: right center;
 }

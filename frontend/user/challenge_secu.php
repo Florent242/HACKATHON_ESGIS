@@ -14,7 +14,7 @@
 </head>
 <body>
   <!-- Header -->
-  <?php require_once '../../includes/user/header.php'; ?>
+  <?php require_once '../includes/user/header.php'; ?>
 
   <!-- Main structure -->
   <section class="main-container">

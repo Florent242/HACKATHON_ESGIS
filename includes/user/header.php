@@ -28,9 +28,9 @@ if (!isset($_SESSION['csrf_token'])) {
                     <div class="dropdown-container">
                         <div class="dropdown">
                             <ul class="dropdown-item" data-item="0">
-                                <a href="/HACKATHON_ESGIS/public/user/challenges">
+                                <a href="/HACKATHON_ESGIS/public/user/challenge_security">
                                     <li>
-                                        Challenges
+                                        Challenges de sécurité
                                     </li>
                                 </a>
                                 <a href="/HACKATHON_ESGIS/public/user/hackathon">

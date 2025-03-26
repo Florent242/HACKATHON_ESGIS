@@ -35,6 +35,7 @@ class AuthController
             $database = Database::getInstance();
             $this->db = $database->getConnection();
         }
+
         $this->user = new User($this->db);
 
         // Générer un token CSRF s'il n'existe pas
@@ -142,6 +143,19 @@ class AuthController
 
             $email = $data['email'];
             $password = $data['password'];
+// =======
+//             $user = $this->user->findByEmail($email);
+            
+//             if ($user && password_verify($password, $user['mot_de_passe'])) {
+//                 // Créer un token JWT
+//                 $jwt = $this->generateToken($user['id']);
+                
+//                 // Stocker les informations de session
+//                 $_SESSION['user_id'] = htmlspecialchars($user['id']);
+//                 $_SESSION['username'] = htmlspecialchars($user['username']);
+//                 $_SESSION['role'] = htmlspecialchars($user['role']);
+//                 setFlashMessage('success', 'Connexion réussie');
+// >>>>>>> frontend
 
             // Log the login attempt (without password)
             logActivity('login_attempt', 'Tentative de connexion', ['email' => $email], 'info');
@@ -186,6 +200,7 @@ class AuthController
                 'message' => $e->getMessage()
             ]);
             throw new Exception($e->getMessage());
+
         }
     }
 
@@ -305,7 +320,18 @@ class AuthController
     public function forgotPassword()
     {
         try {
+// =======
+//     public function forgotPassword() {
+//         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+//             try {
+//                 $email = htmlspecialchars($_POST['email'] ?? '');
+//                 $user = $this->user->findByEmail($email);
 
+//                 if ($user) {
+//                     // Générer un token de réinitialisation
+//                     $token = bin2hex(random_bytes(32));
+//                     $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
+// >>>>>>> frontend
             // Si c'est une requête API avec des données JSON
             $jsonData = json_decode(file_get_contents('php://input'), true);
             if ($jsonData && isset($jsonData['email'])) {
@@ -496,8 +522,49 @@ class AuthController
         }
     }
 
-    private function generateToken($userId)
-    {
+    public function checkEmail(string $email) {
+        try {
+            // Vérifier si l'email est vide
+            if (!isset($email) || empty($email)) {
+                sendResponse(400, ['error' => 'Email requis']);
+                return;
+            }
+
+            // Vérifier si l'email existe déjà
+            $user = $this->user->findByEmail($email);
+            
+            sendResponse(200, [
+                'exists' => $user !== false
+            ]);
+            
+        } catch (Exception $e) {
+            error_log("Erreur de vérification de l'email : " . $e->getMessage());
+            sendResponse(500, ['error' => 'Erreur serveur: '. $e->getMessage()]);
+        }
+    }
+
+    public function checkUsername(string $username) {
+        try {
+            // Vérifier si le nom d'utilisateur est vide
+            if (empty($username)) {
+                sendResponse(400, ['error' => 'Nom d\'utilisateur requis']);
+                return;
+            }
+
+            // Vérifier si le nom d'utilisateur existe déjà
+            $user = $this->user->findByUsername($username);
+            
+            sendResponse(200, [
+                'exists' => $user !== false
+            ]);
+            
+        } catch (Exception $e) {
+            error_log("Erreur de vérification du nom d'utilisateur : " . $e->getMessage());
+            sendResponse(500, ['error' => 'Erreur serveur: '. $e->getMessage()]);
+        }
+    }
+
+    private function generateToken($userId) {
         // En production, utilisez une bibliothèque JWT sécurisée
         $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
         $payload = base64_encode(json_encode([

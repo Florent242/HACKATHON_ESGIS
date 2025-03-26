@@ -199,7 +199,7 @@ function setFlashMessage($type, $message,$details = null) {
 
 // Fonction pour récupérer et effacer le message flash
 function getFlashMessage() {
-    if (session_status() === PHP_SESSION_NONE) {
+    if (!isset($_SESSION) || !is_array($_SESSION)) {
         session_start();
     }
     if (isset($_SESSION['notification'])) {

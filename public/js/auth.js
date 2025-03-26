@@ -20,131 +20,233 @@ document.addEventListener("DOMContentLoaded", function () {
         registerForm.style.display = "block";
         loginForm.style.display = "none";
     });
-});
 
-/**
- * Affiche une notification.
- * @param {string} message - Le message à afficher.
- * @param {string} details - Les détails de la notification (optionnel).
- * @param {string} type - Le type de notification ('success', 'error', 'info', 'warning').
- * @param {number} duration - Durée en millisecondes avant disparition (optionnel).
- */
-function showNotification(message, details = null, type = 'success', duration = 5000) {
-    const notification = document.createElement('div');
-    notification.className = `fixed top-4 ${type === 'success' ? 'left-1/2' : 'right-[1%]'} transform ${type === 'success' ? '-translate-x-1/2' : '-translate-x-[1%]'} max-w-md w-auto ${type === 'success' ? 'bg-green-700' : type === 'error' ? 'bg-red-700' : type === 'warning' ? 'bg-yellow-700' : 'bg-blue-700'} rounded-lg shadow-lg p-2 flex items-start animate-fade-in z-200`;
+    // message d'erreur pour la validation a l'inscription
+    const form = document.getElementById('registrationForm');
 
-    // Conteneur d'icône
-    const iconContainer = document.createElement('div');
-    iconContainer.className = 'flex-shrink-0 mr-3';
+    // Éléments du formulaire
+    const fullName = document.getElementById('fullName');
+    const username = document.getElementById('username');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirmPassword');
 
-    // Icône Lucide
-    const icon = document.createElement('i');
-    icon.setAttribute('data-lucide',
-        type === 'success' ? 'check-circle' :
-            type === 'error' ? 'circle-x' :
-                type === 'warning' ? 'alert-triangle' :
-                    'info'
-    );
-    icon.className = `w-4 h-4 ${type === 'success' ? 'text-green-500' :
-            type === 'error' ? 'text-red-500' :
-                type === 'warning' ? 'text-yellow-500' :
-                    'text-blue-500'
-        }`;
-
-    iconContainer.appendChild(icon);
-    notification.appendChild(iconContainer);
-
-    // Contenu du texte
-    const textContainer = document.createElement('div');
-    textContainer.className = 'flex-1';
-
-    // Message principal
-    const messageElement = document.createElement('h3');
-    messageElement.className = 'text-white font-semibold';
-    messageElement.innerText = message;
-    textContainer.appendChild(messageElement);
-
-    // Message de détails (en option)
-    if (details) {
-        const detailsElement = document.createElement('p');
-        detailsElement.className = 'text-white font-light text-sm mt-0.5';
-        detailsElement.innerText = details;
-        textContainer.appendChild(detailsElement);
-    }
-
-    notification.appendChild(textContainer);
-
-    // Bouton de fermeture
-    const closeContainer = document.createElement('div');
-    closeContainer.className = 'flex-shrink-0 ml-3';
-
-    const closeButton = document.createElement('button');
-    closeButton.className = 'text-gray-400 hover:text-gray-500 focus:outline-none';
-
-    const closeIcon = document.createElement('i');
-    closeIcon.setAttribute('data-lucide', 'x');
-    closeIcon.className = 'w-5 h-5';
-
-    closeButton.appendChild(closeIcon);
-    closeButton.addEventListener('click', () => {
-        hideNotification(notification);
+    // Messages d'erreur
+    const fullNameError = document.getElementById('fullNameError');
+    const usernameError = document.getElementById('usernameError');
+    const emailError = document.getElementById('emailError');
+    const passwordError = document.getElementById('passwordError');
+    const confirmPasswordError = document.getElementById('confirmPasswordError');
+    
+    // Validation du nom complet
+    fullName.addEventListener('input', function () {
+        if (this.value.length < 3 && this.value.trim() !== '') {
+            showError(this, fullNameError, "Le nom complet doit contenir au moins 3 caractères");
+        } else if (!/^[a-zA-ZÀ-ÿ\s'-]+$/.test(this.value) && this.value.trim() !== '') {
+            showError(this, fullNameError, "Le nom ne peut contenir que des lettres");
+        } else if (this.value.trim() === '') {
+            hideError(this, fullNameError);
+        }else{
+            hideError(this, fullNameError);
+        }
     });
 
-    closeContainer.appendChild(closeButton);
-    notification.appendChild(closeContainer);
+    // Validation du nom d'utilisateur
+    username.addEventListener('input', function () {
+        if (username.value.length < 3 && username.value !== '') {
+            showError(username, usernameError, "Le nom d'utilisateur doit contenir au moins 3 caractères");
+        } else if (!/^[a-zA-Z0-9_]+$/.test(username.value)) {
+            showError(username, usernameError, "Le nom d'utilisateur ne peut contenir que des lettres, chiffres et underscores");
+        } else if (username.value.length >= 3) {
+            checkUsername(username.value);
+        } else {
+            hideError(username, usernameError);
+        }    
+    });    
 
-    // Ajouter la notification au DOM
-    document.body.appendChild(notification);
+    // Validation de l'email
+    email.addEventListener('input', function () {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(this.value) && this.value !== '') {
+            showError(this, emailError, "Veuillez entrer une adresse email valide");
+        } else if (emailRegex.test(this.value) && this.value !== '') {
+            checkEmail(this.value);
+        } else {
+            hideError(this, emailError);
+        }    
+    });    
 
-    // Initialiser Lucide pour les nouvelles icônes
-    if (window.lucide) {
-        window.lucide.createIcons();
-    }
+    // Validation du mot de passe
+    password.addEventListener('input', function () {
+        if (this.value.trim() === '') {
+            hideError(this, passwordError);
+            return;
+        }    
+        validatePassword(this.value, this, passwordError);
+    });    
 
-    // Masquer la notification après la durée spécifiée
-    if (duration) {
-        setTimeout(() => hideNotification(notification), duration);
-    }
+    // Validation de la confirmation du mot de passe
+    confirmPassword.addEventListener('input', function () {
+        if (this.value !== password.value && this.value.trim() !== '') {
+            showError(this, confirmPasswordError, "Les mots de passe ne correspondent pas");
+        } else {
+            hideError(this, confirmPasswordError);
+        }    
+    });    
 
-    return notification;
-}
+    // Validation du formulaire à la soumission
+    form.addEventListener('submit', async function (event) {
+        event.preventDefault(); // Toujours preventDefault au début
 
-function hideNotification(notification) {
-    notification.classList.add('animate-fade-out');
-    notification.addEventListener('animationend', () => notification.remove(), { once: true });
-}
+        let isValid = true;
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Pour tester la notification qui correspond à l'image
-
-    const notificationElement = document.getElementById('notification-data');
-    if (notificationElement) {
-        try {
-            console.log(notificationElement);
-            const notificationData = JSON.parse(notificationElement.getAttribute('data-notification'));
-            if (notificationData) {
-                showNotification(
-                    notificationData.message,
-                    notificationData.details || null,
-                    notificationData.type || 'success'
-                );
-                // Supprimer la notification de la session après affichage
-                fetch('clearNotification.php', { method: 'POST' })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Erreur lors de la suppression de la notification');
-                        }
-                    })
-                    .catch(error => {
-                        console.error(error);
-                    });
-            }
-        } catch (e) {
-            console.error('Erreur lors du parsing des données de notification:', e);
+        // Validation du nom complet
+        if (fullName.value.length < 3 || fullName.value.trim() === '') {
+            showError(fullName, fullNameError, "Le nom complet doit contenir au moins 3 caractères");
+            isValid = false;
         }
+
+        // Validation du nom d'utilisateur
+        if (username.value.length < 3 || username.value.trim() === '') {
+            showError(username, usernameError, "Le nom d'utilisateur doit contenir au moins 3 caractères");
+            isValid = false;
+        }
+
+        // Validation de l'email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.value) || email.value.trim() === '') {
+            showError(email, emailError, "Veuillez entrer une adresse email valide");
+            isValid = false;
+        }
+
+        // Validation du mot de passe
+        if (!validatePassword(password.value, password, passwordError) || password.value.trim() === '') {
+            showError(password, passwordError, "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial");
+            isValid = false;
+        }
+
+        // Validation de la confirmation du mot de passe
+        if (confirmPassword.value !== password.value || confirmPassword.value.trim() === '') {
+            showError(confirmPassword, confirmPasswordError, "Les mots de passe ne correspondent pas");
+            isValid = false;
+        }
+
+        // Validation asynchrone
+        if (isValid) {
+            try {
+                const [usernameAvailable, emailAvailable] = await Promise.all([
+                    checkUsername(username.value),
+                    checkEmail(email.value)
+                ]);
+
+                if (!usernameAvailable && !emailAvailable) {
+                    form.submit(); // Soumettre seulement si tout est valide
+                }
+            } catch (error) {
+                console.error('Validation error:', error);
+            }
+        }
+    });
+
+    
+    // function pour rechercher un nom d'utilisateur
+    async function checkUsername(Username) {
+        fetch('/HACKATHON_ESGIS/public/api/auth/check-username', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username: Username })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.exists) {
+                showError(username, usernameError, "Cet nom d'utilisateur est déjà utilisé");
+                return false;
+            } else {
+                hideError(username, usernameError);
+                return true;
+            }
+        })
+        .catch(error => {
+            console.error('Error checking username:', error);
+        });
+}
+
+// function pour rechercher un email
+async function checkEmail(Email) {
+    fetch('/HACKATHON_ESGIS/public/api/auth/check-email', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email: Email })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.exists) {
+                showError(email, emailError, "Cet email est déjà utilisé");
+                return false;
+            } else {
+                hideError(email, emailError);
+                return true;
+            }
+        })
+        .catch(error => {
+            console.error('Error checking email:', error);
+        });
     }
+    
+    // Fonctions d'affichage/masquage des erreurs
+function showError(inputElement, errorElement, message) {
+    // Ajouter la classe d'erreur à l'input
+    inputElement.parentElement.classList.add('input-error');
+    
+    // Afficher et animer le message d'erreur
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden', 'fade-out');
+}
+
+function hideError(inputElement, errorElement) {
+    // Retirer la classe d'erreur de l'input
+    inputElement.parentElement.classList.remove('input-error');
+
+    // Vérifier si l'erreur est déjà masquée
+    if (errorElement.classList.contains('hidden')) return;
+
+    // Supprimer l'ancienne animation si elle est encore en cours
+    errorElement.classList.remove('fade-in');
+    
+    // Ajouter la classe de disparition
+    errorElement.classList.add('fade-out');
+
+    // Attendre la fin de l'animation avant de cacher complètement
+    errorElement.addEventListener('animationend', function () {
+        errorElement.classList.add('hidden');
+        errorElement.classList.remove('fade-out'); // Nettoyage après animation
+    }, { once: true });
+}
+
+// Validation du mot de passe
+function validatePassword(value,password, passwordError) {
+    if (value.length < 8) {
+        showError(password, passwordError, "Le mot de passe doit contenir au moins 8 caractères");
+        return false;
+    } else if (!/[A-Z]/.test(value)) {
+        showError(password, passwordError, "Le mot de passe doit contenir au moins une majuscule");
+        return false;
+    } else if (!/[a-z]/.test(value)) {
+        showError(password, passwordError, "Le mot de passe doit contenir au moins une minuscule");
+        return false;
+    } else if (!/[0-9]/.test(value)) {
+        showError(password, passwordError, "Le mot de passe doit contenir au moins un chiffre");
+        return false;
+    } else if (!/[^A-Za-z0-9]/.test(value)) {
+        showError(password, passwordError, "Le mot de passe doit contenir au moins un caractère spécial");
+        return false;
+    } else {
+        hideError(password, passwordError);
+        return true;
+    }
+}
 });
-
-
-
-// showNotification('Successfully saved!', 'Anyone with a link can now view this file.','success');
