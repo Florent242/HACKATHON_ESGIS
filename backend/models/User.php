@@ -239,42 +239,27 @@ class User {
      * @param string $email Email de l'utilisateur
      * @return array|bool Les données de l'utilisateur ou false si non trouvé
      */
-    public function findByEmail($email) {
-        try {
-            $query = "SELECT * FROM {$this->table} WHERE email = :email LIMIT 1";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':email', $email);
-            $stmt->execute();
-
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($user) {
-                unset($user['password']); // Ne pas renvoyer le mot de passe
-            }
-
-            return $user;
-        } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération de l\'utilisateur par email: ' . $e->getMessage());
-            return false;
-// =======
-//                 // Vérifier le hash
-//                 if (password_verify($password, $user[$this->passwordColumn])) {
-//                     unset($user[$this->passwordColumn]); // Ne pas retourner le hash
-//                     return [
-//                         'id' => $user['id'],
-//                         'username' => $user['username'],
-//                         'email' => $user['email'],
-//                         'role' => $user['role']
-//                     ];
-//                 }
-//             }
-            
-//             return false;
-//         } catch (Exception $e) {
-//             throw new Exception("Erreur lors de l'authentification : " . $e->getMessage());
-// >>>>>>> frontend
-        }
+public function findByUsername($username) {
+    try {
+        $sql = "SELECT id, username, email, role FROM {$this->table} WHERE username = :username";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':username' => $username]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
+    } catch (PDOException $e) {
+        throw new Exception(message: 'Erreur lors de la recherche par username: ' . $e->getMessage());
     }
+}
 
+public function findByEmail($email) {
+    try {
+        $query = "SELECT id, username, email, role FROM {$this->table} WHERE email = :email";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([':email' => $email]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
+    } catch (PDOException $e) {
+        throw new Exception('Erreur lors de la recherche par email: ' . $e->getMessage());
+    }
+}
     /**
      * Récupère tous les utilisateurs
      * @return array Liste des utilisateurs
@@ -286,9 +271,7 @@ class User {
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération des utilisateurs: ' . $e->getMessage());
-            return [];
-
+            error_log('Erreur lors de la récupération des utilisateurs: ' . $e->getMessage());            
             throw new Exception("Cette adresse email est déjà utilisée. User");
         }
     }

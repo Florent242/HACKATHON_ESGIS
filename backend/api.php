@@ -71,9 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
-// 
-const BASE_URL = '/HACKATHON_ESGIS/public';
-
 // Récupération de la méthode HTTP et de l'URL
 $method = $_SERVER['REQUEST_METHOD'];
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -126,9 +123,6 @@ try {
                         $controller->checkUsername($username);
                     }
                     break;
-                    
-
-
                       
                 case 'register':
                     try {

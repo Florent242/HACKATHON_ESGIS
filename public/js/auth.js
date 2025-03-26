@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById('registrationForm');
 
     // Éléments du formulaire
-    const fullName = document.getElementById('fullName');
+    const fullName = document.getElementById('fullname');
     const username = document.getElementById('username');
     const email = document.getElementById('email');
     const password = document.getElementById('password');
