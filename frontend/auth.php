@@ -18,6 +18,9 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
     <script defer src="/HACKATHON_ESGIS/public/js/auth.js"></script>
     <!-- Lucide Icons -->
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.280.0/dist/umd/lucide.min.js"></script>
+
+
+
 </head>
 
 <body>
