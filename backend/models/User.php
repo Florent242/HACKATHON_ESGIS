@@ -395,5 +395,23 @@ public function findByEmail($email) {
             error_log('Erreur lors de la récupération des utilisateurs par rôle: ' . $e->getMessage());
             return [];
         }
+    } 
+    
+    public function getById(int $id): array|false
+    {
+        try {
+            $query = "SELECT id, username, fullname, email, role, status, school, github_url, linkedin_url, bio, profile_picture 
+                     FROM {$this->table} 
+                     WHERE id = :id";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+    
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération de l\'utilisateur: ' . $e->getMessage());
+            return false;
+        }
     }
+    
 }
