@@ -1,0 +1,270 @@
+/* Définition des variables */
+:root {
+    --background: #030B20;
+    --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
+    --card-hover: #1E293B;
+    --blue: #3B82F6;
+    --text: #FFFFFF;
+    --text-secondary: #94A3B8;
+    --border: #1E293B;
+}
+
+/* Style général */
+body {
+    background-color: var(--background);
+    color: var(--text);
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 15px;
+    margin: 0;
+    padding-top: 10px; 
+}
+
+/* En-tête */
+.newdiv h1 {
+    font-size: 32px;
+    font-weight: bold;
+}
+
+.subtitle {
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
+/* Conteneur des cartes */
+.cards {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* Style des cartes */
+.card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    width: 300px;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+    transition: transform 0.2s ease-in-out, background 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    background: var(--card-hover);
+}
+
+/* Badge en haut de la carte */
+.badge {
+    display: inline-block;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 15px;
+    margin-bottom: 10px;
+}
+
+.platine {
+    background: var(--blue);
+    color: var(--text);
+}
+
+.gold {
+    background: #f4b400;
+    color: var(--text);
+}
+
+.silver {
+    background: #a6a6a6;
+    color: var(--text);
+}
+
+/* Titre et description */
+h3 {
+    margin: 10px 0;
+    font-size: 20px;
+}
+
+.description {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+/* Montant */
+.amount {
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--blue);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+/* Liste des avantages */
+.advantages {
+    list-style: none;
+    padding: 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.advantages li {
+    margin: 5px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Icônes Lucide */
+.icon {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
+    color: var(--blue);
+}
+
+/* Bouton Voir le profil */
+.profile-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--blue);
+    border: none;
+    color: var(--card-hover);
+    margin-top: 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    transition: 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.profile-btn:hover {
+    background: #2563eb;
+}
+
+.down{
+        padding: 10px 20px;
+        font-size: 14px;
+        background: var(--blue);
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        color: var(--card-hover);
+        margin-bottom: 5%;
+        font-weight: bold;
+}
+
+.innov{
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centre horizontalement */
+    gap: 5px; /* Espacement entre les éléments */
+}
+
+.innov h1{
+    margin-top: 10%;
+    margin-bottom: 3%;
+}
+
+.entete p{
+    margin-top: 5px;
+    margin-bottom: 3%;
+    color: var(--text-secondary);
+}
+
+.innov .card  p{
+    margin-top: -10px;
+    color: var(--text-secondary);
+    font-size: 15px;
+}
+
+.innov .card h4{
+    margin-top: 6%;
+}
+
+.alias{
+    color: #2563eb;
+    margin-top: 20px;
+}
+
+.down:hover{
+    background: #2563eb;
+}
+
+/* RESPONSIVE DESIGN */
+
+/* Tablette (écran entre 600px et 1024px) */
+@media (max-width: 1024px) {
+    .cards {
+        gap: 15px;
+    }
+
+    .card {
+        width: 280px;
+        padding: 18px;
+    }
+
+    h3 {
+        font-size: 18px;
+    }
+
+    .amount {
+        font-size: 15px;
+    }
+
+    .profile-btn {
+        font-size: 13px;
+        padding: 9px;
+    }
+}
+
+
+
+/* Mobile (écran inférieur à 600px) */
+@media (max-width: 600px) {
+    body {
+        padding: 20px;
+    }
+
+    header h1 {
+        font-size: 24px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+    }
+
+    .cards {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .card {
+        width: 100%;
+        max-width: 320px;
+        padding: 16px;
+    }
+
+    h3 {
+        font-size: 18px;
+    }
+
+    .amount {
+        font-size: 14px;
+    }
+
+    .profile-btn {
+        font-size: 12px;
+        padding: 8px;
+    }
+}
