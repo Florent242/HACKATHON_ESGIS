@@ -1,11 +1,14 @@
 <?php
+if (!defined('CONFIG_INCLUDED')) {
+    define('CONFIG_INCLUDED', true);
+}
 
 // Configuration de la base de données SQLite
 define('DB_FILE', __DIR__ . '/../database/hackathon.db');
 
 // Configuration de l'application
-define('APP_NAME', 'Hackathon Platform');
-define('APP_URL', 'http://localhost');
+// define('APP_NAME', 'Hackathon Platform');
+// define('APP_URL', 'http://localhost');
 define('APP_VERSION', '1.0.0');
 
 // Configuration des sessions
@@ -53,7 +56,7 @@ function jsonResponse($data, $statusCode = 200) {
     http_response_code($statusCode);
     header('Content-Type: application/json');
     echo json_encode($data);
-    exit();
+    exit;
 }
 // Elements de cors.php
     // Configuration CORS

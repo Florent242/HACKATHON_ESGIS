@@ -75,15 +75,18 @@ function redirect($path) {
 }
 
 // Fonction pour afficher un message flash
-function setFlashMessage($type, $message,$details = null) {
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
+if (!function_exists('getFlashMessage')) {
+    function getFlashMessage() {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        if (isset($_SESSION['notification'])) {
+            $notification = $_SESSION['notification'];
+            unset($_SESSION['notification']);
+            return $notification;
+        }
+        return null;
     }
-    $_SESSION['notification'] = [
-        'message' => $message,
-        'details' => $details,
-        'type' => $type
-    ];
 }
 
 // Fonction pour récupérer et effacer le message flash

@@ -87,8 +87,8 @@ switch ($url) {
     case '/HACKATHON_ESGIS/public/user':
         require_once '../frontend/user/dashboard.php'; // Inclure la page "User"
         break;
-    case '/HACKATHON_ESGIS/public/user/challenges':
-        require_once '../frontend/user/challenge.php'; // Inclure la page "user/challenges"
+    case '/HACKATHON_ESGIS/public/user/challenge_security':
+        require_once '../frontend/user/challenge_secu.php'; // Inclure la page "user/challenges"
         break;
     case '/HACKATHON_ESGIS/public/user/hackathon':
         require_once '../frontend/user/hackathon.php'; // Inclure la page "user/hacka"
@@ -121,3 +121,5 @@ switch ($url) {
 }
 // a ce niveau d'autres amelioration devront etre fait n'y toucher donc pas
 ?>
+
+<script src="./js/main.js"></script>

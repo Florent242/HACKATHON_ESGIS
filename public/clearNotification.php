@@ -1,6 +1,10 @@
 <?php
-session_start();
-
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!isset($_SESSION['notification'])) {
+    $_SESSION['notification'] = null;
+}
 // Supprimer la notification de la session
 unset($_SESSION['notification']);
 

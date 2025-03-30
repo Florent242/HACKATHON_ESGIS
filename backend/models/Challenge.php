@@ -17,7 +17,7 @@ class Challenge {
         try {
             $this->validate($data);
 
-            $sql = "INSERT INTO {$this->table} (titre, description, hackathon_id, points, created_by, created_at) 
+            $sql = "INSERT INTO {$this->table} (titre, description, hackathon_id, points, created_by, created_at)
                     VALUES (:titre, :description, :hackathon_id, :points, :created_by, :created_at)";
 
             $stmt = $this->db->prepare($sql);
@@ -56,6 +56,30 @@ class Challenge {
         }
     }
 
+    /**
+     * Récupère tous les challenges
+     * @return array
+     */
+    public function getAll() {
+        try {
+            $sql = "SELECT c.*, u.nom as created_by_nom, u.prenom as created_by_prenom,
+                    h.titre as hackathon_titre,
+                    COUNT(DISTINCT p.id) as nombre_projets
+                    FROM {$this->table} c
+                    LEFT JOIN users u ON c.created_by = u.id
+                    LEFT JOIN hackathons h ON c.hackathon_id = h.id
+                    LEFT JOIN projets p ON c.id = p.challenge_id
+                    GROUP BY c.id
+                    ORDER BY c.created_at DESC";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la récupération de tous les challenges : " . $e->getMessage());
+        }
+    }
+
     public function update($id, $data) {
         try {
             $fields = [];
@@ -86,7 +110,7 @@ class Challenge {
             $sql = "SELECT COUNT(*) FROM projets WHERE challenge_id = :id";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':id' => $id]);
-            
+
             if ($stmt->fetchColumn() > 0) {
                 throw new Exception("Impossible de supprimer le challenge : des projets y sont associés");
             }
@@ -140,7 +164,7 @@ class Challenge {
         }
 
         // Vérifier si le titre est unique pour ce hackathon
-        $sql = "SELECT COUNT(*) FROM {$this->table} 
+        $sql = "SELECT COUNT(*) FROM {$this->table}
                 WHERE titre = :titre AND hackathon_id = :hackathon_id";
 
         if (isset($data['id'])) {
@@ -167,7 +191,7 @@ class Challenge {
         $sql = "SELECT id FROM hackathons WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':id' => $data['hackathon_id']]);
-        
+
         if (!$stmt->fetch()) {
             throw new Exception("Hackathon non trouvé");
         }
