@@ -1,7 +1,14 @@
 <?php
 namespace Auth\Controller;
+use Firebase\JWT\JWT; // Ajoutez cette ligne pour importer JWT
 
+
+use Auth\Model\Participant; // Ajoutez cette ligne
+use Auth\Model\User; // Assurez-vous d'importer le modèle User
+use Auth\Model\Database; // Assurez-vous d'importer le modèle Database
 use Exception;
+use PDO;
+use PDOException;
 
 if(!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
@@ -15,6 +22,16 @@ if(!class_exists('User')) {
 if(!class_exists('Controller')) {
     require_once __DIR__ . '/Controller.php';
 }
+if (!class_exists('Auth\Model\TokenManager')) {
+    require_once __DIR__ . '/../models/TokenManager.php';
+}
+
+// Vérifier si la classe Database existe, sinon l'inclure
+if (!class_exists('Auth\Model\Database')) {
+    require_once __DIR__ . '/../models/Database.php';
+}
+
+
 
 class UserController extends Controller {
     private $user;
@@ -23,7 +40,7 @@ class UserController extends Controller {
     public function __construct($db) {
         parent::__construct();
         $this->db = $db;
-        $this->user = new \Auth\Model\User($this->db);
+        $this->user = new User($this->db);
     }
 
     public function register() {
@@ -327,4 +344,1219 @@ class UserController extends Controller {
             ], 400);
         }
     }
+
+
+    //toutes les fonctions user_data et user...
+
+
+
+    /**
+     * Renvoie une réponse JSON et termine l'exécution du script.
+     *
+     * @param mixed $data Données à envoyer en JSON
+     */
+    public function sendJsonResponse($data) {
+        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        exit;
+    }
+    
+    /**
+     * Vérifie si l'utilisateur est authentifié
+     */
+    public function isAuthenticated() {
+        return isset($_SESSION['user_id']);
+    }
+    
+    /**
+     * Récupère les informations de l'utilisateur connecté et renvoie un JSON
+     */
+    public function getUserData() {
+        if (!isAuthenticated()) {
+            echo json_encode(['error' => 'Utilisateur non authentifié']);
+            exit;
+        }
+    
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+        $user = new User($db);
+    
+        $userData = $user->find($_SESSION['user_id']);
+        echo json_encode($userData);
+        exit;
+    }
+    
+    /**
+     * Récupère les statistiques de l'utilisateur et renvoie un JSON
+     */
+    public function getUserStats($userId) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $stmt = $db->prepare("SELECT COUNT(*) FROM challenge_submissions WHERE user_id = :user_id AND status = 'active'");
+        $stmt->execute([':user_id' => $userId]);
+        $flagsCount = $stmt->fetchColumn();
+    
+        $stmt = $db->prepare("SELECT COUNT(*) FROM equipe_membres WHERE user_id = :user_id");
+        $stmt->execute([':user_id' => $userId]);
+        $teamsCount = $stmt->fetchColumn();
+    
+        $rankQuery = "SELECT COUNT(*) + 1 as rank FROM (SELECT user_id, SUM(points) as total_points FROM challenge_submissions WHERE status = 'active' GROUP BY user_id HAVING SUM(points) > (SELECT COALESCE(SUM(points), 0) FROM challenge_submissions WHERE user_id = :user_id AND status = 'active')) as better_users";
+        $stmt = $db->prepare($rankQuery);
+        $stmt->execute([':user_id' => $userId]);
+        $rank = $stmt->fetchColumn();
+    
+        echo json_encode([
+            'flags_count' => $flagsCount,
+            'teams_count' => $teamsCount,
+            'rank' => $rank,
+            'is_top50' => ($rank <= 50)
+        ]);
+        exit;
+    }
+    
+    /**
+     * Récupère les hackathons de l'utilisateur et renvoie un JSON
+     */
+    public function getUserHackathons($userId) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+        $participant = new Participant($db);
+    
+        echo json_encode($participant->getByUser($userId));
+        exit;
+    }
+    
+    /**
+     * Récupère les équipes de l'utilisateur et renvoie un JSON
+     */
+    public function getUserTeams($userId) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $stmt = $db->prepare("SELECT e.* FROM equipes e JOIN equipe_membres em ON e.id = em.equipe_id WHERE em.user_id = :user_id");
+        $stmt->execute([':user_id' => $userId]);
+    
+        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        exit;
+    }
+    
+    /**
+     * Récupère le classement général et renvoie un JSON
+     */
+    public function getLeaderboard($limit = 50) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $stmt = $db->prepare("SELECT u.id, u.username, SUM(cs.points) as total_points FROM users u LEFT JOIN challenge_submissions cs ON u.id = cs.user_id AND cs.status = 'active' GROUP BY u.id, u.username ORDER BY total_points DESC LIMIT :limit");
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+    
+        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        exit;
+    }
+    
+    /**
+     * Soumet un flag pour un challenge et renvoie un JSON
+     */
+    public function submitChallengeFlag($userId, $challengeId, $flag) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $stmt = $db->prepare("SELECT * FROM challenges WHERE id = :id");
+        $stmt->execute([':id' => $challengeId]);
+        $challenge = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+        if (!$challenge) {
+            return json_encode(['success' => false, 'message' => 'Challenge non trouvé']);
+        }
+    
+        $isCorrect = ($flag === $challenge['flag']);
+        $status = $isCorrect ? 'active' : 'rejected';
+        $points = $isCorrect ? $challenge['points'] : 0;
+    
+        $stmt = $db->prepare("INSERT INTO challenge_submissions (user_id, challenge_id, submission_value, status, points, created_at) VALUES (:user_id, :challenge_id, :submission, :status, :points, NOW())");
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':challenge_id' => $challengeId,
+            ':submission' => $flag,
+            ':status' => $status,
+            ':points' => $points
+        ]);
+    
+        echo json_encode([
+            'success' => true,
+            'is_correct' => $isCorrect,
+            'points' => $points,
+            'message' => $isCorrect ? 'Félicitations ! Flag correct.' : 'Flag incorrect. Essayez encore.'
+        ]);
+        exit;
+    }
+
+
+
+    /** */
+
+    public function getUserIdFromJWT($jwt) {
+        // Vérifiez si le JWT est valide
+        $decoded = JWT::decode($jwt, '', ['HS256']); // Remplacez par votre clé secrète
+        return $decoded->sub; // Supposons que l'ID de l'utilisateur est stocké dans le champ 'sub'
+    }
+    /**
+     * Récupère les données du leaderboard et les renvoie au format JSON
+     * @return string Données du leaderboard au format JSON
+     */
+    public function getLeaderboardJSON() {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+        
+        try {
+            // Requête pour récupérer les utilisateurs classés par points
+            $stmt = $db->prepare("
+                SELECT 
+                    u.id, 
+                    u.username, 
+                    u.fullname, 
+                    u.school, 
+                    u.profile_picture,
+                    u.bio,
+                    u.email,
+                    (
+                        SELECT COUNT(*) 
+                        FROM team_members tm 
+                        WHERE tm.user_id = u.id
+                    ) as teams_count,
+                    (
+                        SELECT COUNT(*) 
+                        FROM activity_logs al 
+                        WHERE al.user_id = u.id AND al.action = 'login_success'
+                    ) as login_count
+                FROM users u
+                ORDER BY login_count DESC, teams_count DESC
+                LIMIT 50
+            ");
+            $stmt->execute();
+            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Ajouter le rang à chaque utilisateur
+            $rank = 1;
+            foreach ($users as &$user) {
+                $user['rank'] = $rank++;
+                
+                // Récupérer les activités récentes de l'utilisateur
+                $activityStmt = $db->prepare("
+                    SELECT action, description, level, created_at
+                    FROM activity_logs
+                    WHERE user_id = :userId
+                    ORDER BY created_at DESC
+                    LIMIT 5
+                ");
+                $activityStmt->bindParam(':userId', $user['id'], PDO::PARAM_INT);
+                $activityStmt->execute();
+                $user['recent_activities'] = $activityStmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+            
+            echo json_encode([
+                "status" => "success",
+                "data" => $users
+            ]);
+            exit;
+        } catch(PDOException $e) {
+            echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
+            exit;
+        }
+    }
+    
+    /**
+     * Récupère les données du profil d'un utilisateur et les renvoie au format JSON
+     * @return string Données du profil au format JSON
+     */
+    public function getProfileJSON() {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+        
+        $jwt = $_COOKIE['jwt'];
+        $userId = $this->getUserIdFromJWT($jwt);
+        try {
+            // Récupérer les informations de base de l'utilisateur
+            $stmt = $db->prepare("
+                SELECT 
+                    id, 
+                    username, 
+                    fullname, 
+                    email, 
+                    school, 
+                    bio, 
+                    profile_picture, 
+                    github_url, 
+                    linkedin_url, 
+                    role,
+                    created_at,
+                    updated_at,
+                    status
+                FROM users 
+                WHERE id = :userId
+            ");
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$user) {
+                return json_encode(["status" => "error", "message" => "User not found"]);
+            }
+            
+            // Récupérer les équipes de l'utilisateur
+            $teamsStmt = $db->prepare("
+                SELECT 
+                    t.id, 
+                    t.name, 
+                    t.created_at,
+                    h.name as hackathon_name,
+                    h.id as hackathon_id,
+                    (t.leader_id = :userId) as is_leader
+                FROM teams t
+                JOIN team_members tm ON t.id = tm.team_id
+                JOIN hackathons h ON t.hackathon_id = h.id
+                WHERE tm.user_id = :userId
+            ");
+            $teamsStmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $teamsStmt->execute();
+            $teams = $teamsStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Récupérer les hackathons auxquels l'utilisateur participe
+            $hackathonsStmt = $db->prepare("
+                SELECT 
+                    h.id, 
+                    h.name, 
+                    h.description, 
+                    h.start_date, 
+                    h.end_date, 
+                    h.location,
+                    hp.participation_status
+                FROM hackathons h
+                JOIN hackathon_participants hp ON h.id = hp.hackathon_id
+                WHERE hp.user_id = :userId
+            ");
+            $hackathonsStmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $hackathonsStmt->execute();
+            $hackathons = $hackathonsStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Récupérer les activités récentes de l'utilisateur
+            $activityStmt = $db->prepare("
+                SELECT 
+                    id,
+                    action, 
+                    description, 
+                    data, 
+                    level, 
+                    created_at
+                FROM activity_logs
+                WHERE user_id = :userId
+                ORDER BY created_at DESC
+                LIMIT 10
+            ");
+            $activityStmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $activityStmt->execute();
+            $activities = $activityStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Traiter les données JSON dans la colonne 'data'
+            foreach ($activities as &$activity) {
+                if (!empty($activity['data'])) {
+                    $activity['data'] = json_decode($activity['data'], true);
+                }
+            }
+            
+            // Récupérer les notifications de l'utilisateur
+            $notificationsStmt = $db->prepare("
+                SELECT 
+                    id, 
+                    message, 
+                    read_status, 
+                    created_at
+                FROM notifications
+                WHERE user_id = :userId
+                ORDER BY created_at DESC
+                LIMIT 10
+            ");
+            $notificationsStmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $notificationsStmt->execute();
+            $notifications = $notificationsStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Calculer les statistiques de l'utilisateur
+            $statsStmt = $db->prepare("
+                SELECT 
+                    COUNT(DISTINCT hp.hackathon_id) as hackathons_count,
+                    COUNT(DISTINCT tm.team_id) as teams_count,
+                    COUNT(DISTINCT al.id) as activities_count
+                FROM users u
+                LEFT JOIN hackathon_participants hp ON u.id = hp.user_id
+                LEFT JOIN team_members tm ON u.id = tm.user_id
+                LEFT JOIN activity_logs al ON u.id = al.user_id
+                WHERE u.id = :userId
+            ");
+            $statsStmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $statsStmt->execute();
+            $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Ajouter des statistiques supplémentaires
+            $stats['login_count'] = $db->query("SELECT COUNT(*) FROM activity_logs WHERE user_id = $userId AND action = 'login_success'")->fetchColumn();
+            $stats['last_login'] = $db->query("SELECT created_at FROM activity_logs WHERE user_id = $userId AND action = 'login_success' ORDER BY created_at DESC LIMIT 1")->fetchColumn();
+            
+            return json_encode([
+                "status" => "success",
+                "data" => [
+                    "user" => $user,
+                    "teams" => $teams,
+                    "hackathons" => $hackathons,
+                    "activities" => $activities,
+                    "notifications" => $notifications,
+                    "stats" => $stats
+                ]
+            ]);
+        } catch(PDOException $e) {
+            echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
+            exit;
+        }
+    }
+    
+    /**
+     * Récupère les données des défis et les renvoie au format JSON
+     * @return string Données des défis au format JSON
+     */
+    public function getChallengesJSON() {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+        
+        $jwt = $_COOKIE['jwt'];
+        $userId = $this->getUserIdFromJWT($jwt);
+        try {
+            // Récupérer tous les défis
+            $stmt = $db->prepare("
+                SELECT 
+                    c.id, 
+                    c.title, 
+                    c.description, 
+                    c.difficulty, 
+                    c.hackathon_id,
+                    c.created_at,
+                    c.updated_at,
+                    h.name as hackathon_name
+                FROM challenges c
+                JOIN hackathons h ON c.hackathon_id = h.id
+                ORDER BY c.created_at DESC
+            ");
+            $stmt->execute();
+            $challenges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Pour chaque défi, récupérer les technologies associées
+            foreach ($challenges as &$challenge) {
+                $techStmt = $db->prepare("
+                    SELECT 
+                        t.id, 
+                        t.name
+                    FROM technologies t
+                    JOIN challenge_technologies ct ON t.id = ct.technology_id
+                    WHERE ct.challenge_id = :challengeId
+                ");
+                $techStmt->bindParam(':challengeId', $challenge['id'], PDO::PARAM_INT);
+                $techStmt->execute();
+                $challenge['technologies'] = $techStmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+            
+            // Récupérer les meilleurs utilisateurs
+            $topUsersStmt = $db->prepare("
+                SELECT 
+                    u.id, 
+                    u.username, 
+                    u.fullname,
+                    u.profile_picture,
+                    COUNT(DISTINCT al.id) as activity_count
+                FROM users u
+                LEFT JOIN activity_logs al ON u.id = al.user_id
+                GROUP BY u.id
+                ORDER BY activity_count DESC
+                LIMIT 10
+            ");
+            $topUsersStmt->execute();
+            $topUsers = $topUsersStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Récupérer toutes les technologies disponibles
+            $technologiesStmt = $db->prepare("
+                SELECT id, name
+                FROM technologies
+                ORDER BY name
+            ");
+            $technologiesStmt->execute();
+            $technologies = $technologiesStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return json_encode([
+                "status" => "success",
+                "data" => [
+                    "challenges" => $challenges,
+                    "top_users" => $topUsers,
+                    "technologies" => $technologies,
+                    "filters" => [
+                        "difficulties" => ["easy", "medium", "hard"],
+                        "technologies" => array_column($technologies, 'name')
+                    ]
+                ]
+            ]);
+        } catch(PDOException $e) {
+            echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
+            exit;
+        }
+    }
+    
+    /**
+     * Fonction utilitaire pour convertir un objet JSON en tableau associatif
+     * Utile pour traiter les données JSON stockées dans la base de données
+     * @param string $json Chaîne JSON à convertir
+     * @return array Tableau associatif
+     */
+    public function jsonToRecord($json) {
+        if (empty($json)) {
+            return [];
+        }
+        
+        try {
+            $data = json_decode($json, true);
+            return is_array($data) ? $data : [];
+        } catch (Exception $e) {
+            echo json_encode(["status" => "error", "message" => "Invalid JSON"]);
+            exit;
+        }
+    }
+    
+    /**
+     * Fonction utilitaire pour renvoyer des données au format JSON avec les en-têtes appropriés
+     * @param string $jsonData Données au format JSON
+     */
+    public function outputJSON($jsonData) {
+        // Définir les en-têtes pour le JSON et CORS
+        header("Access-Control-Allow-Origin: *");
+        header("Content-Type: application/json; charset=UTF-8");
+        header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+        header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+        
+        // Afficher les données JSON
+        echo $jsonData;
+        exit;
+    }
+    
+    /**
+     * Fonction pour récupérer toutes les données nécessaires pour les trois pages
+     * et les renvoyer dans un seul objet JSON
+     * @return string Toutes les données au format JSON
+     */
+    public function getAllDataJSON() {
+        $jwt = $_COOKIE['jwt'];
+        $userId = $this->getUserIdFromJWT($jwt);
+        try {
+            $data = [
+                "status" => "success",
+                "timestamp" => date('Y-m-d H:i:s'),
+                "data" => []
+            ];
+            
+            // Récupérer les données du leaderboard
+            $leaderboardData = json_decode($this->getLeaderboardJSON(), true);
+            if (isset($leaderboardData['status']) && $leaderboardData['status'] === 'success') {
+                $data['data']['leaderboard'] = $leaderboardData['data'];
+            } else {
+                $data['data']['leaderboard'] = ["error" => "Failed to retrieve leaderboard data"];
+            }
+            
+            // Récupérer les données des défis
+            $challengesData = json_decode($this->getChallengesJSON(), true);
+            if (isset($challengesData['status']) && $challengesData['status'] === 'success') {
+                $data['data']['challenges'] = $challengesData['data'];
+            } else {
+                $data['data']['challenges'] = ["error" => "Failed to retrieve challenges data"];
+            }
+            
+            // Récupérer les données du profil si un ID utilisateur est fourni
+            if ($userId) {
+                $profileData = json_decode($this->getProfileJSON(), true);
+                if (isset($profileData['status']) && $profileData['status'] === 'success') {
+                    $data['data']['profile'] = $profileData['data'];
+                } else {
+                    $data['data']['profile'] = ["error" => "Failed to retrieve profile data"];
+                }
+            }
+            
+            echo json_encode($data);
+            exit;
+        } catch (Exception $e) {
+            echo json_encode([
+                "status" => "error",
+                "message" => "Error retrieving data: " . $e->getMessage()
+            ]);
+            exit;
+        }
+    }
+    
+    /**
+     * Exemple d'utilisation:
+     * 
+     * // Pour récupérer et afficher le leaderboard
+     * $leaderboardData = getLeaderboardJSON();
+     * outputJSON($leaderboardData);
+     * 
+     * // Pour récupérer et afficher le profil d'un utilisateur
+     * $profileData = getProfileJSON(1);
+     * outputJSON($profileData);
+     * 
+     * // Pour récupérer et afficher les défis
+     * $challengesData = getChallengesJSON();
+     * outputJSON($challengesData);
+     * 
+     * // Pour récupérer toutes les données en une seule fois
+     * $allData = getAllDataJSON(1); // Avec ID utilisateur
+     * outputJSON($allData);
+     */
+
+
+
+
+     // admin 
+    public function getJwt() {
+        return $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    }
+    
+    /**
+     * Vérifie si l'utilisateur est authentifié en tant qu'administrateur
+     *
+     * @return bool True si l'utilisateur est administrateur, false sinon
+     */
+    public function isAdmin() {
+        if (!isset($_SESSION['user_id'])) {
+            return false;
+        }
+    
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $query = "SELECT role FROM users WHERE id = :id";
+        $stmt = $db->prepare($query);
+        $stmt->execute([':id' => $_SESSION['user_id']]);
+        $role = $stmt->fetchColumn();
+    
+        echo $role === 'admin' || $role === 'organisateur';
+        exit;
+    }
+    
+    /**
+     * Redirection si non admin
+     */
+    public function requireAdmin() {
+        if (!$this->isAdmin()) {
+            header('Location: /HACKATHON_ESGIS/public/auth_admin');
+            exit;
+        }
+    }
+    
+    /**
+     * Récupère des statistiques pour le tableau de bord
+     *
+     * @return array Statistiques générales
+     */
+    public function getDashboardStats() {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        // Nombre total d'utilisateurs
+        $usersQuery = "SELECT COUNT(*) FROM users";
+        $stmt = $db->prepare($usersQuery);
+        $stmt->execute();
+        $usersCount = $stmt->fetchColumn();
+    
+        // Nombre d'administrateurs
+        $adminsQuery = "SELECT COUNT(*) FROM users WHERE role IN ('admin', 'organisateur')";
+        $stmt = $db->prepare($adminsQuery);
+        $stmt->execute();
+        $adminsCount = $stmt->fetchColumn();
+    
+        // Nombre de hackathons
+        $hackathonsQuery = "SELECT COUNT(*) FROM hackathons";
+        $stmt = $db->prepare($hackathonsQuery);
+        $stmt->execute();
+        $hackathonsCount = $stmt->fetchColumn();
+    
+        // Nombre de challenges
+        $challengesQuery = "SELECT COUNT(*) FROM challenges";
+        $stmt = $db->prepare($challengesQuery);
+        $stmt->execute();
+        $challengesCount = $stmt->fetchColumn();
+    
+        // Nombre d'équipes
+        $teamsQuery = "SELECT COUNT(*) FROM equipes";
+        $stmt = $db->prepare($teamsQuery);
+        $stmt->execute();
+        $teamsCount = $stmt->fetchColumn();
+    
+        // Nombre de participants
+        $participantsQuery = "SELECT COUNT(*) FROM participants";
+        $stmt = $db->prepare($participantsQuery);
+        $stmt->execute();
+        $participantsCount = $stmt->fetchColumn();
+    
+        // Nombre de soumissions
+        $submissionsQuery = "SELECT COUNT(*) FROM challenge_submissions";
+        $stmt = $db->prepare($submissionsQuery);
+        $stmt->execute();
+        $submissionsCount = $stmt->fetchColumn();
+    
+        $data = [
+            'users' => $usersCount,
+            'admins' => $adminsCount,
+            'participants' => $participantsCount,
+            'hackathons' => $hackathonsCount,
+            'challenges' => $challengesCount,
+            'teams' => $teamsCount,
+            'submissions' => $submissionsCount
+        ];
+    
+        echo json_encode($data);
+        exit;
+    }
+    
+    /**
+     * Récupère tous les utilisateurs
+     *
+     * @param string $filter Filtre par rôle ou statut
+     * @return array Liste des utilisateurs
+     */
+    public function getAllUsers($filter = null) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $query = "SELECT u.*,
+                (SELECT COUNT(*) FROM participants p WHERE p.user_id = u.id) as participations,
+                (SELECT COUNT(*) FROM equipe_membres em WHERE em.user_id = u.id) as teams
+                FROM users u";
+    
+        if ($filter) {
+            if ($filter === 'admin') {
+                $query .= " WHERE u.role IN ('admin', 'organisateur')";
+            } elseif ($filter === 'participant') {
+                $query .= " WHERE u.role = 'participant'";
+            } elseif ($filter === 'active') {
+                $query .= " WHERE u.status = 'active'";
+            } elseif ($filter === 'inactive') {
+                $query .= " WHERE u.status = 'inactive'";
+            }
+        }
+    
+        $query .= " ORDER BY u.created_at DESC";
+    
+        $stmt = $db->prepare($query);
+        $stmt->execute();
+    
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($result) !== false ? $result : [];
+        exit;
+    }
+    
+    /**
+     * Récupère tous les hackathons
+     *
+     * @param string $status Filtre par statut
+     * @return array Liste des hackathons
+     */
+    public function getAllHackathons($status = null) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $query = "SELECT h.*,
+                u.username as organizer,
+                (SELECT COUNT(*) FROM participants p WHERE p.hackathon_id = h.id) as participants_count,
+                (SELECT COUNT(*) FROM challenges c WHERE c.hackathon_id = h.id) as challenges_count
+                FROM hackathons h
+                JOIN users u ON h.created_by = u.id";
+    
+        if ($status) {
+            $query .= " WHERE h.status = :status";
+        }
+    
+        $query .= " ORDER BY h.start_date DESC";
+    
+        $stmt = $db->prepare($query);
+    
+        if ($status) {
+            $stmt->bindValue(':status', $status);
+        }
+    
+        $stmt->execute();
+    
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($result) !== false ? $result : [];
+        exit;
+    }
+    
+    /**
+     * Récupère tous les challenges
+     *
+     * @param int $hackathonId Filtre par hackathon
+     * @return array Liste des challenges
+     */
+    public function getAllChallenges($hackathonId = null) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $query = "SELECT c.*,
+                h.title as hackathon_title,
+                (SELECT COUNT(*) FROM challenge_submissions cs WHERE cs.challenge_id = c.id) as submissions_count,
+                (SELECT COUNT(*) FROM challenge_submissions cs WHERE cs.challenge_id = c.id AND cs.status = 'accepted') as solved_count
+                FROM challenges c
+                JOIN hackathons h ON c.hackathon_id = h.id";
+    
+        if ($hackathonId) {
+            $query .= " WHERE c.hackathon_id = :hackathon_id";
+        }
+    
+        $query .= " ORDER BY c.created_at DESC";
+    
+        $stmt = $db->prepare($query);
+    
+        if ($hackathonId) {
+            $stmt->bindValue(':hackathon_id', $hackathonId);
+        }
+    
+        $stmt->execute();
+    
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($result) !== false ? $result : [];
+        exit;
+    }
+    
+    /**
+     * Récupère toutes les équipes
+     *
+     * @param int $hackathonId Filtre par hackathon
+     * @return array Liste des équipes
+     */
+    public function getAllTeams($hackathonId = null) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $query = "SELECT e.*,
+                h.title as hackathon_title,
+                (SELECT COUNT(*) FROM equipe_membres em WHERE em.equipe_id = e.id) as members_count,
+                (SELECT SUM(points) FROM challenge_submissions cs
+                 JOIN equipe_membres em ON cs.user_id = em.user_id
+                 WHERE em.equipe_id = e.id AND cs.status = 'accepted') as total_points
+                FROM equipes e
+                JOIN hackathons h ON e.hackathon_id = h.id";
+    
+        if ($hackathonId) {
+            $query .= " WHERE e.hackathon_id = :hackathon_id";
+        }
+    
+        $query .= " ORDER BY e.created_at DESC";
+    
+        $stmt = $db->prepare($query);
+    
+        if ($hackathonId) {
+            $stmt->bindValue(':hackathon_id', $hackathonId);
+        }
+    
+        $stmt->execute();
+    
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($result) !== false ? $result : [];
+        exit;
+    }
+    
+    /**
+     * Récupère les membres d'une équipe
+     *
+     * @param int $teamId ID de l'équipe
+     * @return array Liste des membres
+     */
+    public function getTeamMembers($teamId) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $query = "SELECT u.*, em.role as team_role
+                FROM users u
+                JOIN equipe_membres em ON u.id = em.user_id
+                WHERE em.equipe_id = :team_id";
+    
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(':team_id', $teamId);
+        $stmt->execute();
+    
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($result) !== false ? $result : [];
+        exit;
+    }
+    
+    /**
+     * Récupère toutes les soumissions
+     *
+     * @param int $challengeId Filtre par challenge
+     * @param int $userId Filtre par utilisateur
+     * @return array Liste des soumissions
+     */
+    public function getAllSubmissions($challengeId = null, $userId = null) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $query = "SELECT cs.*,
+                u.username,
+                c.title as challenge_title,
+                h.title as hackathon_title
+                FROM challenge_submissions cs
+                JOIN users u ON cs.user_id = u.id
+                JOIN challenges c ON cs.challenge_id = c.id
+                JOIN hackathons h ON c.hackathon_id = h.id";
+    
+        $params = [];
+    
+        if ($challengeId || $userId) {
+            $query .= " WHERE";
+    
+            if ($challengeId) {
+                $query .= " cs.challenge_id = :challenge_id";
+                $params[':challenge_id'] = $challengeId;
+    
+                if ($userId) {
+                    $query .= " AND";
+                }
+            }
+    
+            if ($userId) {
+                $query .= " cs.user_id = :user_id";
+                $params[':user_id'] = $userId;
+            }
+        }
+    
+        $query .= " ORDER BY cs.created_at DESC";
+    
+        $stmt = $db->prepare($query);
+    
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+    
+        $stmt->execute();
+    
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($result) !== false ? $result : [];
+        exit;
+    }
+    
+    /**
+     * Récupère toutes les ressources
+     *
+     * @param int $hackathonId Filtre par hackathon
+     * @return array Liste des ressources
+     */
+    public function getAllResources($hackathonId = null) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+        $ressource = new \Auth\Model\Ressource($db);
+    
+        if ($hackathonId) {
+            return $ressource->getByHackathon($hackathonId);
+        }
+    
+        $query = "SELECT r.*,
+                u.username as created_by_name,
+                h.title as hackathon_title
+                FROM ressources r
+                JOIN users u ON r.created_by = u.id
+                JOIN hackathons h ON r.hackathon_id = h.id
+                ORDER BY r.created_at DESC";
+    
+        $stmt = $db->prepare($query);
+        $stmt->execute();
+    
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($result) !== false ? $result : [];
+        exit;
+    }
+    
+    /**
+     * Récupère les logs d'activité
+     *
+     * @param int $limit Nombre de logs à récupérer
+     * @param int $userId Filtre par utilisateur
+     * @return array Liste des logs
+     */
+    public function getActivityLogs($limit = 50, $userId = null) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $query = "SELECT al.*, u.username
+                FROM activity_logs al
+                LEFT JOIN users u ON al.user_id = u.id";
+    
+        if ($userId) {
+            $query .= " WHERE al.user_id = :user_id";
+        }
+    
+        $query .= " ORDER BY al.created_at DESC LIMIT :limit";
+    
+        $stmt = $db->prepare($query);
+    
+        if ($userId) {
+            $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        }
+    
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+    
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($result) !== false ? $result : [];
+        exit;
+    }
+    
+    /**
+     * Récupère les notifications pour les administrateurs
+     *
+     * @param int $limit Nombre de notifications à récupérer
+     * @return array Liste des notifications
+     */
+    public function getAdminNotifications($limit = 5) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        // Récupération des notifications système
+        $query = "SELECT 'system' as type, al.id, al.action as title, al.description as message,
+                al.level as notification_type, al.created_at, al.user_id, u.username
+                FROM activity_logs al
+                LEFT JOIN users u ON al.user_id = u.id
+                WHERE al.level IN ('warning', 'error')
+    
+                UNION
+    
+                SELECT 'user' as type, n.id, n.title, n.message, n.type as notification_type,
+                n.created_at, n.user_id, u.username
+                FROM notifications n
+                JOIN users u ON n.user_id = u.id
+                WHERE n.admin_notification = 1
+    
+                ORDER BY created_at DESC
+                LIMIT :limit";
+    
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+    
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($result) !== false ? $result : [];
+        exit;
+    }
+    
+    /**
+     * Récupère les statistiques d'un hackathon spécifique
+     *
+     * @param int $hackathonId ID du hackathon
+     * @return array Statistiques du hackathon
+     */
+    public function getHackathonStats($hackathonId) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        // Récupérer le hackathon
+        $hackathonQuery = "SELECT * FROM hackathons WHERE id = :id";
+        $stmt = $db->prepare($hackathonQuery);
+        $stmt->bindValue(':id', $hackathonId);
+        $stmt->execute();
+        $hackathon = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+        if (!$hackathon) {
+            return [];
+        }
+    
+        // Nombre de participants
+        $participantsQuery = "SELECT COUNT(*) FROM participants WHERE hackathon_id = :id";
+        $stmt = $db->prepare($participantsQuery);
+        $stmt->bindValue(':id', $hackathonId);
+        $stmt->execute();
+        $participantsCount = $stmt->fetchColumn();
+    
+        // Nombre d'équipes
+        $teamsQuery = "SELECT COUNT(*) FROM equipes WHERE hackathon_id = :id";
+        $stmt = $db->prepare($teamsQuery);
+        $stmt->bindValue(':id', $hackathonId);
+        $stmt->execute();
+        $teamsCount = $stmt->fetchColumn();
+    
+        // Nombre de challenges
+        $challengesQuery = "SELECT COUNT(*) FROM challenges WHERE hackathon_id = :id";
+        $stmt = $db->prepare($challengesQuery);
+        $stmt->bindValue(':id', $hackathonId);
+        $stmt->execute();
+        $challengesCount = $stmt->fetchColumn();
+    
+        // Nombre de soumissions
+        $submissionsQuery = "SELECT COUNT(*) FROM challenge_submissions cs
+                          JOIN challenges c ON cs.challenge_id = c.id
+                          WHERE c.hackathon_id = :id";
+        $stmt = $db->prepare($submissionsQuery);
+        $stmt->bindValue(':id', $hackathonId);
+        $stmt->execute();
+        $submissionsCount = $stmt->fetchColumn();
+    
+        // Taux de résolution des challenges
+        $solvedQuery = "SELECT
+                        (SELECT COUNT(*) FROM challenge_submissions cs
+                         JOIN challenges c ON cs.challenge_id = c.id
+                         WHERE c.hackathon_id = :id AND cs.status = 'accepted') /
+                        (SELECT COUNT(*) FROM challenges WHERE hackathon_id = :id) * 100 as rate";
+        $stmt = $db->prepare($solvedQuery);
+        $stmt->bindValue(':id', $hackathonId);
+        $stmt->execute();
+        $solvedRate = $stmt->fetchColumn();
+    
+        $data = [
+            'hackathon' => $hackathon,
+            'participants_count' => $participantsCount,
+            'teams_count' => $teamsCount,
+            'challenges_count' => $challengesCount,
+            'submissions_count' => $submissionsCount,
+            'solved_rate' => $solvedRate ?? 0
+        ];
+        echo json_encode($data);
+        exit;
+    }
+    
+    /**
+     * Récupère les statistiques d'un challenge spécifique
+     *
+     * @param int $challengeId ID du challenge
+     * @return array Statistiques du challenge
+     */
+    public function getChallengeStats($challengeId) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        // Récupérer le challenge
+        $challengeQuery = "SELECT c.*, h.title as hackathon_title
+                          FROM challenges c
+                          JOIN hackathons h ON c.hackathon_id = h.id
+                          WHERE c.id = :id";
+        $stmt = $db->prepare($challengeQuery);
+        $stmt->bindValue(':id', $challengeId);
+        $stmt->execute();
+        $challenge = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+        if (!$challenge) {
+            return [];
+        }
+    
+        // Nombre de soumissions
+        $submissionsQuery = "SELECT COUNT(*) FROM challenge_submissions WHERE challenge_id = :id";
+        $stmt = $db->prepare($submissionsQuery);
+        $stmt->bindValue(':id', $challengeId);
+        $stmt->execute();
+        $submissionsCount = $stmt->fetchColumn();
+    
+        // Nombre de résolutions
+        $solvedQuery = "SELECT COUNT(*) FROM challenge_submissions WHERE challenge_id = :id AND status = 'accepted'";
+        $stmt = $db->prepare($solvedQuery);
+        $stmt->bindValue(':id', $challengeId);
+        $stmt->execute();
+        $solvedCount = $stmt->fetchColumn();
+    
+        // Taux de réussite
+        $successRate = ($submissionsCount > 0) ? ($solvedCount / $submissionsCount) * 100 : 0;
+    
+        // Temps moyen de résolution
+        $avgTimeQuery = "SELECT AVG(TIMESTAMPDIFF(MINUTE, c.created_at, cs.created_at)) as avg_time
+                        FROM challenge_submissions cs
+                        JOIN challenges c ON cs.challenge_id = c.id
+                        WHERE cs.challenge_id = :id AND cs.status = 'accepted'";
+        $stmt = $db->prepare($avgTimeQuery);
+        $stmt->bindValue(':id', $challengeId);
+        $stmt->execute();
+        $avgTime = $stmt->fetchColumn();
+    
+        $data = [
+            'challenge' => $challenge,
+            'submissions_count' => $submissionsCount,
+            'solved_count' => $solvedCount,
+            'success_rate' => $successRate,
+            'avg_solve_time' => $avgTime
+        ];
+        echo json_encode($data);
+        exit;
+    }
+    
+    /**
+     * Met à jour le statut d'un utilisateur
+     *
+     * @param int $userId ID de l'utilisateur
+     * @param string $status Nouveau statut
+     * @return bool Succès ou échec
+     */
+    public function updateUserStatus($userId, $status) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $query = "UPDATE users SET status = :status WHERE id = :id";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(':id', $userId);
+        $stmt->bindValue(':status', $status);
+    
+        echo json_encode($stmt->execute()) !== false ? $stmt->execute() : [];
+        exit;
+    }
+    
+    /**
+     * Met à jour le statut d'un hackathon
+     *
+     * @param int $hackathonId ID du hackathon
+     * @param string $status Nouveau statut
+     * @return bool Succès ou échec
+     */
+    public function updateHackathonStatus($hackathonId, $status) {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+    
+        $query = "UPDATE hackathons SET status = :status WHERE id = :id";
+        $stmt = $db->prepare($query);
+        $stmt->bindValue(':id', $hackathonId);
+        $stmt->bindValue(':status', $status);
+    
+        echo json_encode($stmt->execute()) !== false ? $stmt->execute() : [];
+        exit;
+    }
+    
+    /**
+     * Format une date pour l'affichage
+     *
+     * @param string $date Date au format SQL
+     * @param string $format Format de sortie
+     * @return string Date formatée
+     */
+    public function formatDate($date, $format = 'd/m/Y H:i') {
+        if (!$date) return 'N/A';
+        return date($format, strtotime($date));
+    }
+    
+    /**
+     * Protection CSRF
+     *
+     * @param string $token Token à vérifier
+     * @return bool Validité du token
+     */
+    public function validateCsrfToken($token) {
+        return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+    }
+    
+    /**
+     * Obtenir un jeton CSRF
+     *
+     * @return string Jeton CSRF
+     */
+    public function getCsrfToken() {
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        return $_SESSION['csrf_token'];
+    }
+    
+    
 }
