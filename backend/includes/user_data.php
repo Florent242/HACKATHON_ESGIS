@@ -45,7 +45,7 @@ function getUserStats($userId) {
     $database = \Auth\Model\Database::getInstance();
     $db = $database->getConnection();
 
-    $stmt = $db->prepare("SELECT COUNT(*) FROM challenge_submissions WHERE user_id = :user_id AND status = 'accepted'");
+    $stmt = $db->prepare("SELECT COUNT(*) FROM challenge_submissions WHERE user_id = :user_id AND status = 'active'");
     $stmt->execute([':user_id' => $userId]);
     $flagsCount = $stmt->fetchColumn();
 
@@ -53,7 +53,7 @@ function getUserStats($userId) {
     $stmt->execute([':user_id' => $userId]);
     $teamsCount = $stmt->fetchColumn();
 
-    $rankQuery = "SELECT COUNT(*) + 1 as rank FROM (SELECT user_id, SUM(points) as total_points FROM challenge_submissions WHERE status = 'accepted' GROUP BY user_id HAVING SUM(points) > (SELECT COALESCE(SUM(points), 0) FROM challenge_submissions WHERE user_id = :user_id AND status = 'accepted')) as better_users";
+    $rankQuery = "SELECT COUNT(*) + 1 as rank FROM (SELECT user_id, SUM(points) as total_points FROM challenge_submissions WHERE status = 'active' GROUP BY user_id HAVING SUM(points) > (SELECT COALESCE(SUM(points), 0) FROM challenge_submissions WHERE user_id = :user_id AND status = 'active')) as better_users";
     $stmt = $db->prepare($rankQuery);
     $stmt->execute([':user_id' => $userId]);
     $rank = $stmt->fetchColumn();
@@ -91,7 +91,7 @@ function getUserTeams($userId) {
     $stmt = $db->prepare("SELECT e.* FROM equipes e JOIN equipe_membres em ON e.id = em.equipe_id WHERE em.user_id = :user_id");
     $stmt->execute([':user_id' => $userId]);
 
-    sendJsonResponse($stmt->fetchAll(\PDO::FETCH_ASSOC));
+    sendJsonResponse($stmt->fetchAll(PDO::FETCH_ASSOC));
 }
 
 /**
@@ -102,11 +102,11 @@ function getLeaderboard($limit = 50) {
     $database = \Auth\Model\Database::getInstance();
     $db = $database->getConnection();
 
-    $stmt = $db->prepare("SELECT u.id, u.username, SUM(cs.points) as total_points FROM users u LEFT JOIN challenge_submissions cs ON u.id = cs.user_id AND cs.status = 'accepted' GROUP BY u.id, u.username ORDER BY total_points DESC LIMIT :limit");
+    $stmt = $db->prepare("SELECT u.id, u.username, SUM(cs.points) as total_points FROM users u LEFT JOIN challenge_submissions cs ON u.id = cs.user_id AND cs.status = 'active' GROUP BY u.id, u.username ORDER BY total_points DESC LIMIT :limit");
     $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
     $stmt->execute();
 
-    sendJsonResponse($stmt->fetchAll(\PDO::FETCH_ASSOC));
+    sendJsonResponse($stmt->fetchAll(PDO::FETCH_ASSOC));
 }
 
 /**
@@ -119,14 +119,14 @@ function submitChallengeFlag($userId, $challengeId, $flag) {
 
     $stmt = $db->prepare("SELECT * FROM challenges WHERE id = :id");
     $stmt->execute([':id' => $challengeId]);
-    $challenge = $stmt->fetch(\PDO::FETCH_ASSOC);
+    $challenge = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$challenge) {
         sendJsonResponse(['success' => false, 'message' => 'Challenge non trouvé']);
     }
 
     $isCorrect = ($flag === $challenge['flag']);
-    $status = $isCorrect ? 'accepted' : 'rejected';
+    $status = $isCorrect ? 'active' : 'rejected';
     $points = $isCorrect ? $challenge['points'] : 0;
 
     $stmt = $db->prepare("INSERT INTO challenge_submissions (user_id, challenge_id, submission_value, status, points, created_at) VALUES (:user_id, :challenge_id, :submission, :status, :points, NOW())");

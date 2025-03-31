@@ -1,11 +1,45 @@
 <?php
+
+namespace Auth\Model;
+use PDO;
+use PDOException;
+use Exception;
+use Firebase\JWT\JWT;
+
+/**
+ * Fichier de fonctions utilitaires pour les pages du frontend/admin
+ */
+function getUserIdFromJWT($jwt) {
+    // Vérifiez si le JWT est valide
+    $decoded = JWT::decode($jwt, '', ['HS256']); // Remplacez par votre clé secrète
+    return $decoded->sub; // Supposons que l'ID de l'utilisateur est stocké dans le champ 'sub'
+}
+// Vérifier si la classe TokenManager existe, sinon l'inclure
+if (!class_exists('Auth\Model\TokenManager')) {
+    require_once __DIR__ . '/../models/TokenManager.php';
+}
+
+// Vérifier si la classe Database existe, sinon l'inclure
+if (!class_exists('Auth\Model\Database')) {
+    require_once __DIR__ . '/../models/Database.php';
+}
+
+// Vérifier si la classe User existe, sinon l'inclure
+if (!class_exists('Auth\Model\User')) {
+    require_once __DIR__ . '/../models/User.php';
+}
+
+// Vérifier si les fonctions sont déjà incluses
+if (!defined('FUNCTIONS_INCLUDED')) {
+    require_once __DIR__ . '/includes/functions.php';
+}
 /**
  * Fichier de fonctions pour récupérer les données au format JSON
  * Ces fonctions récupèrent uniquement des données réelles de la base de données
  */
 
 /**
- * Récupère les données du leaderboard et les renvoie au format JSON
+ * Récupère les données du leaderboard et les renvoie au foHS256rmat JSON
  * @return string Données du leaderboard au format JSON
  */
 function getLeaderboardJSON() {
@@ -47,7 +81,7 @@ function getLeaderboardJSON() {
             $user['rank'] = $rank++;
             
             // Récupérer les activités récentes de l'utilisateur
-            $activityStmt = $conn->prepare("
+            $activityStmt = $db->prepare("
                 SELECT action, description, level, created_at
                 FROM activity_logs
                 WHERE user_id = :userId
@@ -70,14 +104,15 @@ function getLeaderboardJSON() {
 
 /**
  * Récupère les données du profil d'un utilisateur et les renvoie au format JSON
- * @param int $userId ID de l'utilisateur
  * @return string Données du profil au format JSON
  */
-function getProfileJSON($userId) {
+function getProfileJSON() {
     require_once __DIR__ . '/../backend/models/Database.php';
     $database = \Auth\Model\Database::getInstance();
     $db = $database->getConnection();
     
+    $jwt = $_COOKIE['jwt'];
+    $userId = getUserIdFromJWT($jwt);
     try {
         // Récupérer les informations de base de l'utilisateur
         $stmt = $db->prepare("
@@ -107,7 +142,7 @@ function getProfileJSON($userId) {
         }
         
         // Récupérer les équipes de l'utilisateur
-        $teamsStmt = $conn->prepare("
+        $teamsStmt = $db->prepare("
             SELECT 
                 t.id, 
                 t.name, 
@@ -125,7 +160,7 @@ function getProfileJSON($userId) {
         $teams = $teamsStmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Récupérer les hackathons auxquels l'utilisateur participe
-        $hackathonsStmt = $conn->prepare("
+        $hackathonsStmt = $db->prepare("
             SELECT 
                 h.id, 
                 h.name, 
@@ -143,7 +178,7 @@ function getProfileJSON($userId) {
         $hackathons = $hackathonsStmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Récupérer les activités récentes de l'utilisateur
-        $activityStmt = $conn->prepare("
+        $activityStmt = $db->prepare("
             SELECT 
                 id,
                 action, 
@@ -168,7 +203,7 @@ function getProfileJSON($userId) {
         }
         
         // Récupérer les notifications de l'utilisateur
-        $notificationsStmt = $conn->prepare("
+        $notificationsStmt = $db->prepare("
             SELECT 
                 id, 
                 message, 
@@ -184,7 +219,7 @@ function getProfileJSON($userId) {
         $notifications = $notificationsStmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Calculer les statistiques de l'utilisateur
-        $statsStmt = $conn->prepare("
+        $statsStmt = $db->prepare("
             SELECT 
                 COUNT(DISTINCT hp.hackathon_id) as hackathons_count,
                 COUNT(DISTINCT tm.team_id) as teams_count,
@@ -200,8 +235,8 @@ function getProfileJSON($userId) {
         $stats = $statsStmt->fetch(PDO::FETCH_ASSOC);
         
         // Ajouter des statistiques supplémentaires
-        $stats['login_count'] = $conn->query("SELECT COUNT(*) FROM activity_logs WHERE user_id = $userId AND action = 'login_success'")->fetchColumn();
-        $stats['last_login'] = $conn->query("SELECT created_at FROM activity_logs WHERE user_id = $userId AND action = 'login_success' ORDER BY created_at DESC LIMIT 1")->fetchColumn();
+        $stats['login_count'] = $db->query("SELECT COUNT(*) FROM activity_logs WHERE user_id = $userId AND action = 'login_success'")->fetchColumn();
+        $stats['last_login'] = $db->query("SELECT created_at FROM activity_logs WHERE user_id = $userId AND action = 'login_success' ORDER BY created_at DESC LIMIT 1")->fetchColumn();
         
         return json_encode([
             "status" => "success",
@@ -228,6 +263,8 @@ function getChallengesJSON() {
     $database = \Auth\Model\Database::getInstance();
     $db = $database->getConnection();
     
+    $jwt = $_COOKIE['jwt'];
+    $userId = getUserIdFromJWT($jwt);
     try {
         // Récupérer tous les défis
         $stmt = $db->prepare("
@@ -249,7 +286,7 @@ function getChallengesJSON() {
         
         // Pour chaque défi, récupérer les technologies associées
         foreach ($challenges as &$challenge) {
-            $techStmt = $conn->prepare("
+            $techStmt = $db->prepare("
                 SELECT 
                     t.id, 
                     t.name
@@ -263,7 +300,7 @@ function getChallengesJSON() {
         }
         
         // Récupérer les meilleurs utilisateurs
-        $topUsersStmt = $conn->prepare("
+        $topUsersStmt = $db->prepare("
             SELECT 
                 u.id, 
                 u.username, 
@@ -280,7 +317,7 @@ function getChallengesJSON() {
         $topUsers = $topUsersStmt->fetchAll(PDO::FETCH_ASSOC);
         
         // Récupérer toutes les technologies disponibles
-        $technologiesStmt = $conn->prepare("
+        $technologiesStmt = $db->prepare("
             SELECT id, name
             FROM technologies
             ORDER BY name
@@ -343,10 +380,11 @@ function outputJSON($jsonData) {
 /**
  * Fonction pour récupérer toutes les données nécessaires pour les trois pages
  * et les renvoyer dans un seul objet JSON
- * @param int $userId ID de l'utilisateur (optionnel)
  * @return string Toutes les données au format JSON
  */
-function getAllDataJSON($userId = null) {
+function getAllDataJSON() {
+    $jwt = $_COOKIE['jwt'];
+    $userId = getUserIdFromJWT($jwt);
     try {
         $data = [
             "status" => "success",
@@ -372,7 +410,7 @@ function getAllDataJSON($userId = null) {
         
         // Récupérer les données du profil si un ID utilisateur est fourni
         if ($userId) {
-            $profileData = json_decode(getProfileJSON($userId), true);
+            $profileData = json_decode(getProfileJSON(), true);
             if (isset($profileData['status']) && $profileData['status'] === 'success') {
                 $data['data']['profile'] = $profileData['data'];
             } else {

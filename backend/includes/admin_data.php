@@ -1,8 +1,27 @@
 <?php
+namespace Auth\Model;
+
+use PDO;
+
+use Firebase\JWT\JWT;
+
 /**
  * Fichier de fonctions utilitaires pour les pages du frontend/admin
  */
+function getUserIdFromJWT($jwt) {
+    // Vérifiez si le JWT est valide
+    $decoded = JWT::decode($jwt, '', ['HS256']); // Remplacez par votre clé secrète
+    return $decoded->sub; // Supposons que l'ID de l'utilisateur est stocké dans le champ 'sub'
+}
 
+
+$jwt = $_SERVER['HTTP_AUTHORIZATION'] ?? ''; // Récupérer le JWT des en-têtes
+if (!$jwt) {
+    return json_encode(['error' => 'Token non fourni']);
+}
+
+// Extraire l'ID de l'utilisateur à partir du JWT
+$userId = getUserIdFromJWT($jwt);
 /**
  * Vérifie si l'utilisateur est authentifié en tant qu'administrateur
  *
@@ -133,7 +152,7 @@ function getAllUsers($filter = null) {
     $stmt = $db->prepare($query);
     $stmt->execute();
 
-    $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     return json_encode($result) !== false ? $result : [];
 }
 
@@ -169,7 +188,7 @@ function getAllHackathons($status = null) {
 
     $stmt->execute();
 
-    $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     return json_encode($result) !== false ? $result : [];
 }
 
@@ -205,7 +224,7 @@ function getAllChallenges($hackathonId = null) {
 
     $stmt->execute();
 
-    $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     return json_encode($result) !== false ? $result : [];
 }
 
@@ -243,7 +262,7 @@ function getAllTeams($hackathonId = null) {
 
     $stmt->execute();
 
-    $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     return json_encode($result) !== false ? $result : [];
 }
 
@@ -267,7 +286,7 @@ function getTeamMembers($teamId) {
     $stmt->bindValue(':team_id', $teamId);
     $stmt->execute();
 
-    $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     return json_encode($result) !== false ? $result : [];
 }
 
@@ -322,7 +341,7 @@ function getAllSubmissions($challengeId = null, $userId = null) {
 
     $stmt->execute();
 
-    $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     return json_encode($result) !== false ? $result : [];
 }
 
@@ -355,7 +374,7 @@ function getAllResources($hackathonId = null) {
     $stmt = $db->prepare($query);
     $stmt->execute();
 
-    $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     return json_encode($result) !== false ? $result : [];
 }
 
@@ -390,7 +409,7 @@ function getActivityLogs($limit = 50, $userId = null) {
     $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
     $stmt->execute();
 
-    $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     return json_encode($result) !== false ? $result : [];
 }
 
@@ -427,7 +446,7 @@ function getAdminNotifications($limit = 5) {
     $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
     $stmt->execute();
 
-    $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
     return json_encode($result) !== false ? $result : [];
 }
 
@@ -447,7 +466,7 @@ function getHackathonStats($hackathonId) {
     $stmt = $db->prepare($hackathonQuery);
     $stmt->bindValue(':id', $hackathonId);
     $stmt->execute();
-    $hackathon = $stmt->fetch(\PDO::FETCH_ASSOC);
+    $hackathon = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$hackathon) {
         return null;
@@ -524,7 +543,7 @@ function getChallengeStats($challengeId) {
     $stmt = $db->prepare($challengeQuery);
     $stmt->bindValue(':id', $challengeId);
     $stmt->execute();
-    $challenge = $stmt->fetch(\PDO::FETCH_ASSOC);
+    $challenge = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$challenge) {
         return null;
