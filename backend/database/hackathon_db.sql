@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : localhost
--- Généré le : mar. 01 avr. 2025 à 08:53
+-- Généré le : mar. 01 avr. 2025 à 21:08
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -230,6 +230,22 @@ CREATE TABLE `projects` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `security_logs`
+--
+
+CREATE TABLE `security_logs` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `event_type` varchar(50) NOT NULL,
+  `ip_address` varchar(45) NOT NULL,
+  `user_agent` text NOT NULL,
+  `details` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `teams`
 --
 
@@ -295,6 +311,10 @@ CREATE TABLE `users` (
   `school` varchar(35) DEFAULT NULL,
   `email` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
+  `special_comp` int(85) NOT NULL,
+  `idea_project` int(255) DEFAULT NULL,
+  `study_level` varchar(50) NOT NULL,
+  `number` int(15) NOT NULL,
   `role` enum('admin','organizer','participant','judge') NOT NULL DEFAULT 'participant',
   `profile_picture` varchar(255) DEFAULT NULL,
   `bio` text DEFAULT NULL,
@@ -309,9 +329,9 @@ CREATE TABLE `users` (
 -- Déchargement des données de la table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `fullname`, `school`, `email`, `password`, `role`, `profile_picture`, `bio`, `github_url`, `linkedin_url`, `created_at`, `updated_at`, `status`) VALUES
-(1, 'lolo andoche', 'jean messiah', '', 'loyovat896@opposir.com', '$2y$10$HNVlAKZZk9unXeT1QwWHdOSYvh3jvjpgRx58k7U6ry6OHwZy7B8wK', 'participant', NULL, NULL, NULL, NULL, '2025-03-26 18:58:43', '2025-03-26 18:58:43', 'active'),
-(2, 'Test01', 'jean messiah', 'ESGIS', 'galigom995@opposir.com', '$2y$10$Mj3KoO9C7XLg9MQzMyUwsOhsaSnswRb1KAV9pz8hrNeGB9rf1suRq', 'participant', NULL, NULL, NULL, NULL, '2025-03-30 12:56:11', '2025-03-30 12:56:11', 'active');
+INSERT INTO `users` (`id`, `username`, `fullname`, `school`, `email`, `password`, `special_comp`, `idea_project`, `study_level`, `number`, `role`, `profile_picture`, `bio`, `github_url`, `linkedin_url`, `created_at`, `updated_at`, `status`) VALUES
+(1, 'lolo andoche', 'jean messiah', '', 'loyovat896@opposir.com', '$2y$10$HNVlAKZZk9unXeT1QwWHdOSYvh3jvjpgRx58k7U6ry6OHwZy7B8wK', 0, NULL, '', 0, 'participant', NULL, NULL, NULL, NULL, '2025-03-26 18:58:43', '2025-03-26 18:58:43', 'active'),
+(2, 'Test01', 'jean messiah', 'ESGIS', 'galigom995@opposir.com', '$2y$10$Mj3KoO9C7XLg9MQzMyUwsOhsaSnswRb1KAV9pz8hrNeGB9rf1suRq', 0, NULL, '', 0, 'participant', NULL, NULL, NULL, NULL, '2025-03-30 12:56:11', '2025-03-30 12:56:11', 'active');
 
 -- --------------------------------------------------------
 
@@ -412,6 +432,13 @@ ALTER TABLE `projects`
   ADD KEY `hackathon_id` (`hackathon_id`);
 
 --
+-- Index pour la table `security_logs`
+--
+ALTER TABLE `security_logs`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `user_id` (`user_id`);
+
+--
 -- Index pour la table `teams`
 --
 ALTER TABLE `teams`
@@ -448,7 +475,8 @@ ALTER TABLE `user_tokens`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `token` (`token`),
   ADD KEY `user_id` (`user_id`),
-  ADD KEY `type_expires` (`type`,`expires_at`);
+  ADD KEY `type_expires` (`type`,`expires_at`),
+  ADD KEY `user_id_2` (`user_id`);
 
 --
 -- AUTO_INCREMENT pour les tables déchargées
@@ -506,6 +534,12 @@ ALTER TABLE `participants_hackathon`
 -- AUTO_INCREMENT pour la table `projects`
 --
 ALTER TABLE `projects`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `security_logs`
+--
+ALTER TABLE `security_logs`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -601,6 +635,12 @@ ALTER TABLE `participants_hackathon`
 ALTER TABLE `projects`
   ADD CONSTRAINT `projects_ibfk_1` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `projects_ibfk_2` FOREIGN KEY (`hackathon_id`) REFERENCES `hackathons` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `security_logs`
+--
+ALTER TABLE `security_logs`
+  ADD CONSTRAINT `security_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
 --
 -- Contraintes pour la table `teams`
