@@ -187,6 +187,11 @@ class TokenManager
                 'valid' => false,
                 'error' => 'Token invalide'
             ];
+        } catch (Exception $e) { 
+            return [
+                'valid' => false,
+                'error' => 'Erreur inconnue: ' . $e->getMessage()
+            ];
         }
     }
 
