@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : localhost
--- Généré le : lun. 24 mars 2025 à 17:51
+-- Généré le : mar. 01 avr. 2025 à 08:53
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -20,6 +20,48 @@ SET time_zone = "+00:00";
 --
 -- Base de données : `hackathon_db`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `activity_logs`
+--
+
+CREATE TABLE `activity_logs` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  `action` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `data` text DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `user_agent` text DEFAULT NULL,
+  `level` varchar(20) DEFAULT 'info',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `activity_logs`
+--
+
+INSERT INTO `activity_logs` (`id`, `user_id`, `action`, `description`, `data`, `ip_address`, `user_agent`, `level`, `created_at`) VALUES
+(1, NULL, 'create_error', 'SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'', '{\"email\":\"babaokechi@gmail.com\",\"error\":\"SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-03-26 18:44:06'),
+(2, NULL, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'', '{\"email\":\"babaokechi@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-03-26 18:44:07'),
+(3, NULL, 'create_error', 'SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'', '{\"email\":\"babaokechi@gmail.com\",\"error\":\"SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-03-26 18:46:20'),
+(4, NULL, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'', '{\"email\":\"babaokechi@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-03-26 18:46:20'),
+(5, NULL, 'login_attempt', 'Tentative de connexion', '{\"email\":\"admin@test.com\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-26 18:46:49'),
+(6, NULL, 'login_failed', 'Échec de connexion', '{\"email\":\"admin@test.com\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'warning', '2025-03-26 18:46:49'),
+(7, NULL, 'login_error', 'Email ou mot de passe incorrect', '{\"email\":\"admin@test.com\",\"error\":\"Email ou mot de passe incorrect\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-03-26 18:46:49'),
+(8, NULL, 'create_error', 'SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'', '{\"email\":\"babaokechi@gmail.com\",\"error\":\"SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-03-26 18:56:23'),
+(9, NULL, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'', '{\"email\":\"babaokechi@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-03-26 18:56:23'),
+(10, NULL, 'create_error', 'SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'', '{\"email\":\"blacknazard@gmail.com\",\"error\":\"SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-03-26 18:57:09'),
+(11, NULL, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'', '{\"email\":\"blacknazard@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[42S22]: Column not found: 1054 Unknown column \'status\' in \'field list\'\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-03-26 18:57:09'),
+(12, NULL, 'login_attempt', 'Tentative de connexion', '{\"email\":\"blacknazard@gmail.com\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-26 18:58:52'),
+(13, NULL, 'login_failed', 'Échec de connexion', '{\"email\":\"blacknazard@gmail.com\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'warning', '2025-03-26 18:58:52'),
+(14, NULL, 'login_error', 'Email ou mot de passe incorrect', '{\"email\":\"blacknazard@gmail.com\",\"error\":\"Email ou mot de passe incorrect\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-03-26 18:58:52'),
+(15, NULL, 'login_attempt', 'Tentative de connexion', '{\"email\":\"loyovat896@opposir.com\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-26 18:59:25'),
+(16, 1, 'login_success', 'Connexion réussie', '{\"user_id\":1,\"role\":\"participant\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-26 18:59:25'),
+(17, NULL, 'login_attempt', 'Tentative de connexion', '{\"email\":\"galigom995@opposir.com\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-30 12:56:34'),
+(18, 2, 'login_success', 'Connexion réussie', '{\"user_id\":2,\"role\":\"participant\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-30 12:56:34');
 
 -- --------------------------------------------------------
 
@@ -259,12 +301,47 @@ CREATE TABLE `users` (
   `github_url` varchar(255) DEFAULT NULL,
   `linkedin_url` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `status` enum('active','inactive') DEFAULT 'active'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `users`
+--
+
+INSERT INTO `users` (`id`, `username`, `fullname`, `school`, `email`, `password`, `role`, `profile_picture`, `bio`, `github_url`, `linkedin_url`, `created_at`, `updated_at`, `status`) VALUES
+(1, 'lolo andoche', 'jean messiah', '', 'loyovat896@opposir.com', '$2y$10$HNVlAKZZk9unXeT1QwWHdOSYvh3jvjpgRx58k7U6ry6OHwZy7B8wK', 'participant', NULL, NULL, NULL, NULL, '2025-03-26 18:58:43', '2025-03-26 18:58:43', 'active'),
+(2, 'Test01', 'jean messiah', 'ESGIS', 'galigom995@opposir.com', '$2y$10$Mj3KoO9C7XLg9MQzMyUwsOhsaSnswRb1KAV9pz8hrNeGB9rf1suRq', 'participant', NULL, NULL, NULL, NULL, '2025-03-30 12:56:11', '2025-03-30 12:56:11', 'active');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `user_tokens`
+--
+
+CREATE TABLE `user_tokens` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `token` varchar(255) NOT NULL,
+  `type` enum('authentication','password_reset','email_verification','remember_me','api') NOT NULL,
+  `expires_at` datetime NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `used` tinyint(1) NOT NULL DEFAULT 0,
+  `revoked` tinyint(1) NOT NULL DEFAULT 0,
+  `user_agent` text DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Index pour les tables déchargées
 --
+
+--
+-- Index pour la table `activity_logs`
+--
+ALTER TABLE `activity_logs`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Index pour la table `challenges`
@@ -365,8 +442,23 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `email` (`email`);
 
 --
+-- Index pour la table `user_tokens`
+--
+ALTER TABLE `user_tokens`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `token` (`token`),
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `type_expires` (`type`,`expires_at`);
+
+--
 -- AUTO_INCREMENT pour les tables déchargées
 --
+
+--
+-- AUTO_INCREMENT pour la table `activity_logs`
+--
+ALTER TABLE `activity_logs`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT pour la table `challenges`
@@ -438,6 +530,12 @@ ALTER TABLE `technologies`
 -- AUTO_INCREMENT pour la table `users`
 --
 ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- AUTO_INCREMENT pour la table `user_tokens`
+--
+ALTER TABLE `user_tokens`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -517,6 +615,12 @@ ALTER TABLE `teams`
 ALTER TABLE `team_members`
   ADD CONSTRAINT `team_members_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `team_members_ibfk_2` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `user_tokens`
+--
+ALTER TABLE `user_tokens`
+  ADD CONSTRAINT `user_tokens_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
