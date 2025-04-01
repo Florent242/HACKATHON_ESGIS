@@ -156,7 +156,7 @@ try {
             if ($id === null) {
                 // Route /api/users
                 if ($method === 'GET') {
-                    $controller->get($id);
+                    $controller->getAll();
                 } elseif ($method === 'POST') {
                     $controller->register();
                 } else {
@@ -179,12 +179,15 @@ try {
                         case 'role':
                             $controller->updateRole($id);
                             break;
+                        case 'password':
+                            $controller->updatePassword($id);
+                            break;
                         default:
                             throw new Exception('Action non reconnue', 404);
                     }
                 }
             } else {
-                throw new Exception('ID non valide', 400);
+                throw new Exception('Identifiant invalide', 400);
             }
             break;
 

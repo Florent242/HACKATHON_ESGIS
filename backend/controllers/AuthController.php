@@ -163,8 +163,8 @@ class AuthController
                 throw new Exception('Email et mot de passe requis');
             }
 
-            $email = $data['email'];
-            $password = $data['password'];
+            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+            $password = filter_input(INPUT_POST, 'password', FILTER_DEFAULT);
             $rememberMe = isset($data['remember_me']) && $data['remember_me'] === 'on';
 
             // Authentifier l'utilisateur
