@@ -42,7 +42,7 @@ class User {
                 return $user;
             }
 
-            return false;
+            return $user;
         } catch (PDOException $e) {
             error_log('Erreur d\'authentification: ' . $e->getMessage());
             return false;
@@ -100,6 +100,21 @@ class User {
                 throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
             }
 
+            // Vérification du special_comp
+            if (empty($data['special_comp'])) {
+                throw new Exception("La spécialité est requise");
+            }
+
+            // Vérification du study_level
+            if (empty($data['study_level'])) {
+                throw new Exception("Le niveau d'étude est requis");
+            }
+
+            // Vérification du number
+            if (empty($data['number'])) {
+                throw new Exception("Le numéro de téléphone est requis");
+            }
+
             // Hash du mot de passe
             $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
 
@@ -109,7 +124,11 @@ class User {
             fullname, 
             school, 
             email, 
-            password, 
+            password,
+            special_comp,
+            idea_project,
+            study_level,
+            number,
             role, 
             status, 
             github_url, 
@@ -122,7 +141,11 @@ class User {
                     :fullname, 
                     :school, 
                     :email, 
-                    :password, 
+                    :password,
+                    :special_comp,
+                    :idea_project,
+                    :study_level,
+                    :number,
                     :role, 
                     :status, 
                     :github_url, 
@@ -138,6 +161,10 @@ class User {
             $stmt->bindValue(':school', $data['school'] ?? null);
             $stmt->bindValue(':email', $data['email']);
             $stmt->bindValue(':password', $hashedPassword);
+            $stmt->bindValue(':special_comp', $data['special_comp']);
+            $stmt->bindValue(':idea_project', $data['idea_project'] ?? null);
+            $stmt->bindValue(':study_level', $data['study_level']);
+            $stmt->bindValue(':number', $data['number']);
             $stmt->bindValue(':role', $data['role'] ?? 'participant');
             $stmt->bindValue(':status', $data['status'] ?? 'active');
             $stmt->bindValue(':github_url', $data['github_url'] ?? null);

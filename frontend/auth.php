@@ -2,7 +2,7 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-// $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
 ?>
 <!DOCTYPE html>
@@ -37,7 +37,7 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
             <div class="auth-form" id="loginForm">
                 <h1>Espace Utilisateur</h1>
                 <p>Connectez-vous à votre compte étudiant</p> <br>
-                <form action="/HACKATHON_ESGIS/public/api/auth/login" method="POST">
+                <form action="/HACKATHON_ESGIS/public/api/auth/login" method="POST"  id="signinForm">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="form-group">
                         <label for="email_user">Email</label>

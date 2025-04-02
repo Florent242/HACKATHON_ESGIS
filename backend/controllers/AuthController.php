@@ -42,7 +42,10 @@ class AuthController
         }
 
         $this->user = new User($this->db);
-        $this->tokenManager = new TokenManager($_ENV['JWT_SECRET'] ?? 'your-256-bit-secret', $this->db);
+        $this->tokenManager = new TokenManager($_ENV['JWT_SECRET'] ?? 'your-secret-key', $this->db, [
+            'shortTermExpiry' => 3600, // 1 heure
+            'longTermExpiry' => 2592000 // 30 jours
+        ]);
 
         // Générer un token CSRF s'il n'existe pas
         if (empty($_SESSION['csrf_token'])) {
@@ -97,6 +100,9 @@ class AuthController
                 'email'       => trim(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?: ''),
                 'school'      => trim(filter_input(INPUT_POST, 'school', FILTER_DEFAULT) ?: ''),
                 'password'    => trim(filter_input(INPUT_POST, 'password', FILTER_UNSAFE_RAW) ?: ''), // Ne pas filtrer le mot de passe
+                'number'      => trim(filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_NUMBER_INT) ?: ''),
+                'special_comp' => trim(filter_input(INPUT_POST, 'main_skill', FILTER_DEFAULT) ?: ''),
+                'study_level' => trim(filter_input(INPUT_POST, 'education_level', FILTER_DEFAULT) ?: ''),
                 'role'        => 'participant'
             ];
 
@@ -186,12 +192,15 @@ class AuthController
                 // Réponse JSON
                 echo json_encode([
                     'success' => true,
+                    'token' => $token,
+                    'refresh_token' => $longTermToken,
                     'user' => $user,
+                    'message' => 'Connexion reussie',
                     'redirect' => self::BASE_URL . "/user"
                 ]);
                 exit();
             } else {
-                throw new Exception('Email ou mot de passe incorrect');
+                throw new Exception("Email ou mot de passe incorrect.");
             }
         } catch (Exception $e) {
             logActivity('login_error', $e->getMessage(), [

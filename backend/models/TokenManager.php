@@ -94,8 +94,8 @@ class TokenManager
             ];
         } catch (PDOException $e) {
             $this->db->rollBack();
-            error_log('Token generation error: ' . $e->getMessage());
-            throw new Exception('Could not generate token');
+            error_log('Erreur de génération de token: ' . $e->getMessage());
+            throw new Exception('Génération de token impossible: ' . $e->getMessage());
         }
     }
 
@@ -114,10 +114,26 @@ class TokenManager
     public function validateToken(string $token): array
     {
         try {
+            // Vérifier d'abord dans la base de données
+            // $stmt = $this->db->prepare(
+            //     "SELECT * FROM user_tokens WHERE token = :token AND revoked = 0"
+            // );
+            // $stmt->execute([':token' => $token]);
+            // $tokenData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // if (!$tokenData) {
+            //     return ['valid' => false, 'error' => 'Token invalide ou révoqué'];
+            // }
+
+            // Vérifier l'expiré
+            // if (strtotime($tokenData['expires_at']) < time()) {
+            //     return ['valid' => false, 'error' => 'Token expiré'];
+            // }
+
             $decoded = JWT::decode($token, new Key($this->key, $this->algorithm));
 
             // Vérifications supplémentaires
-            if ($decoded->iss !== 'your-domain.com') {
+            if ($decoded->iss !== $this->domain) {
                 throw new Exception('Invalid issuer');
             }
 
@@ -166,7 +182,7 @@ class TokenManager
                 'user_id' => $decoded->sub,
                 'payload' => (array)$decoded
             ];
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return [
                 'valid' => false,
                 'error' => $e->getMessage(),
@@ -175,19 +191,19 @@ class TokenManager
         } catch (\Firebase\JWT\ExpiredException $e) {
             return [
                 'valid' => false,
-                'error' => 'Token expiré'
+                'error' => 'Token expiré: ' . $e->getMessage()
             ];
         } catch (\Firebase\JWT\SignatureInvalidException $e) {
             return [
                 'valid' => false,
-                'error' => 'Signature invalide'
+                'error' => 'Signature invalide: ' . $e->getMessage()
             ];
         } catch (\UnexpectedValueException $e) {
             return [
                 'valid' => false,
-                'error' => 'Token invalide'
+                'error' => 'Token invalide: ' . $e->getMessage()
             ];
-        } catch (Exception $e) { 
+        } catch (Exception $e) {
             return [
                 'valid' => false,
                 'error' => 'Erreur inconnue: ' . $e->getMessage()

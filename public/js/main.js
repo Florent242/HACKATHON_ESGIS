@@ -23,6 +23,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         console.error(error);
                     });
             }
+            const flashMessage = getFlashMessage();
+            console.log(flashMessage);
+            if (flashMessage) {
+                showNotification(
+                    flashMessage.message,
+                    flashMessage.details || null,
+                    flashMessage.type || 'info'
+                );
+                // Supprimer le message après l'avoir affiché
+                localStorage.removeItem('flashMessage');
+            }
         } catch (e) {
             console.error('Erreur lors du parsing des données de notification:', e);
         }
@@ -53,9 +64,9 @@ function showNotification(message, details = null, type = 'success', duration = 
                     'info'
     );
     icon.className = `w-5 h-5 ${type === 'success' ? 'text-green-400' :
-            type === 'error' ? 'text-red-400' :
-                type === 'warning' ? 'text-yellow-400' :
-                    'text-blue-400'
+        type === 'error' ? 'text-red-400' :
+            type === 'warning' ? 'text-yellow-400' :
+                'text-blue-400'
         }`;
 
     iconContainer.appendChild(icon);
@@ -96,7 +107,7 @@ function showNotification(message, details = null, type = 'success', duration = 
     closeButton.addEventListener('click', () => {
         hideNotification(notification);
     });
-    
+
     closeContainer.appendChild(closeButton);
     notification.appendChild(closeContainer);
 
@@ -119,5 +130,25 @@ function showNotification(message, details = null, type = 'success', duration = 
 function hideNotification(notification) {
     notification.classList.add('animate-fade-out');
     // notification.addEventListener('animationend', () => notification.remove(), { once: true });
+}
+
+// Dans un fichier utils.js ou directement dans auth.js
+function setFlashMessage(type, message, details = null) {
+    // Stocker le message dans localStorage
+    localStorage.setItem('flashMessage', JSON.stringify({
+        type: type,
+        message: message,
+        details: details,
+        timestamp: Date.now()
+    }));
+}
+
+function getFlashMessage() {
+    const message = localStorage.getItem('flashMessage');
+    if (message) {
+        const flash = JSON.parse(message);
+        return flash;
+    }
+    return null;
 }
 
