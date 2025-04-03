@@ -336,25 +336,6 @@ class UserController extends Controller
     }
 
     /**
-     * Récupère les informations de l'utilisateur connecté et renvoie un JSON
-     */
-    public function getUserData()
-    {
-        if (!isAuthenticated()) {
-            echo json_encode(['error' => 'Utilisateur non authentifié']);
-            exit;
-        }
-
-        $database = Database::getInstance();
-        $db = $database->getConnection();
-        $user = new User($db);
-
-        $userData = $user->find($_SESSION['user_id']);
-        echo json_encode($userData);
-        exit;
-    }
-
-    /**
      * Récupère les statistiques de l'utilisateur et renvoie un JSON
      */
     public function getUserStats($userId)
@@ -366,7 +347,7 @@ class UserController extends Controller
         $stmt->execute([':user_id' => $userId]);
         $flagsCount = $stmt->fetchColumn();
 
-        $stmt = $db->prepare("SELECT COUNT(*) FROM equipe_membres WHERE user_id = :user_id");
+        $stmt = $db->prepare("SELECT COUNT(*) FROM teams_membres WHERE user_id = :user_id");
         $stmt->execute([':user_id' => $userId]);
         $teamsCount = $stmt->fetchColumn();
 
