@@ -383,7 +383,6 @@ class UserController extends Controller
         ]);
         exit;
     }
-
     /**
      * Récupère les hackathons de l'utilisateur et renvoie un JSON
      */

@@ -199,7 +199,7 @@ try {
                         
                                 // Récupérer les informations de l'utilisateur
                                 try {
-                                    $controller->get($currentUserId);
+                                    $controller->getUserStats($currentUserId);
                                 } catch (Exception $e) {
                                     jsonResponse(['error' => $e->getMessage()], 404);
                                 }
@@ -230,7 +230,7 @@ try {
                                 if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                     jsonResponse(['success' => false, 'error' => 'Accès non autorisé vous n\'êtes pas autorisé à voir ce profil'], 403);
                                 }
-                                $controller->get($id);
+                                $controller->getUserData();
                                 break;
                                 
                             case 'POST':
@@ -295,7 +295,19 @@ try {
                                 }
                                 $controller->getUserTeams($id);
                                 break;
-                                
+                            case 'dashboard':
+                                if ($currentUserId != $id) {
+                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                }
+                                $controller->getProfileJSON();
+                                break;          
+                            case 'submit-flag':
+                                if ($currentUserId != $id) {
+                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                }
+                                $data = json_decode(file_get_contents('php://input'), true);
+                                $controller->submitChallengeFlag($id, $data['challenge_id'], $data['flag']);
+                                    break;
                             default:
                                 jsonResponse(['success' => false, 'error' => 'Action non reconnue'], 404);
                         }
