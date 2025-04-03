@@ -65,7 +65,7 @@
                                 <i data-lucide="code" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
                             <div class="text-3xl font-bold mt-2" id="number-dev-challenges">0</div>
-                            <p class="text-gray-400"><span class="number-dev-challenges-on">0</span> défis en cours</p>
+                            <p class="text-gray-400"><span id="number-dev-challenges-on">0</span> défis en cours</p>
                             <p class="text-green-400 text-sm mt-1"><span id="dev-stat">0</span> défis soumis</p>
                         </div>
                     </div>
@@ -78,7 +78,9 @@
                                 <i data-lucide="shield" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
                             <div class="text-3xl font-bold mt-2" id="number-hacking-challenges">0</div>
-                            <p class="text-gray-400"><span class="number-hacking-challenges-validate">0</span> flags validés</p>
+                            <p class="text-gray-400"><span id="number-hacking-challenges-validate">0</span> flags validés</p>
+                            <p class="text-green-400 text-sm mt-1"><span id="hacking-stat">0</span>% de réussite</p>
+
                         </div>
                     </div>
 
@@ -90,7 +92,7 @@
                                 <i data-lucide="file-text" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
                             <div class="text-3xl font-bold mt-2" id="number-submitted-projects">0</div>
-                            <p class="text-gray-400"><span class="number-submitted-projects-wait">0</span> projet en attente d'évaluation</p>
+                            <p class="text-gray-400"><span id="number-submitted-projects-wait">0</span> projet en attente d'évaluation</p>
                         </div>
                     </div>
 

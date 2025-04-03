@@ -346,7 +346,14 @@ class UserController extends Controller
             $database = Database::getInstance();
             $db = $database->getConnection();
     
-            // Structure de réponse
+            // Vérifier que l'utilisateur existe
+            $userCheck = $db->prepare("SELECT id FROM users WHERE id = ?");
+            $userCheck->execute([$userId]);
+            if ($userCheck->rowCount() === 0) {
+                throw new Exception("Utilisateur non trouvé");
+            }
+    
+            // Structure de réponse complète avec toutes les clés nécessaires
             $response = [
                 'success' => true,
                 'data' => [
@@ -356,15 +363,16 @@ class UserController extends Controller
                     'number-hacking-challenges-validate' => 0,
                     'number-submitted-projects' => 0,
                     'total-points' => 0,
-                    'total-points-stat' => 0
+                    'total-points-stat' => 0,
+                    'hacking-stat' => 0 // Ajout de cette clé manquante
                 ]
             ];
     
-            // 1. Défis de développement (basés sur la table projects)
+            // 1. Défis de développement
             $devQuery = $db->prepare("
                 SELECT 
                     COUNT(*) as total,
-                    SUM(status = 'ongoing') as in_progress
+                    COALESCE(SUM(status = 'ongoing'), 0) as in_progress
                 FROM projects 
                 WHERE team_id IN (
                     SELECT team_id FROM team_members WHERE user_id = ?
@@ -373,31 +381,42 @@ class UserController extends Controller
             $devQuery->execute([$userId]);
             $devData = $devQuery->fetch(PDO::FETCH_ASSOC);
             
-            if ($devData) {
-                $response['data']['number-dev-challenges'] = (int)$devData['total'];
-                $response['data']['number-dev-challenges-on'] = (int)$devData['in_progress'];
-            }
+            $response['data']['number-dev-challenges'] = (int)$devData['total'];
+            $response['data']['number-dev-challenges-on'] = (int)$devData['in_progress'];
     
-            // 2. Défis de hacking 
+            // 2. Défis de hacking
             // a) Total des défis disponibles
-            $hackingTotalQuery = $db->prepare("SELECT COUNT(*) as total FROM challenges");
-            $hackingTotalQuery->execute();
+            $hackingTotalQuery = $db->prepare("
+                SELECT COUNT(*) as total 
+                FROM challenges
+                WHERE hackathon_id IN (
+                    SELECT hackathon_id FROM hackathon_participants WHERE user_id = ?
+                )
+            ");
+            $hackingTotalQuery->execute([$userId]);
             $hackingTotal = $hackingTotalQuery->fetch(PDO::FETCH_ASSOC);
             $response['data']['number-hacking-challenges'] = (int)$hackingTotal['total'];
     
             // b) Défis validés par l'utilisateur
             $hackingValidQuery = $db->prepare("
-                SELECT COUNT(*) as validated
+                SELECT COALESCE(COUNT(*), 0) as validated
                 FROM challenge_submissions 
-                WHERE user_id = ? AND status = 'valid'
+                WHERE user_id = ? AND status = 'validated'
             ");
             $hackingValidQuery->execute([$userId]);
             $hackingValid = $hackingValidQuery->fetch(PDO::FETCH_ASSOC);
             $response['data']['number-hacking-challenges-validate'] = (int)$hackingValid['validated'];
     
-            // 3. Projets soumis (status = completed)
+            // Calcul du pourcentage de réussite hacking
+            if ($response['data']['number-hacking-challenges'] > 0) {
+                $response['data']['hacking-stat'] = round(
+                    ($response['data']['number-hacking-challenges-validate'] / $response['data']['number-hacking-challenges']) * 100
+                );
+            }
+    
+            // 3. Projets soumis
             $projectsQuery = $db->prepare("
-                SELECT COUNT(*) as submitted
+                SELECT COALESCE(COUNT(*), 0) as submitted
                 FROM projects 
                 WHERE status = 'completed' 
                 AND team_id IN (
@@ -412,31 +431,23 @@ class UserController extends Controller
             $pointsQuery = $db->prepare("
                 SELECT COALESCE(SUM(points), 0) as total
                 FROM challenge_submissions 
-                WHERE user_id = ? AND status = 'valid'
+                WHERE user_id = ? AND status = 'validated'
             ");
             $pointsQuery->execute([$userId]);
             $pointsData = $pointsQuery->fetch(PDO::FETCH_ASSOC);
-            $totalPoints = (int)$pointsData['total'];
-            $response['data']['total-points'] = $totalPoints;
+            $response['data']['total-points'] = (int)$pointsData['total'];
             
-            // Calcul du pourcentage de progression (500 points max)
-            $response['data']['total-points-stat'] = min(100, round(($totalPoints / 1000) * 100));
+            // Calcul du pourcentage de progression
+            $response['data']['total-points-stat'] = min(100, round(($response['data']['total-points'] / 1000) * 100));
     
             echo json_encode($response);
     
-        } catch (PDOException $e) {
-            http_response_code(500);
-            echo json_encode([
-                'success' => false,
-                'error' => 'Database error',
-                'details' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
         } catch (Exception $e) {
             http_response_code(500);
             echo json_encode([
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
         }
         exit;
