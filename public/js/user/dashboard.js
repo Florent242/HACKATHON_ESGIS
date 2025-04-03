@@ -58,7 +58,7 @@ async function getUserId() {
         });
 
         if (!response.ok) {
-            throw new Error('Non authentifié');
+            throw new Error('Non authentifié. Dashboard');
         }
 
         const data = await response.json();

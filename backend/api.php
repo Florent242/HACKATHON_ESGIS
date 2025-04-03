@@ -14,6 +14,7 @@ use Auth\Controller\UserController;
 use Auth\Controller\NotificationController;
 use Auth\Controller\ChallengeController;
 use Auth\Controller\EvaluationController;
+use Auth\Model\TokenManager;
 
 // ✅ Inclure une seule fois le fichier de configuration
 if (!defined('CONFIG_INCLUDED')) {
@@ -37,6 +38,7 @@ $files = [
     'ProjectController'   => '/controllers/ProjectController.php',
     'ChallengeController' => '/controllers/ChallengeController.php',
     'EvaluationController'=> '/controllers/EvaluationController.php',
+    'TokenManager'        => '/models/TokenManager.php'
 ];
 
 foreach ($files as $class => $path) {
@@ -65,6 +67,8 @@ configureCors();
 // Initialisation de la base de données
 $db = Database::getInstance()->getConnection();
 
+$key = 'your-secret-key';
+
 // Pour les requêtes OPTIONS, renvoyer directement une réponse
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
@@ -90,6 +94,9 @@ $input = json_decode($rawInput, true);
 if ($input === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = $_POST;
 }
+
+// Initialisation du gestionnaire de token
+$tokenManager = new TokenManager($key, $db);
 
 try {
     switch ($endpoint) {
@@ -152,7 +159,7 @@ try {
             break;
 
             case 'users':
-                $controller = new UserController($db);
+                $controller = new UserController($db, $tokenManager);
                 
                 // Vérification du token JWT pour toutes les routes sauf OPTIONS
                 if ($method !== 'OPTIONS') {
@@ -174,7 +181,7 @@ try {
                     } catch (Exception $e) {
                         jsonResponse([
                             'success' => false,
-                            'error' => $e->getMessage()
+                            'error' => 'api.php ' . $e->getMessage()
                         ], $e->getCode() ?: 401);
                     }
                 }
@@ -186,7 +193,7 @@ try {
                             if ($request[1] === 'me') {
                                 // Vérifier l'authentification
                                 if (!$currentUserId) {
-                                    jsonResponse(['error' => 'Non authentifié'], 401);
+                                    jsonResponse(['error' => 'Non authentifié. api.php ' . $currentUserId.' !='.$request[1]], 401);
                                     return;
                                 }
                         

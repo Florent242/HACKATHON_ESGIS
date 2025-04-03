@@ -43,9 +43,9 @@ class UserController extends Controller
     private $db;
     private $key = 'your-secret-key';
 
-    public function __construct($db)
+    public function __construct($db, $tokenManager)
     {
-        parent::__construct();
+        parent::__construct($tokenManager);
         $this->db = $db;
         $this->user = new User($this->db);
     }
@@ -69,7 +69,7 @@ class UserController extends Controller
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => 'UserController.php ' . $e->getMessage()
             ], 404);
         }
     }
@@ -333,14 +333,6 @@ class UserController extends Controller
     {
         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         exit;
-    }
-
-    /**
-     * Vérifie si l'utilisateur est authentifié
-     */
-    public function isAuthenticated()
-    {
-        return isset($_SESSION['user_id']);
     }
 
     /**
@@ -1552,10 +1544,10 @@ class UserController extends Controller
      * @param string $token Token à vérifier
      * @return bool Validité du token
      */
-    public function validateCsrfToken($token)
-    {
-        return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
-    }
+    // public function validateCsrfToken($token)
+    // {
+    //     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+    // }
 
     /**
      * Obtenir un jeton CSRF

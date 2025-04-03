@@ -1,9 +1,9 @@
--- phpMyAdmin SQL Dump
+-- phpMyAdmin SQL Dumphackathon_db
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : localhost
--- Généré le : mer. 02 avr. 2025 à 12:46
+-- Généré le : mar. 01 avr. 2025 à 21:08
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -61,18 +61,7 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `action`, `description`, `data`, `
 (15, NULL, 'login_attempt', 'Tentative de connexion', '{\"email\":\"loyovat896@opposir.com\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-26 18:59:25'),
 (16, 1, 'login_success', 'Connexion réussie', '{\"user_id\":1,\"role\":\"participant\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-26 18:59:25'),
 (17, NULL, 'login_attempt', 'Tentative de connexion', '{\"email\":\"galigom995@opposir.com\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-30 12:56:34'),
-(18, 2, 'login_success', 'Connexion réussie', '{\"user_id\":2,\"role\":\"participant\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-30 12:56:34'),
-(19, 2, 'login_error', 'Email ou mot de passe incorrect', '{\"email\":\"loyovat896@opposir.com\",\"error\":\"Email ou mot de passe incorrect\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:11:50'),
-(20, 2, 'create_error', 'SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:12:58'),
-(21, 2, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:12:58'),
-(22, 2, 'create_error', 'SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:14:19'),
-(23, 2, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:14:19'),
-(24, 2, 'create_error', 'SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:14:52'),
-(25, 2, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:14:52'),
-(26, 2, 'create_error', 'SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:15:00'),
-(27, 2, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:15:00'),
-(28, 2, 'create_error', 'SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:19:21'),
-(29, 2, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:19:21');
+(18, 2, 'login_success', 'Connexion réussie', '{\"user_id\":2,\"role\":\"participant\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-30 12:56:34');
 
 -- --------------------------------------------------------
 
@@ -322,8 +311,8 @@ CREATE TABLE `users` (
   `school` varchar(35) DEFAULT NULL,
   `email` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `special_comp` varchar(85) NOT NULL,
-  `idea_project` text DEFAULT NULL,
+  `special_comp` int(85) NOT NULL,
+  `idea_project` int(255) DEFAULT NULL,
   `study_level` varchar(50) NOT NULL,
   `number` int(15) NOT NULL,
   `role` enum('admin','organizer','participant','judge') NOT NULL DEFAULT 'participant',
@@ -341,8 +330,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `fullname`, `school`, `email`, `password`, `special_comp`, `idea_project`, `study_level`, `number`, `role`, `profile_picture`, `bio`, `github_url`, `linkedin_url`, `created_at`, `updated_at`, `status`) VALUES
-(1, 'lolo andoche', 'jean messiah', '', 'loyovat896@opposir.com', '$2y$10$HNVlAKZZk9unXeT1QwWHdOSYvh3jvjpgRx58k7U6ry6OHwZy7B8wK', '0', NULL, '', 0, 'participant', NULL, NULL, NULL, NULL, '2025-03-26 18:58:43', '2025-03-26 18:58:43', 'active'),
-(2, 'Test01', 'jean messiah', 'ESGIS', 'galigom995@opposir.com', '$2y$10$Mj3KoO9C7XLg9MQzMyUwsOhsaSnswRb1KAV9pz8hrNeGB9rf1suRq', '0', NULL, '', 0, 'participant', NULL, NULL, NULL, NULL, '2025-03-30 12:56:11', '2025-03-30 12:56:11', 'active');
+(1, 'lolo andoche', 'jean messiah', '', 'loyovat896@opposir.com', '$2y$10$HNVlAKZZk9unXeT1QwWHdOSYvh3jvjpgRx58k7U6ry6OHwZy7B8wK', 0, NULL, '', 0, 'participant', NULL, NULL, NULL, NULL, '2025-03-26 18:58:43', '2025-03-26 18:58:43', 'active'),
+(2, 'Test01', 'jean messiah', 'ESGIS', 'galigom995@opposir.com', '$2y$10$Mj3KoO9C7XLg9MQzMyUwsOhsaSnswRb1KAV9pz8hrNeGB9rf1suRq', 0, NULL, '', 0, 'participant', NULL, NULL, NULL, NULL, '2025-03-30 12:56:11', '2025-03-30 12:56:11', 'active');
 
 -- --------------------------------------------------------
 
@@ -354,7 +343,6 @@ CREATE TABLE `user_tokens` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `token` varchar(255) NOT NULL,
-  `refresh_token` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `type` enum('authentication','password_reset','email_verification','remember_me','api') NOT NULL,
   `expires_at` datetime NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -498,7 +486,7 @@ ALTER TABLE `user_tokens`
 -- AUTO_INCREMENT pour la table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT pour la table `challenges`

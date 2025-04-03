@@ -176,7 +176,7 @@ class AuthController
             // Authentifier l'utilisateur
             $user = $this->user->authenticate($email, $password);
 
-            if ($user) {
+            if (isset($user) && $user) {
                 // Générer les tokens
                 $token = $this->tokenManager->generateJwt($user['id']);
                 $longTermToken = null;

@@ -406,7 +406,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Désactiver le bouton de soumission et afficher l'indicateur de traitement
         const submitBtn = event.target.querySelector('button[type="submit"]');
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i data-lucide="loader-circle" class="animate-spin"></i> Traitement...';
+        submitBtn.innerHTML = '<i data-lucide="loader" class="animate-spin"></i> Traitement...';
 
         try {
             // Validation du nom complet
@@ -499,7 +499,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const form = e.target;
         const submitBtn = form.querySelector('button[type="submit"]');
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i data-lucide="circle-loader" class="animate-spin"></i> Traitement...';
+        submitBtn.innerHTML = '<i data-lucide="loader" class="animate-spin"></i> Traitement...';
 
         try {
             const formData = new FormData(form);
@@ -519,19 +519,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
             // Stockage des tokens
             if (data.success) {
-                setFlashMessage('success', data.message, data.details);
+                console.log(data);
+                setFlashMessage('success', data.message, data.username);
                 window.location.href = data.redirect || '/user';
             } else if (!data.success) {
                 showNotification(data.message || "Erreur lors de la connexion", 'Veuillez corriger les erreurs', 'warning');
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Se connecter';
+                submitBtn.innerHTML = '<i data-lucide="send"></i> Se connecter';
                 return;
             }
         } catch (error) {
             showNotification(error.message, 'Veuillez corriger les erreurs', 'warning');
         } finally {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Se connecter';
+            submitBtn.innerHTML = '<i data-lucide="send"></i> Se connecter';
         }
     });
 

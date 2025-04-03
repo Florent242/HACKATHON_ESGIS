@@ -42,7 +42,7 @@ class User {
                 return $user;
             }
 
-            return $user;
+            return false;
         } catch (PDOException $e) {
             error_log('Erreur d\'authentification: ' . $e->getMessage());
             return false;
