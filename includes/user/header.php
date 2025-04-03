@@ -7,7 +7,6 @@ if (!isset($_SESSION['csrf_token'])) {
 }
 
 ?>
-<script defer src="/HACKATHON_ESGIS/public/js/lucide.js"></script>
 <script defer src="/HACKATHON_ESGIS/public/js/user/header.js"></script>
 <header>
     <div class="header-container">

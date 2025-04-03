@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
     // Pour tester la notification qui correspond à l'image
 
     const notificationElement = document.getElementById('notification-data');

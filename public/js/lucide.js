@@ -1,5 +1,5 @@
 /**
- * @license lucide v0.475.0 - ISC
+ * @license lucide v0.487.0 - ISC
  *
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
@@ -10,20 +10,6 @@
   typeof define === 'function' && define.amd ? define(['exports'], factory) :
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.lucide = {}));
 })(this, (function (exports) { 'use strict';
-
-  const createElement = ([tag, attrs, children]) => {
-    const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
-    Object.keys(attrs).forEach((name) => {
-      element.setAttribute(name, String(attrs[name]));
-    });
-    if (children?.length) {
-      children.forEach((child) => {
-        const childElement = createElement(child);
-        element.appendChild(childElement);
-      });
-    }
-    return element;
-  };
 
   const defaultAttributes = {
     xmlns: "http://www.w3.org/2000/svg",
@@ -37,15 +23,35 @@
     "stroke-linejoin": "round"
   };
 
+  const createSVGElement = ([tag, attrs, children]) => {
+    const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    Object.keys(attrs).forEach((name) => {
+      element.setAttribute(name, String(attrs[name]));
+    });
+    if (children?.length) {
+      children.forEach((child) => {
+        const childElement = createSVGElement(child);
+        element.appendChild(childElement);
+      });
+    }
+    return element;
+  };
+  const createElement = (iconNode, customAttrs = {}) => {
+    const tag = "svg";
+    const attrs = {
+      ...defaultAttributes,
+      ...customAttrs
+    };
+    return createSVGElement([tag, attrs, iconNode]);
+  };
+
   const getAttrs = (element) => Array.from(element.attributes).reduce((attrs, attr) => {
     attrs[attr.name] = attr.value;
     return attrs;
   }, {});
   const getClassNames = (attrs) => {
-    if (typeof attrs === "string")
-      return attrs;
-    if (!attrs || !attrs.class)
-      return "";
+    if (typeof attrs === "string") return attrs;
+    if (!attrs || !attrs.class) return "";
     if (attrs.class && typeof attrs.class === "string") {
       return attrs.class.split(" ");
     }
@@ -61,8 +67,7 @@
   const toPascalCase = (string) => string.replace(/(\w)(\w*)(_|-|\s*)/g, (g0, g1, g2) => g1.toUpperCase() + g2.toLowerCase());
   const replaceElement = (element, { nameAttr, icons, attrs }) => {
     const iconName = element.getAttribute(nameAttr);
-    if (iconName == null)
-      return;
+    if (iconName == null) return;
     const ComponentName = toPascalCase(iconName);
     const iconNode = icons[ComponentName];
     if (!iconNode) {
@@ -83,7 +88,7 @@
         class: classNames
       });
     }
-    const svgElement = createElement(["svg", iconAttrs, iconNode]);
+    const svgElement = createElement(iconNode, iconAttrs);
     return element.parentNode?.replaceChild(svgElement, element);
   };
 
@@ -361,13 +366,6 @@
     ["path", { d: "M22 4H2" }]
   ];
 
-  const AlignVerticalSpaceBetween = [
-    ["rect", { width: "14", height: "6", x: "5", y: "15", rx: "2" }],
-    ["rect", { width: "10", height: "6", x: "7", y: "3", rx: "2" }],
-    ["path", { d: "M2 21h20" }],
-    ["path", { d: "M2 3h20" }]
-  ];
-
   const Ambulance = [
     ["path", { d: "M10 10H6" }],
     ["path", { d: "M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" }],
@@ -381,6 +379,13 @@
     ["path", { d: "M9 18h6" }],
     ["circle", { cx: "17", cy: "18", r: "2" }],
     ["circle", { cx: "7", cy: "18", r: "2" }]
+  ];
+
+  const AlignVerticalSpaceBetween = [
+    ["rect", { width: "14", height: "6", x: "5", y: "15", rx: "2" }],
+    ["rect", { width: "10", height: "6", x: "7", y: "3", rx: "2" }],
+    ["path", { d: "M2 21h20" }],
+    ["path", { d: "M2 3h20" }]
   ];
 
   const Ampersand = [
@@ -896,17 +901,6 @@
     ["path", { d: "m9 12 2 2 4-4" }]
   ];
 
-  const BadgeDollarSign = [
-    [
-      "path",
-      {
-        d: "M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"
-      }
-    ],
-    ["path", { d: "M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" }],
-    ["path", { d: "M12 18V6" }]
-  ];
-
   const BadgeEuro = [
     [
       "path",
@@ -916,6 +910,17 @@
     ],
     ["path", { d: "M7 12h5" }],
     ["path", { d: "M15 9.4a4 4 0 1 0 0 5.2" }]
+  ];
+
+  const BadgeDollarSign = [
+    [
+      "path",
+      {
+        d: "M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"
+      }
+    ],
+    ["path", { d: "M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" }],
+    ["path", { d: "M12 18V6" }]
   ];
 
   const BadgeHelp = [
@@ -1086,6 +1091,33 @@
     ["rect", { x: "2", y: "6", width: "20", height: "12", rx: "2" }]
   ];
 
+  const BanknoteArrowDown = [
+    ["path", { d: "M12 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5" }],
+    ["path", { d: "m16 19 3 3 3-3" }],
+    ["path", { d: "M18 12h.01" }],
+    ["path", { d: "M19 16v6" }],
+    ["path", { d: "M6 12h.01" }],
+    ["circle", { cx: "12", cy: "12", r: "2" }]
+  ];
+
+  const BanknoteArrowUp = [
+    ["path", { d: "M12 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5" }],
+    ["path", { d: "M18 12h.01" }],
+    ["path", { d: "M19 22v-6" }],
+    ["path", { d: "m22 19-3-3-3 3" }],
+    ["path", { d: "M6 12h.01" }],
+    ["circle", { cx: "12", cy: "12", r: "2" }]
+  ];
+
+  const BanknoteX = [
+    ["path", { d: "M13 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5" }],
+    ["path", { d: "m17 17 5 5" }],
+    ["path", { d: "M18 12h.01" }],
+    ["path", { d: "m22 17-5 5" }],
+    ["path", { d: "M6 12h.01" }],
+    ["circle", { cx: "12", cy: "12", r: "2" }]
+  ];
+
   const Banknote = [
     ["rect", { width: "20", height: "12", x: "2", y: "6", rx: "2" }],
     ["circle", { cx: "12", cy: "12", r: "2" }],
@@ -1142,20 +1174,20 @@
     ["line", { x1: "10", x2: "10", y1: "11", y2: "13" }]
   ];
 
-  const BatteryPlus = [
-    ["path", { d: "M10 9v6" }],
-    ["path", { d: "M13.5 7H16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2.5" }],
-    ["path", { d: "M22 11v2" }],
-    ["path", { d: "M6.5 17H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2.5" }],
-    ["path", { d: "M7 12h6" }]
-  ];
-
   const BatteryWarning = [
     ["path", { d: "M10 17h.01" }],
     ["path", { d: "M10 7v6" }],
     ["path", { d: "M14 7h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2" }],
     ["path", { d: "M22 11v2" }],
     ["path", { d: "M6 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" }]
+  ];
+
+  const BatteryPlus = [
+    ["path", { d: "M10 9v6" }],
+    ["path", { d: "M13.5 7H16a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2.5" }],
+    ["path", { d: "M22 11v2" }],
+    ["path", { d: "M6.5 17H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h2.5" }],
+    ["path", { d: "M7 12h6" }]
   ];
 
   const Battery = [
@@ -1207,19 +1239,19 @@
   ];
 
   const Beef = [
-    ["circle", { cx: "12.5", cy: "8.5", r: "2.5" }],
     [
       "path",
       {
-        d: "M12.5 2a6.5 6.5 0 0 0-6.22 4.6c-1.1 3.13-.78 3.9-3.18 6.08A3 3 0 0 0 5 18c4 0 8.4-1.8 11.4-4.3A6.5 6.5 0 0 0 12.5 2Z"
+        d: "M16.4 13.7A6.5 6.5 0 1 0 6.28 6.6c-1.1 3.13-.78 3.9-3.18 6.08A3 3 0 0 0 5 18c4 0 8.4-1.8 11.4-4.3"
       }
     ],
     [
       "path",
       {
-        d: "m18.5 6 2.19 4.5a6.48 6.48 0 0 1 .31 2 6.49 6.49 0 0 1-2.6 5.2C15.4 20.2 11 22 7 22a3 3 0 0 1-2.68-1.66L2.4 16.5"
+        d: "m18.5 6 2.19 4.5a6.48 6.48 0 0 1-2.29 7.2C15.4 20.2 11 22 7 22a3 3 0 0 1-2.68-1.66L2.4 16.5"
       }
-    ]
+    ],
+    ["circle", { cx: "12.5", cy: "8.5", r: "2.5" }]
   ];
 
   const BeerOff = [
@@ -1329,16 +1361,16 @@
     ["rect", { width: "13", height: "7", x: "3", y: "14", rx: "1" }]
   ];
 
-  const BetweenHorizontalStart = [
-    ["rect", { width: "13", height: "7", x: "8", y: "3", rx: "1" }],
-    ["path", { d: "m2 9 3 3-3 3" }],
-    ["rect", { width: "13", height: "7", x: "8", y: "14", rx: "1" }]
-  ];
-
   const BetweenVerticalEnd = [
     ["rect", { width: "7", height: "13", x: "3", y: "3", rx: "1" }],
     ["path", { d: "m9 22 3-3 3 3" }],
     ["rect", { width: "7", height: "13", x: "14", y: "3", rx: "1" }]
+  ];
+
+  const BetweenHorizontalStart = [
+    ["rect", { width: "13", height: "7", x: "8", y: "3", rx: "1" }],
+    ["path", { d: "m2 9 3 3-3 3" }],
+    ["rect", { width: "13", height: "7", x: "8", y: "14", rx: "1" }]
   ];
 
   const BetweenVerticalStart = [
@@ -1837,8 +1869,8 @@
   ];
 
   const Brackets = [
-    ["path", { d: "M16 3h3v18h-3" }],
-    ["path", { d: "M8 21H5V3h3" }]
+    ["path", { d: "M16 3h2a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-2" }],
+    ["path", { d: "M8 21H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h2" }]
   ];
 
   const BrainCircuit = [
@@ -2003,16 +2035,6 @@
     ["path", { d: "M17.2 17c2.1.1 3.8 1.9 3.8 4" }]
   ];
 
-  const Building2 = [
-    ["path", { d: "M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" }],
-    ["path", { d: "M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" }],
-    ["path", { d: "M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" }],
-    ["path", { d: "M10 6h4" }],
-    ["path", { d: "M10 10h4" }],
-    ["path", { d: "M10 14h4" }],
-    ["path", { d: "M10 18h4" }]
-  ];
-
   const Building = [
     ["rect", { width: "16", height: "20", x: "4", y: "2", rx: "2", ry: "2" }],
     ["path", { d: "M9 22v-4h6v4" }],
@@ -2025,6 +2047,16 @@
     ["path", { d: "M16 14h.01" }],
     ["path", { d: "M8 10h.01" }],
     ["path", { d: "M8 14h.01" }]
+  ];
+
+  const Building2 = [
+    ["path", { d: "M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" }],
+    ["path", { d: "M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" }],
+    ["path", { d: "M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" }],
+    ["path", { d: "M10 6h4" }],
+    ["path", { d: "M10 10h4" }],
+    ["path", { d: "M10 14h4" }],
+    ["path", { d: "M10 18h4" }]
   ];
 
   const BusFront = [
@@ -2333,22 +2365,46 @@
   ];
 
   const CandyOff = [
-    ["path", { d: "m8.5 8.5-1 1a4.95 4.95 0 0 0 7 7l1-1" }],
-    ["path", { d: "M11.843 6.187A4.947 4.947 0 0 1 16.5 7.5a4.947 4.947 0 0 1 1.313 4.657" }],
-    ["path", { d: "M14 16.5V14" }],
-    ["path", { d: "M14 6.5v1.843" }],
-    ["path", { d: "M10 10v7.5" }],
-    ["path", { d: "m16 7 1-5 1.367.683A3 3 0 0 0 19.708 3H21v1.292a3 3 0 0 0 .317 1.341L22 7l-5 1" }],
-    ["path", { d: "m8 17-1 5-1.367-.683A3 3 0 0 0 4.292 21H3v-1.292a3 3 0 0 0-.317-1.341L2 17l5-1" }],
-    ["line", { x1: "2", x2: "22", y1: "2", y2: "22" }]
+    ["path", { d: "M10 10v7.9" }],
+    ["path", { d: "M11.802 6.145a5 5 0 0 1 6.053 6.053" }],
+    ["path", { d: "M14 6.1v2.243" }],
+    ["path", { d: "m15.5 15.571-.964.964a5 5 0 0 1-7.071 0 5 5 0 0 1 0-7.07l.964-.965" }],
+    [
+      "path",
+      {
+        d: "M16 7V3a1 1 0 0 1 1.707-.707 2.5 2.5 0 0 0 2.152.717 1 1 0 0 1 1.131 1.131 2.5 2.5 0 0 0 .717 2.152A1 1 0 0 1 21 8h-4"
+      }
+    ],
+    ["path", { d: "m2 2 20 20" }],
+    [
+      "path",
+      {
+        d: "M8 17v4a1 1 0 0 1-1.707.707 2.5 2.5 0 0 0-2.152-.717 1 1 0 0 1-1.131-1.131 2.5 2.5 0 0 0-.717-2.152A1 1 0 0 1 3 16h4"
+      }
+    ]
   ];
 
   const Candy = [
-    ["path", { d: "m9.5 7.5-2 2a4.95 4.95 0 1 0 7 7l2-2a4.95 4.95 0 1 0-7-7Z" }],
-    ["path", { d: "M14 6.5v10" }],
-    ["path", { d: "M10 7.5v10" }],
-    ["path", { d: "m16 7 1-5 1.37.68A3 3 0 0 0 19.7 3H21v1.3c0 .46.1.92.32 1.33L22 7l-5 1" }],
-    ["path", { d: "m8 17-1 5-1.37-.68A3 3 0 0 0 4.3 21H3v-1.3a3 3 0 0 0-.32-1.33L2 17l5-1" }]
+    ["path", { d: "M10 7v10.9" }],
+    ["path", { d: "M14 6.1V17" }],
+    [
+      "path",
+      {
+        d: "M16 7V3a1 1 0 0 1 1.707-.707 2.5 2.5 0 0 0 2.152.717 1 1 0 0 1 1.131 1.131 2.5 2.5 0 0 0 .717 2.152A1 1 0 0 1 21 8h-4"
+      }
+    ],
+    [
+      "path",
+      {
+        d: "M16.536 7.465a5 5 0 0 0-7.072 0l-2 2a5 5 0 0 0 0 7.07 5 5 0 0 0 7.072 0l2-2a5 5 0 0 0 0-7.07"
+      }
+    ],
+    [
+      "path",
+      {
+        d: "M8 17v4a1 1 0 0 1-1.707.707 2.5 2.5 0 0 0-2.152-.717 1 1 0 0 1-1.131-1.131 2.5 2.5 0 0 0-.717-2.152A1 1 0 0 1 3 16h4"
+      }
+    ]
   ];
 
   const Cannabis = [
@@ -2807,16 +2863,16 @@
     ["line", { x1: "12", x2: "12.01", y1: "16", y2: "16" }]
   ];
 
-  const CircleArrowDown = [
-    ["circle", { cx: "12", cy: "12", r: "10" }],
-    ["path", { d: "M12 8v8" }],
-    ["path", { d: "m8 12 4 4 4-4" }]
-  ];
-
   const CircleArrowLeft = [
     ["circle", { cx: "12", cy: "12", r: "10" }],
     ["path", { d: "M16 12H8" }],
     ["path", { d: "m12 8-4 4 4 4" }]
+  ];
+
+  const CircleArrowDown = [
+    ["circle", { cx: "12", cy: "12", r: "10" }],
+    ["path", { d: "M12 8v8" }],
+    ["path", { d: "m8 12 4 4 4-4" }]
   ];
 
   const CircleArrowOutDownLeft = [
@@ -3025,8 +3081,8 @@
   ];
 
   const CircleSlash2 = [
-    ["circle", { cx: "12", cy: "12", r: "10" }],
-    ["path", { d: "M22 2 2 22" }]
+    ["path", { d: "M22 2 2 22" }],
+    ["circle", { cx: "12", cy: "12", r: "10" }]
   ];
 
   const CircleSlash = [
@@ -3226,14 +3282,14 @@
     ["polyline", { points: "12 6 12 12 9.5 16" }]
   ];
 
-  const Clock8 = [
-    ["circle", { cx: "12", cy: "12", r: "10" }],
-    ["polyline", { points: "12 6 12 12 8 14" }]
-  ];
-
   const Clock9 = [
     ["circle", { cx: "12", cy: "12", r: "10" }],
     ["polyline", { points: "12 6 12 12 7.5 12" }]
+  ];
+
+  const Clock8 = [
+    ["circle", { cx: "12", cy: "12", r: "10" }],
+    ["polyline", { points: "12 6 12 12 8 14" }]
   ];
 
   const ClockAlert = [
@@ -3255,6 +3311,15 @@
     ["path", { d: "M12 6v6l1.562.781" }],
     ["path", { d: "m14 18 4-4 4 4" }],
     ["path", { d: "M18 22v-8" }]
+  ];
+
+  const ClockFading = [
+    ["path", { d: "M12 2a10 10 0 0 1 7.38 16.75" }],
+    ["path", { d: "M12 6v6l4 2" }],
+    ["path", { d: "M2.5 8.875a10 10 0 0 0-.5 3" }],
+    ["path", { d: "M2.83 16a10 10 0 0 0 2.43 3.4" }],
+    ["path", { d: "M4.636 5.235a10 10 0 0 1 .891-.857" }],
+    ["path", { d: "M8.644 21.42a10 10 0 0 0 7.631-.38" }]
   ];
 
   const Clock = [
@@ -3556,16 +3621,16 @@
     ["path", { d: "M12 18h6" }]
   ];
 
+  const Cone = [
+    ["path", { d: "m20.9 18.55-8-15.98a1 1 0 0 0-1.8 0l-8 15.98" }],
+    ["ellipse", { cx: "12", cy: "19", rx: "9", ry: "3" }]
+  ];
+
   const ConciergeBell = [
     ["path", { d: "M3 20a1 1 0 0 1-1-1v-1a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1Z" }],
     ["path", { d: "M20 16a8 8 0 1 0-16 0" }],
     ["path", { d: "M12 4v4" }],
     ["path", { d: "M10 4h4" }]
-  ];
-
-  const Cone = [
-    ["path", { d: "m20.9 18.55-8-15.98a1 1 0 0 0-1.8 0l-8 15.98" }],
-    ["ellipse", { cx: "12", cy: "19", rx: "9", ry: "3" }]
   ];
 
   const Construction = [
@@ -3654,14 +3719,14 @@
     ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" }]
   ];
 
-  const CopyX = [
-    ["line", { x1: "12", x2: "18", y1: "12", y2: "18" }],
-    ["line", { x1: "12", x2: "18", y1: "18", y2: "12" }],
+  const Copy = [
     ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2" }],
     ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" }]
   ];
 
-  const Copy = [
+  const CopyX = [
+    ["line", { x1: "12", x2: "18", y1: "12", y2: "18" }],
+    ["line", { x1: "12", x2: "18", y1: "18", y2: "12" }],
     ["rect", { width: "14", height: "14", x: "8", y: "8", rx: "2", ry: "2" }],
     ["path", { d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" }]
   ];
@@ -3676,14 +3741,14 @@
     ["path", { d: "M14.83 14.83a4 4 0 1 1 0-5.66" }]
   ];
 
-  const CornerDownLeft = [
-    ["polyline", { points: "9 10 4 15 9 20" }],
-    ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4" }]
-  ];
-
   const CornerDownRight = [
     ["polyline", { points: "15 10 20 15 15 20" }],
     ["path", { d: "M4 4v7a4 4 0 0 0 4 4h12" }]
+  ];
+
+  const CornerDownLeft = [
+    ["polyline", { points: "9 10 4 15 9 20" }],
+    ["path", { d: "M20 4v7a4 4 0 0 1-4 4H4" }]
   ];
 
   const CornerLeftDown = [
@@ -3887,16 +3952,6 @@
     ["path", { d: "M3.66 6.48a10 10 0 0 0 13.86 13.86" }]
   ];
 
-  const DiamondMinus = [
-    [
-      "path",
-      {
-        d: "M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41L13.7 2.71a2.41 2.41 0 0 0-3.41 0z"
-      }
-    ],
-    ["path", { d: "M8 12h8" }]
-  ];
-
   const DiamondPercent = [
     [
       "path",
@@ -3907,6 +3962,16 @@
     ["path", { d: "M9.2 9.2h.01" }],
     ["path", { d: "m14.5 9.5-5 5" }],
     ["path", { d: "M14.7 14.8h.01" }]
+  ];
+
+  const DiamondMinus = [
+    [
+      "path",
+      {
+        d: "M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41L13.7 2.71a2.41 2.41 0 0 0-3.41 0z"
+      }
+    ],
+    ["path", { d: "M8 12h8" }]
   ];
 
   const DiamondPlus = [
@@ -4603,6 +4668,13 @@
     ["path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z" }]
   ];
 
+  const FileDiff = [
+    ["path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" }],
+    ["path", { d: "M9 10h6" }],
+    ["path", { d: "M12 13V7" }],
+    ["path", { d: "M9 17h6" }]
+  ];
+
   const FileCog = [
     ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4" }],
     ["path", { d: "m3.2 12.9-.9-.4" }],
@@ -4615,13 +4687,6 @@
     ["path", { d: "m9.7 12.5-.9.4" }],
     ["path", { d: "m9.7 15.5-.9-.4" }],
     ["circle", { cx: "6", cy: "14", r: "3" }]
-  ];
-
-  const FileDiff = [
-    ["path", { d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" }],
-    ["path", { d: "M9 10h6" }],
-    ["path", { d: "M12 13V7" }],
-    ["path", { d: "M9 17h6" }]
   ];
 
   const FileDigit = [
@@ -4819,6 +4884,15 @@
     ["path", { d: "M14 17h2" }]
   ];
 
+  const FileSymlink = [
+    ["path", { d: "m10 18 3-3-3-3" }],
+    ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4" }],
+    [
+      "path",
+      { d: "M4 11V4a2 2 0 0 1 2-2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h7" }
+    ]
+  ];
+
   const FileStack = [
     ["path", { d: "M21 7h-3a2 2 0 0 1-2-2V2" }],
     [
@@ -4827,15 +4901,6 @@
     ],
     ["path", { d: "M7 8v8.8c0 .3.2.6.4.8.2.2.5.4.8.4H15" }],
     ["path", { d: "M3 12v8.8c0 .3.2.6.4.8.2.2.5.4.8.4H11" }]
-  ];
-
-  const FileSymlink = [
-    ["path", { d: "m10 18 3-3-3-3" }],
-    ["path", { d: "M14 2v4a2 2 0 0 0 2 2h4" }],
-    [
-      "path",
-      { d: "M4 11V4a2 2 0 0 1 2-2h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h7" }
-    ]
   ];
 
   const FileTerminal = [
@@ -4957,14 +5022,6 @@
     ["path", { d: "M17 7.5h4" }],
     ["path", { d: "M17 16.5h4" }]
   ];
-
-  const FilterX = [
-    ["path", { d: "M13.013 3H2l8 9.46V19l4 2v-8.54l.9-1.055" }],
-    ["path", { d: "m22 3-5 5" }],
-    ["path", { d: "m17 3 5 5" }]
-  ];
-
-  const Filter = [["polygon", { points: "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" }]];
 
   const Fingerprint = [
     ["path", { d: "M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4" }],
@@ -5622,6 +5679,37 @@
     ["rect", { width: "10", height: "8", x: "7", y: "8", rx: "1" }]
   ];
 
+  const FunnelPlus = [
+    [
+      "path",
+      {
+        d: "M13.354 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14v6a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341l1.218-1.348"
+      }
+    ],
+    ["path", { d: "M16 6h6" }],
+    ["path", { d: "M19 3v6" }]
+  ];
+
+  const FunnelX = [
+    [
+      "path",
+      {
+        d: "M12.531 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14v6a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341l.427-.473"
+      }
+    ],
+    ["path", { d: "m16.5 3.5 5 5" }],
+    ["path", { d: "m21.5 3.5-5 5" }]
+  ];
+
+  const Funnel = [
+    [
+      "path",
+      {
+        d: "M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"
+      }
+    ]
+  ];
+
   const GalleryHorizontalEnd = [
     ["path", { d: "M2 7v10" }],
     ["path", { d: "M6 5v14" }],
@@ -6106,18 +6194,6 @@
     ["path", { d: "M5 14v6a1 1 0 0 1-1 1H2" }]
   ];
 
-  const Hand = [
-    ["path", { d: "M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" }],
-    ["path", { d: "M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" }],
-    ["path", { d: "M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" }],
-    [
-      "path",
-      {
-        d: "M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"
-      }
-    ]
-  ];
-
   const Handshake = [
     ["path", { d: "m11 17 2 2a1 1 0 1 0 3-3" }],
     [
@@ -6131,17 +6207,21 @@
     ["path", { d: "M3 4h8" }]
   ];
 
+  const Hand = [
+    ["path", { d: "M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2" }],
+    ["path", { d: "M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2" }],
+    ["path", { d: "M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8" }],
+    [
+      "path",
+      {
+        d: "M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"
+      }
+    ]
+  ];
+
   const HardDriveDownload = [
     ["path", { d: "M12 2v8" }],
     ["path", { d: "m16 6-4 4-4-4" }],
-    ["rect", { width: "20", height: "8", x: "2", y: "14", rx: "2" }],
-    ["path", { d: "M6 18h.01" }],
-    ["path", { d: "M10 18h.01" }]
-  ];
-
-  const HardDriveUpload = [
-    ["path", { d: "m16 6-4-4-4 4" }],
-    ["path", { d: "M12 2v8" }],
     ["rect", { width: "20", height: "8", x: "2", y: "14", rx: "2" }],
     ["path", { d: "M6 18h.01" }],
     ["path", { d: "M10 18h.01" }]
@@ -6157,6 +6237,14 @@
     ],
     ["line", { x1: "6", x2: "6.01", y1: "16", y2: "16" }],
     ["line", { x1: "10", x2: "10.01", y1: "16", y2: "16" }]
+  ];
+
+  const HardDriveUpload = [
+    ["path", { d: "m16 6-4-4-4 4" }],
+    ["path", { d: "M12 2v8" }],
+    ["rect", { width: "20", height: "8", x: "2", y: "14", rx: "2" }],
+    ["path", { d: "M6 18h.01" }],
+    ["path", { d: "M10 18h.01" }]
   ];
 
   const HardHat = [
@@ -6644,12 +6732,7 @@
   ];
 
   const Infinity = [
-    [
-      "path",
-      {
-        d: "M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4Z"
-      }
-    ]
+    ["path", { d: "M6 16c5 0 7-8 12-8a4 4 0 0 1 0 8c-5 0-7-8-12-8a4 4 0 1 0 0 8" }]
   ];
 
   const Info = [
@@ -6879,6 +6962,13 @@
     ]
   ];
 
+  const Laugh = [
+    ["circle", { cx: "12", cy: "12", r: "10" }],
+    ["path", { d: "M18 13a6 6 0 0 1-6 5 6 6 0 0 1-6-5h12Z" }],
+    ["line", { x1: "9", x2: "9.01", y1: "9", y2: "9" }],
+    ["line", { x1: "15", x2: "15.01", y1: "9", y2: "9" }]
+  ];
+
   const Lasso = [
     ["path", { d: "M7 22a5 5 0 0 1-2-4" }],
     [
@@ -6886,13 +6976,6 @@
       { d: "M3.3 14A6.8 6.8 0 0 1 2 10c0-4.4 4.5-8 10-8s10 3.6 10 8-4.5 8-10 8a12 12 0 0 1-5-1" }
     ],
     ["path", { d: "M5 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" }]
-  ];
-
-  const Laugh = [
-    ["circle", { cx: "12", cy: "12", r: "10" }],
-    ["path", { d: "M18 13a6 6 0 0 1-6 5 6 6 0 0 1-6-5h12Z" }],
-    ["line", { x1: "9", x2: "9.01", y1: "9", y2: "9" }],
-    ["line", { x1: "15", x2: "15.01", y1: "9", y2: "9" }]
   ];
 
   const Layers2 = [
@@ -6956,18 +7039,18 @@
     ["rect", { width: "7", height: "7", x: "14", y: "14", rx: "1" }]
   ];
 
-  const LayoutTemplate = [
-    ["rect", { width: "18", height: "7", x: "3", y: "3", rx: "1" }],
-    ["rect", { width: "9", height: "7", x: "3", y: "14", rx: "1" }],
-    ["rect", { width: "5", height: "7", x: "16", y: "14", rx: "1" }]
-  ];
-
   const Leaf = [
     [
       "path",
       { d: "M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" }
     ],
     ["path", { d: "M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" }]
+  ];
+
+  const LayoutTemplate = [
+    ["rect", { width: "18", height: "7", x: "3", y: "3", rx: "1" }],
+    ["rect", { width: "9", height: "7", x: "3", y: "14", rx: "1" }],
+    ["rect", { width: "5", height: "7", x: "16", y: "14", rx: "1" }]
   ];
 
   const LeafyGreen = [
@@ -7263,15 +7346,15 @@
     ["path", { d: "M7 10V7a5 5 0 0 1 9.33-2.5" }]
   ];
 
+  const LockOpen = [
+    ["rect", { width: "18", height: "11", x: "3", y: "11", rx: "2", ry: "2" }],
+    ["path", { d: "M7 11V7a5 5 0 0 1 9.9-1" }]
+  ];
+
   const LockKeyhole = [
     ["circle", { cx: "12", cy: "16", r: "1" }],
     ["rect", { x: "3", y: "10", width: "18", height: "12", rx: "2" }],
     ["path", { d: "M7 10V7a5 5 0 0 1 10 0v3" }]
-  ];
-
-  const LockOpen = [
-    ["rect", { width: "18", height: "11", x: "3", y: "11", rx: "2", ry: "2" }],
-    ["path", { d: "M7 11V7a5 5 0 0 1 9.9-1" }]
   ];
 
   const Lock = [
@@ -7447,17 +7530,6 @@
     ["path", { d: "M9 10h6" }]
   ];
 
-  const MapPinMinus = [
-    [
-      "path",
-      {
-        d: "M18.977 14C19.6 12.701 20 11.343 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738"
-      }
-    ],
-    ["circle", { cx: "12", cy: "10", r: "3" }],
-    ["path", { d: "M16 18h6" }]
-  ];
-
   const MapPinOff = [
     ["path", { d: "M12.75 7.09a3 3 0 0 1 2.16 2.16" }],
     [
@@ -7469,6 +7541,17 @@
     ["path", { d: "m2 2 20 20" }],
     ["path", { d: "M8.475 2.818A8 8 0 0 1 20 10c0 1.183-.31 2.377-.81 3.533" }],
     ["path", { d: "M9.13 9.13a3 3 0 0 0 3.74 3.74" }]
+  ];
+
+  const MapPinMinus = [
+    [
+      "path",
+      {
+        d: "M18.977 14C19.6 12.701 20 11.343 20 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32 32 0 0 0 .824-.738"
+      }
+    ],
+    ["circle", { cx: "12", cy: "10", r: "3" }],
+    ["path", { d: "M16 18h6" }]
   ];
 
   const MapPinPlusInside = [
@@ -7662,12 +7745,6 @@
     ["path", { d: "m20 22-5-5" }]
   ];
 
-  const MessageCircleCode = [
-    ["path", { d: "M10 9.5 8 12l2 2.5" }],
-    ["path", { d: "m14 9.5 2 2.5-2 2.5" }],
-    ["path", { d: "M7.9 20A9 9 0 1 0 4 16.1L2 22z" }]
-  ];
-
   const MessageCircleDashed = [
     ["path", { d: "M13.5 3.1c-.5 0-1-.1-1.5-.1s-1 .1-1.5.1" }],
     ["path", { d: "M19.3 6.8a10.45 10.45 0 0 0-2.1-2.1" }],
@@ -7677,6 +7754,12 @@
     ["path", { d: "M3.5 17.5 2 22l4.5-1.5" }],
     ["path", { d: "M3.1 10.5c0 .5-.1 1-.1 1.5s.1 1 .1 1.5" }],
     ["path", { d: "M6.8 4.7a10.45 10.45 0 0 0-2.1 2.1" }]
+  ];
+
+  const MessageCircleCode = [
+    ["path", { d: "M10 9.5 8 12l2 2.5" }],
+    ["path", { d: "m14 9.5 2 2.5-2 2.5" }],
+    ["path", { d: "M7.9 20A9 9 0 1 0 4 16.1L2 22z" }]
   ];
 
   const MessageCircleHeart = [
@@ -7906,17 +7989,6 @@
     ["path", { d: "M18 19v2" }]
   ];
 
-  const Milestone = [
-    ["path", { d: "M12 13v8" }],
-    ["path", { d: "M12 3v3" }],
-    [
-      "path",
-      {
-        d: "M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z"
-      }
-    ]
-  ];
-
   const MilkOff = [
     ["path", { d: "M8 2h8" }],
     [
@@ -7927,6 +7999,17 @@
     ],
     ["path", { d: "M7 15a6.47 6.47 0 0 1 5 0 6.472 6.472 0 0 0 3.435.435" }],
     ["line", { x1: "2", x2: "22", y1: "2", y2: "22" }]
+  ];
+
+  const Milestone = [
+    ["path", { d: "M12 13v8" }],
+    ["path", { d: "M12 3v3" }],
+    [
+      "path",
+      {
+        d: "M4 6a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h13a2 2 0 0 0 1.152-.365l3.424-2.317a1 1 0 0 0 0-1.635l-3.424-2.318A2 2 0 0 0 17 6z"
+      }
+    ]
   ];
 
   const Milk = [
@@ -8142,16 +8225,16 @@
     ["path", { d: "m18 16 3 3-3 3" }]
   ];
 
-  const MoveDiagonal2 = [
-    ["path", { d: "M19 13v6h-6" }],
-    ["path", { d: "M5 11V5h6" }],
-    ["path", { d: "m5 5 14 14" }]
-  ];
-
   const MoveDiagonal = [
     ["path", { d: "M11 19H5v-6" }],
     ["path", { d: "M13 5h6v6" }],
     ["path", { d: "M19 5 5 19" }]
+  ];
+
+  const MoveDiagonal2 = [
+    ["path", { d: "M19 13v6h-6" }],
+    ["path", { d: "M5 11V5h6" }],
+    ["path", { d: "m5 5 14 14" }]
   ];
 
   const MoveDownLeft = [
@@ -8263,15 +8346,15 @@
   ];
 
   const Newspaper = [
+    ["path", { d: "M15 18h-5" }],
+    ["path", { d: "M18 14h-8" }],
     [
       "path",
       {
-        d: "M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"
+        d: "M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"
       }
     ],
-    ["path", { d: "M18 14h-8" }],
-    ["path", { d: "M15 18h-5" }],
-    ["path", { d: "M10 6h8v4h-8V6Z" }]
+    ["rect", { width: "8", height: "4", x: "10", y: "6", rx: "1" }]
   ];
 
   const Nfc = [
@@ -8614,6 +8697,19 @@
     ]
   ];
 
+  const Palette = [
+    ["circle", { cx: "13.5", cy: "6.5", r: ".5", fill: "currentColor" }],
+    ["circle", { cx: "17.5", cy: "10.5", r: ".5", fill: "currentColor" }],
+    ["circle", { cx: "8.5", cy: "7.5", r: ".5", fill: "currentColor" }],
+    ["circle", { cx: "6.5", cy: "12.5", r: ".5", fill: "currentColor" }],
+    [
+      "path",
+      {
+        d: "M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"
+      }
+    ]
+  ];
+
   const Paintbrush = [
     ["path", { d: "m14.622 17.897-10.68-2.913" }],
     [
@@ -8626,19 +8722,6 @@
       "path",
       {
         d: "M9 8c-1.804 2.71-3.97 3.46-6.583 3.948a.507.507 0 0 0-.302.819l7.32 8.883a1 1 0 0 0 1.185.204C12.735 20.405 16 16.792 16 15"
-      }
-    ]
-  ];
-
-  const Palette = [
-    ["circle", { cx: "13.5", cy: "6.5", r: ".5", fill: "currentColor" }],
-    ["circle", { cx: "17.5", cy: "10.5", r: ".5", fill: "currentColor" }],
-    ["circle", { cx: "8.5", cy: "7.5", r: ".5", fill: "currentColor" }],
-    ["circle", { cx: "6.5", cy: "12.5", r: ".5", fill: "currentColor" }],
-    [
-      "path",
-      {
-        d: "M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"
       }
     ]
   ];
@@ -9145,17 +9228,6 @@
     ]
   ];
 
-  const Pipette = [
-    ["path", { d: "m2 22 1-1h3l9-9" }],
-    ["path", { d: "M3 21v-3l9-9" }],
-    [
-      "path",
-      {
-        d: "m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"
-      }
-    ]
-  ];
-
   const Pizza = [
     ["path", { d: "m12 14-1 1" }],
     ["path", { d: "m13.75 18.25-1.25 1.42" }],
@@ -9165,6 +9237,17 @@
       "path",
       {
         d: "M21.964 20.732a1 1 0 0 1-1.232 1.232l-18-5a1 1 0 0 1-.695-1.232A19.68 19.68 0 0 1 15.732 2.037a1 1 0 0 1 1.232.695z"
+      }
+    ]
+  ];
+
+  const Pipette = [
+    ["path", { d: "m2 22 1-1h3l9-9" }],
+    ["path", { d: "M3 21v-3l9-9" }],
+    [
+      "path",
+      {
+        d: "m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"
       }
     ]
   ];
@@ -9318,17 +9401,17 @@
     ["path", { d: "m7 21 5-5 5 5" }]
   ];
 
+  const Printer = [
+    ["path", { d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" }],
+    ["path", { d: "M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" }],
+    ["rect", { x: "6", y: "14", width: "12", height: "8", rx: "1" }]
+  ];
+
   const PrinterCheck = [
     ["path", { d: "M13.5 22H7a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v.5" }],
     ["path", { d: "m16 19 2 2 4-4" }],
     ["path", { d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2" }],
     ["path", { d: "M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" }]
-  ];
-
-  const Printer = [
-    ["path", { d: "M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" }],
-    ["path", { d: "M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" }],
-    ["rect", { x: "6", y: "14", width: "12", height: "8", rx: "1" }]
   ];
 
   const Projector = [
@@ -9635,6 +9718,13 @@
     ["path", { d: "M16 16h5v5" }]
   ];
 
+  const RefreshCw = [
+    ["path", { d: "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" }],
+    ["path", { d: "M21 3v5h-5" }],
+    ["path", { d: "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" }],
+    ["path", { d: "M8 16H3v5" }]
+  ];
+
   const RefreshCwOff = [
     ["path", { d: "M21 8L18.74 5.74A9.75 9.75 0 0 0 12 3C11 3 10.03 3.16 9.13 3.47" }],
     ["path", { d: "M8 16H3v5" }],
@@ -9643,13 +9733,6 @@
     ["path", { d: "M21 12c0 1-.16 1.97-.47 2.87" }],
     ["path", { d: "M21 3v5h-5" }],
     ["path", { d: "M22 22 2 2" }]
-  ];
-
-  const RefreshCw = [
-    ["path", { d: "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" }],
-    ["path", { d: "M21 3v5h-5" }],
-    ["path", { d: "M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" }],
-    ["path", { d: "M8 16H3v5" }]
   ];
 
   const Refrigerator = [
@@ -9733,19 +9816,6 @@
     ["polygon", { points: "22 19 13 12 22 5 22 19" }]
   ];
 
-  const Ribbon = [
-    ["path", { d: "M12 11.22C11 9.997 10 9 10 8a2 2 0 0 1 4 0c0 1-.998 2.002-2.01 3.22" }],
-    ["path", { d: "m12 18 2.57-3.5" }],
-    ["path", { d: "M6.243 9.016a7 7 0 0 1 11.507-.009" }],
-    ["path", { d: "M9.35 14.53 12 11.22" }],
-    [
-      "path",
-      {
-        d: "M9.35 14.53C7.728 12.246 6 10.221 6 7a6 5 0 0 1 12 0c-.005 3.22-1.778 5.235-3.43 7.5l3.557 4.527a1 1 0 0 1-.203 1.43l-1.894 1.36a1 1 0 0 1-1.384-.215L12 18l-2.679 3.593a1 1 0 0 1-1.39.213l-1.865-1.353a1 1 0 0 1-.203-1.422z"
-      }
-    ]
-  ];
-
   const Rocket = [
     [
       "path",
@@ -9761,6 +9831,19 @@
     ],
     ["path", { d: "M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0" }],
     ["path", { d: "M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5" }]
+  ];
+
+  const Ribbon = [
+    ["path", { d: "M12 11.22C11 9.997 10 9 10 8a2 2 0 0 1 4 0c0 1-.998 2.002-2.01 3.22" }],
+    ["path", { d: "m12 18 2.57-3.5" }],
+    ["path", { d: "M6.243 9.016a7 7 0 0 1 11.507-.009" }],
+    ["path", { d: "M9.35 14.53 12 11.22" }],
+    [
+      "path",
+      {
+        d: "M9.35 14.53C7.728 12.246 6 10.221 6 7a6 5 0 0 1 12 0c-.005 3.22-1.778 5.235-3.43 7.5l3.557 4.527a1 1 0 0 1-.203 1.43l-1.894 1.36a1 1 0 0 1-1.384-.215L12 18l-2.679 3.593a1 1 0 0 1-1.39.213l-1.865-1.353a1 1 0 0 1-.203-1.422z"
+      }
+    ]
   ];
 
   const RockingChair = [
@@ -9925,6 +10008,13 @@
     ["path", { d: "m8 12 4 4 6-6-4-4Z" }],
     ["path", { d: "m16 8 3-3" }],
     ["path", { d: "M9 21a6 6 0 0 0-6-6" }]
+  ];
+
+  const SaudiRiyal = [
+    ["path", { d: "m20 19.5-5.5 1.2" }],
+    ["path", { d: "M14.5 4v11.22a1 1 0 0 0 1.242.97L20 15.2" }],
+    ["path", { d: "m2.978 19.351 5.549-1.363A2 2 0 0 0 10 16V2" }],
+    ["path", { d: "M20 10 4 13.5" }]
   ];
 
   const SaveAll = [
@@ -10295,18 +10385,18 @@
     ["line", { x1: "15.41", x2: "8.59", y1: "6.51", y2: "10.49" }]
   ];
 
-  const Share = [
-    ["path", { d: "M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" }],
-    ["polyline", { points: "16 6 12 2 8 6" }],
-    ["line", { x1: "12", x2: "12", y1: "2", y2: "15" }]
-  ];
-
   const Sheet = [
     ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", ry: "2" }],
     ["line", { x1: "3", x2: "21", y1: "9", y2: "9" }],
     ["line", { x1: "3", x2: "21", y1: "15", y2: "15" }],
     ["line", { x1: "9", x2: "9", y1: "9", y2: "21" }],
     ["line", { x1: "15", x2: "15", y1: "9", y2: "21" }]
+  ];
+
+  const Share = [
+    ["path", { d: "M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" }],
+    ["polyline", { points: "16 6 12 2 8 6" }],
+    ["line", { x1: "12", x2: "12", y1: "2", y2: "15" }]
   ];
 
   const Shell = [
@@ -10329,16 +10419,6 @@
     ["path", { d: "M12 16h.01" }]
   ];
 
-  const ShieldBan = [
-    [
-      "path",
-      {
-        d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
-      }
-    ],
-    ["path", { d: "m4.243 5.21 14.39 12.472" }]
-  ];
-
   const ShieldCheck = [
     [
       "path",
@@ -10347,6 +10427,16 @@
       }
     ],
     ["path", { d: "m9 12 2 2 4-4" }]
+  ];
+
+  const ShieldBan = [
+    [
+      "path",
+      {
+        d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+      }
+    ],
+    ["path", { d: "m4.243 5.21 14.39 12.472" }]
   ];
 
   const ShieldEllipsis = [
@@ -10417,6 +10507,17 @@
     ],
     ["path", { d: "M9.1 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3" }],
     ["path", { d: "M12 17h.01" }]
+  ];
+
+  const ShieldUser = [
+    [
+      "path",
+      {
+        d: "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
+      }
+    ],
+    ["path", { d: "M6.376 18.91a6 6 0 0 1 11.249.003" }],
+    ["circle", { cx: "12", cy: "11", r: "4" }]
   ];
 
   const ShieldX = [
@@ -10521,6 +10622,19 @@
     ["path", { d: "M11 20v.01" }],
     ["path", { d: "M17 14v.01" }],
     ["path", { d: "M20 11v.01" }]
+  ];
+
+  const Shrimp = [
+    ["path", { d: "M11 12h.01" }],
+    ["path", { d: "M13 22c.5-.5 1.12-1 2.5-1-1.38 0-2-.5-2.5-1" }],
+    [
+      "path",
+      {
+        d: "M14 2a3.28 3.28 0 0 1-3.227 1.798l-6.17-.561A2.387 2.387 0 1 0 4.387 8H15.5a1 1 0 0 1 0 13 1 1 0 0 0 0-5H12a7 7 0 0 1-7-7V8"
+      }
+    ],
+    ["path", { d: "M14 8a8.5 8.5 0 0 1 0 8" }],
+    ["path", { d: "M16 16c2 0 4.5-4 4-6" }]
   ];
 
   const Shrink = [
@@ -10835,10 +10949,16 @@
     ["path", { d: "m16 20 2 2 4-4" }]
   ];
 
-  const Spline = [
+  const SplinePointer = [
+    [
+      "path",
+      {
+        d: "M12.034 12.681a.498.498 0 0 1 .647-.647l9 3.5a.5.5 0 0 1-.033.943l-3.444 1.068a1 1 0 0 0-.66.66l-1.067 3.443a.5.5 0 0 1-.943.033z"
+      }
+    ],
+    ["path", { d: "M5 17A12 12 0 0 1 17 5" }],
     ["circle", { cx: "19", cy: "5", r: "2" }],
-    ["circle", { cx: "5", cy: "19", r: "2" }],
-    ["path", { d: "M5 17A12 12 0 0 1 17 5" }]
+    ["circle", { cx: "5", cy: "19", r: "2" }]
   ];
 
   const Split = [
@@ -10846,6 +10966,12 @@
     ["path", { d: "M8 3H3v5" }],
     ["path", { d: "M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3" }],
     ["path", { d: "m15 9 6-6" }]
+  ];
+
+  const Spline = [
+    ["circle", { cx: "19", cy: "5", r: "2" }],
+    ["circle", { cx: "5", cy: "19", r: "2" }],
+    ["path", { d: "M5 17A12 12 0 0 1 17 5" }]
   ];
 
   const SprayCan = [
@@ -10993,14 +11119,14 @@
     ["path", { d: "m16 10-4 4-4-4" }]
   ];
 
-  const SquareChevronLeft = [
-    ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2" }],
-    ["path", { d: "m14 16-4-4 4-4" }]
-  ];
-
   const SquareChevronRight = [
     ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2" }],
     ["path", { d: "m10 8 4 4-4 4" }]
+  ];
+
+  const SquareChevronLeft = [
+    ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2" }],
+    ["path", { d: "m14 16-4-4 4-4" }]
   ];
 
   const SquareChevronUp = [
@@ -11210,6 +11336,11 @@
     ["rect", { x: "3", y: "3", width: "18", height: "18", rx: "2" }]
   ];
 
+  const SquareRoundCorner = [
+    ["path", { d: "M21 11a8 8 0 0 0-8-8" }],
+    ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" }]
+  ];
+
   const SquareScissors = [
     ["rect", { width: "20", height: "20", x: "2", y: "2", rx: "2" }],
     ["circle", { cx: "8", cy: "8", r: "2" }],
@@ -11235,15 +11366,15 @@
     ["line", { x1: "12", x2: "12", y1: "4", y2: "20" }]
   ];
 
+  const SquareSquare = [
+    ["rect", { x: "3", y: "3", width: "18", height: "18", rx: "2" }],
+    ["rect", { x: "8", y: "8", width: "8", height: "8", rx: "1" }]
+  ];
+
   const SquareSplitVertical = [
     ["path", { d: "M5 8V5c0-1 1-2 2-2h10c1 0 2 1 2 2v3" }],
     ["path", { d: "M19 16v3c0 1-1 2-2 2H7c-1 0-2-1-2-2v-3" }],
     ["line", { x1: "4", x2: "20", y1: "12", y2: "12" }]
-  ];
-
-  const SquareSquare = [
-    ["rect", { x: "3", y: "3", width: "18", height: "18", rx: "2" }],
-    ["rect", { x: "8", y: "8", width: "8", height: "8", rx: "1" }]
   ];
 
   const SquareStack = [
@@ -11924,17 +12055,6 @@
     ["path", { d: "m9.5 14.5 5-5" }]
   ];
 
-  const TicketX = [
-    [
-      "path",
-      {
-        d: "M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"
-      }
-    ],
-    ["path", { d: "m9.5 14.5 5-5" }],
-    ["path", { d: "m9.5 9.5 5 5" }]
-  ];
-
   const Ticket = [
     [
       "path",
@@ -11945,6 +12065,17 @@
     ["path", { d: "M13 5v2" }],
     ["path", { d: "M13 17v2" }],
     ["path", { d: "M13 11v2" }]
+  ];
+
+  const TicketX = [
+    [
+      "path",
+      {
+        d: "M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"
+      }
+    ],
+    ["path", { d: "m9.5 14.5 5-5" }],
+    ["path", { d: "m9.5 9.5 5 5" }]
   ];
 
   const TicketsPlane = [
@@ -12019,6 +12150,12 @@
     ["ellipse", { cx: "12", cy: "12.5", rx: "10", ry: "8.5" }]
   ];
 
+  const Touchpad = [
+    ["rect", { width: "20", height: "16", x: "2", y: "4", rx: "2" }],
+    ["path", { d: "M2 14h20" }],
+    ["path", { d: "M12 20v-6" }]
+  ];
+
   const TouchpadOff = [
     ["path", { d: "M4 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16" }],
     ["path", { d: "M2 14h12" }],
@@ -12026,12 +12163,6 @@
     ["path", { d: "M12 20v-6" }],
     ["path", { d: "m2 2 20 20" }],
     ["path", { d: "M22 16V6a2 2 0 0 0-2-2H10" }]
-  ];
-
-  const Touchpad = [
-    ["rect", { width: "20", height: "16", x: "2", y: "4", rx: "2" }],
-    ["path", { d: "M2 14h20" }],
-    ["path", { d: "M12 20v-6" }]
   ];
 
   const TowerControl = [
@@ -12165,16 +12296,6 @@
     ["path", { d: "M11 15.5c.5 2.5-.17 4.5-1 6.5h4c2-5.5-.5-12-1-14" }]
   ];
 
-  const TreePine = [
-    [
-      "path",
-      {
-        d: "m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17Z"
-      }
-    ],
-    ["path", { d: "M12 22v-3" }]
-  ];
-
   const Trees = [
     ["path", { d: "M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z" }],
     ["path", { d: "M7 16v6" }],
@@ -12185,6 +12306,16 @@
         d: "M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"
       }
     ]
+  ];
+
+  const TreePine = [
+    [
+      "path",
+      {
+        d: "m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2A1 1 0 0 1 8 7.3L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17Z"
+      }
+    ],
+    ["path", { d: "M12 22v-3" }]
   ];
 
   const Trello = [
@@ -12494,12 +12625,6 @@
     ["path", { d: "m16.9 15.2-.4-.9" }]
   ];
 
-  const UserRoundMinus = [
-    ["path", { d: "M2 21a8 8 0 0 1 13.292-6" }],
-    ["circle", { cx: "10", cy: "8", r: "5" }],
-    ["path", { d: "M22 19h-6" }]
-  ];
-
   const UserRoundPen = [
     ["path", { d: "M2 21a8 8 0 0 1 10.821-7.487" }],
     [
@@ -12509,6 +12634,12 @@
       }
     ],
     ["circle", { cx: "10", cy: "8", r: "5" }]
+  ];
+
+  const UserRoundMinus = [
+    ["path", { d: "M2 21a8 8 0 0 1 13.292-6" }],
+    ["circle", { cx: "10", cy: "8", r: "5" }],
+    ["path", { d: "M22 19h-6" }]
   ];
 
   const UserRoundPlus = [
@@ -12562,18 +12693,18 @@
     ["path", { d: "M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3" }]
   ];
 
-  const Users = [
-    ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" }],
-    ["circle", { cx: "9", cy: "7", r: "4" }],
-    ["path", { d: "M22 21v-2a4 4 0 0 0-3-3.87" }],
-    ["path", { d: "M16 3.13a4 4 0 0 1 0 7.75" }]
-  ];
-
   const UtensilsCrossed = [
     ["path", { d: "m16 2-2.3 2.3a3 3 0 0 0 0 4.2l1.8 1.8a3 3 0 0 0 4.2 0L22 8" }],
     ["path", { d: "M15 15 3.3 3.3a4.2 4.2 0 0 0 0 6l7.3 7.3c.7.7 2 .7 2.8 0L15 15Zm0 0 7 7" }],
     ["path", { d: "m2.1 21.8 6.4-6.3" }],
     ["path", { d: "m19 5-7 7" }]
+  ];
+
+  const Users = [
+    ["path", { d: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" }],
+    ["circle", { cx: "9", cy: "7", r: "4" }],
+    ["path", { d: "M22 21v-2a4 4 0 0 0-3-3.87" }],
+    ["path", { d: "M16 3.13a4 4 0 0 1 0 7.75" }]
   ];
 
   const Utensils = [
@@ -12637,18 +12768,18 @@
     ["circle", { cx: "12", cy: "11", r: "5" }]
   ];
 
-  const Venus = [
-    ["path", { d: "M12 15v7" }],
-    ["path", { d: "M9 19h6" }],
-    ["circle", { cx: "12", cy: "9", r: "6" }]
-  ];
-
   const VibrateOff = [
     ["path", { d: "m2 8 2 2-2 2 2 2-2 2" }],
     ["path", { d: "m22 8-2 2 2 2-2 2 2 2" }],
     ["path", { d: "M8 8v10c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2" }],
     ["path", { d: "M16 10.34V6c0-.55-.45-1-1-1h-4.34" }],
     ["line", { x1: "2", x2: "22", y1: "2", y2: "22" }]
+  ];
+
+  const Venus = [
+    ["path", { d: "M12 15v7" }],
+    ["path", { d: "M9 19h6" }],
+    ["circle", { cx: "12", cy: "9", r: "6" }]
   ];
 
   const Vibrate = [
@@ -12929,27 +13060,6 @@
     ]
   ];
 
-  const WheatOff = [
-    ["path", { d: "m2 22 10-10" }],
-    ["path", { d: "m16 8-1.17 1.17" }],
-    [
-      "path",
-      { d: "M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z" }
-    ],
-    ["path", { d: "m8 8-.53.53a3.5 3.5 0 0 0 0 4.94L9 15l1.53-1.53c.55-.55.88-1.25.98-1.97" }],
-    ["path", { d: "M10.91 5.26c.15-.26.34-.51.56-.73L13 3l1.53 1.53a3.5 3.5 0 0 1 .28 4.62" }],
-    ["path", { d: "M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z" }],
-    [
-      "path",
-      {
-        d: "M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"
-      }
-    ],
-    ["path", { d: "m16 16-.53.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.49 3.49 0 0 1 1.97-.98" }],
-    ["path", { d: "M18.74 13.09c.26-.15.51-.34.73-.56L21 11l-1.53-1.53a3.5 3.5 0 0 0-4.62-.28" }],
-    ["line", { x1: "2", x2: "22", y1: "2", y2: "22" }]
-  ];
-
   const Wheat = [
     ["path", { d: "M2 22 16 8" }],
     [
@@ -12983,6 +13093,27 @@
         d: "M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"
       }
     ]
+  ];
+
+  const WheatOff = [
+    ["path", { d: "m2 22 10-10" }],
+    ["path", { d: "m16 8-1.17 1.17" }],
+    [
+      "path",
+      { d: "M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z" }
+    ],
+    ["path", { d: "m8 8-.53.53a3.5 3.5 0 0 0 0 4.94L9 15l1.53-1.53c.55-.55.88-1.25.98-1.97" }],
+    ["path", { d: "M10.91 5.26c.15-.26.34-.51.56-.73L13 3l1.53 1.53a3.5 3.5 0 0 1 .28 4.62" }],
+    ["path", { d: "M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z" }],
+    [
+      "path",
+      {
+        d: "M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"
+      }
+    ],
+    ["path", { d: "m16 16-.53.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.49 3.49 0 0 1 1.97-.98" }],
+    ["path", { d: "M18.74 13.09c.26-.15.51-.34.73-.56L21 11l-1.53-1.53a3.5 3.5 0 0 0-4.62-.28" }],
+    ["line", { x1: "2", x2: "22", y1: "2", y2: "22" }]
   ];
 
   const WholeWord = [
@@ -13306,6 +13437,9 @@
     Banana: Banana,
     Bandage: Bandage,
     Banknote: Banknote,
+    BanknoteArrowDown: BanknoteArrowDown,
+    BanknoteArrowUp: BanknoteArrowUp,
+    BanknoteX: BanknoteX,
     BarChart: ChartNoAxesColumnIncreasing,
     BarChart2: ChartNoAxesColumn,
     BarChart3: ChartColumn,
@@ -13601,6 +13735,7 @@
     ClockAlert: ClockAlert,
     ClockArrowDown: ClockArrowDown,
     ClockArrowUp: ClockArrowUp,
+    ClockFading: ClockFading,
     Cloud: Cloud,
     CloudAlert: CloudAlert,
     CloudCog: CloudCog,
@@ -13828,8 +13963,8 @@
     FileX2: FileX2,
     Files: Files,
     Film: Film,
-    Filter: Filter,
-    FilterX: FilterX,
+    Filter: Funnel,
+    FilterX: FunnelX,
     Fingerprint: Fingerprint,
     FireExtinguisher: FireExtinguisher,
     Fish: Fish,
@@ -13900,6 +14035,9 @@
     Fuel: Fuel,
     Fullscreen: Fullscreen,
     FunctionSquare: SquareFunction,
+    Funnel: Funnel,
+    FunnelPlus: FunnelPlus,
+    FunnelX: FunnelX,
     GalleryHorizontal: GalleryHorizontal,
     GalleryHorizontalEnd: GalleryHorizontalEnd,
     GalleryThumbnails: GalleryThumbnails,
@@ -14470,6 +14608,7 @@
     Sandwich: Sandwich,
     Satellite: Satellite,
     SatelliteDish: SatelliteDish,
+    SaudiRiyal: SaudiRiyal,
     Save: Save,
     SaveAll: SaveAll,
     SaveOff: SaveOff,
@@ -14531,6 +14670,7 @@
     ShieldOff: ShieldOff,
     ShieldPlus: ShieldPlus,
     ShieldQuestion: ShieldQuestion,
+    ShieldUser: ShieldUser,
     ShieldX: ShieldX,
     Ship: Ship,
     ShipWheel: ShipWheel,
@@ -14540,6 +14680,7 @@
     ShoppingCart: ShoppingCart,
     Shovel: Shovel,
     ShowerHead: ShowerHead,
+    Shrimp: Shrimp,
     Shrink: Shrink,
     Shrub: Shrub,
     Shuffle: Shuffle,
@@ -14587,6 +14728,7 @@
     SpellCheck: SpellCheck,
     SpellCheck2: SpellCheck2,
     Spline: Spline,
+    SplinePointer: SplinePointer,
     Split: Split,
     SplitSquareHorizontal: SquareSplitHorizontal,
     SplitSquareVertical: SquareSplitVertical,
@@ -14642,6 +14784,7 @@
     SquarePlus: SquarePlus,
     SquarePower: SquarePower,
     SquareRadical: SquareRadical,
+    SquareRoundCorner: SquareRoundCorner,
     SquareScissors: SquareScissors,
     SquareSigma: SquareSigma,
     SquareSlash: SquareSlash,
@@ -15090,6 +15233,9 @@
   exports.Banana = Banana;
   exports.Bandage = Bandage;
   exports.Banknote = Banknote;
+  exports.BanknoteArrowDown = BanknoteArrowDown;
+  exports.BanknoteArrowUp = BanknoteArrowUp;
+  exports.BanknoteX = BanknoteX;
   exports.BarChart = ChartNoAxesColumnIncreasing;
   exports.BarChart2 = ChartNoAxesColumn;
   exports.BarChart3 = ChartColumn;
@@ -15385,6 +15531,7 @@
   exports.ClockAlert = ClockAlert;
   exports.ClockArrowDown = ClockArrowDown;
   exports.ClockArrowUp = ClockArrowUp;
+  exports.ClockFading = ClockFading;
   exports.Cloud = Cloud;
   exports.CloudAlert = CloudAlert;
   exports.CloudCog = CloudCog;
@@ -15612,8 +15759,8 @@
   exports.FileX2 = FileX2;
   exports.Files = Files;
   exports.Film = Film;
-  exports.Filter = Filter;
-  exports.FilterX = FilterX;
+  exports.Filter = Funnel;
+  exports.FilterX = FunnelX;
   exports.Fingerprint = Fingerprint;
   exports.FireExtinguisher = FireExtinguisher;
   exports.Fish = Fish;
@@ -15684,6 +15831,9 @@
   exports.Fuel = Fuel;
   exports.Fullscreen = Fullscreen;
   exports.FunctionSquare = SquareFunction;
+  exports.Funnel = Funnel;
+  exports.FunnelPlus = FunnelPlus;
+  exports.FunnelX = FunnelX;
   exports.GalleryHorizontal = GalleryHorizontal;
   exports.GalleryHorizontalEnd = GalleryHorizontalEnd;
   exports.GalleryThumbnails = GalleryThumbnails;
@@ -16254,6 +16404,7 @@
   exports.Sandwich = Sandwich;
   exports.Satellite = Satellite;
   exports.SatelliteDish = SatelliteDish;
+  exports.SaudiRiyal = SaudiRiyal;
   exports.Save = Save;
   exports.SaveAll = SaveAll;
   exports.SaveOff = SaveOff;
@@ -16315,6 +16466,7 @@
   exports.ShieldOff = ShieldOff;
   exports.ShieldPlus = ShieldPlus;
   exports.ShieldQuestion = ShieldQuestion;
+  exports.ShieldUser = ShieldUser;
   exports.ShieldX = ShieldX;
   exports.Ship = Ship;
   exports.ShipWheel = ShipWheel;
@@ -16324,6 +16476,7 @@
   exports.ShoppingCart = ShoppingCart;
   exports.Shovel = Shovel;
   exports.ShowerHead = ShowerHead;
+  exports.Shrimp = Shrimp;
   exports.Shrink = Shrink;
   exports.Shrub = Shrub;
   exports.Shuffle = Shuffle;
@@ -16371,6 +16524,7 @@
   exports.SpellCheck = SpellCheck;
   exports.SpellCheck2 = SpellCheck2;
   exports.Spline = Spline;
+  exports.SplinePointer = SplinePointer;
   exports.Split = Split;
   exports.SplitSquareHorizontal = SquareSplitHorizontal;
   exports.SplitSquareVertical = SquareSplitVertical;
@@ -16426,6 +16580,7 @@
   exports.SquarePlus = SquarePlus;
   exports.SquarePower = SquarePower;
   exports.SquareRadical = SquareRadical;
+  exports.SquareRoundCorner = SquareRoundCorner;
   exports.SquareScissors = SquareScissors;
   exports.SquareSigma = SquareSigma;
   exports.SquareSlash = SquareSlash;

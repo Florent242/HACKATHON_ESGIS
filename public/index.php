@@ -122,4 +122,5 @@ switch ($url) {
 // a ce niveau d'autres amelioration devront etre fait n'y toucher donc pas
 ?>
 
+<script src="./js/lucide.js"></script>
 <script src="./js/main.js"></script>

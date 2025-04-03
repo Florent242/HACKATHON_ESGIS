@@ -4,7 +4,6 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 ?>
-<script defer src="/HACKATHON_ESGIS/public/js/lucide.js"></script>
 <script defer src="/HACKATHON_ESGIS/public/js/header.js"></script>
 <header>
     <div class="header-container">

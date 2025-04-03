@@ -17,8 +17,7 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
     <script defer src="/HACKATHON_ESGIS/public/js/auth.js"></script>
     <!-- Lucide Icons -->
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.280.0/dist/umd/lucide.min.js"></script>
-
+    <script src="https://unpkg.com/lucide@latest"></script>
 
 
 </head>
@@ -242,7 +241,7 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
     </div>
 
     <script>
-        window.addEventListener("load", function() {
+        window.addEventListener("DOMContentLoaded", function() {
             lucide.createIcons();
         });
     </script>

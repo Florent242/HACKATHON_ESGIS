@@ -563,7 +563,7 @@ try {
 } catch (Exception $e) {
     $statusCode = $e->getCode() ?: 500;
     header('Content-Type: application/json');
-    http_response_code($statusCode);
+    // http_response_code($statusCode);
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage(),

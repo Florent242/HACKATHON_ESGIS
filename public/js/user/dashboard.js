@@ -17,8 +17,9 @@ const DASHBOARD_ELEMENTS = {
 };
 
 // Fonction utilitaire pour gérer les erreurs
-function handleError(error, message = 'Une erreur est survenue') {
-    console.error(message, error);
+function handleError(title = 'Une erreur est survenue', error, type = 'error') {
+    console.error(title, error);
+    setFlashMessage(type,title, error);
     // Vous pouvez ajouter ici une gestion d'erreur plus élaborée (affichage d'une modale, etc.)
 }
 
@@ -42,7 +43,7 @@ async function apiRequest(endpoint, options = {}) {
         const data = await response.json();
         return data;  // ✅ Retourne bien les données récupérées
     } catch (error) {
-        handleError(error, 'Erreur lors de la requête API');
+        handleError('Erreur lors de la requête API', error, 'error');
         throw error;
     }
 }
@@ -64,7 +65,7 @@ async function getUserId() {
         const data = await response.json();
         return data.data.id;  // Retourne bien l'ID utilisateur
     } catch (error) {
-        handleError(error, 'Impossible de récupérer l\'ID utilisateur.');
+        handleError('Impossible de récupérer l\'ID utilisateur.', error, 'error');
         return null;
     }
 }
@@ -96,7 +97,7 @@ async function initializeDashboard() {
         // Charger les données de base
         await Promise.all([
             loadUserInfo(userId),
-            // loadStatistics(),
+            loadStatistics(),
             // loadNotifications()
         ]);
 
@@ -104,11 +105,11 @@ async function initializeDashboard() {
         setupEventListeners();
 
     } catch (error) {
-        handleError(error, 'Erreur lors de l\'initialisation du dashboard');
+        handleError('Erreur lors de l\'initialisation du dashboard', error, 'error');
     }
 }
 
-// Fonction pour charger les informations de l'utilisateur
+// Fonction pour charger les informations de l\'utilisateur
 async function loadUserInfo(userId) {
     try {
         const data = await apiRequest(`/users/${userId}`);
@@ -117,24 +118,36 @@ async function loadUserInfo(userId) {
             email: DASHBOARD_ELEMENTS.email
         }, data);
     } catch (error) {
-        handleError(error, 'Erreur lors de la récupération des informations utilisateur');
+        handleError('Erreur lors de la récupération des informations utilisateur', error, 'error');
     }
 }
 
 // Fonction pour charger les statistiques
 async function loadStatistics() {
     try {
-        const data = await apiRequest('/user/statistics');
+        const userId = await getUserId();
+        if (!userId) {
+            console.error('Utilisateur non authentifié');
+            return;
+        }
+        const data = await apiRequest(`/users/${userId}/stats`);
+        console.log(data);
         updateDOM(DASHBOARD_ELEMENTS.stats, data);
     } catch (error) {
-        handleError(error, 'Erreur lors de la récupération des statistiques');
+        handleError('Erreur lors de la récupération des statistiques', error, 'error');
     }
 }
 
 // Fonction pour charger les notifications
 async function loadNotifications() {
     try {
-        const data = await apiRequest('/user/notifications');
+        const userId = await getUserId();
+        if (!userId) {
+            console.error('Utilisateur non authentifié');
+            return;
+        }
+        const data = await apiRequest(`/users/${userId}/notifications`);
+        console.log(data);
         const notificationsContainer = document.querySelector('.notifications-list');
         if (notificationsContainer) {
             notificationsContainer.innerHTML = data.map(notification => `
@@ -156,16 +169,21 @@ async function loadNotifications() {
             });
         }
     } catch (error) {
-        handleError(error, 'Erreur lors de la récupération des notifications');
+        handleError('Erreur lors de la récupération des notifications', error, 'error');
     }
 }
 
 // Fonction pour marquer une notification comme lue
 async function markNotificationAsRead(notificationId) {
     try {
-        await apiRequest(`/user/notifications/${notificationId}/read`, { method: 'POST' });
+        const userId = await getUserId();
+        if (!userId) {
+            console.error('Utilisateur non authentifié');
+            return;
+        }
+        await apiRequest(`/users/${userId}/notifications/${notificationId}/read`, { method: 'POST' });
     } catch (error) {
-        handleError(error, 'Erreur lors de la mise à jour de la notification');
+        handleError('Erreur lors de la mise à jour de la notification', error, 'error');
     }
 }
 
@@ -189,7 +207,7 @@ function setupEventListeners() {
             try {
                 await loadStatistics();
             } catch (error) {
-                handleError(error, 'Erreur lors de la mise à jour des statistiques');
+                handleError('Erreur lors de la mise à jour des statistiques', error, 'error');
             }
         });
     }
@@ -254,7 +272,7 @@ function setupEventListeners() {
                     loadStatistics()
                 ]);
             } catch (error) {
-                handleError(error, 'Erreur lors de la mise à jour');
+                handleError('Erreur lors de la mise à jour', error, 'error');
             }
         });
     });

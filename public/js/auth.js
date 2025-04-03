@@ -406,7 +406,8 @@ document.addEventListener("DOMContentLoaded", function () {
         // Désactiver le bouton de soumission et afficher l'indicateur de traitement
         const submitBtn = event.target.querySelector('button[type="submit"]');
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i data-lucide="loader" class="animate-spin"></i> Traitement...';
+        submitBtn.innerHTML = '<i data-lucide="loader-circle" class="animate-spin"></i> Traitement...';
+        lucide.createIcons();
 
         try {
             // Validation du nom complet
@@ -488,7 +489,8 @@ document.addEventListener("DOMContentLoaded", function () {
             showNotification('Une erreur est survenue', error.message, 'error');
         } finally {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = 'S\'inscrire';
+            submitBtn.innerHTML = '<i data-lucide="send"></i>S\'inscrire';
+            lucide.createIcons();
         }
     });
 
@@ -499,7 +501,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const form = e.target;
         const submitBtn = form.querySelector('button[type="submit"]');
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i data-lucide="loader" class="animate-spin"></i> Traitement...';
+        submitBtn.innerHTML = '<i data-lucide="loader-circle" class="animate-spin"></i> Traitement...';
+        lucide.createIcons();
 
         try {
             const formData = new FormData(form);
@@ -526,6 +529,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 showNotification(data.message || "Erreur lors de la connexion", 'Veuillez corriger les erreurs', 'warning');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i data-lucide="send"></i> Se connecter';
+                lucide.createIcons();
                 return;
             }
         } catch (error) {
@@ -533,6 +537,7 @@ document.addEventListener("DOMContentLoaded", function () {
         } finally {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i data-lucide="send"></i> Se connecter';
+            lucide.createIcons();
         }
     });
 
