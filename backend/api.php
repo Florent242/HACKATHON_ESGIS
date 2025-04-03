@@ -230,6 +230,7 @@ try {
                                 if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                     jsonResponse(['success' => false, 'error' => 'Accès non autorisé vous n\'êtes pas autorisé à voir ce profil'], 403);
                                 }
+                                $controller->get($id);
                                 $controller->getUserData();
                                 break;
                                 
