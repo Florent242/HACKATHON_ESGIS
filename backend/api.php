@@ -231,7 +231,7 @@ try {
                                     jsonResponse(['success' => false, 'error' => 'Accès non autorisé vous n\'êtes pas autorisé à voir ce profil'], 403);
                                 }
                                 $controller->get($id);
-                                $controller->getUserData();
+                                $controller->getUserStats($id);
                                 break;
                                 
                             case 'POST':
