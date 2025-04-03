@@ -1,9 +1,9 @@
--- phpMyAdmin SQL Dumphackathon_db
+-- phpMyAdmin SQL Dump
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : localhost
--- Généré le : mar. 01 avr. 2025 à 21:08
+-- Généré le : ven. 04 avr. 2025 à 00:27
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -61,7 +61,26 @@ INSERT INTO `activity_logs` (`id`, `user_id`, `action`, `description`, `data`, `
 (15, NULL, 'login_attempt', 'Tentative de connexion', '{\"email\":\"loyovat896@opposir.com\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-26 18:59:25'),
 (16, 1, 'login_success', 'Connexion réussie', '{\"user_id\":1,\"role\":\"participant\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-26 18:59:25'),
 (17, NULL, 'login_attempt', 'Tentative de connexion', '{\"email\":\"galigom995@opposir.com\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-30 12:56:34'),
-(18, 2, 'login_success', 'Connexion réussie', '{\"user_id\":2,\"role\":\"participant\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-30 12:56:34');
+(18, 2, 'login_success', 'Connexion réussie', '{\"user_id\":2,\"role\":\"participant\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'info', '2025-03-30 12:56:34'),
+(19, 2, 'login_error', 'Email ou mot de passe incorrect', '{\"email\":\"loyovat896@opposir.com\",\"error\":\"Email ou mot de passe incorrect\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:11:50'),
+(20, 2, 'create_error', 'SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:12:58'),
+(21, 2, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:12:58'),
+(22, 2, 'create_error', 'SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:14:19'),
+(23, 2, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:14:19'),
+(24, 2, 'create_error', 'SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:14:52'),
+(25, 2, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:14:52'),
+(26, 2, 'create_error', 'SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:15:00'),
+(27, 2, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:15:00'),
+(28, 2, 'create_error', 'SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:19:21'),
+(29, 2, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value', '{\"email\":\"azerty@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[HY000]: General error: 1364 Field \'special_comp\' doesn\'t have a default value\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-01 19:19:21'),
+(30, 2, 'create_error', 'SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column \'number\' at row 1', '{\"email\":\"babaokechi@gmail.com\",\"error\":\"SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column \'number\' at row 1\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-03 13:25:37'),
+(31, 2, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column \'number\' at row 1', '{\"email\":\"babaokechi@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column \'number\' at row 1\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-03 13:25:38'),
+(32, 2, 'create_error', 'SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column \'number\' at row 1', '{\"email\":\"babaokechi@gmail.com\",\"error\":\"SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column \'number\' at row 1\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-03 13:25:44'),
+(33, 2, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column \'number\' at row 1', '{\"email\":\"babaokechi@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column \'number\' at row 1\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-03 13:25:44'),
+(34, 2, 'create_error', 'SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column \'number\' at row 1', '{\"email\":\"babaokechi@gmail.com\",\"error\":\"SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column \'number\' at row 1\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-03 13:25:51'),
+(35, 2, 'register_error', 'Erreur lors de la création de l\'utilisateur: SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column \'number\' at row 1', '{\"email\":\"babaokechi@gmail.com\",\"error\":\"Erreur lors de la création de l\'utilisateur: SQLSTATE[22003]: Numeric value out of range: 1264 Out of range value for column \'number\' at row 1\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-03 13:25:51'),
+(36, NULL, 'login_error', 'Email ou mot de passe incorrect.', '{\"email\":\"loyovat896@opposir.com\",\"error\":\"Email ou mot de passe incorrect.\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-03 20:16:31'),
+(37, NULL, 'login_error', 'Email ou mot de passe incorrect.', '{\"email\":\"loyovat896@opposir.com\",\"error\":\"Email ou mot de passe incorrect.\"}', '127.0.0.1', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36', 'error', '2025-04-03 20:16:40');
 
 -- --------------------------------------------------------
 
@@ -78,6 +97,30 @@ CREATE TABLE `challenges` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `challenges`
+--
+
+INSERT INTO `challenges` (`id`, `title`, `description`, `difficulty`, `hackathon_id`, `created_at`, `updated_at`) VALUES
+(1, 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 'medium', 2, '2025-04-03 21:52:00', '2025-04-03 21:52:00');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `challenge_submissions`
+--
+
+CREATE TABLE `challenge_submissions` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `challenge_id` int(11) NOT NULL,
+  `submission_value` varchar(255) NOT NULL,
+  `status` enum('active','rejected','pending') NOT NULL DEFAULT 'pending',
+  `points` int(11) NOT NULL DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -137,6 +180,14 @@ CREATE TABLE `hackathons` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Déchargement des données de la table `hackathons`
+--
+
+INSERT INTO `hackathons` (`id`, `name`, `description`, `start_date`, `end_date`, `location`, `max_teams`, `max_team_members`, `rules`, `prizes`, `created_by`, `created_at`, `updated_at`) VALUES
+(1, 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', '2025-04-03 23:49:43', '2025-04-03 23:49:43', 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 10, 4, 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', '1254', 3, '2025-04-03 21:51:24', '2025-04-03 21:51:24'),
+(2, '', '', '2025-04-03 23:49:43', '2025-04-03 23:49:43', NULL, 10, 4, '', NULL, 2, '2025-04-03 21:51:24', '2025-04-03 21:51:24');
+
 -- --------------------------------------------------------
 
 --
@@ -150,6 +201,13 @@ CREATE TABLE `hackathon_participants` (
   `participation_status` enum('pending','accepted','rejected') NOT NULL DEFAULT 'pending',
   `joined_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `hackathon_participants`
+--
+
+INSERT INTO `hackathon_participants` (`id`, `user_id`, `hackathon_id`, `participation_status`, `joined_at`) VALUES
+(1, 4, 2, 'accepted', '2025-04-03 21:52:25');
 
 -- --------------------------------------------------------
 
@@ -311,8 +369,8 @@ CREATE TABLE `users` (
   `school` varchar(35) DEFAULT NULL,
   `email` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
-  `special_comp` int(85) NOT NULL,
-  `idea_project` int(255) DEFAULT NULL,
+  `special_comp` varchar(85) NOT NULL,
+  `idea_project` text DEFAULT NULL,
   `study_level` varchar(50) NOT NULL,
   `number` int(15) NOT NULL,
   `role` enum('admin','organizer','participant','judge') NOT NULL DEFAULT 'participant',
@@ -330,8 +388,10 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `fullname`, `school`, `email`, `password`, `special_comp`, `idea_project`, `study_level`, `number`, `role`, `profile_picture`, `bio`, `github_url`, `linkedin_url`, `created_at`, `updated_at`, `status`) VALUES
-(1, 'lolo andoche', 'jean messiah', '', 'loyovat896@opposir.com', '$2y$10$HNVlAKZZk9unXeT1QwWHdOSYvh3jvjpgRx58k7U6ry6OHwZy7B8wK', 0, NULL, '', 0, 'participant', NULL, NULL, NULL, NULL, '2025-03-26 18:58:43', '2025-03-26 18:58:43', 'active'),
-(2, 'Test01', 'jean messiah', 'ESGIS', 'galigom995@opposir.com', '$2y$10$Mj3KoO9C7XLg9MQzMyUwsOhsaSnswRb1KAV9pz8hrNeGB9rf1suRq', 0, NULL, '', 0, 'participant', NULL, NULL, NULL, NULL, '2025-03-30 12:56:11', '2025-03-30 12:56:11', 'active');
+(1, 'lolo andoche', 'jean messiah', '', 'loyovat896@opposir.com', '$2y$10$HNVlAKZZk9unXeT1QwWHdOSYvh3jvjpgRx58k7U6ry6OHwZy7B8wK', '0', NULL, '', 0, 'participant', NULL, NULL, NULL, NULL, '2025-03-26 18:58:43', '2025-03-26 18:58:43', 'active'),
+(2, 'Test01', 'jean messiah', 'ESGIS', 'galigom995@opposir.com', '$2y$10$Mj3KoO9C7XLg9MQzMyUwsOhsaSnswRb1KAV9pz8hrNeGB9rf1suRq', '0', NULL, '', 0, 'participant', NULL, NULL, NULL, NULL, '2025-03-30 12:56:11', '2025-03-30 12:56:11', 'active'),
+(3, 'ggggg', 'ggggg', 'ESGIS', 'babaokechi@gmail.com', '$2y$10$AVLQBs9j5PPQ.O8rowaSQ.ZpUdbzKDkahfd1BiXPruLjEshJWpgWG', 'frontend', NULL, 'master2', 22925252, 'participant', NULL, NULL, NULL, NULL, '2025-04-03 13:26:25', '2025-04-03 13:26:25', 'active'),
+(4, 'azerty', 'jean messiah', 'ESGIS', 'azerty@gmail.com', '$2y$10$LNF6H69p3HGREmXi8p9FJOc7.AOq/E4jy4N57yoz.VN.e7ak.xvr6', 'backend', NULL, 'master1', 228747474, 'participant', NULL, NULL, NULL, NULL, '2025-04-03 21:30:51', '2025-04-03 21:30:51', 'active');
 
 -- --------------------------------------------------------
 
@@ -343,6 +403,7 @@ CREATE TABLE `user_tokens` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `token` varchar(255) NOT NULL,
+  `refresh_token` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `type` enum('authentication','password_reset','email_verification','remember_me','api') NOT NULL,
   `expires_at` datetime NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
@@ -361,7 +422,9 @@ CREATE TABLE `user_tokens` (
 -- Index pour la table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_user_created` (`user_id`,`created_at`),
+  ADD KEY `idx_action_level` (`action`,`level`);
 
 --
 -- Index pour la table `challenges`
@@ -369,6 +432,16 @@ ALTER TABLE `activity_logs`
 ALTER TABLE `challenges`
   ADD PRIMARY KEY (`id`),
   ADD KEY `hackathon_id` (`hackathon_id`);
+
+--
+-- Index pour la table `challenge_submissions`
+--
+ALTER TABLE `challenge_submissions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_user_id` (`user_id`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_challenge_user` (`challenge_id`,`user_id`),
+  ADD KEY `idx_ranking` (`status`,`user_id`,`points`);
 
 --
 -- Index pour la table `challenge_technologies`
@@ -390,7 +463,9 @@ ALTER TABLE `evaluations`
 --
 ALTER TABLE `hackathons`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `created_by` (`created_by`);
+  ADD KEY `created_by` (`created_by`),
+  ADD KEY `idx_date_range` (`start_date`,`end_date`),
+  ADD KEY `idx_location` (`location`);
 
 --
 -- Index pour la table `hackathon_participants`
@@ -398,7 +473,7 @@ ALTER TABLE `hackathons`
 ALTER TABLE `hackathon_participants`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `user_id` (`user_id`,`hackathon_id`),
-  ADD KEY `hackathon_id` (`hackathon_id`);
+  ADD KEY `fk_hackpart_hackathon` (`hackathon_id`);
 
 --
 -- Index pour la table `messages`
@@ -413,7 +488,7 @@ ALTER TABLE `messages`
 --
 ALTER TABLE `notifications`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD KEY `fk_notifications_user` (`user_id`);
 
 --
 -- Index pour la table `participants_hackathon`
@@ -428,15 +503,18 @@ ALTER TABLE `participants_hackathon`
 --
 ALTER TABLE `projects`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `team_id` (`team_id`),
-  ADD KEY `hackathon_id` (`hackathon_id`);
+  ADD KEY `hackathon_id` (`hackathon_id`),
+  ADD KEY `idx_status_score` (`status`,`score`),
+  ADD KEY `idx_team_hackathon` (`team_id`,`hackathon_id`);
 
 --
 -- Index pour la table `security_logs`
 --
 ALTER TABLE `security_logs`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD KEY `user_id` (`user_id`),
+  ADD KEY `idx_event_type` (`event_type`),
+  ADD KEY `idx_ip_created` (`ip_address`,`created_at`);
 
 --
 -- Index pour la table `teams`
@@ -452,7 +530,7 @@ ALTER TABLE `teams`
 ALTER TABLE `team_members`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `user_id` (`user_id`,`team_id`),
-  ADD KEY `team_id` (`team_id`);
+  ADD KEY `fk_teammember_team` (`team_id`);
 
 --
 -- Index pour la table `technologies`
@@ -466,7 +544,10 @@ ALTER TABLE `technologies`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`);
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `idx_role_status` (`role`,`status`),
+  ADD KEY `idx_email_password` (`email`,`password`),
+  ADD KEY `idx_school_study` (`school`,`study_level`);
 
 --
 -- Index pour la table `user_tokens`
@@ -476,7 +557,9 @@ ALTER TABLE `user_tokens`
   ADD UNIQUE KEY `token` (`token`),
   ADD KEY `user_id` (`user_id`),
   ADD KEY `type_expires` (`type`,`expires_at`),
-  ADD KEY `user_id_2` (`user_id`);
+  ADD KEY `user_id_2` (`user_id`),
+  ADD KEY `idx_token_type` (`token`,`type`),
+  ADD KEY `idx_created_expires` (`created_at`,`expires_at`);
 
 --
 -- AUTO_INCREMENT pour les tables déchargées
@@ -486,12 +569,18 @@ ALTER TABLE `user_tokens`
 -- AUTO_INCREMENT pour la table `activity_logs`
 --
 ALTER TABLE `activity_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT pour la table `challenges`
 --
 ALTER TABLE `challenges`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT pour la table `challenge_submissions`
+--
+ALTER TABLE `challenge_submissions`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -504,13 +593,13 @@ ALTER TABLE `evaluations`
 -- AUTO_INCREMENT pour la table `hackathons`
 --
 ALTER TABLE `hackathons`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pour la table `hackathon_participants`
 --
 ALTER TABLE `hackathon_participants`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT pour la table `messages`
@@ -564,7 +653,7 @@ ALTER TABLE `technologies`
 -- AUTO_INCREMENT pour la table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT pour la table `user_tokens`
@@ -577,10 +666,23 @@ ALTER TABLE `user_tokens`
 --
 
 --
+-- Contraintes pour la table `activity_logs`
+--
+ALTER TABLE `activity_logs`
+  ADD CONSTRAINT `fk_activity_logs_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
 -- Contraintes pour la table `challenges`
 --
 ALTER TABLE `challenges`
   ADD CONSTRAINT `challenges_ibfk_1` FOREIGN KEY (`hackathon_id`) REFERENCES `hackathons` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `challenge_submissions`
+--
+ALTER TABLE `challenge_submissions`
+  ADD CONSTRAINT `challenge_submissions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `challenge_submissions_ibfk_2` FOREIGN KEY (`challenge_id`) REFERENCES `challenges` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `challenge_technologies`
@@ -606,8 +708,8 @@ ALTER TABLE `hackathons`
 -- Contraintes pour la table `hackathon_participants`
 --
 ALTER TABLE `hackathon_participants`
-  ADD CONSTRAINT `hackathon_participants_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `hackathon_participants_ibfk_2` FOREIGN KEY (`hackathon_id`) REFERENCES `hackathons` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_hackpart_hackathon` FOREIGN KEY (`hackathon_id`) REFERENCES `hackathons` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_hackpart_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Contraintes pour la table `messages`
@@ -620,6 +722,7 @@ ALTER TABLE `messages`
 -- Contraintes pour la table `notifications`
 --
 ALTER TABLE `notifications`
+  ADD CONSTRAINT `fk_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
@@ -640,6 +743,7 @@ ALTER TABLE `projects`
 -- Contraintes pour la table `security_logs`
 --
 ALTER TABLE `security_logs`
+  ADD CONSTRAINT `fk_security_logs_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `security_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
 
 --
@@ -653,8 +757,8 @@ ALTER TABLE `teams`
 -- Contraintes pour la table `team_members`
 --
 ALTER TABLE `team_members`
-  ADD CONSTRAINT `team_members_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `team_members_ibfk_2` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_teammember_team` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_teammember_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Contraintes pour la table `user_tokens`

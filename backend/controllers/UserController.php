@@ -378,7 +378,7 @@ class UserController extends Controller
                 $response['data']['number-dev-challenges-on'] = (int)$devData['in_progress'];
             }
     
-            // 2. Défis de hacking (tous les défis sont considérés comme hacking dans ce cas)
+            // 2. Défis de hacking 
             // a) Total des défis disponibles
             $hackingTotalQuery = $db->prepare("SELECT COUNT(*) as total FROM challenges");
             $hackingTotalQuery->execute();
@@ -420,7 +420,7 @@ class UserController extends Controller
             $response['data']['total-points'] = $totalPoints;
             
             // Calcul du pourcentage de progression (500 points max)
-            $response['data']['total-points-stat'] = min(100, round(($totalPoints / 500) * 100));
+            $response['data']['total-points-stat'] = min(100, round(($totalPoints / 1000) * 100));
     
             echo json_encode($response);
     
