@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : localhost
--- Généré le : ven. 04 avr. 2025 à 00:27
+-- Généré le : ven. 04 avr. 2025 à 01:08
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -372,7 +372,7 @@ CREATE TABLE `users` (
   `special_comp` varchar(85) NOT NULL,
   `idea_project` text DEFAULT NULL,
   `study_level` varchar(50) NOT NULL,
-  `number` int(15) NOT NULL,
+  `number` varchar(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
   `role` enum('admin','organizer','participant','judge') NOT NULL DEFAULT 'participant',
   `profile_picture` varchar(255) DEFAULT NULL,
   `bio` text DEFAULT NULL,
@@ -388,10 +388,10 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `fullname`, `school`, `email`, `password`, `special_comp`, `idea_project`, `study_level`, `number`, `role`, `profile_picture`, `bio`, `github_url`, `linkedin_url`, `created_at`, `updated_at`, `status`) VALUES
-(1, 'lolo andoche', 'jean messiah', '', 'loyovat896@opposir.com', '$2y$10$HNVlAKZZk9unXeT1QwWHdOSYvh3jvjpgRx58k7U6ry6OHwZy7B8wK', '0', NULL, '', 0, 'participant', NULL, NULL, NULL, NULL, '2025-03-26 18:58:43', '2025-03-26 18:58:43', 'active'),
-(2, 'Test01', 'jean messiah', 'ESGIS', 'galigom995@opposir.com', '$2y$10$Mj3KoO9C7XLg9MQzMyUwsOhsaSnswRb1KAV9pz8hrNeGB9rf1suRq', '0', NULL, '', 0, 'participant', NULL, NULL, NULL, NULL, '2025-03-30 12:56:11', '2025-03-30 12:56:11', 'active'),
-(3, 'ggggg', 'ggggg', 'ESGIS', 'babaokechi@gmail.com', '$2y$10$AVLQBs9j5PPQ.O8rowaSQ.ZpUdbzKDkahfd1BiXPruLjEshJWpgWG', 'frontend', NULL, 'master2', 22925252, 'participant', NULL, NULL, NULL, NULL, '2025-04-03 13:26:25', '2025-04-03 13:26:25', 'active'),
-(4, 'azerty', 'jean messiah', 'ESGIS', 'azerty@gmail.com', '$2y$10$LNF6H69p3HGREmXi8p9FJOc7.AOq/E4jy4N57yoz.VN.e7ak.xvr6', 'backend', NULL, 'master1', 228747474, 'participant', NULL, NULL, NULL, NULL, '2025-04-03 21:30:51', '2025-04-03 21:30:51', 'active');
+(1, 'lolo andoche', 'jean messiah', '', 'loyovat896@opposir.com', '$2y$10$HNVlAKZZk9unXeT1QwWHdOSYvh3jvjpgRx58k7U6ry6OHwZy7B8wK', '0', NULL, '', '0', 'participant', NULL, NULL, NULL, NULL, '2025-03-26 18:58:43', '2025-03-26 18:58:43', 'active'),
+(2, 'Test01', 'jean messiah', 'ESGIS', 'galigom995@opposir.com', '$2y$10$Mj3KoO9C7XLg9MQzMyUwsOhsaSnswRb1KAV9pz8hrNeGB9rf1suRq', '0', NULL, '', '0', 'participant', NULL, NULL, NULL, NULL, '2025-03-30 12:56:11', '2025-03-30 12:56:11', 'active'),
+(3, 'ggggg', 'ggggg', 'ESGIS', 'babaokechi@gmail.com', '$2y$10$AVLQBs9j5PPQ.O8rowaSQ.ZpUdbzKDkahfd1BiXPruLjEshJWpgWG', 'frontend', NULL, 'master2', '22925252', 'participant', NULL, NULL, NULL, NULL, '2025-04-03 13:26:25', '2025-04-03 13:26:25', 'active'),
+(4, 'azerty', 'jean messiah', 'ESGIS', 'azerty@gmail.com', '$2y$10$LNF6H69p3HGREmXi8p9FJOc7.AOq/E4jy4N57yoz.VN.e7ak.xvr6', 'backend', NULL, 'master1', '228747474', 'participant', NULL, NULL, NULL, NULL, '2025-04-03 21:30:51', '2025-04-03 21:30:51', 'active');
 
 -- --------------------------------------------------------
 

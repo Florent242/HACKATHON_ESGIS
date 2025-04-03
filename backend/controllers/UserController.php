@@ -1412,7 +1412,43 @@ class UserController extends Controller
         echo json_encode($result) !== false ? $result : [];
         exit;
     }
+// Dans votre contrôleur
+public function getHackers()
+{
+    header('Content-Type: application/json');
+    
+    try {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
 
+        $stmt = $db->prepare("
+            SELECT id, username, email, role, created_at 
+            FROM users 
+            WHERE role = 'hacker' OR role = 'participant'
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute();
+        
+        $hackers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode([
+            'status' => 'success',
+            'data' => $hackers,
+            'count' => count($hackers),
+            'timestamp' => date('Y-m-d H:i:s')
+        ]);
+        exit;
+        
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Database error',
+            'error' => $e->getMessage()
+        ]);
+        exit;
+    }
+}
     /**
      * Récupère les statistiques d'un hackathon spécifique
      *
