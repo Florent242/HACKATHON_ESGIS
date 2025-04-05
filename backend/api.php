@@ -168,8 +168,7 @@ try {
             break;
 
             case 'users':
-                $controller = new UserController($db, $tokenManager);
-                
+                $controller = new UserController($db, $tokenManager);                
                 // Vérification du token JWT pour toutes les routes sauf OPTIONS
                 if ($method !== 'OPTIONS') {
                     try {
@@ -377,6 +376,21 @@ try {
                                 }
                                 $controller->getUserTeams($id);
                                 break;
+                                case 'ongoing-challenges':
+                                    // Un utilisateur peut voir ses propres défis en cours ou un admin peut voir ceux des autres
+                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    }
+                                    $controller->getOngoingChallenges($id);
+                                    break;
+                                
+                                case 'recent-activity':
+                                    // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
+                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    }
+                                    $controller->getRecentActivity($id);
+                                    break;
                                 
                             default:
                                 if (isAjaxRequest()) {
@@ -613,11 +627,11 @@ try {
             break;
 
         case 'notifications':
-            $controller = new NotificationController($db);
+            $controller = new NotificationController($db, $tokenManager);
             if ($id === null) {
                 // Route /api/notifications
                 if ($method === 'GET') {
-                    $controller->getAll();
+                    $controller->getNotifications($userId);
                 } elseif ($method === 'POST') {
                     $controller->create();
                 } else {
@@ -627,7 +641,7 @@ try {
                 // Route /api/notifications/{id}
                 if ($action === null) {
                     if ($method === 'GET') {
-                        $controller->get($id);
+                        $controller->getNotifications( $userId);
                     } elseif ($method === 'POST' || $method === 'PUT') {
                         $controller->update($id);
                     } elseif ($method === 'DELETE') {
@@ -639,7 +653,7 @@ try {
                     $controller->markAsRead($id);
                 }
             } elseif ($id === 'user' && is_numeric($action)) {
-                $controller->getByUser($action);
+                $controller->getNotifications($action);
             } else {
                 throw new Exception('ID non valide', 400);
             }

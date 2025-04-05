@@ -343,24 +343,25 @@ class UserController extends Controller
      * Récupère les statistiques de l'utilisateur et renvoie un JSON
      */
     public function getUserStats($userId)
-    {
-        header('Content-Type: application/json');
-        
-        try {
-            $database = Database::getInstance();
-            $db = $database->getConnection();
+{
+    header('Content-Type: application/json');
     
-            // Vérifier que l'utilisateur existe
-            $userCheck = $db->prepare("SELECT id FROM users WHERE id = ?");
-            $userCheck->execute([$userId]);
-            if ($userCheck->rowCount() === 0) {
-                throw new Exception("Utilisateur non trouvé");
-            }
-    
-            // Structure de réponse complète avec toutes les clés nécessaires
-            $response = [
-                'success' => true,
-                'data' => [
+    try {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+
+        // Vérifier que l'utilisateur existe
+        $userCheck = $db->prepare("SELECT id FROM users WHERE id = ?");
+        $userCheck->execute([$userId]);
+        if ($userCheck->rowCount() === 0) {
+            throw new Exception("Utilisateur non trouvé");
+        }
+
+        // Structure de réponse complète
+        $response = [
+            'success' => true,
+            'data' => [
+                'stats' => [
                     'number-dev-challenges' => 0,
                     'number-dev-challenges-on' => 0,
                     'number-hacking-challenges' => 0,
@@ -368,94 +369,129 @@ class UserController extends Controller
                     'number-submitted-projects' => 0,
                     'total-points' => 0,
                     'total-points-stat' => 0,
-                    'hacking-stat' => 0 // Ajout de cette clé manquante
+                    'hacking-stat' => 0
+                ],
+                'notifications' => [
+                    'list' => [],
+                    'unread_count' => 0
                 ]
-            ];
-    
-            // 1. Défis de développement
-            $devQuery = $db->prepare("
-                SELECT 
-                    COUNT(*) as total,
-                    COALESCE(SUM(status = 'ongoing'), 0) as in_progress
-                FROM projects 
-                WHERE team_id IN (
-                    SELECT team_id FROM team_members WHERE user_id = ?
-                )
+            ]
+        ];
+
+        // 1. Récupérer les statistiques
+        // Défis de développement
+        $devQuery = $db->prepare("
+            SELECT 
+                COUNT(*) as total,
+                COALESCE(SUM(status = 'ongoing'), 0) as in_progress
+            FROM projects 
+            WHERE team_id IN (
+                SELECT team_id FROM team_members WHERE user_id = ?
+            )
+        ");
+        $devQuery->execute([$userId]);
+        $devData = $devQuery->fetch(PDO::FETCH_ASSOC);
+        
+        $response['data']['stats']['number-dev-challenges'] = (int)$devData['total'];
+        $response['data']['stats']['number-dev-challenges-on'] = (int)$devData['in_progress'];
+
+        // Défis de hacking
+        $hackingTotalQuery = $db->prepare("
+            SELECT COUNT(*) as total 
+            FROM challenges
+            WHERE hackathon_id IN (
+                SELECT hackathon_id FROM hackathon_participants WHERE user_id = ?
+            )
+        ");
+        $hackingTotalQuery->execute([$userId]);
+        $hackingTotal = $hackingTotalQuery->fetch(PDO::FETCH_ASSOC);
+        $response['data']['stats']['number-hacking-challenges'] = (int)$hackingTotal['total'];
+
+        // Défis validés
+        $hackingValidQuery = $db->prepare("
+            SELECT COALESCE(COUNT(*), 0) as validated
+            FROM challenge_submissions 
+            WHERE user_id = ? AND status = 'validated'
+        ");
+        $hackingValidQuery->execute([$userId]);
+        $hackingValid = $hackingValidQuery->fetch(PDO::FETCH_ASSOC);
+        $response['data']['stats']['number-hacking-challenges-validate'] = (int)$hackingValid['validated'];
+
+        // Pourcentage de réussite hacking
+        if ($response['data']['stats']['number-hacking-challenges'] > 0) {
+            $response['data']['stats']['hacking-stat'] = round(
+                ($response['data']['stats']['number-hacking-challenges-validate'] / 
+                 $response['data']['stats']['number-hacking-challenges']) * 100
+            );
+        }
+
+        // Projets soumis
+        $projectsQuery = $db->prepare("
+            SELECT COALESCE(COUNT(*), 0) as submitted
+            FROM projects 
+            WHERE status = 'completed' 
+            AND team_id IN (
+                SELECT team_id FROM team_members WHERE user_id = ?
+            )
+        ");
+        $projectsQuery->execute([$userId]);
+        $projectsData = $projectsQuery->fetch(PDO::FETCH_ASSOC);
+        $response['data']['stats']['number-submitted-projects'] = (int)$projectsData['submitted'];
+
+        // Points totaux
+        $pointsQuery = $db->prepare("
+            SELECT COALESCE(SUM(points), 0) as total
+            FROM challenge_submissions 
+            WHERE user_id = ? AND status = 'validated'
+        ");
+        $pointsQuery->execute([$userId]);
+        $pointsData = $pointsQuery->fetch(PDO::FETCH_ASSOC);
+        $response['data']['stats']['total-points'] = (int)$pointsData['total'];
+        
+        // Pourcentage de progression
+        $response['data']['stats']['total-points-stat'] = min(100, 
+            round(($response['data']['stats']['total-points'] / 1000) * 100));
+
+        // 2. Récupérer les notifications
+        $notificationsQuery = $db->prepare("
+                SELECT
+                    id,
+                    message,
+                    read_status as isRead,
+                    created_at as createdAt
+                FROM notifications
+                WHERE user_id = ?
+                ORDER BY created_at DESC
+                LIMIT 5
             ");
-            $devQuery->execute([$userId]);
-            $devData = $devQuery->fetch(PDO::FETCH_ASSOC);
-            
-            $response['data']['number-dev-challenges'] = (int)$devData['total'];
-            $response['data']['number-dev-challenges-on'] = (int)$devData['in_progress'];
-    
-            // 2. Défis de hacking
-            // a) Total des défis disponibles
-            $hackingTotalQuery = $db->prepare("
-                SELECT COUNT(*) as total 
-                FROM challenges
-                WHERE hackathon_id IN (
-                    SELECT hackathon_id FROM hackathon_participants WHERE user_id = ?
-                )
+            $notificationsQuery->execute([$userId]);
+            $notifications = $notificationsQuery->fetchAll(PDO::FETCH_ASSOC);
+
+            $response['data']['notifications']['list'] = $notifications;
+
+            // 3. Compter les notifications non lues
+            $unreadQuery = $db->prepare("
+                SELECT COUNT(*)
+                FROM notifications
+                WHERE user_id = ? AND read_status = 0
             ");
-            $hackingTotalQuery->execute([$userId]);
-            $hackingTotal = $hackingTotalQuery->fetch(PDO::FETCH_ASSOC);
-            $response['data']['number-hacking-challenges'] = (int)$hackingTotal['total'];
-    
-            // b) Défis validés par l'utilisateur
-            $hackingValidQuery = $db->prepare("
-                SELECT COALESCE(COUNT(*), 0) as validated
-                FROM challenge_submissions 
-                WHERE user_id = ? AND status = 'validated'
-            ");
-            $hackingValidQuery->execute([$userId]);
-            $hackingValid = $hackingValidQuery->fetch(PDO::FETCH_ASSOC);
-            $response['data']['number-hacking-challenges-validate'] = (int)$hackingValid['validated'];
-    
-            // Calcul du pourcentage de réussite hacking
-            if ($response['data']['number-hacking-challenges'] > 0) {
-                $response['data']['hacking-stat'] = round(
-                    ($response['data']['number-hacking-challenges-validate'] / $response['data']['number-hacking-challenges']) * 100
-                );
-            }
-    
-            // 3. Projets soumis
-            $projectsQuery = $db->prepare("
-                SELECT COALESCE(COUNT(*), 0) as submitted
-                FROM projects 
-                WHERE status = 'completed' 
-                AND team_id IN (
-                    SELECT team_id FROM team_members WHERE user_id = ?
-                )
-            ");
-            $projectsQuery->execute([$userId]);
-            $projectsData = $projectsQuery->fetch(PDO::FETCH_ASSOC);
-            $response['data']['number-submitted-projects'] = (int)$projectsData['submitted'];
-    
-            // 4. Points totaux
-            $pointsQuery = $db->prepare("
-                SELECT COALESCE(SUM(points), 0) as total
-                FROM challenge_submissions 
-                WHERE user_id = ? AND status = 'validated'
-            ");
-            $pointsQuery->execute([$userId]);
-            $pointsData = $pointsQuery->fetch(PDO::FETCH_ASSOC);
-            $response['data']['total-points'] = (int)$pointsData['total'];
-            
-            // Calcul du pourcentage de progression
-            $response['data']['total-points-stat'] = min(100, round(($response['data']['total-points'] / 1000) * 100));
-    
-            echo json_encode($response);
-    
+            $unreadQuery->execute([$userId]);
+            $unreadCount = $unreadQuery->fetchColumn();
+
+            $response['data']['notifications']['unread_count'] = (int)$unreadCount;
+
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            exit;
+
         } catch (Exception $e) {
-            http_response_code(500);
             echo json_encode([
                 'success' => false,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
-            ]);
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            exit;
         }
-        exit;
-    }
+}
     /**
      * Récupère les hackathons de l'utilisateur et renvoie un JSON
      */
@@ -536,8 +572,94 @@ class UserController extends Controller
         ]);
         exit;
     }
+/****
+ * 
+ * 
+ * 
+ * 
+ */
+private function countUserValidatedFlags($userId) {
+    $query = "SELECT COUNT(*) FROM validated_flags WHERE user_id = :user_id";
+    $stmt = $this->db->prepare($query);
+    $stmt->bindParam(':user_id', $userId);
+    $stmt->execute();
+    return (int) $stmt->fetchColumn();
+}
 
+private function countUserChallengesByType($userId, $type) {
+    $query = "SELECT COUNT(*) FROM challenges c
+              INNER JOIN user_challenges uc ON c.id = uc.challenge_id
+              WHERE uc.user_id = :user_id AND c.type = :type";
+    $stmt = $this->db->prepare($query);
+    $stmt->bindParam(':user_id', $userId);
+    $stmt->bindParam(':type', $type);
+    $stmt->execute();
+    return (int) $stmt->fetchColumn();
+}
 
+private function countUserOngoingChallengesByType($userId, $type) {
+    // Adapter la requête en fonction de la façon dont vous suivez les défis en cours
+    return 0; // Exemple
+}
+
+private function countUserSubmittedProjects($userId) {
+    $query = "SELECT COUNT(*) FROM projects WHERE user_id = :user_id";
+    $stmt = $this->db->prepare($query);
+    $stmt->bindParam(':user_id', $userId);
+    $stmt->execute();
+    return (int) $stmt->fetchColumn();
+}
+
+private function getUserTotalPoints($userId) {
+    // Logique pour calculer le total des points de l'utilisateur
+    return 0; // Exemple
+}
+
+private function calculatePointsChange($userId) {
+    // Logique pour calculer le changement de points depuis la dernière connexion
+    return 0; // Exemple
+}
+
+private function getUserRecentActivity($userId) {
+    // Logique pour récupérer l'activité récente de l'utilisateur (ex: soumissions, validations)
+    return []; // Exemple
+}
+public function getOngoingChallenges($userId)
+{
+    // Assurez-vous que l'utilisateur authentifié est autorisé à voir ces informations
+    if ($_SESSION['user_id'] != $userId && !hasRole('admin')) {
+        $this->jsonResponse(['success' => false, 'error' => 'Non autorisé'], 403);
+        return;
+    }
+
+    // Logique pour récupérer les défis en cours de l'utilisateur
+    // Exemple (à adapter à votre modèle de données) :
+    $challenges = $this->user->getOngoingChallenges($userId);
+
+    $this->jsonResponse(['success' => true, 'data' => $challenges]);
+}
+
+public function getRecentActivity($userId)
+{
+    // Assurez-vous que l'utilisateur authentifié est autorisé à voir ces informations
+    if ($_SESSION['user_id'] != $userId && !hasRole('admin')) {
+        $this->jsonResponse(['success' => false, 'error' => 'Non autorisé'], 403);
+        return;
+    }
+
+    // Logique pour récupérer l'activité récente de l'utilisateur
+    // Exemple (à adapter à votre modèle de données) :
+    $activity = $this->user->getRecentActivity($userId);
+
+    $this->jsonResponse(['success' => true, 'data' => $activity]);
+}
+/****
+ * 
+ * 
+ * 
+ * 
+ * 
+ */
 
     /** */
 
@@ -769,7 +891,6 @@ class UserController extends Controller
             exit;
         }
     }
-
     /**
      * Récupère les données des défis et les renvoie au format JSON
      * @return string Données des défis au format JSON

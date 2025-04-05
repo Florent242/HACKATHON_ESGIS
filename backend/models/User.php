@@ -238,7 +238,7 @@ class User {
     }
 
     /**
-     * Récupère un utilisateur par son ID
+     * Trouve un utilisateur par son ID
      * @param int $id ID de l'utilisateur
      * @return array|bool Les données de l'utilisateur ou false si non trouvé
      */
@@ -250,13 +250,14 @@ class User {
             $stmt->execute();
 
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($user) {
-                unset($user['password']); // Ne pas renvoyer le mot de passe
+            if (!$user) {
+                return false;
             }
 
+            unset($user['password']); // Ne pas renvoyer le mot de passe
             return $user;
         } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération de l\'utilisateur: ' . $e->getMessage());
+            error_log('Erreur lors de la recherche de l\'utilisateur: ' . $e->getMessage());
             return false;
         }
     }

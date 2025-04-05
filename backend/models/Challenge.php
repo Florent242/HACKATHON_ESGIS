@@ -196,4 +196,24 @@ class Challenge {
             throw new Exception("Hackathon non trouvé");
         }
     }
+
+
+    public function getUserOngoingChallenges($userId, $type)
+    {
+        try {
+            $query = "SELECT c.*
+                      FROM {$this->table} c
+                      INNER JOIN user_challenges uc ON c.id = uc.challenge_id
+                      WHERE uc.user_id = :user_id AND c.type = :type AND uc.status = 'ongoing'"; // Adaptez 'status' si nécessaire
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':user_id', $userId);
+            $stmt->bindParam(':type', $type);
+            $stmt->execute();
+            $challenges = $stmt->fetchAll();
+            return $challenges;
+        } catch (Exception $e) {
+            error_log('Erreur lors de la récupération des défis en cours : ' . $e->getMessage());
+            return [];
+        }
+    }
 }
