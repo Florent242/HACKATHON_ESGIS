@@ -103,16 +103,21 @@ try {
         case 'auth':
             $controller = new AuthController($db);
             switch ($request[1] ?? '') {
+                case 'check':
+                    $controller->checkAuth();
+                    break;
                 case 'login':
                     try {
                         $controller->login();
                     } catch (Exception $e) {
-                        setFlashMessage('error', 'Connexion echouée', $e->getMessage());
-
-                        // un echo pour les requetes frontend
-                        echo json_encode(['error' => $e->getMessage()]);
-                        //redirection vers la page de connexion
-                        header('Location: ' . BASE_URL . '/auth');
+                        if (isAjaxRequest()) {
+                            header('Content-Type: application/json');
+                            http_response_code(400);
+                            echo json_encode(['error' => $e->getMessage()]);
+                        } else {
+                            setFlashMessage('error', 'Connexion echouée', $e->getMessage());
+                            header('Location: ' . BASE_URL . '/auth');
+                        }
                         exit();  
                     }
                     break;
@@ -135,10 +140,14 @@ try {
                     try {
                         $controller->register();
                     } catch (Exception $e) {
+                        if (isAjaxRequest()){
+                            header('Content-Type: application/json');
+                            http_response_code(400);
+                            echo json_encode(['error' => $e->getMessage()]);
+                        }
+                        else
                         setFlashMessage('error', 'Inscription echouée', $e->getMessage());
                         
-                        // un echo pour les requetes frontend
-                        echo json_encode(['error' => $e->getMessage()]);
                         //redirection vers la page d'inscription
                         header('Location: ' . BASE_URL . '/auth');
                         exit();
@@ -179,10 +188,17 @@ try {
                         $currentUserId = $tokenValidation['user_id'];
                         
                     } catch (Exception $e) {
-                        jsonResponse([
-                            'success' => false,
-                            'error' => 'api.php ' . $e->getMessage()
-                        ], $e->getCode() ?: 401);
+                        if (isAjaxRequest()) {
+                            jsonResponse([
+                                'success' => false,
+                                'error' => 'api.php ' . $e->getMessage()
+                            ], $e->getCode() ?: 401);
+                        }
+                        else{
+                            setFlashMessage('error', 'Erreur de connexion', $e->getMessage());
+                            header('Location: ' . BASE_URL . '/user');
+                            exit();
+                        }
                     }
                 }
             
@@ -190,9 +206,11 @@ try {
                     // Route /api/users
                     switch ($method) {
                         case 'GET':
-                            if ($request[1] === 'me') {
+                            if ($request[1] === 'me')
+                            {
                                 // Vérifier l'authentification
-                                if (!$currentUserId) {
+                                if (!$currentUserId)
+                                {
                                     jsonResponse(['error' => 'Non authentifié. api.php ' . $currentUserId.' !='.$request[1]], 401);
                                     return;
                                 }
@@ -202,13 +220,28 @@ try {
                                     $controller->get($currentUserId);
                                     $controller->getUserStats($currentUserId);
                                 } catch (Exception $e) {
-                                    jsonResponse(['error' => $e->getMessage()], 404);
+                                    if (isAjaxRequest()) {
+                                        jsonResponse([
+                                            'success' => false,
+                                            'error' => 'api.php ' . $e->getMessage()
+                                        ], $e->getCode() ?: 404);
+                                    }
+                                    else{
+                                        setFlashMessage('error', 'Erreur de connexion', $e->getMessage());
+                                        header('Location: ' . BASE_URL . '/user');
+                                        exit();
+                                    }
                                 }
                             }
                             // Seul l'admin peut lister tous les utilisateurs
                             if (!$controller->isAdmin($currentUserId)) {
-                                jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                return;
+                                if (isAjaxRequest()) {
+                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    return;
+                                }
+                                setFlashMessage('error', 'Erreur de connexion', 'Accès non autorisé');
+                                header('Location: ' . BASE_URL . '/user');
+                                exit();
                             }
                             $controller->getAllUsers();
                             break;
@@ -229,7 +262,13 @@ try {
                             case 'GET':
                                 // Un utilisateur peut voir son propre profil ou un admin peut voir n'importe quel profil
                                 if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé vous n\'êtes pas autorisé à voir ce profil'], 403);
+                                    if (isAjaxRequest()) {
+                                        jsonResponse(['success' => false, 'error' => "Accès non autorisé "], 403);
+                                        return;
+                                    }
+                                    setFlashMessage('error', 'Erreur de connexion', "Accès non autorisé ");
+                                    header('Location: ' . BASE_URL . '/user');
+                                    exit();
                                 }
                                 $controller->get($id);
                                 break;
@@ -238,7 +277,13 @@ try {
                             case 'PUT':
                                 // Un utilisateur peut mettre à jour son propre profil ou un admin peut mettre à jour n'importe quel profil
                                 if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    if (isAjaxRequest()) {
+                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                        return;
+                                    }
+                                    setFlashMessage('error', 'Erreur de mise à jour', 'Accès non autorisé');
+                                    header('Location: ' . BASE_URL . '/user');
+                                    exit();
                                 }
                                 $controller->update($id);
                                 break;
@@ -246,13 +291,25 @@ try {
                             case 'DELETE':
                                 // Seul l'admin peut supprimer un utilisateur
                                 if (!$controller->isAdmin($currentUserId)) {
-                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    if (isAjaxRequest()) {
+                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                        return;
+                                    }
+                                    setFlashMessage('error', 'Erreur de suppression', 'Accès non autorisé');
+                                    header('Location: ' . BASE_URL . '/user');
+                                    exit();
                                 }
                                 $controller->delete($id);
                                 break;
                                 
                             default:
-                                jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
+                                if (isAjaxRequest()) {
+                                    jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
+                                    return;
+                                }
+                                setFlashMessage('error', 'Erreur de connexion', 'Méthode non autorisée');
+                                header('Location: ' . BASE_URL . '/user');
+                                exit();
                         }
                     } else {
                         // Routes avec action spécifique /api/users/{id}/{action}
@@ -260,7 +317,13 @@ try {
                             case 'role':
                                 // Seul l'admin peut modifier les rôles
                                 if (!$controller->isAdmin($currentUserId)) {
-                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    if (isAjaxRequest()) {
+                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                        return;
+                                    }
+                                    setFlashMessage('error', 'Erreur de connexion', 'Accès non autorisé');
+                                    header('Location: ' . BASE_URL . '/user');
+                                    exit();
                                 }
                                 $controller->updateRole($id);
                                 break;
@@ -268,7 +331,13 @@ try {
                             case 'password':
                                 // Un utilisateur peut changer son propre mot de passe
                                 if ($currentUserId != $id) {
-                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    if (isAjaxRequest()) {
+                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                        return;
+                                    }
+                                    setFlashMessage('error', 'Erreur de modification', 'Accès non autorisé');
+                                    header('Location: ' . BASE_URL . '/user');
+                                    exit();
                                 }
                                 $controller->updatePassword($id);
                                 break;
@@ -276,7 +345,13 @@ try {
                             case 'stats':
                                 // Un utilisateur peut voir ses propres stats ou un admin peut voir n'importe quelles stats
                                 if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    if (isAjaxRequest()) {
+                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                        return;
+                                    }
+                                    setFlashMessage('error', 'Erreur de connexion', 'Accès non autorisé');
+                                    header('Location: ' . BASE_URL . '/user');
+                                    exit();
                                 }
                                 $controller->getUserStats($id);
                                 break;
@@ -292,13 +367,25 @@ try {
                             case 'teams':
                                 // Un utilisateur peut voir ses propres équipes ou un admin peut voir n'importe quelles équipes
                                 if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    if (isAjaxRequest()) {
+                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                        return;
+                                    }
+                                    setFlashMessage('error', 'Erreur de connexion', 'Accès non autorisé');
+                                    header('Location: ' . BASE_URL . '/user');
+                                    exit();
                                 }
                                 $controller->getUserTeams($id);
                                 break;
                                 
                             default:
-                                jsonResponse(['success' => false, 'error' => 'Action non reconnue'], 404);
+                                if (isAjaxRequest()) {
+                                    jsonResponse(['success' => false, 'error' => 'Action non reconnue'], 404);
+                                    return;
+                                }
+                                setFlashMessage('error', 'Erreur de connexion', 'Action non reconnue');
+                                header('Location: ' . BASE_URL . '/user');
+                                exit();
                         }
                     }
                 } else {
@@ -562,12 +649,21 @@ try {
             throw new Exception('Endpoint non trouvé', 404);
     }
 } catch (Exception $e) {
-    $statusCode = $e->getCode() ?: 500;
-    header('Content-Type: application/json');
-    // http_response_code($statusCode);
-    echo json_encode([
-        'success' => false,
-        'error' => $e->getMessage(),
-        'debug' => print_r($request, true)
-    ]);
+    if (isAjaxRequest()) {
+        header('Content-Type: application/json');
+        $statusCode = $e->getCode() ?: 500;
+        jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
+        echo json_encode([
+            'debug' => print_r($request, true)
+        ]);
+        return;
+    }
+    setFlashMessage('error', 'Erreur API', $e->getMessage());
+    header('Location: ' . BASE_URL
+        . '/HACKATHON_ESGIS/public/auth');
+    exit();
+}
+function isAjaxRequest() {
+    return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) 
+           && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 }

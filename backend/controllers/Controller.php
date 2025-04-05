@@ -11,7 +11,8 @@ class Controller
         'auth/register',
         'auth/forgot-password',
         'auth/reset-password',
-        'auth/verify-email'
+        'auth/verify-email',
+        'auth/check-auth'
     ];
 
     public function __construct($tokenManager) 
@@ -79,13 +80,20 @@ class Controller
     {
         $headers = $this->getAuthorizationHeader();
         
+        if (isset($_COOKIE['long_term_token'])) {
+            return $_COOKIE['long_term_token'];
+        }
+        
+        if (isset($_COOKIE['jwt_token'])) {
+            return $_COOKIE['jwt_token'];
+        }
         if (!empty($headers) && preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
             return $matches[1];
         }
         
         return null;
     }
-
+    
     /**
      * Récupère le header Authorization
      */

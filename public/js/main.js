@@ -1,45 +1,119 @@
-document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
-    // Pour tester la notification qui correspond à l'image
+class AuthService {
+    // Configurations des routes par rôle (à adapter selon votre structure)
+    static ROUTES = {
+        guest: '/HACKATHON_ESGIS/public/auth',
+        admin: '/HACKATHON_ESGIS/public/admin',
+        participant: '/HACKATHON_ESGIS/public/user',
+        visitor: '/HACKATHON_ESGIS/public' // Nouvelle route visiteur
+    };
 
-    const notificationElement = document.getElementById('notification-data');
-    if (notificationElement) {
+    // Vérifie l'authentification et redirige si nécessaire
+    static async verifyAuth() {
         try {
-            const notificationData = JSON.parse(notificationElement.getAttribute('data-notification'));
-            console.log(notificationData);
-            if (notificationData) {
-                showNotification(
-                    notificationData.message,
-                    notificationData.details || null,
-                    notificationData.type || 'info'
-                );
-                // Supprimer la notification de la session après affichage
-                fetch('clearNotification.php', { method: 'POST' })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Erreur lors de la suppression de la notification');
-                        }
-                    })
-                    .catch(error => {
-                        console.error(error);
-                    });
+            const response = await fetch('/HACKATHON_ESGIS/public/api/auth/check', {
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Échec de la vérification d\'authentification');
             }
-            const flashMessage = getFlashMessage();
-            console.log(flashMessage);
-            if (flashMessage) {
-                showNotification(
-                    flashMessage.message,
-                    flashMessage.details || null,
-                    flashMessage.type || 'info'
-                );
-                // Supprimer le message après l'avoir affiché
-                localStorage.removeItem('flashMessage');
-            }
-        } catch (e) {
-            console.error('Erreur lors du parsing des données de notification:', e);
+
+            const data = await response.json();
+            return {
+                authenticated: data.authenticated,
+                userId: data.id || null,
+                userRole: data.role || null,
+                error: null
+            };
+
+        } catch (error) {
+            console.error('AuthService error:', error);
+            return {
+                authenticated: false,
+                user: null,
+                error: error.message
+            };
         }
     }
-});
+
+    // Gère un utilisateur authentifié
+    static handleAuthenticated(user) {
+        const isPathAllowed = this.checkPathPermission(user.role);
+
+        if (!isPathAllowed) {
+            this.redirectToRoleHome(user.role);
+            return false;
+        }
+
+        return true;
+    }
+
+    // Gère un utilisateur non authentifié
+    static handleUnauthenticated() {
+        if (this.isVisitorPath()) {
+            return true; // Autorise à rester sur la page visiteur
+        }
+
+        this.redirectToLogin();
+        return false;
+    }
+
+    // Vérifie si le chemin actuel est autorisé pour le rôle
+    static checkPathPermission(role) {
+        const currentPath = window.location.pathname;
+        const pathPatterns = {
+            admin: /^\/HACKATHON_ESGIS\/public\/admin/,
+            participant: /^\/HACKATHON_ESGIS\/public\/user/,
+            visitor: /^\/HACKATHON_ESGIS\/public\/(auth|challenge|contact|sponsors|hackathon|leaderboard|resources)/ // Chemins publics
+        };
+
+        return pathPatterns[role]?.test(currentPath); // Les routes visiteur sont accessibles à tous
+    }
+
+    // Vérifie si l'utilisateur est sur une page visiteur
+    static isVisitorPath() {
+        return /^\/HACKATHON_ESGIS\/public\/(auth|challenge|contact|sponsors|hackathon|leaderboard|resources)/.test(window.location.pathname) || /^\/HACKATHON_ESGIS\/public\/$/.test(window.location.pathname);
+    }
+
+    // Redirige vers la page d'accueil correspondant au rôle
+    static redirectToRoleHome(role) {
+        window.location.href = this.ROUTES[role] || this.ROUTES.visitor;
+    }
+
+    // Redirige vers la page de login appropriée
+    static redirectToLogin() {
+        const isAdminPath = window.location.pathname.includes('/admin');
+        window.location.href = isAdminPath
+            ? '/HACKATHON_ESGIS/public/auth_admin'
+            : '/HACKATHON_ESGIS/public/auth';
+    }
+
+    // Déconnexion
+    static async logout() {
+        try {
+            await fetch('/HACKATHON_ESGIS/public/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            this.redirectToVisitorHome();
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    }
+
+    // Redirige vers l'accueil visiteur après déconnexion
+    static redirectToVisitorHome() {
+        window.location.href = this.ROUTES.visitor;
+    }
+}
 
 /**
  * Affiche une notification.
@@ -152,4 +226,109 @@ function getFlashMessage() {
     }
     return null;
 }
+// Fonction utilitaire pour gérer les requêtes API
+async function apiRequest(endpoint, options = {}) {
+    try {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+
+        const response = await fetch(`/HACKATHON_ESGIS/public/api${endpoint}`, {
+            ...options,
+            headers: { ...headers, ...options.headers }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data;  // Retourne bien les données récupérées
+    } catch (error) {
+        handleError('Erreur lors de la requête API', error, 'error');
+        throw error;
+    }
+}
+
+async function initVerification() {
+    const authCheck = await AuthService.verifyAuth();
+    console.log('Auth check:', authCheck);
+    if (!authCheck.authenticated) {
+        // Si non authentifié ET pas sur une page visiteur -> redirection
+        if (!AuthService.isVisitorPath()) {
+            AuthService.redirectToLogin();
+            setFlashMessage('info', 'Vous n\'êtes pas connecté');
+            return; // On arrête l'exécution pour éviter tout traitement inutile
+        }
+    } else {
+        // Si authentifié mais sur une page non autorisée -> redirection
+        if (!AuthService.checkPathPermission(authCheck.userRole)) {
+            AuthService.redirectToRoleHome(authCheck.userRole);
+            return;
+        }
+
+        // Ici l'utilisateur est bien authentifié et autorisé
+        console.log('Utilisateur connecté:', authCheck.authenticated);
+
+        // Vous pouvez ajouter ici des initialisations spécifiques aux utilisateurs connectés
+        // Par exemple :
+        // - Charger des données utilisateur
+        // - Mettre à jour l'UI
+        // - Initialiser des écouteurs d'événements spécifiques
+    }
+}
+try {
+    initVerification();
+} catch (error) {
+    console.error('Erreur lors de la vérification de l\'authentification:', error);
+
+    // En cas d'erreur, on considère comme non authentifié
+    if (!AuthService.isVisitorPath()) {
+        setFlashMessage('info', 'Vous n\'êtes pas connecté');
+        AuthService.redirectToLogin();
+    }
+}
+	document.addEventListener('DOMContentLoaded', async () => {
+    // initialisation des notifications
+    const notificationElement = document.getElementById('notification-data');
+    if (notificationElement) {
+        try {
+            // TODO: nettoyer la notification de la session après affichage 
+            // fetch('clearNotification.php', { method: 'POST' })
+            const notificationData = JSON.parse(notificationElement.getAttribute('data-notification'));
+            if (notificationData) {
+                showNotification(
+                    notificationData.message,
+                    notificationData.details || null,
+                    notificationData.type || 'info'
+                );
+                // Supprimer la notification de la session après affichage
+                fetch('clearNotification.php', { method: 'POST' })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erreur lors de la suppression de la notification');
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            }
+            const flashMessage = getFlashMessage();
+            if (flashMessage) {
+                showNotification(
+                    flashMessage.message,
+                    flashMessage.details || null,
+                    flashMessage.type || 'info'
+                );
+                // Supprimer le message après l'avoir affiché
+                localStorage.removeItem('flashMessage');
+            }
+        } catch (e) {
+            console.error('Erreur lors du parsing des données de notification:', e);
+        }
+    }
+
+});
 

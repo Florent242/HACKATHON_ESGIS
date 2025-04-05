@@ -86,10 +86,14 @@ class UserController extends Controller
         }
         
         // Si pas dans les headers, chercher dans les cookies
+        if (isset($_COOKIE['long_term_token'])) {
+            return $_COOKIE['long_term_token'];
+        }
+        
         if (isset($_COOKIE['jwt_token'])) {
             return $_COOKIE['jwt_token'];
         }
-        
+
         return null;
     }
 
@@ -470,8 +474,7 @@ class UserController extends Controller
      */
     public function getUserTeams($userId)
     {
-        $database = Database::getInstance();
-        $db = $database->getConnection();
+        $db = $this->db;
 
         $stmt = $db->prepare("SELECT e.* FROM equipes e JOIN equipe_membres em ON e.id = em.equipe_id WHERE em.user_id = :user_id");
         $stmt->execute([':user_id' => $userId]);
@@ -1658,11 +1661,4 @@ public function getHackers()
      *
      * @return string Jeton CSRF
      */
-    public function getCsrfToken()
-    {
-        if (empty($_SESSION['csrf_token'])) {
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-        }
-        return $_SESSION['csrf_token'];
-    }
 }

@@ -1,4 +1,14 @@
+<script src="/HACKATHON_ESGIS/public/js/lucide.min.js"></script>
+<script src="/HACKATHON_ESGIS/public/js/main.js"></script>
 <?php
+require_once __DIR__ . '/../backend/includes/authMiddleware.php';
+
+// Vérifier l'authentification
+$user = AuthMiddleware::checkAuth();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+// echo print_r($_SESSION, true);
 // Récupérer l'URL demandée (par exemple /home ou /about)
 $url = $_SERVER['REQUEST_URI'] ?? "/HACKATHON_ESGIS/public/";
 
@@ -22,11 +32,11 @@ switch ($url) {
     case '/HACKATHON_ESGIS/public/auth':
         require_once '../frontend/auth.php'; // Inclure la page "auth"
         break;
-    case '/HACKATHON_ESGIS/public/auth_admin':
-        require_once '../frontend/auth_admin.php'; // Inclure la page "logout"
+    case '/HACKATHON_ESGIS/public/contact':
+        require_once '../frontend/contact.php'; // Inclure la page "contact"
         break;
-    case '/HACKATHON_ESGIS/public/profile':
-        require_once '../frontend/profile.php'; // Inclure la page "Profil"
+    case '/HACKATHON_ESGIS/public/sponsors':
+        require_once '../frontend/sponsors.php'; // Inclure la page "sponsors"
         break;
 
     // Page admin
@@ -117,10 +127,13 @@ switch ($url) {
         } else {
             require_once '../frontend/404.php'; // Inclure la page 404 générale si rien ne correspond
         }
-        break; 
+        break;
 }
 // a ce niveau d'autres amelioration devront etre fait n'y toucher donc pas
 ?>
 
-<script src="./js/lucide.js"></script>
-<script src="./js/main.js"></script>
+<script defer>
+    window.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+    });
+</script>

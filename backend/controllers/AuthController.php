@@ -9,7 +9,7 @@ use Auth\Model\TokenManager;
 use PDO;
 use PDOException;
 
-    if (!class_exists('Auth\Model\TokenManager')) {
+if (!class_exists('Auth\Model\TokenManager')) {
     require_once __DIR__ . '/../models/TokenManager.php';
 }
 if (!class_exists('Database')) {
@@ -53,13 +53,112 @@ class AuthController
         }
     }
 
+        /**
+     * Récupère le token JWT depuis les headers
+     */
+    public function getBearerToken(): ?string
+    {
+        // D'abord essayer le header Authorization
+        $headers = $this->getAuthorizationHeader();
+        if (!empty($headers) && preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
+            return $matches[1];
+        }
+        
+        // Si pas dans les headers, chercher dans les cookies
+        if (isset($_COOKIE['long_term_token'])) {
+            return $_COOKIE['long_term_token'];
+        }
+        
+        if (isset($_COOKIE['jwt_token'])) {
+            return $_COOKIE['jwt_token'];
+        }
+        
+        return null;
+    }
+
+    /**
+     * Récupère le header Authorization
+     */
+    public function getAuthorizationHeader(): ?string
+    {
+        $headers = null;
+        if (isset($_SERVER['Authorization'])) {
+            $headers = trim($_SERVER['Authorization']);
+        } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $headers = trim($_SERVER['HTTP_AUTHORIZATION']);
+        } elseif (function_exists('apache_request_headers')) {
+            $requestHeaders = apache_request_headers();
+            $requestHeaders = array_combine(
+                array_map('ucwords', array_keys($requestHeaders)),
+                array_values($requestHeaders)
+            );
+            if (isset($requestHeaders['Authorization'])) {
+                $headers = trim($requestHeaders['Authorization']);
+            }
+        }
+        return $headers;
+    }
+    public function checkAuth() {
+        header('Content-Type: application/json');
+    
+        try {
+            $token = $this->getBearerToken();
+            if (!$token) {
+                throw new Exception('Token manquant', 401);
+            }
+            // Vérifiez si le token est valide (exemple avec JWT)
+            $tokenManager = $this->tokenManager;
+            $user = $tokenManager->validateToken($token);
+            if (!$user && !$user['valid']) {
+                throw new Exception('Non authentifié', 401);
+            }
+            $user_data = $this->user->find($user['user_id']);
+            $user['role'] = $user_data['role'];
+            
+            // Récupérez les infos nécessaires pour le frontend
+            $response = [
+                'authenticated' => true,
+                'id' => $user['user_id'],
+                'role' => $user['role']
+            ];
+            
+            echo json_encode($response);
+            
+        } catch (Exception $e) {
+            // http_response_code($e->getCode() ?: 401);
+            echo json_encode([
+                'authenticated' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
     private function validateCsrfToken()
     {
-        if (
-            !isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) ||
-            !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])
-        ) {
-            throw new Exception('Token CSRF invalide');
+        // Récupérer le token CSRF de la requête
+        $requestToken = filter_input(INPUT_POST, 'csrf_token', FILTER_DEFAULT) ?: null;
+
+        // Vérifier si le token est présent dans la requête
+        if (empty($requestToken)) {
+            throw new Exception('Token CSRF manquant', 400);
+        }
+
+        // Récupérer le token CSRF de la session
+        $sessionToken = $_SESSION['csrf_token'] ?? null;
+
+        // Vérifier si le token est présent dans la session
+        if (empty($sessionToken)) {
+            throw new Exception('Session CSRF invalide', 400);
+        }
+
+        // Comparer les tokens avec hash_equals pour éviter les attaques de timing
+        if (!hash_equals($sessionToken, $requestToken)) {
+            throw new Exception('Token CSRF invalide', 403);
+        }
+
+        // Optionnel : régénérer le token CSRF après utilisation
+        if (empty($_SESSION['csrf_token']) || $_SESSION['csrf_token'] === $requestToken) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         }
     }
 
@@ -132,7 +231,7 @@ class AuthController
                 $this->setAuthCookies($token);
 
                 setFlashMessage('success', 'Inscription réussie');
-                
+
                 echo json_encode([
                     'success' => true,
                     'redirect' => self::BASE_URL . "/user"
@@ -146,7 +245,7 @@ class AuthController
                 'email' => $data['email'] ?? 'non fourni',
                 'error' => $e->getMessage()
             ], 'error');
-            
+
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
@@ -173,14 +272,26 @@ class AuthController
             $password = filter_input(INPUT_POST, 'password', FILTER_DEFAULT);
             $rememberMe = isset($data['remember_me']) && $data['remember_me'] === 'on';
 
-            // Authentifier l'utilisateur
+            // Authentifier l'utilisateur en verifiant son statut et son mot de passe
             $user = $this->user->authenticate($email, $password);
 
             if (isset($user) && $user) {
+                if (session_status() === PHP_SESSION_NONE) {
+                    session_start();
+                }
+                // Créer la session
+                $_SESSION['user'] = [
+                    'id' => $user['id'],
+                    'email' => $user['email'],
+                    'role' => $user['role'],
+                    'logged_in' => true,
+                    'last_activity' => time()
+                ];
+
                 // Générer les tokens
                 $token = $this->tokenManager->generateJwt($user['id']);
                 $longTermToken = null;
-                
+
                 if ($rememberMe) {
                     $longTermTokenData = $this->tokenManager->generateLongTermToken($user['id']);
                     $longTermToken = $longTermTokenData['token'];

@@ -1,6 +1,3 @@
-// lucide initiating
-lucide.createIcons();
-
 // Start Challenge button click handler
 if (document.querySelector('.profile-btn')) {
     document.querySelector('.profile-btn').addEventListener('click', () => {
@@ -78,3 +75,26 @@ document.querySelector('.nav-container').addEventListener('mouseleave', function
 headerDropdown.addEventListener('mouseleave', function () {
     this.classList.remove('visible'); // Hide it when mouse leaves
 });
+document.addEventListener('DOMContentLoaded', async () => {
+    const logoutBtn = document.querySelector('.logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
+            try{
+
+                const data = await apiRequest('/auth/logout', {
+                    method: 'POST'
+                })
+                
+                if (data.success) {
+                    window.location.href = '/HACKATHON_ESGIS/public';
+                } else {
+                    setFlashMessage('error', 'Echec de déconnexion',data.message);
+                    return;
+                }
+            } catch (error) {
+                setFlashMessage('error', 'Echec de déconnexion',error.message);
+                console.error('Logout failed:', error);
+            }
+        });
+    }
+})

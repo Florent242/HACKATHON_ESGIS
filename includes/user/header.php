@@ -120,13 +120,11 @@ if (!isset($_SESSION['csrf_token'])) {
                             </li>
                         </a>
                     </div>
-                    <div class="p-2">
-                        <a href="/HACKATHON_ESGIS/public/user/logout">
-                            <li class="flex items-center gap-2 p-1 rounded-lg text-red-500 hover:bg-slate-900">
-                                <i data-lucide="log-out" class="w-4 h-4 stroke-current"></i>
-                                Logout
-                            </li>
-                        </a>
+                    <div class="p-2 logout-btn">
+                        <li class="flex items-center gap-2 p-1 rounded-lg text-red-500 hover:bg-slate-900">
+                            <i data-lucide="log-out" class="w-4 h-4 stroke-current"></i>
+                            Logout
+                        </li>
                     </div>
                 </div>
             </div>

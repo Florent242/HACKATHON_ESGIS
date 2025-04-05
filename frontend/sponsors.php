@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nos Sponsors</title>
-    <link rel="stylesheet" href="sponsors.css">
+    <link rel="stylesheet" href="../public/css/styles/sponsors.css">
     <link rel="stylesheet" href="../public/css/styles/header.css">
     <link rel="stylesheet" href="../public/css/dist/output.css">
     <!-- Intégration du CDN Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
-<?php require_once '../includes/header.php';?>
 
-        <!-- En-tête -->
+<body>
+    <?php require_once '../includes/header.php'; ?>
+
+    <!-- En-tête -->
     <div class="newdiv">
         <h1>Nos Sponsors</h1>
         <p class="subtitle">Ils nous font confiance et soutiennent l'innovation</p>
@@ -53,7 +55,7 @@
                     <i data-lucide="trophy" class="icon"></i> 25,000,000 FCFA
                 </p>
                 <ul class="advantages">
-                <h1>Avantages</h1>
+                    <h1>Avantages</h1>
                     <li><i data-lucide="check-circle" class="icon"></i> Logo sur site web</li>
                     <li><i data-lucide="check-circle" class="icon"></i> Stand partagé</li>
                     <li><i data-lucide="check-circle" class="icon"></i> Mentoring</li>
@@ -72,7 +74,7 @@
                     <i data-lucide="trophy" class="icon"></i> 10,000,000 FCFA
                 </p>
                 <ul class="advantages">
-                <h1>Avantages</h1>
+                    <h1>Avantages</h1>
                     <li><i data-lucide="check-circle" class="icon"></i> Logo sur site web</li>
                     <li><i data-lucide="check-circle" class="icon"></i> Présentation flash</li>
                     <li><i data-lucide="check-circle" class="icon"></i> Goodies</li>
@@ -84,15 +86,15 @@
 
         </div>
     </section>
-    
-    <section class="innov">
-     <div class="entete">
-        <h1>Devenez Sponsor</h1>
-        <p>Rejoignez-nous dans notre mission de soutenir l'innovation et découvrez les talents de demain</p>
-        <button class="down">Télécharger la brochure sponsoring</button>
-    </div>
 
-    <div class="cards">
+    <section class="innov">
+        <div class="entete">
+            <h1>Devenez Sponsor</h1>
+            <p>Rejoignez-nous dans notre mission de soutenir l'innovation et découvrez les talents de demain</p>
+            <button class="down">Télécharger la brochure sponsoring</button>
+        </div>
+
+        <div class="cards">
             <div class="card">
                 <i data-lucide="trophy" class="alias"></i>
                 <h4>Visibilté Premium</h4>
@@ -114,9 +116,6 @@
         </div>
     </section>
 
-    <script>
-        lucide.createIcons();
-    </script>
-
 </body>
+
 </html>

@@ -1,7 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-    // INITIALISATION DES ICONES LUCIDE
-    lucide.createIcons();
-
 
     // --- Gestion des filtres dans le sidebar ---
 

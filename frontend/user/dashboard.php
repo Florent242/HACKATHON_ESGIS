@@ -263,7 +263,7 @@
 
         </section>
     </main>
-    <?php require_once '../includes/footer.php'; ?>
+    <?php require_once '../includes/user/footer.php'; ?>
 </body>
 
 </html>

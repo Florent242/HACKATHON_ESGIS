@@ -2,8 +2,9 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-$errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -239,12 +240,6 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
         </div>
         <br>
     </div>
-
-    <script>
-        window.addEventListener("DOMContentLoaded", function() {
-            lucide.createIcons();
-        });
-    </script>
 
 </body>
 

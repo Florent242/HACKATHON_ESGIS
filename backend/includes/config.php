@@ -2,7 +2,61 @@
 if (!defined('CONFIG_INCLUDED')) {
     define('CONFIG_INCLUDED', true);
 }
+// Configuration des routes par rôle
+define('ROLE_REDIRECTIONS', [
+    'admin' => '/HACKATHON_ESGIS/public/admin',
+    'organizer' => '/HACKATHON_ESGIS/public/admin/hackathon',
+    'participant' => '/HACKATHON_ESGIS/public/user',
+    'guest' => '/HACKATHON_ESGIS/public/auth'
+]);
 
+// Routes publiques qui ne nécessitent pas d'authentification
+define('PUBLIC_ROUTES', [
+    '/HACKATHON_ESGIS/public/auth', // Page d'authentification
+    '/HACKATHON_ESGIS/public/auth/login', // Connexion
+    '/HACKATHON_ESGIS/public/auth/register', // Inscription
+    '/HACKATHON_ESGIS/public/auth/forgot-password', // Mot de passe oublié
+    '/HACKATHON_ESGIS/public/auth/reset-password', // Réinitialisation du mot de passe
+    '/HACKATHON_ESGIS/public/auth/verify-email', // Vérification de l'email
+    '/HACKATHON_ESGIS/public/auth/confirm-email', // Confirmation de l'email
+    '/HACKATHON_ESGIS/public/auth/verify-otp', // Vérification du code OTP
+    '/HACKATHON_ESGIS/public/auth/send-otp', // Envoi du code OTP
+    '/HACKATHON_ESGIS/public/auth/logout', // Déconnexion
+    '/HACKATHON_ESGIS/public/api/auth', // API d'authentification
+    '/HACKATHON_ESGIS/public/api/auth/register', // API d'inscription
+    '/HACKATHON_ESGIS/public/api/auth/login', // API de connexion
+    '/HACKATHON_ESGIS/public/api/auth/forgot-password', // API de récupération de mot de passe
+    '/HACKATHON_ESGIS/public/api/auth/reset-password', // API de réinitialisation de mot de passe
+    '/HACKATHON_ESGIS/public/api/auth/verify-email', // API de vérification d'email
+    '/HACKATHON_ESGIS/public/api/auth/confirm-email', // API de confirmation d'email
+    '/HACKATHON_ESGIS/public/api/auth/verify-otp', // API de vérification OTP
+    '/HACKATHON_ESGIS/public/api/auth/send-otp', // API d'envoi OTP
+    '/HACKATHON_ESGIS/public/api/auth/logout', // API de déconnexion
+    '/HACKATHON_ESGIS/public/api/auth/refresh-token', // API de rafraîchissement du token
+    '/HACKATHON_ESGIS/public/api/auth/validate-token', // API de validation du token
+    '/HACKATHON_ESGIS/public/api/public', // API publique
+    '/HACKATHON_ESGIS/public/api/public/*', // Toutes les routes API publiques
+    '/HACKATHON_ESGIS/public/assets/*', // Accès aux assets (images, css, js)
+    '/HACKATHON_ESGIS/public/docs', // Documentation
+    '/HACKATHON_ESGIS/public/docs/*', // Documentation
+    '/HACKATHON_ESGIS/public/about', // À propos
+    '/HACKATHON_ESGIS/public/contact', // Contact
+    '/HACKATHON_ESGIS/public/privacy', // Politique de confidentialité
+    '/HACKATHON_ESGIS/public/terms', // Conditions d'utilisation
+    '/HACKATHON_ESGIS/public/faq', // FAQ
+    '/HACKATHON_ESGIS/public/health-check', // Vérification de santé
+    '/HACKATHON_ESGIS/public/error', // Page d'erreur
+    '/HACKATHON_ESGIS/public/error/*', // Toutes les pages d'erreur
+    '/HACKATHON_ESGIS/public/robots.txt', // Fichier robots.txt
+    '/HACKATHON_ESGIS/public/sitemap.xml', // Sitemap
+    '/HACKATHON_ESGIS/public/favicon.ico', // Favicon
+    '/HACKATHON_ESGIS/public/opensearch.xml', // OpenSearch
+    '/HACKATHON_ESGIS/public/apple-touch-icon.png', // Icône Apple Touch
+    '/HACKATHON_ESGIS/public/.well-known/*' // Routes .well-known
+]);
+
+// Durée de vie des sessions (en secondes)
+define('SESSION_LIFETIME', 3600); // 1 heure
 // Configuration de la base de données SQLite
 define('DB_FILE', __DIR__ . '/../database/hackathon.db');
 

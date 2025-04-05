@@ -17,9 +17,9 @@ const DASHBOARD_ELEMENTS = {
 };
 
 // Fonction utilitaire pour gérer les erreurs
-function handleError(title = 'Une erreur est survenue', error, type = 'error') {
+function handleError(title = 'Une erreur est survenue', error = null, type = 'error') {
     console.error(title, error);
-    setFlashMessage(type,title, error);
+    setFlashMessage(type,title, error.message);
     // Vous pouvez ajouter ici une gestion d'erreur plus élaborée (affichage d'une modale, etc.)
 }
 
@@ -28,7 +28,9 @@ async function apiRequest(endpoint, options = {}) {
     try {
         const headers = {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+
         };
 
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -41,7 +43,7 @@ async function apiRequest(endpoint, options = {}) {
         }
 
         const data = await response.json();
-        return data;  // ✅ Retourne bien les données récupérées
+        return data;  // Retourne bien les données récupérées
     } catch (error) {
         handleError('Erreur lors de la requête API', error, 'error');
         throw error;
@@ -59,7 +61,7 @@ async function getUserId() {
         });
 
         if (!response.ok) {
-            throw new Error('Non authentifié. Dashboard');
+            throw new Error('Utilisateur non authentifié. Dashboard');
         }
 
         const data = await response.json();
@@ -280,8 +282,7 @@ function setupEventListeners() {
 
 // Fonction pour mettre en place les écouteurs d'événements
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialisation de Lucide
-    lucide.createIcons();
+
 
     // Ajout du comportement de défilement en douceur
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {

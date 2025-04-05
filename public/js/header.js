@@ -1,6 +1,3 @@
-// lucide initiating
-lucide.createIcons();
-
 // Start Challenge button click handler
 if (document.querySelector('.start-challenge')) {
     document.querySelector('.start-challenge').addEventListener('click', () => {
