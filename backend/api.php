@@ -377,21 +377,42 @@ try {
                                 $controller->getUserTeams($id);
                                 break;
                                 case 'ongoing-challenges':
+
                                     // Un utilisateur peut voir ses propres défis en cours ou un admin peut voir ceux des autres
                                     if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                         jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                                     }
-                                    $controller->getOngoingChallenges($id);
+                                    // Before calling $controller->getOngoingChallenges($id);
+                                    if (!method_exists($controller, 'getOngoingChallenges')) {
+                                        jsonResponse(['success' => false, 'error' => 'Endpoint not implemented'], 501);
+                                        return;
+                                    }
+                                    $controller->getOngoingChallenges($id, $token);
                                     break;
+                                case 'current-challenges':
+                                        // Vérification d'autorisation (similaire à ongoing-challenges)
+                                        if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                            jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                        }
+                                        // **Assurez-vous que vous avez une méthode `getCurrentChallenges()` dans UserController**
+                                        $controller->getCurrentChallenges($id, $token);
+                                        $controller->getUserHackathons($îd);
+                                        break;
                                 
-                                case 'recent-activity':
+                                case 'recent-activities':
                                     // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
                                     if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                         jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                                     }
-                                    $controller->getRecentActivity($id);
+                                    $controller->getRecentActivities($id, $token);
                                     break;
-                                
+                                case 'next-event':
+                                    // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
+                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    }
+                                    $controller->getNextEvent($id, $token);
+                                    break;                                    
                             default:
                                 if (isAjaxRequest()) {
                                     jsonResponse(['success' => false, 'error' => 'Action non reconnue'], 404);

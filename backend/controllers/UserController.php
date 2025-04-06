@@ -5,7 +5,6 @@ namespace Auth\Controller;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
-
 use Auth\Model\Participant; // Ajoutez cette ligne
 use Auth\Model\User; // Assurez-vous d'importer le modèle User
 use Auth\Model\Database; // Assurez-vous d'importer le modèle Database
@@ -34,8 +33,6 @@ if (!class_exists('Auth\Model\TokenManager')) {
 if (!class_exists('Auth\Model\Database')) {
     require_once __DIR__ . '/../models/Database.php';
 }
-
-
 
 class UserController extends Controller
 {
@@ -504,7 +501,73 @@ class UserController extends Controller
         echo json_encode($participant->getByUser($userId));
         exit;
     }
+    public function getOngoingChallenges($userId, $jwt)
+    {
+        header('Content-Type: application/json');
 
+        try {        
+            $currentUserId = $this->getUserIdFromJWT($jwt);
+            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                return;
+            }
+            $database = Database::getInstance();
+            $db = $database->getConnection();
+    
+            $stmt = $db->prepare("
+                SELECT c.* 
+                FROM challenges c
+                JOIN challenge_submissions cs ON c.id = cs.challenge_id
+                WHERE cs.user_id = :userId AND cs.status = 'pending'
+            ");
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            
+            $challenges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $challenges
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+ * Récupère l'activité récente de l'utilisateur
+ * @param int $userId ID de l'utilisateur
+ */
+
+
+    /**
+     * Récupère les défis en cours d'un utilisateur
+     * @param int $userId ID de l'utilisateur
+     */
+    public function getCurrentChallenges($userId, $jwt)
+    {
+        $currentUserId = $this->getUserIdFromJWT($jwt);
+        if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+            $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+            return;
+        }
+        $challenges = $this->user->getCurrentChallenges($userId);
+        $this->jsonResponse(['success' => true, 'data' => $challenges]);
+    }
+    
+    public function getRecentActivities($userId, $jwt)
+    {
+        $currentUserId = $this->getUserIdFromJWT($jwt);
+        if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+            $this->jsonResponse(['success' => false, 'error' => 'Non autorisé'], 403);
+            return;
+        }
+        $activities = $this->user->getRecentActivities($userId);
+        $this->jsonResponse(['success' => true, 'data' => $activities]);
+    }
     /**
      * Récupère les équipes de l'utilisateur et renvoie un JSON
      */
@@ -624,43 +687,6 @@ private function getUserRecentActivity($userId) {
     // Logique pour récupérer l'activité récente de l'utilisateur (ex: soumissions, validations)
     return []; // Exemple
 }
-public function getOngoingChallenges($userId)
-{
-    // Assurez-vous que l'utilisateur authentifié est autorisé à voir ces informations
-    if ($_SESSION['user_id'] != $userId && !hasRole('admin')) {
-        $this->jsonResponse(['success' => false, 'error' => 'Non autorisé'], 403);
-        return;
-    }
-
-    // Logique pour récupérer les défis en cours de l'utilisateur
-    // Exemple (à adapter à votre modèle de données) :
-    $challenges = $this->user->getOngoingChallenges($userId);
-
-    $this->jsonResponse(['success' => true, 'data' => $challenges]);
-}
-
-public function getRecentActivity($userId)
-{
-    // Assurez-vous que l'utilisateur authentifié est autorisé à voir ces informations
-    if ($_SESSION['user_id'] != $userId && !hasRole('admin')) {
-        $this->jsonResponse(['success' => false, 'error' => 'Non autorisé'], 403);
-        return;
-    }
-
-    // Logique pour récupérer l'activité récente de l'utilisateur
-    // Exemple (à adapter à votre modèle de données) :
-    $activity = $this->user->getRecentActivity($userId);
-
-    $this->jsonResponse(['success' => true, 'data' => $activity]);
-}
-/****
- * 
- * 
- * 
- * 
- * 
- */
-
     /** */
 
     public function getUserIdFromJWT($jwt)
@@ -1781,5 +1807,9 @@ public function getHackers()
      * Obtenir un jeton CSRF
      *
      * @return string Jeton CSRF
+     */
+    /**
+     * Récupère l'ID de l'utilisateur actuellement connecté
+     * @return int|null ID de l'utilisateur ou null si non authentifié
      */
 }
