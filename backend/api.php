@@ -419,13 +419,6 @@ try {
                                         jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                                     }
                                     $controller->getNotifications($id, $token);
-                                    break; 
-                                case 'dashboard-data':
-                                    // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
-                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                    }
-                                    $controller->getUserDashboardData($id, $token);
                                     break;                                                                         
                             default:
                                 if (isAjaxRequest()) {

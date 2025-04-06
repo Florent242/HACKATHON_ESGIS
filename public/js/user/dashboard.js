@@ -245,8 +245,7 @@ async function initializeDashboard() {
         await Promise.all([
             loadUserInfo(userId),
             loadStatistics(),
-            loadNotifications(),
-            loadNextEvent()
+            // loadNotifications()
         ]);
 
         // Mettre en place les écouteurs d'événements
@@ -286,7 +285,6 @@ async function loadStatistics() {
         handleError('Erreur lors de la récupération des statistiques', error, 'error');
     }
 }*/
-
 async function loadStatistics() {
     try {
         const userId = await getUserId();
@@ -294,57 +292,24 @@ async function loadStatistics() {
             console.error('Utilisateur non authentifié');
             return;
         }
-
-        const data = await apiRequest(`/users/${userId}/dashboard-data`); // Appel au nouvel endpoint
-
-        if (data.success && data.data) {
-            console.log('Dashboard Data:', data.data);
-
-            // Mettre à jour les statistiques
-            updateDOM({
-                devChallenges: DASHBOARD_ELEMENTS.stats.devChallenges,
-                hackingChallenges: DASHBOARD_ELEMENTS.stats.hackingChallenges,
-                devChallengesOn: DASHBOARD_ELEMENTS.stats.devChallengesOn,
-                hackingChallengesValidate: DASHBOARD_ELEMENTS.stats.hackingChallengesValidate,
-                submittedProjects: DASHBOARD_ELEMENTS.stats.submittedProjects,
-                totalPoints: DASHBOARD_ELEMENTS.stats.totalPoints,
-                // Vous devrez peut-être ajouter des éléments HTML pour afficher ces nouvelles données
-                // devStat: DASHBOARD_ELEMENTS.stats.devStat,
-                hackingStat: DASHBOARD_ELEMENTS.stats.hackingStat,
-                totalPointsStat: DASHBOARD_ELEMENTS.stats.totalPointsStat,
-                validated_flags: '#validated-flags-count', // Exemple de sélecteur pour les flags validés
-                points_change: '#points-change', // Exemple de sélecteur pour le changement de points
-            }, { data: {
-                'number-dev-challenges': data.data.dev_challenges,
-                'number-hacking-challenges': data.data.hacking_challenges,
-                'number-dev-challenges-on': data.data.ongoing_dev_challenges,
-                'number-hacking-challenges-validate': 0, // Vous devrez peut-être calculer ça côté JS si ce n'est pas direct
-                'number-submitted-projects': data.data.submitted_projects,
-                'total-points': data.data.total_points,
-                'validated_flags_count': data.data.validated_flags,
-                'points_change': data.data.points_change,
-                // Vous devrez peut-être calculer les pourcentages de stat côté JS avec les données brutes
-                // 'dev-stat': ...,
-                // 'hacking-stat': ...,
-                // 'total-points-stat': ...,
-            }});
-
-            // Mettre à jour les activités récentes
-            updateRecentActivities(data.data.recent_activity || []);
-
-            // Vous n'avez plus besoin d'appels séparés pour les défis en cours et les activités récentes ici
-            // car ils sont inclus dans la réponse de /dashboard-data
-            // const challengesResponse = await apiRequest(`/users/${userId}/current-challenges`);
-            // updateCurrentChallenges(challengesResponse.data || []);
-            // const activitiesResponse = await apiRequest(`/users/${userId}/recent-activities`);
-            // updateRecentActivities(activitiesResponse.data || []);
-
-        } else {
-            handleError('Erreur lors de la récupération des données du dashboard', data.error);
-        }
-
+        
+        // Charge les statistiques
+        const statsResponse = await apiRequest(`/users/${userId}/stats`);
+        console.log('Stats:', statsResponse);
+        updateDOM(DASHBOARD_ELEMENTS.stats, statsResponse);
+        
+        // Charge les défis en cours
+        const challengesResponse = await apiRequest(`/users/${userId}/current-challenges`);
+        console.log('Défis en cours:', challengesResponse);
+        updateCurrentChallenges(challengesResponse.data || []);
+        
+        // Charge les activités récentes
+        const activitiesResponse = await apiRequest(`/users/${userId}/recent-activities`);
+        console.log('Activités récentes:', activitiesResponse);
+        updateRecentActivities(activitiesResponse.data || []);
+        
     } catch (error) {
-        handleError('Erreur lors de la récupération des données du dashboard', error);
+        handleError('Erreur lors de la récupération des données du dashboard', error, 'error');
     }
 }
 

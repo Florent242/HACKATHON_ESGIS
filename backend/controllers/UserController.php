@@ -754,17 +754,12 @@ private function calculatePointsChange($userId)
 
     private function getUserRecentActivity($userId, $limit = 5)
     {
-        $query = "SELECT 'submission' as type, s.created_at, c.title as activity_text
-                  FROM submissions s
-                  INNER JOIN challenges c ON s.challenge_id = c.id
-                  WHERE s.user_id = :user_id
-                  UNION ALL
-                  SELECT 'flag_validated' as type, vf.validated_at as created_at, f.name as activity_text
-                  FROM validated_flags vf
-                  INNER JOIN flags f ON vf.flag_id = f.id
-                  WHERE vf.user_id = :user_id
-                  ORDER BY created_at DESC
-                  LIMIT :limit";
+        $query = "SELECT cs.submission_value, c.title AS challenge_title, cs.created_at 
+        FROM challenge_submissions cs
+        INNER JOIN challenges c ON cs.challenge_id = c.id
+        WHERE cs.user_id = :user_id
+        ORDER BY cs.created_at DESC
+        LIMIT 5"; 
         $stmt = $this->db->prepare($query);
         $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
         $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
@@ -2021,4 +2016,4 @@ public function getUserChallengeIds($userId) {
             ], 500);
         }
     }
-    }
+}
