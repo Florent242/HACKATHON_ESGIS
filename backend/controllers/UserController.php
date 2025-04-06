@@ -492,8 +492,13 @@ class UserController extends Controller
     /**
      * Récupère les hackathons de l'utilisateur et renvoie un JSON
      */
-    public function getUserHackathons($userId)
+    public function getUserHackathons($userId, $jwt)
     {
+        $currentUserId = $this->getUserIdFromJWT($jwt);
+        if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+            $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+            return;
+        }
         $database = Database::getInstance();
         $db = $database->getConnection();
         $participant = new Participant($db);

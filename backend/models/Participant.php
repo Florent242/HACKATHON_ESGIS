@@ -1,9 +1,12 @@
 <?php
 namespace Auth\Model;
+use Auth\Controller\Controller;
 use Exception;
 use PDOException;
 use PDO;
-class Participant {
+use Auth\Controller\UserController;
+
+class Participant{
     private $db;
     private $table = 'participants';
 
@@ -140,10 +143,16 @@ class Participant {
             throw new Exception("Erreur lors de la récupération des participants : " . $e->getMessage());
         }
     }
+    
 
     // Récupérer les hackathons d'un participant
-    public function getByUser($userId) {
+    public function getByUser($userId, $jwt) {
         try {
+            $currentUserId = $this->getUserIdFromJWT($jwt);
+            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                return;
+            }
             $sql = "SELECT p.*, h.title as hackathon_title,
                     h.start_date, h.end_date, h.status as hackathon_status,
                     e.id as equipe_id, e.name as equipe_name

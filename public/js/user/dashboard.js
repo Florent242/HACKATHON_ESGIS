@@ -115,6 +115,7 @@ function updateRecentActivities(activities) {
  */
 function updateActivityItem(element, activity) {
     const icon = element.querySelector('.activity-icon');
+    
     if (icon) {
         // Vous pouvez personnaliser l'icône en fonction du type d'activité
         const iconMap = {
@@ -188,6 +189,7 @@ async function getUserId() {
 
 
 // Fonction pour mettre à jour les éléments du DOM
+/*
 function updateDOM(elements, data) {
     Object.entries(elements).forEach(([key, selector]) => {
         const elements = document.querySelectorAll(selector);
@@ -196,6 +198,26 @@ function updateDOM(elements, data) {
                 element.textContent = data.data[key] || 'N/A';
             });
         }else{
+            console.error('Éléments non trouvés', selector);
+        }
+    });
+}*/
+function updateDOM(elements, data) {
+    Object.entries(elements).forEach(([key, selector]) => {
+        const elements = document.querySelectorAll(selector);
+        if (elements.length > 0) {
+            elements.forEach(element => {
+                let value = 'N/A';
+                if (data && data.data) {
+                    if (data.data.stats && data.data.stats[key]) {
+                        value = data.data.stats[key];
+                    } else if (data.data[key]) {
+                        value = data.data[key];
+                    }
+                }
+                element.textContent = value;
+            });
+        } else {
             console.error('Éléments non trouvés', selector);
         }
     });
