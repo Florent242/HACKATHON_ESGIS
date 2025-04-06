@@ -360,7 +360,7 @@ try {
                                 if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                     jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                                 }
-                                $controller->getUserHackathons($id);
+                                $controller->getUserHackathons($id, $token);
                                 break;
                                 
                             case 'teams':
@@ -396,7 +396,7 @@ try {
                                         }
                                         // **Assurez-vous que vous avez une méthode `getCurrentChallenges()` dans UserController**
                                         $controller->getCurrentChallenges($id, $token);
-                                        $controller->getUserHackathons($îd);
+                                        $controller->getUserHackathons($îd, $token);
                                         break;
                                 
                                 case 'recent-activities':
@@ -412,7 +412,21 @@ try {
                                         jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                                     }
                                     $controller->getNextEvent($id, $token);
-                                    break;                                    
+                                    break; 
+                                case 'notifications':
+                                    // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
+                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    }
+                                    $controller->getNotifications($id, $token);
+                                    break; 
+                                case 'dashboard-data':
+                                    // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
+                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    }
+                                    $controller->getUserDashboardData($id, $token);
+                                    break;                                                                         
                             default:
                                 if (isAjaxRequest()) {
                                     jsonResponse(['success' => false, 'error' => 'Action non reconnue'], 404);

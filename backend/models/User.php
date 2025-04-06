@@ -495,4 +495,21 @@ public function findByEmail($email) {
             return [];
         }
     }
+
+// In User.php
+public function getChallengeIdsForUser($userId) {
+    $query = "
+        SELECT DISTINCT c.id 
+        FROM challenges c
+        -- JOIN tables as needed to define the relationship between users and challenges
+        -- For example, if users submit solutions:
+        JOIN challenge_submissions cs ON c.id = cs.challenge_id
+        WHERE cs.user_id = :user_id
+    ";
+    $stmt = $this->db->prepare($query);
+    $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_COLUMN); // Fetch IDs as a simple array
+}
+
 }

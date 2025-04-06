@@ -146,13 +146,8 @@ class Participant{
     
 
     // Récupérer les hackathons d'un participant
-    public function getByUser($userId, $jwt) {
+    public function getByUser($userId) {
         try {
-            $currentUserId = $this->getUserIdFromJWT($jwt);
-            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
-                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                return;
-            }
             $sql = "SELECT p.*, h.title as hackathon_title,
                     h.start_date, h.end_date, h.status as hackathon_status,
                     e.id as equipe_id, e.name as equipe_name

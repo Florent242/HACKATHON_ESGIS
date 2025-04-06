@@ -126,34 +126,34 @@ class UserController extends Controller
         return $tokenManager->validateToken($token);
     }
 
-    public function update($id)
+    public function update($id, $jwt)
     {
         try {
             $this->validateMethod('POST');
 
+            $currentUserId = $this->getUserIdFromJWT($jwt);
+
             // Vérifier si l'utilisateur modifie son propre profil ou est admin
-            if ($_SESSION['user_id'] != $id && !hasRole('admin')) {
-                throw new Exception('Non autorisé');
+            if ($currentUserId != $id && !$this->isAdmin($currentUserId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Non autorisé'], 403);
+                return;
             }
 
-            $updatableFields = ['nom', 'prenom', 'email', 'role'];
+            $updatableFields = ['username', 'fullname', 'school', 'email', 'special_comp', 'idea_project', 'study_level', 'number', 'bio', 'github_url', 'linkedin_url'];
             $data = $this->filterData($_POST, $updatableFields);
 
             if (empty($data)) {
-                throw new Exception('Aucune donnée à mettre à jour');
+                $this->jsonResponse(['success' => false, 'error' => 'Aucune donnée à mettre à jour'], 400);
+                return;
             }
 
-            // Si l'email est modifié, vérifier qu'il n'existe pas déjà
+            // Si l'email est modifié, vérifier qu'il n'existe pas déjà pour un autre utilisateur
             if (isset($data['email'])) {
                 $existingUser = $this->user->findByEmail($data['email']);
-                if ($existingUser && $existingUser['id'] != $id) {
-                    throw new Exception('Cette adresse email est déjà utilisée. Mise à jour annulée !');
+                if ($existingUser && (int) $existingUser['id'] !== (int) $id) {
+                    $this->jsonResponse(['success' => false, 'error' => 'Cette adresse email est déjà utilisée. Mise à jour annulée !'], 400);
+                    return;
                 }
-            }
-
-            // Seul l'admin peut changer le rôle
-            if (isset($data['role']) && !hasRole('admin')) {
-                unset($data['role']);
             }
 
             $data['updated_at'] = date('Y-m-d H:i:s');
@@ -163,6 +163,7 @@ class UserController extends Controller
                 'success' => true,
                 'message' => 'Profil mis à jour avec succès'
             ]);
+
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
@@ -171,14 +172,17 @@ class UserController extends Controller
         }
     }
 
-    public function updatePassword($id)
+    public function updatePassword($id, $jwt)
     {
         try {
             $this->validateMethod('POST');
 
+            $currentUserId = $this->getUserIdFromJWT($jwt);
+
             // Vérifier si l'utilisateur modifie son propre mot de passe
-            if ($_SESSION['user_id'] != $id) {
-                throw new Exception('Non autorisé');
+            if ($currentUserId != $id) {
+                $this->jsonResponse(['success' => false, 'error' => 'Non autorisé'], 403);
+                return;
             }
 
             $requiredFields = ['old_password', 'new_password'];
@@ -186,8 +190,13 @@ class UserController extends Controller
 
             // Vérifier l'ancien mot de passe
             $user = $this->user->find($id);
+            if (!$user) {
+                $this->jsonResponse(['success' => false, 'error' => 'Utilisateur non trouvé'], 404);
+                return;
+            }
             if (!password_verify($_POST['old_password'], $user['password'])) {
-                throw new Exception('Ancien mot de passe incorrect');
+                $this->jsonResponse(['success' => false, 'error' => 'Ancien mot de passe incorrect'], 400);
+                return;
             }
 
             // Hasher le nouveau mot de passe
@@ -202,6 +211,7 @@ class UserController extends Controller
                 'success' => true,
                 'message' => 'Mot de passe mis à jour avec succès'
             ]);
+
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
@@ -339,6 +349,35 @@ class UserController extends Controller
     /**
      * Récupère les statistiques de l'utilisateur et renvoie un JSON
      */
+    public function getUserDashboardData($userId, $jwt)
+    {
+        header('Content-Type: application/json');
+
+        try {
+            $currentUserId = $this->getUserIdFromJWT($jwt);
+            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                return;
+            }
+
+            $data = [
+                'validated_flags' => $this->countUserValidatedFlags($userId),
+                'dev_challenges' => $this->countUserChallengesByType($userId, 'development'), // Adaptez le type
+                'ongoing_dev_challenges' => $this->countUserOngoingChallengesByType($userId, 'development'), // Adaptez le type
+                'hacking_challenges' => $this->countUserChallengesByType($userId, 'hacking'), // Adaptez le type
+                'ongoing_hacking_challenges' => $this->countUserOngoingChallengesByType($userId, 'hacking'), // Adaptez le type
+                'submitted_projects' => $this->countUserSubmittedProjects($userId),
+                'total_points' => $this->getUserTotalPoints($userId),
+                'points_change' => $this->calculatePointsChange($userId),
+                'recent_activity' => $this->getUserRecentActivity($userId),
+            ];
+
+            $this->jsonResponse(['success' => true, 'data' => $data]);
+
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
     public function getUserStats($userId)
 {
     header('Content-Type: application/json');
@@ -424,7 +463,7 @@ class UserController extends Controller
 
         // Projets soumis
         $projectsQuery = $db->prepare("
-            SELECT COALESCE(COUNT(*), 0) as submitted
+            SELECT COUNT(*) as submitted
             FROM projects 
             WHERE status = 'completed' 
             AND team_id IN (
@@ -468,7 +507,7 @@ class UserController extends Controller
 
             // 3. Compter les notifications non lues
             $unreadQuery = $db->prepare("
-                SELECT COUNT(*)
+                SELECT COUNT(*) 
                 FROM notifications
                 WHERE user_id = ? AND read_status = 0
             ");
@@ -499,12 +538,17 @@ class UserController extends Controller
             $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
             return;
         }
+        
         $database = Database::getInstance();
         $db = $database->getConnection();
         $participant = new Participant($db);
 
-        echo json_encode($participant->getByUser($userId));
-        exit;
+        $hackathons = $participant->getByUser($userId);
+        
+        $this->jsonResponse([
+            'success' => true, 
+            'data' => $hackathons
+        ]);
     }
     public function getOngoingChallenges($userId, $jwt)
     {
@@ -656,7 +700,7 @@ private function countUserValidatedFlags($userId) {
 
 private function countUserChallengesByType($userId, $type) {
     $query = "SELECT COUNT(*) FROM challenges c
-              INNER JOIN user_challenges uc ON c.id = uc.challenge_id
+              INNER JOIN challenge_submissions uc ON c.id = uc.challenge_id
               WHERE uc.user_id = :user_id AND c.type = :type";
     $stmt = $this->db->prepare($query);
     $stmt->bindParam(':user_id', $userId);
@@ -665,9 +709,17 @@ private function countUserChallengesByType($userId, $type) {
     return (int) $stmt->fetchColumn();
 }
 
-private function countUserOngoingChallengesByType($userId, $type) {
+private function countUserOngoingChallengesByType($userId, $type)
+{
     // Adapter la requête en fonction de la façon dont vous suivez les défis en cours
-    return 0; // Exemple
+    $query = "SELECT COUNT(*) FROM challenges c
+              INNER JOIN user_progress up ON c.id = up.challenge_id
+              WHERE up.user_id = :user_id AND c.type = :type AND up.status = 'ongoing'";
+    $stmt = $this->db->prepare($query);
+    $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+    $stmt->bindParam(':type', $type, PDO::PARAM_STR);
+    $stmt->execute();
+    return (int) $stmt->fetchColumn();
 }
 
 private function countUserSubmittedProjects($userId) {
@@ -678,20 +730,47 @@ private function countUserSubmittedProjects($userId) {
     return (int) $stmt->fetchColumn();
 }
 
-private function getUserTotalPoints($userId) {
-    // Logique pour calculer le total des points de l'utilisateur
-    return 0; // Exemple
+
+private function getUserTotalPoints($userId)
+{
+    $query = "SELECT COALESCE(SUM(points), 0) FROM submissions WHERE user_id = :user_id AND status = 'validated'";
+    $stmt = $this->db->prepare($query);
+    $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+    $stmt->execute();
+    return (int) $stmt->fetchColumn();
 }
 
-private function calculatePointsChange($userId) {
-    // Logique pour calculer le changement de points depuis la dernière connexion
-    return 0; // Exemple
-}
+private function calculatePointsChange($userId)
+    {
+        $query = "SELECT COALESCE(SUM(s.points), 0)
+                  FROM submissions s
+                  INNER JOIN users u ON s.user_id = u.id
+                  WHERE s.user_id = :user_id AND s.created_at > u.last_login";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        return (int) $stmt->fetchColumn();
+    }
 
-private function getUserRecentActivity($userId) {
-    // Logique pour récupérer l'activité récente de l'utilisateur (ex: soumissions, validations)
-    return []; // Exemple
-}
+    private function getUserRecentActivity($userId, $limit = 5)
+    {
+        $query = "SELECT 'submission' as type, s.created_at, c.title as activity_text
+                  FROM submissions s
+                  INNER JOIN challenges c ON s.challenge_id = c.id
+                  WHERE s.user_id = :user_id
+                  UNION ALL
+                  SELECT 'flag_validated' as type, vf.validated_at as created_at, f.name as activity_text
+                  FROM validated_flags vf
+                  INNER JOIN flags f ON vf.flag_id = f.id
+                  WHERE vf.user_id = :user_id
+                  ORDER BY created_at DESC
+                  LIMIT :limit";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     /** */
 
     public function getUserIdFromJWT($jwt)
@@ -1304,6 +1383,61 @@ private function getUserRecentActivity($userId) {
         echo json_encode($result) !== false ? $result : [];
         exit;
     }
+    public function getNotifications($userId, $jwt)
+    {
+        header('Content-Type: application/json');
+
+        try {
+            $currentUserId = $this->getUserIdFromJWT($jwt);
+            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                return;
+            }
+
+            $database = Database::getInstance();
+            $db = $database->getConnection();
+
+            // Récupérer les notifications de l'utilisateur
+            $stmt = $db->prepare("
+                SELECT
+                    id,
+                    message,
+                    read_status,
+                    created_at
+                FROM notifications
+                WHERE user_id = :user_id
+                ORDER BY created_at DESC
+                LIMIT 10 -- Limiter le nombre de notifications récupérées
+            ");
+            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            $notificationsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Compter le nombre de notifications non lues
+            $unreadStmt = $db->prepare("
+                SELECT COUNT(*)
+                FROM notifications
+                WHERE user_id = :user_id AND read_status = 0
+            ");
+            $unreadStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $unreadStmt->execute();
+            $unreadCount = (int) $unreadStmt->fetchColumn();
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => [
+                    'list' => $notificationsList,
+                    'unread_count' => $unreadCount
+                ]
+            ]);
+
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
     /**
      * Récupère tous les challenges
@@ -1817,4 +1951,74 @@ public function getHackers()
      * Récupère l'ID de l'utilisateur actuellement connecté
      * @return int|null ID de l'utilisateur ou null si non authentifié
      */
-}
+
+    // In UserController.php
+public function getUserChallengeIds($userId) {
+    try {
+        // Authorization check (if needed)
+        // ...
+        $challengeIds = $this->user->getChallengeIdsForUser($userId);
+        $this->jsonResponse([
+            'success' => true,
+            'data' => $challengeIds
+        ]);
+    } catch (Exception $e) {
+        $this->jsonResponse([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}   public function getNextEvent($userId, $jwt)
+    {
+        header('Content-Type: application/json');
+
+        try {
+            $currentUserId = $this->getUserIdFromJWT($jwt);
+            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                return;
+            }
+
+            $database = Database::getInstance();
+            $db = $database->getConnection();
+
+            // Récupérer les hackathons auxquels l'utilisateur participe et qui sont futurs
+            $stmt = $db->prepare("
+                SELECT
+                    h.id,
+                    h.name,
+                    h.description,
+                    h.start_date,
+                    h.end_date,
+                    h.location
+                FROM hackathons h
+                INNER JOIN hackathon_participants hp ON h.id = hp.hackathon_id
+                WHERE hp.user_id = :user_id
+                  AND h.start_date > NOW()
+                ORDER BY h.start_date ASC
+                LIMIT 1
+            ");
+            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            $nextHackathon = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($nextHackathon) {
+                $this->jsonResponse([
+                    'success' => true,
+                    'data' => $nextHackathon
+                ]);
+            } else {
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => 'Aucun événement futur trouvé pour cet utilisateur.'
+                ]);
+            }
+
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    }
