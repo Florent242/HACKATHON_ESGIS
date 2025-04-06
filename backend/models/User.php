@@ -440,5 +440,76 @@ public function findByEmail($email) {
             return false;
         }
     }
-    
+    public function getCurrentChallenges(int $userId): array
+    {
+        try {
+            $query = "SELECT
+                c.id,
+                c.title,
+                c.description,
+                c.difficulty,
+                c.type,
+                c.points
+                -- Ajoutez d'autres colonnes de la table 'challenges' que vous souhaitez récupérer
+            FROM challenges c
+            INNER JOIN challenge_submission uc ON c.id = uc.challenge_id
+            WHERE uc.user_id = :userId AND uc.status = 'active'"; // Adaptez la condition 'status' si nécessaire
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération des défis en cours: ' . $e->getMessage());
+            return [];
+        }
+    }
+    public function getRecentActivities(int $userId): array
+    {
+        try {
+            $query = "SELECT
+                id,
+                action,
+                description,
+                data,
+                level,
+                created_at
+            FROM activity_logs
+            WHERE user_id = :userId
+            ORDER BY created_at DESC
+            LIMIT 10";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Traiter les données JSON dans la colonne 'data' (si nécessaire)
+            foreach ($activities as &$activity) {
+                if (!empty($activity['data'])) {
+                    $activity['data'] = json_decode($activity['data'], true);
+                }
+            }
+
+            return $activities;
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération de l\'activité récente: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+// In User.php
+public function getChallengeIdsForUser($userId) {
+    $query = "
+        SELECT DISTINCT c.id 
+        FROM challenges c
+        -- JOIN tables as needed to define the relationship between users and challenges
+        -- For example, if users submit solutions:
+        JOIN challenge_submissions cs ON c.id = cs.challenge_id
+        WHERE cs.user_id = :user_id
+    ";
+    $stmt = $this->db->prepare($query);
+    $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_COLUMN); // Fetch IDs as a simple array
+}
+
 }

@@ -728,4 +728,6 @@ class AuthController
             throw new Exception($e->getMessage());
         }
     }
+
+    
 }

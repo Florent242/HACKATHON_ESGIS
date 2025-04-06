@@ -39,8 +39,8 @@ class Ressource {
 
     public function find($id) {
         try {
-            $sql = "SELECT r.*, u.nom as created_by_nom, u.prenom as created_by_prenom,
-                    h.titre as hackathon_titre
+            $sql = "SELECT r.*, u.username as created_by_nom, u.prenom as created_by_prenom,
+                    h.name as hackathon_titre
                     FROM {$this->table} r
                     INNER JOIN users u ON r.created_by = u.id
                     INNER JOIN hackathons h ON r.hackathon_id = h.id
@@ -90,7 +90,7 @@ class Ressource {
 
     public function getByHackathon($hackathonId) {
         try {
-            $sql = "SELECT r.*, u.nom as created_by_nom, u.prenom as created_by_prenom
+            $sql = "SELECT r.*, u.username as created_by_nom, u.prenom as created_by_prenom
                     FROM {$this->table} r
                     INNER JOIN users u ON r.created_by = u.id
                     WHERE r.hackathon_id = :hackathon_id
@@ -106,7 +106,7 @@ class Ressource {
 
     public function search($hackathonId, $query, $type = null) {
         try {
-            $sql = "SELECT r.*, u.nom as created_by_nom, u.prenom as created_by_prenom
+            $sql = "SELECT r.*, u.username as created_by_nom, u.prenom as created_by_prenom
                     FROM {$this->table} r
                     INNER JOIN users u ON r.created_by = u.id
                     WHERE r.hackathon_id = :hackathon_id

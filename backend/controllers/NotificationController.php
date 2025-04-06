@@ -20,9 +20,10 @@ if(!class_exists('Controller')) {
 class NotificationController extends Controller {
     private $notification;
     private $db;
+    private $tokenManager;
 
-    public function __construct($db) {
-        parent::__construct();
+    public function __construct($db, $tokenManager) {
+        parent::__construct($tokenManager);
         $this->db = $db;
         $this->notification = new Notification($this->db);
     }
@@ -62,55 +63,11 @@ class NotificationController extends Controller {
         }
     }
 
-    /**
-     * Récupère toutes les notifications
-     */
-    public function getAll() {
-        try {
-            $this->validateMethod('GET');
-
-            // Vérifier si l'utilisateur a les droits d'administration
-            if (!hasRole('admin')) {
-                throw new Exception('Non autorisé - Réservé aux administrateurs');
-            }
-
-            $notifications = $this->notification->getAll();
-
-            $this->jsonResponse([
-                'success' => true,
-                'data' => $notifications
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
-        }
-    }
-
-    public function getByUser($userId) {
-        try {
-            $this->validateMethod('GET');
-
-            $notifications = $this->notification->getByUser($userId);
-
-            $this->jsonResponse([
-                'success' => true,
-                'data' => $notifications
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
-        }
-    }
-
-    /**
+    /** 
      * Récupère une notification par son ID
      * @param int $id ID de la notification
      */
-    public function get($id) {
+    public function getNotifications($id) {
         try {
             $this->validateMethod('GET');
 

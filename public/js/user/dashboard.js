@@ -13,9 +13,133 @@ const DASHBOARD_ELEMENTS = {
         devStat: '#dev-stat',
         hackingStat: '#hacking-stat',
         totalPointsStat: '#total-points-stat'
+    },
+    currentChallenges: {
+        container: '#current-challenges-container',
+        template: '.current-challenge-item' // Sélecteur du template existant dans le HTML
+    },
+    recentActivities: {
+        container: '#recent-activities-container',
+        template: '.recent-activity-item' 
+    },
+    nextEvent: {
+        container: '#next-event-container',
+        title: '.next-event-title',
+        description: '.next-event-description',
+        startDate: '.next-event-start-date',
+        endDate: '.next-event-end-date',
+        location: '.next-event-location',
+        noEventMessage: '#no-next-event'
     }
 };
+/**
+ * Met à jour la section des défis en cours
+ * @param {Array} challenges - Liste des défis en cours
+ */
+function updateCurrentChallenges(challenges) {
+    const container = document.querySelector(DASHBOARD_ELEMENTS.currentChallenges.container);
 
+    // Cache le conteneur si aucun défi
+    if (!challenges || challenges.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    // Affiche le conteneur
+    container.style.display = 'block';
+
+    // Supprime tous les défis existants sauf le premier (qui sert de template)
+    const items = container.querySelectorAll(DASHBOARD_ELEMENTS.currentChallenges.template);
+    for (let i = 1; i < items.length; i++) {
+        items[i].remove();
+    }
+
+    // Clone et remplit le template pour chaque défi (en commençant par l'index 1)
+    challenges.forEach((challenge, index) => {
+        if (index === 0) {
+            // Met à jour le premier élément (template)
+            updateChallengeItem(items[0], challenge);
+        } else {
+            // Clone et ajoute pour les autres défis
+            const clone = items[0].cloneNode(true);
+            updateChallengeItem(clone, challenge);
+            container.appendChild(clone);
+        }
+    });
+}
+
+/**
+ * Met à jour un élément de défi individuel
+ */
+function updateChallengeItem(element, challenge) {
+    element.querySelector('.challenge-title').textContent = challenge.title || 'Titre inconnu';
+    element.querySelector('.challenge-description').textContent = challenge.description || 'Description non disponible';
+    element.querySelector('.challenge-deadline').textContent = challenge.deadline ? `Date limite: ${challenge.deadline}` : 'Pas de date limite';
+    element.querySelector('.challenge-progress').textContent = challenge.progress || 'Progression inconnue';
+}
+
+/**
+ * Met à jour la section des activités récentes
+ * @param {Array} activities - Liste des activités récentes
+ */
+function updateRecentActivities(activities) {
+    const container = document.querySelector(DASHBOARD_ELEMENTS.recentActivities.container);
+    
+    if (!container) {
+        console.error('Conteneur des activités récentes non trouvé');
+        return;
+    }
+
+    // Cache le conteneur si aucune activité
+    if (!activities || activities.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+
+    // Affiche le conteneur
+    container.style.display = 'block';
+
+    // Supprime toutes les activités existantes sauf la première (qui sert de template)
+    const items = container.querySelectorAll(DASHBOARD_ELEMENTS.recentActivities.template);
+    for (let i = 1; i < items.length; i++) {
+        items[i].remove();
+    }
+
+    // Clone et remplit le template pour chaque activité (en commençant par l'index 1)
+    activities.forEach((activity, index) => {
+        if (index === 0) {
+            // Met à jour le premier élément (template)
+            updateActivityItem(items[0], activity);
+        } else {
+            // Clone et ajoute pour les autres activités
+            const clone = items[0].cloneNode(true);
+            updateActivityItem(clone, activity);
+            container.appendChild(clone);
+        }
+    });
+}
+
+/**
+ * Met à jour un élément d'activité individuelle
+ */
+function updateActivityItem(element, activity) {
+    const icon = element.querySelector('.activity-icon');
+    
+    if (icon) {
+        // Vous pouvez personnaliser l'icône en fonction du type d'activité
+        const iconMap = {
+            'trophy': 'trophy',
+            'file': 'file-text',
+            'code': 'code',
+            'flag': 'flag'
+        };
+        const iconName = iconMap[activity.type] || 'activity';
+        icon.setAttribute('data-lucide', iconName);
+    }
+    
+    element.querySelector('.activity-text').textContent = activity.text || 'Activité inconnue';
+    element.querySelector('.activity-time').textContent = activity.time || 'Récemment';
+}
 // Fonction utilitaire pour gérer les erreurs
 function handleError(title = 'Une erreur est survenue', error = null, type = 'error') {
     console.error(title, error);
@@ -74,6 +198,7 @@ async function getUserId() {
 
 
 // Fonction pour mettre à jour les éléments du DOM
+/*
 function updateDOM(elements, data) {
     Object.entries(elements).forEach(([key, selector]) => {
         const elements = document.querySelectorAll(selector);
@@ -82,6 +207,26 @@ function updateDOM(elements, data) {
                 element.textContent = data.data[key] || 'N/A';
             });
         }else{
+            console.error('Éléments non trouvés', selector);
+        }
+    });
+}*/
+function updateDOM(elements, data) {
+    Object.entries(elements).forEach(([key, selector]) => {
+        const elements = document.querySelectorAll(selector);
+        if (elements.length > 0) {
+            elements.forEach(element => {
+                let value = 'N/A';
+                if (data && data.data) {
+                    if (data.data.stats && data.data.stats[key]) {
+                        value = data.data.stats[key];
+                    } else if (data.data[key]) {
+                        value = data.data[key];
+                    }
+                }
+                element.textContent = value;
+            });
+        } else {
             console.error('Éléments non trouvés', selector);
         }
     });
@@ -125,6 +270,7 @@ async function loadUserInfo(userId) {
 }
 
 // Fonction pour charger les statistiques
+/*
 async function loadStatistics() {
     try {
         const userId = await getUserId();
@@ -137,6 +283,33 @@ async function loadStatistics() {
         updateDOM(DASHBOARD_ELEMENTS.stats, data);
     } catch (error) {
         handleError('Erreur lors de la récupération des statistiques', error, 'error');
+    }
+}*/
+async function loadStatistics() {
+    try {
+        const userId = await getUserId();
+        if (!userId) {
+            console.error('Utilisateur non authentifié');
+            return;
+        }
+        
+        // Charge les statistiques
+        const statsResponse = await apiRequest(`/users/${userId}/stats`);
+        console.log('Stats:', statsResponse);
+        updateDOM(DASHBOARD_ELEMENTS.stats, statsResponse);
+        
+        // Charge les défis en cours
+        const challengesResponse = await apiRequest(`/users/${userId}/current-challenges`);
+        console.log('Défis en cours:', challengesResponse);
+        updateCurrentChallenges(challengesResponse.data || []);
+        
+        // Charge les activités récentes
+        const activitiesResponse = await apiRequest(`/users/${userId}/recent-activities`);
+        console.log('Activités récentes:', activitiesResponse);
+        updateRecentActivities(activitiesResponse.data || []);
+        
+    } catch (error) {
+        handleError('Erreur lors de la récupération des données du dashboard', error, 'error');
     }
 }
 
@@ -174,6 +347,46 @@ async function loadNotifications() {
         handleError('Erreur lors de la récupération des notifications', error, 'error');
     }
 }
+// Fonction pour charger le prochain événement
+async function loadNextEvent() {
+    try {
+        const userId = await getUserId();
+        if (!userId) {
+            console.error('Utilisateur non authentifié');
+            return;
+        }
+
+        const data = await apiRequest(`/users/${userId}/next-event`);
+        const nextEventContainer = document.querySelector(DASHBOARD_ELEMENTS.nextEvent.container);
+        const noEventMessage = document.querySelector(DASHBOARD_ELEMENTS.nextEvent.noEventMessage);
+
+        if (data.success && data.data) {
+            // Afficher le conteneur et masquer le message d'absence d'événement
+            if (nextEventContainer) nextEventContainer.style.display = 'block';
+            if (noEventMessage) noEventMessage.style.display = 'none';
+
+            // Mettre à jour les informations de l'événement
+            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.title).textContent = data.data.name || 'Événement inconnu';
+            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.description).textContent = data.data.description || 'Description non disponible';
+            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.startDate).textContent = data.data.start_date ? formatDate(data.data.start_date) : 'Date de début inconnue';
+            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.endDate).textContent = data.data.end_date ? formatDate(data.data.end_date) : 'Date de fin inconnue';
+            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.location).textContent = data.data.location || 'Lieu inconnu';
+
+        } else {
+            // Masquer le conteneur et afficher le message d'absence d'événement
+            if (nextEventContainer) nextEventContainer.style.display = 'none';
+            if (noEventMessage) noEventMessage.style.display = 'block';
+        }
+
+    } catch (error) {
+        handleError('Erreur lors de la récupération du prochain événement', error, 'error');
+        const nextEventContainer = document.querySelector(DASHBOARD_ELEMENTS.nextEvent.container);
+        const noEventMessage = document.querySelector(DASHBOARD_ELEMENTS.nextEvent.noEventMessage);
+        if (nextEventContainer) nextEventContainer.style.display = 'none';
+        if (noEventMessage) noEventMessage.style.display = 'block';
+    }
+}
+
 
 // Fonction pour marquer une notification comme lue
 async function markNotificationAsRead(notificationId) {

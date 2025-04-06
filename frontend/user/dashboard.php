@@ -124,6 +124,7 @@
                             <i data-lucide="activity" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             <h3 class="text-lg font-medium">Défis en cours</h3>
                         </div>
+                    <div id="current-challenges-container">
                         <div class="flex flex-row justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                             <div class="flex flex-col justify-between gap-2">
                                 <h4 class="text-base font-semibold">API REST - Module d'authentification</h4>
@@ -144,26 +145,29 @@
                             </div>
                             <button class="cursor-pointer relative flex items-center justify-center mb-auto w-auto h-auto top-0 right-0 border-none text-white px-3 py-1 rounded-2xl transition delay-150 duration-300 ease-in-out hover:bg-gray-700 hover:shadow-md hover:shadow-gray-500/50">Soumettre le flag</button>
                         </div>
+                    </div>
                     </section>
 
                     <!-- Activité récente -->
                     <section class="fade-in flex flex-col gap-2 space-y-4 p-5 border border-gray-700 rounded-2xl shadow-xl card-bg">
                         <h2 class="text-lg font-medium">Activité récente</h2>
-                        <div class="flex flex-row justify-start items-center w-full card-bg rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
+                    <div id="recent-activities-container">
+                        <div class="flex flex-row justify-start items-center w-full card-bg rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1 recent-activity-item">
                             <i data-lucide="trophy" class="w-5 h-5 flex self-center stroke-current"></i>
                             <div>
-                                <p class="text-gray-400">Flag validé pour "XSS Challenge"</p>
-                                <p class="text-gray-500 text-sm">Il y a 3 heures</p>
+                                <p class="text-gray-400 activity-text">Flag validé pour "XSS Challenge"</p>
+                                <p class="text-gray-500 text-sm activity-time">Il y a 3 heures</p>
                             </div>
                         </div>
-                        <div class="flex flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
+                        <div class="flex flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1 recent-activity-item">
                             <i data-lucide="file-text" class="w-5 h-5 flex self-center stroke-current"></i>
                             <div>
-                                <p class="text-gray-400">Projet "API REST" mis à jour</p>
-                                <p class="text-gray-500 text-sm">Il y a 1 jour</p>
+                                <p class="text-gray-400 activity-text">Projet "API REST" mis à jour</p>
+                                <p class="text-gray-500 text-sm activity-time">Il y a 1 jour</p>
                             </div>
                         </div>
                         <button class="cursor-pointer flex items-center w-full justify-center text-center p-4 rounded-xl border-none text-white max-md:text-sm hover:bg-gray-700 hover:scale-103 transition duration-300 ease-in-out">Voir toutes les activités</button>
+                    </div>
                     </section>
                 </div>
 
