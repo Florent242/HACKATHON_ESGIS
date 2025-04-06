@@ -12,47 +12,48 @@ define('ROLE_REDIRECTIONS', [
 
 // Routes publiques qui ne nécessitent pas d'authentification
 define('PUBLIC_ROUTES', [
-    '/HACKATHON_ESGIS/public/auth', // Page d'authentification
-    '/HACKATHON_ESGIS/public/auth/login', // Connexion
-    '/HACKATHON_ESGIS/public/auth/register', // Inscription
-    '/HACKATHON_ESGIS/public/auth/forgot-password', // Mot de passe oublié
-    '/HACKATHON_ESGIS/public/auth/reset-password', // Réinitialisation du mot de passe
-    '/HACKATHON_ESGIS/public/auth/verify-email', // Vérification de l'email
-    '/HACKATHON_ESGIS/public/auth/confirm-email', // Confirmation de l'email
-    '/HACKATHON_ESGIS/public/auth/verify-otp', // Vérification du code OTP
-    '/HACKATHON_ESGIS/public/auth/send-otp', // Envoi du code OTP
-    '/HACKATHON_ESGIS/public/auth/logout', // Déconnexion
-    '/HACKATHON_ESGIS/public/api/auth', // API d'authentification
-    '/HACKATHON_ESGIS/public/api/auth/register', // API d'inscription
-    '/HACKATHON_ESGIS/public/api/auth/login', // API de connexion
-    '/HACKATHON_ESGIS/public/api/auth/forgot-password', // API de récupération de mot de passe
-    '/HACKATHON_ESGIS/public/api/auth/reset-password', // API de réinitialisation de mot de passe
-    '/HACKATHON_ESGIS/public/api/auth/verify-email', // API de vérification d'email
-    '/HACKATHON_ESGIS/public/api/auth/confirm-email', // API de confirmation d'email
-    '/HACKATHON_ESGIS/public/api/auth/verify-otp', // API de vérification OTP
-    '/HACKATHON_ESGIS/public/api/auth/send-otp', // API d'envoi OTP
-    '/HACKATHON_ESGIS/public/api/auth/logout', // API de déconnexion
-    '/HACKATHON_ESGIS/public/api/auth/refresh-token', // API de rafraîchissement du token
-    '/HACKATHON_ESGIS/public/api/auth/validate-token', // API de validation du token
-    '/HACKATHON_ESGIS/public/api/public', // API publique
-    '/HACKATHON_ESGIS/public/api/public/*', // Toutes les routes API publiques
-    '/HACKATHON_ESGIS/public/assets/*', // Accès aux assets (images, css, js)
-    '/HACKATHON_ESGIS/public/docs', // Documentation
-    '/HACKATHON_ESGIS/public/docs/*', // Documentation
-    '/HACKATHON_ESGIS/public/about', // À propos
-    '/HACKATHON_ESGIS/public/contact', // Contact
-    '/HACKATHON_ESGIS/public/privacy', // Politique de confidentialité
-    '/HACKATHON_ESGIS/public/terms', // Conditions d'utilisation
-    '/HACKATHON_ESGIS/public/faq', // FAQ
-    '/HACKATHON_ESGIS/public/health-check', // Vérification de santé
-    '/HACKATHON_ESGIS/public/error', // Page d'erreur
-    '/HACKATHON_ESGIS/public/error/*', // Toutes les pages d'erreur
-    '/HACKATHON_ESGIS/public/robots.txt', // Fichier robots.txt
-    '/HACKATHON_ESGIS/public/sitemap.xml', // Sitemap
-    '/HACKATHON_ESGIS/public/favicon.ico', // Favicon
-    '/HACKATHON_ESGIS/public/opensearch.xml', // OpenSearch
-    '/HACKATHON_ESGIS/public/apple-touch-icon.png', // Icône Apple Touch
-    '/HACKATHON_ESGIS/public/.well-known/*' // Routes .well-known
+    '/^\/HACKATHON_ESGIS\/public\/?$/', // Page visiteur
+    '/^\/HACKATHON_ESGIS\/public\/auth\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/login\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/register\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/forgot-password\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/reset-password\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/verify-email\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/confirm-email\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/verify-otp\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/send-otp\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/logout\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/register\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/login\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/forgot-password\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/reset-password\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/verify-email\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/confirm-email\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/verify-otp\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/send-otp\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/logout\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/refresh-token\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/validate-token\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/public\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/public\/.*$/',
+    '/^\/HACKATHON_ESGIS\/public\/assets\/.*$/',
+    '/^\/HACKATHON_ESGIS\/public\/docs\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/docs\/.*$/',
+    '/^\/HACKATHON_ESGIS\/public\/about\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/contact\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/privacy\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/terms\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/faq\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/health-check\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/error\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/error\/.*$/',
+    '/^\/HACKATHON_ESGIS\/public\/robots.txt$/',
+    '/^\/HACKATHON_ESGIS\/public\/sitemap.xml$/',
+    '/^\/HACKATHON_ESGIS\/public\/favicon.ico$/',
+    '/^\/HACKATHON_ESGIS\/public\/opensearch.xml$/',
+    '/^\/HACKATHON_ESGIS\/public\/apple-touch-icon.png$/',
+    '/^\/HACKATHON_ESGIS\/public\/.well-known\/.*$/'
 ]);
 
 // Durée de vie des sessions (en secondes)
@@ -83,7 +84,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Fonction pour générer un token CSRF
-function generateCsrfToken() {
+function generateCsrfToken()
+{
     if (!isset($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
@@ -91,43 +93,48 @@ function generateCsrfToken() {
 }
 
 // Fonction pour vérifier un token CSRF
-function verifyCsrfToken($token) {
+function verifyCsrfToken($token)
+{
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
 
 // Fonction pour vérifier si l'utilisateur est connecté
-function isAuthenticated() {
+function isAuthenticated()
+{
     return isset($_SESSION['user_id']);
 }
 
 // Fonction pour vérifier le rôle de l'utilisateur
-function hasRole($role) {
+function hasRole($role)
+{
     return isset($_SESSION['user_role']) && $_SESSION['user_role'] === $role;
 }
 
 // Fonction pour la réponse JSON
-function jsonResponse($data, $statusCode = 200) {
+function jsonResponse($data, $statusCode = 200)
+{
     http_response_code($statusCode);
     header('Content-Type: application/json');
     echo json_encode($data);
     exit;
 }
 // Elements de cors.php
-    // Configuration CORS
-function configureCors() {
+// Configuration CORS
+function configureCors()
+{
     // Autoriser l'origine spécifique de votre frontend
     // En développement, vous pouvez utiliser '*' mais en production, spécifiez l'origine exacte
     header('Access-Control-Allow-Origin: *');
-    
+
     // Autoriser les méthodes HTTP
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    
+
     // Autoriser les en-têtes personnalisés
     header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-    
+
     // Autoriser l'envoi des credentials (cookies, en-têtes d'autorisation)
     header('Access-Control-Allow-Credentials: true');
-    
+
     // Durée de mise en cache des résultats du pre-flight
     header('Access-Control-Max-Age: 86400'); // 24 heures
 
@@ -139,11 +146,10 @@ function configureCors() {
 }
 
 // Fonction pour gérer les erreurs API
-function handleApiError($error, $statusCode = 400) {
+function handleApiError($error, $statusCode = 400)
+{
     jsonResponse([
         'error' => true,
         'message' => $error instanceof Exception ? $error->getMessage() : $error
     ], $statusCode);
 }
-
-

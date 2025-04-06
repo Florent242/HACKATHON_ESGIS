@@ -53,7 +53,7 @@ class AuthController
         }
     }
 
-        /**
+    /**
      * Récupère le token JWT depuis les headers
      */
     public function getBearerToken(): ?string
@@ -63,16 +63,16 @@ class AuthController
         if (!empty($headers) && preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
             return $matches[1];
         }
-        
+
         // Si pas dans les headers, chercher dans les cookies
         if (isset($_COOKIE['long_term_token'])) {
             return $_COOKIE['long_term_token'];
         }
-        
+
         if (isset($_COOKIE['jwt_token'])) {
             return $_COOKIE['jwt_token'];
         }
-        
+
         return null;
     }
 
@@ -98,38 +98,55 @@ class AuthController
         }
         return $headers;
     }
-    public function checkAuth() {
+    public function checkAuth()
+    {
         header('Content-Type: application/json');
-    
+
         try {
+            // Vérifier d'abord la session
+            if (isset($_SESSION['user']) && $_SESSION['user']['logged_in']) {
+                return json_encode([
+                    'authenticated' => true,
+                    'id' => $_SESSION['user']['id'],
+                    'role' => $_SESSION['user']['role']
+                ]);
+            }
+
+            // Puis vérifier les tokens
             $token = $this->getBearerToken();
             if (!$token) {
                 throw new Exception('Token manquant', 401);
             }
-            // Vérifiez si le token est valide (exemple avec JWT)
+
             $tokenManager = $this->tokenManager;
             $user = $tokenManager->validateToken($token);
-            if (!$user && !$user['valid']) {
-                throw new Exception('Non authentifié', 401);
+
+            if (!$user || !$user['valid']) {
+                throw new Exception('Token invalide', 401);
             }
-            $user_data = $this->user->find($user['user_id']);
-            $user['role'] = $user_data['role'];
-            
-            // Récupérez les infos nécessaires pour le frontend
-            $response = [
+
+            // Mettre à jour la session
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $_SESSION['user'] = [
+                'id' => $user['user_id'],
+                'email' => $user['email'],
+                'role' => $user['role'],
+                'logged_in' => true,
+                'last_activity' => time()
+            ];
+
+            return json_encode([
                 'authenticated' => true,
                 'id' => $user['user_id'],
                 'role' => $user['role']
-            ];
-            
-            echo json_encode($response);
-            
+            ]);
         } catch (Exception $e) {
-            // http_response_code($e->getCode() ?: 401);
-            echo json_encode([
+            return json_encode([
                 'authenticated' => false,
                 'error' => $e->getMessage()
-            ]);
+            ], $e->getCode() ?: 401);
         }
     }
 

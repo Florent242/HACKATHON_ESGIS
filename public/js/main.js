@@ -122,7 +122,7 @@ class AuthService {
  * @param {string} type - Le type de notification ('success', 'error', 'info', 'warning').
  * @param {number} duration - Durée en millisecondes avant disparition (optionnel).
  */
-function showNotification(message, details = null, type = 'success', duration = 5000) {
+function showNotification(message, details = null, type = 'info', duration = 5000) {
     const notification = document.createElement('div');
     notification.className = `fixed top-4 ${type === 'success' ? 'left-1/2' : 'right-4'} transform ${type === 'success' ? '-translate-x-1/2' : 'translate-x-0'} max-w-md w-auto bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 flex items-start justify-between gap-3 animate-fade-in z-50`;
 
@@ -259,7 +259,7 @@ async function initVerification() {
         // Si non authentifié ET pas sur une page visiteur -> redirection
         if (!AuthService.isVisitorPath()) {
             AuthService.redirectToLogin();
-            setFlashMessage('info', 'Vous n\'êtes pas connecté');
+            setFlashMessage('info', "Non connecté");
             return; // On arrête l'exécution pour éviter tout traitement inutile
         }
     } else {
@@ -286,7 +286,7 @@ try {
 
     // En cas d'erreur, on considère comme non authentifié
     if (!AuthService.isVisitorPath()) {
-        setFlashMessage('info', 'Vous n\'êtes pas connecté');
+        setFlashMessage('info', "Non connecté");
         AuthService.redirectToLogin();
     }
 }
@@ -296,7 +296,7 @@ try {
     if (notificationElement) {
         try {
             // TODO: nettoyer la notification de la session après affichage 
-            // fetch('clearNotification.php', { method: 'POST' })
+            fetch('clearNotification.php', { method: 'POST' })
             const notificationData = JSON.parse(notificationElement.getAttribute('data-notification'));
             if (notificationData) {
                 showNotification(

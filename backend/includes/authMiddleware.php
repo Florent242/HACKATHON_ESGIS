@@ -32,8 +32,10 @@ class AuthMiddleware {
         
         // Vérifier si la route est publique
         $currentUri = $_SERVER['REQUEST_URI'] ?? '';
-        if (in_array($currentUri, PUBLIC_ROUTES)) {
-            return null; // Pas besoin d'authentification
+        foreach (PUBLIC_ROUTES as $route) {
+            if (preg_match($route, $currentUri)) {
+                return null; // Pas besoin d'authentification
+            }
         }
 
         // Vérifier la session utilisateur
@@ -76,7 +78,7 @@ class AuthMiddleware {
         }
 
         // Redirection si non authentifié
-        setFlashMessage('error', 'Vous n\'êtes pas authentifié');
+        setFlashMessage('error', "Non authentifié");
         self::redirectToLogin();
     }
 
