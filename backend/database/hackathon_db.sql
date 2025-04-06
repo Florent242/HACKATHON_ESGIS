@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : localhost
--- Généré le : dim. 06 avr. 2025 à 12:02
+-- Généré le : dim. 06 avr. 2025 à 17:59
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -98,6 +98,7 @@ CREATE TABLE `challenges` (
   `difficulty` enum('easy','medium','hard') NOT NULL,
   `hackathon_id` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `created_by` int(20) NOT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -105,8 +106,21 @@ CREATE TABLE `challenges` (
 -- Déchargement des données de la table `challenges`
 --
 
-INSERT INTO `challenges` (`id`, `title`, `type`, `points`, `description`, `difficulty`, `hackathon_id`, `created_at`, `updated_at`) VALUES
-(1, 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 'hacking', '150', 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 'medium', 2, '2025-04-03 21:52:00', '2025-04-06 08:47:53');
+INSERT INTO `challenges` (`id`, `title`, `type`, `points`, `description`, `difficulty`, `hackathon_id`, `created_at`, `created_by`, `updated_at`) VALUES
+(1, 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 'hacking', '150', 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 'medium', 2, '2025-04-03 21:52:00', 0, '2025-04-06 08:47:53');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `challenge_solves`
+--
+
+CREATE TABLE `challenge_solves` (
+  `solve_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `challenge_id` int(11) NOT NULL,
+  `solved_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -289,6 +303,7 @@ CREATE TABLE `projects` (
   `documentation_url` varchar(255) DEFAULT NULL,
   `team_id` int(11) NOT NULL,
   `hackathon_id` int(11) NOT NULL,
+  `challenge_id` int(25) NOT NULL,
   `technologies` text DEFAULT NULL,
   `score` int(11) DEFAULT NULL,
   `judges_comments` text DEFAULT NULL,
@@ -385,6 +400,20 @@ INSERT INTO `technologies` (`id`, `name`) VALUES
 (3, 'Python'),
 (5, 'React'),
 (7, 'Vue.js');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `top_hackers`
+--
+
+CREATE TABLE `top_hackers` (
+  `ranking` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `points` int(11) NOT NULL,
+  `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -502,7 +531,16 @@ ALTER TABLE `activity_logs`
 --
 ALTER TABLE `challenges`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `hackathon_id` (`hackathon_id`);
+  ADD KEY `hackathon_id` (`hackathon_id`),
+  ADD KEY `created_by` (`created_by`);
+
+--
+-- Index pour la table `challenge_solves`
+--
+ALTER TABLE `challenge_solves`
+  ADD PRIMARY KEY (`solve_id`),
+  ADD UNIQUE KEY `unique_solve` (`user_id`,`challenge_id`),
+  ADD KEY `challenge_id` (`challenge_id`);
 
 --
 -- Index pour la table `challenge_submissions`
@@ -577,7 +615,8 @@ ALTER TABLE `projects`
   ADD PRIMARY KEY (`id`),
   ADD KEY `hackathon_id` (`hackathon_id`),
   ADD KEY `idx_status_score` (`status`,`score`),
-  ADD KEY `idx_team_hackathon` (`team_id`,`hackathon_id`);
+  ADD KEY `idx_team_hackathon` (`team_id`,`hackathon_id`),
+  ADD KEY `challenge_id` (`challenge_id`);
 
 --
 -- Index pour la table `security_logs`
@@ -610,6 +649,13 @@ ALTER TABLE `team_members`
 ALTER TABLE `technologies`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `name` (`name`);
+
+--
+-- Index pour la table `top_hackers`
+--
+ALTER TABLE `top_hackers`
+  ADD PRIMARY KEY (`ranking`),
+  ADD UNIQUE KEY `user_id` (`user_id`);
 
 --
 -- Index pour la table `users`
@@ -664,6 +710,12 @@ ALTER TABLE `activity_logs`
 --
 ALTER TABLE `challenges`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT pour la table `challenge_solves`
+--
+ALTER TABLE `challenge_solves`
+  MODIFY `solve_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `challenge_submissions`
@@ -738,6 +790,12 @@ ALTER TABLE `technologies`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
+-- AUTO_INCREMENT pour la table `top_hackers`
+--
+ALTER TABLE `top_hackers`
+  MODIFY `ranking` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT pour la table `users`
 --
 ALTER TABLE `users`
@@ -776,6 +834,13 @@ ALTER TABLE `activity_logs`
 --
 ALTER TABLE `challenges`
   ADD CONSTRAINT `challenges_ibfk_1` FOREIGN KEY (`hackathon_id`) REFERENCES `hackathons` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `challenge_solves`
+--
+ALTER TABLE `challenge_solves`
+  ADD CONSTRAINT `challenge_solves_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `challenge_solves_ibfk_2` FOREIGN KEY (`challenge_id`) REFERENCES `challenges` (`id`);
 
 --
 -- Contraintes pour la table `challenge_submissions`
@@ -858,6 +923,12 @@ ALTER TABLE `teams`
 ALTER TABLE `team_members`
   ADD CONSTRAINT `fk_teammember_team` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_teammember_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Contraintes pour la table `top_hackers`
+--
+ALTER TABLE `top_hackers`
+  ADD CONSTRAINT `top_hackers_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `user_progress`

@@ -284,7 +284,7 @@ try {
                                     header('Location: ' . BASE_URL . '/user');
                                     exit();
                                 }
-                                $controller->update($id);
+                                $controller->update($id, $token);
                                 break;
                                 
                             case 'DELETE':
@@ -338,7 +338,7 @@ try {
                                     header('Location: ' . BASE_URL . '/user');
                                     exit();
                                 }
-                                $controller->updatePassword($id);
+                                $controller->updatePassword($id, $token);
                                 break;
                                 
                             case 'stats':
@@ -419,7 +419,7 @@ try {
                                         jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                                     }
                                     $controller->getNotifications($id, $token);
-                                    break;                                                                         
+                                    break;                    
                             default:
                                 if (isAjaxRequest()) {
                                     jsonResponse(['success' => false, 'error' => 'Action non reconnue'], 404);
@@ -434,6 +434,15 @@ try {
                     jsonResponse(['success' => false, 'error' => 'Identifiant invalide: ' . $id], 400);
                 }
                 break;
+        case 'hackers': 
+                    $controller = new UserController($db, $tokenManager); // Ou créez un HackerController si nécessaire
+                    if ($id === 'top' && $method === 'GET') {
+                        $controller->getTopHackers(); 
+                    } else {
+                        http_response_code(404);
+                        echo json_encode(['error' => 'Endpoint non trouvé ou méthode non autorisée pour /hackers/top']);
+                    }
+                    break;
 
         case 'hackathons':
             $controller = new HackathonController($db);
@@ -590,36 +599,43 @@ try {
             }
             break;
 
-        case 'challenges':
-            $controller = new ChallengeController($db);
-            if ($id === null) {
-                // Route /api/challenges
-                if ($method === 'GET') {
-                    $controller->getAll();
-                } elseif ($method === 'POST') {
-                    $controller->create();
-                } else {
-                    throw new Exception('Méthode non autorisée', 405);
-                }
-            } elseif (is_numeric($id)) {
-                // Route /api/challenges/{id}
-                if ($action === null) {
+            case 'challenges':
+                $controller = new ChallengeController($db, $tokenManager);
+                if ($id === null) {
+                    // Route /api/challenges
                     if ($method === 'GET') {
-                        $controller->get($id);
-                    } elseif ($method === 'POST' || $method === 'PUT') {
-                        $controller->update($id);
-                    } elseif ($method === 'DELETE') {
-                        $controller->delete($id);
+                        $controller->getAll();
+                    } elseif ($method === 'POST') {
+                        $controller->create();
                     } else {
                         throw new Exception('Méthode non autorisée', 405);
                     }
+                } elseif ($id === 'solves') {
+                    // Nouvelle route /api/challenges/solves
+                    if ($method === 'GET') {
+                        $controller->getSolvesCount();
+                    } else {
+                        throw new Exception('Méthode non autorisée', 405);
+                    }
+                } elseif (is_numeric($id)) {
+                    // Route /api/challenges/{id}
+                    if ($action === null) {
+                        if ($method === 'GET') {
+                            $controller->get($id);
+                        } elseif ($method === 'POST' || $method === 'PUT') {
+                            $controller->update($id);
+                        } elseif ($method === 'DELETE') {
+                            $controller->delete($id);
+                        } else {
+                            throw new Exception('Méthode non autorisée', 405);
+                        }
+                    }
+                } elseif ($id === 'hackathon' && is_numeric($action)) {
+                    $controller->getByHackathon($action);
+                } else {
+                    throw new Exception('ID non valide', 400);
                 }
-            } elseif ($id === 'hackathon' && is_numeric($action)) {
-                $controller->getByHackathon($action);
-            } else {
-                throw new Exception('ID non valide', 400);
-            }
-            break;
+                break;
 
         case 'evaluations':
             $controller = new EvaluationController($db);

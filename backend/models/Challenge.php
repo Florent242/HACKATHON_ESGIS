@@ -17,12 +17,12 @@ class Challenge {
         try {
             $this->validate($data);
 
-            $sql = "INSERT INTO {$this->table} (titre, description, hackathon_id, points, created_by, created_at)
+            $sql = "INSERT INTO {$this->table} (title, description, hackathon_id, points, created_by, created_at)
                     VALUES (:titre, :description, :hackathon_id, :points, :created_by, :created_at)";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
-                ':titre' => $data['titre'],
+                ':title' => $data['title'],
                 ':description' => $data['description'],
                 ':hackathon_id' => $data['hackathon_id'],
                 ':points' => $data['points'],
@@ -38,13 +38,13 @@ class Challenge {
 
     public function find($id) {
         try {
-            $sql = "SELECT c.*, u.nom as created_by_nom, u.prenom as created_by_prenom,
-                    h.titre as hackathon_titre,
-                    COUNT(DISTINCT p.id) as nombre_projets
+            $sql = "SELECT c.*, u.username as created_by_username,
+                    h.name as hackathon_titre,
+                    COUNT(DISTINCT p.id) as nombre_projects
                     FROM {$this->table} c
                     LEFT JOIN users u ON c.created_by = u.id
                     LEFT JOIN hackathons h ON c.hackathon_id = h.id
-                    LEFT JOIN projets p ON c.id = p.challenge_id
+                    LEFT JOIN projects p ON c.id = p.challenge_id
                     WHERE c.id = :id
                     GROUP BY c.id";
 
@@ -62,13 +62,13 @@ class Challenge {
      */
     public function getAll() {
         try {
-            $sql = "SELECT c.*, u.nom as created_by_nom, u.prenom as created_by_prenom,
-                    h.titre as hackathon_titre,
-                    COUNT(DISTINCT p.id) as nombre_projets
+            $sql = "SELECT c.*, u.username as created_by_name,
+                    h.name as hackathon_titre,
+                    COUNT(DISTINCT p.id) as nombre_projects
                     FROM {$this->table} c
                     LEFT JOIN users u ON c.created_by = u.id
                     LEFT JOIN hackathons h ON c.hackathon_id = h.id
-                    LEFT JOIN projets p ON c.id = p.challenge_id
+                    LEFT JOIN projects p ON c.id = p.challenge_id
                     GROUP BY c.id
                     ORDER BY c.created_at DESC";
 
@@ -107,7 +107,7 @@ class Challenge {
     public function delete($id) {
         try {
             // Vérifier si des projets sont associés
-            $sql = "SELECT COUNT(*) FROM projets WHERE challenge_id = :id";
+            $sql = "SELECT COUNT(*) FROM projects WHERE challenge_id = :id";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':id' => $id]);
 
@@ -125,11 +125,11 @@ class Challenge {
 
     public function getByHackathon($hackathonId) {
         try {
-            $sql = "SELECT c.*, u.nom as created_by_nom, u.prenom as created_by_prenom,
-                    COUNT(DISTINCT p.id) as nombre_projets
+            $sql = "SELECT c.*, u.username as created_by_name,
+                    COUNT(DISTINCT p.id) as nombre_projects
                     FROM {$this->table} c
                     LEFT JOIN users u ON c.created_by = u.id
-                    LEFT JOIN projets p ON c.id = p.challenge_id
+                    LEFT JOIN projects p ON c.id = p.challenge_id
                     WHERE c.hackathon_id = :hackathon_id
                     GROUP BY c.id
                     ORDER BY c.created_at DESC";
@@ -214,6 +214,41 @@ class Challenge {
         } catch (Exception $e) {
             error_log('Erreur lors de la récupération des défis en cours : ' . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Récupère le nombre total de résolutions de challenges.
+     *
+     * @return int Le nombre total de résolutions.
+     * @throws Exception Si une erreur de base de données survient.
+     */
+    public function getTotalSolvesCount(): int {
+        try {
+            $stmt = $this->db->query("SELECT COUNT(*) FROM challenge_solves");
+            $count = $stmt->fetchColumn();
+            return (int) $count;
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la récupération du nombre total de résolutions : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Récupère le nombre de résolutions pour un challenge spécifique.
+     *
+     * @param int $challengeId L'ID du challenge.
+     * @return int Le nombre de résolutions pour le challenge.
+     * @throws Exception Si une erreur de base de données survient.
+     */
+    public function getSolvesCountByChallengeId(int $challengeId): int {
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM challenge_solves WHERE challenge_id = :challenge_id");
+            $stmt->bindParam(':challenge_id', $challengeId, PDO::PARAM_INT);
+            $stmt->execute();
+            $count = $stmt->fetchColumn();
+            return (int) $count;
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la récupération du nombre de résolutions pour le challenge {$challengeId} : " . $e->getMessage());
         }
     }
 }

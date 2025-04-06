@@ -79,7 +79,7 @@ function renderChallenges(challenges) {
         card.setAttribute('data-time', challenge.time);
         card.setAttribute('data-points', challenge.points);
         card.setAttribute('data-hint', challenge.hint);
-        card.setAttribute('data-tags', challenge.tags.join(','));
+        card.setAttribute('data-tags', Array.isArray(challenge.tags) ? challenge.tags.join(',') : '');
         card.setAttribute('data-solved', challenge.solved || 'false');
 
         card.innerHTML = `
@@ -102,7 +102,7 @@ function renderChallenges(challenges) {
             </div>
             <p class="description">${challenge.description}</p>
             <div class="tags">
-                ${challenge.tags.map(tag => `<span class="tag">${tag.toUpperCase()}</span>`).join('')}
+                ${Array.isArray(challenge.tags) ? challenge.tags.map(tag => `<span class="tag">${tag.toUpperCase()}</span>`).join('') : ''}
             </div>
             <div class="stats-table">
                 <div class="stat">
@@ -162,11 +162,19 @@ async function updateSolvesCount() {
         const data = await apiRequest('/challenges/solves');
         const elements = document.querySelectorAll(CHALLENGE_ELEMENTS.solvesCount);
         
-        elements.forEach(el => {
-            el.textContent = `${data.count || 0} solves`;
-        });
+        if (data && data.success && data.count !== undefined) {
+            elements.forEach(el => {
+                el.textContent = `${data.count} solves`;
+            });
+        } else {
+            throw new Error('Réponse API invalide');
+        }
     } catch (error) {
         handleError('Erreur lors de la mise à jour des résolutions', error);
+        // Valeur par défaut en cas d'erreur
+        document.querySelectorAll(CHALLENGE_ELEMENTS.solvesCount).forEach(el => {
+            el.textContent = '0 solves';
+        });
     }
 }
 

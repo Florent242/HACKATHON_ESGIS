@@ -1446,7 +1446,7 @@ private function calculatePointsChange($userId)
         $db = $database->getConnection();
 
         $query = "SELECT c.*,
-                h.title as hackathon_title,
+                h.name as hackathon_title,
                 (SELECT COUNT(*) FROM challenge_submissions cs WHERE cs.challenge_id = c.id) as submissions_count,
                 (SELECT COUNT(*) FROM challenge_submissions cs WHERE cs.challenge_id = c.id AND cs.status = 'accepted') as solved_count
                 FROM challenges c
@@ -1483,7 +1483,7 @@ private function calculatePointsChange($userId)
         $db = $database->getConnection();
 
         $query = "SELECT e.*,
-                h.title as hackathon_title,
+                h.name as hackathon_title,
                 (SELECT COUNT(*) FROM equipe_membres em WHERE em.equipe_id = e.id) as members_count,
                 (SELECT SUM(points) FROM challenge_submissions cs
                  JOIN equipe_membres em ON cs.user_id = em.user_id
@@ -1550,7 +1550,7 @@ private function calculatePointsChange($userId)
         $query = "SELECT cs.*,
                 u.username,
                 c.title as challenge_title,
-                h.title as hackathon_title
+                h.name as hackathon_title
                 FROM challenge_submissions cs
                 JOIN users u ON cs.user_id = u.id
                 JOIN challenges c ON cs.challenge_id = c.id
@@ -1609,7 +1609,7 @@ private function calculatePointsChange($userId)
 
         $query = "SELECT r.*,
                 u.username as created_by_name,
-                h.title as hackathon_title
+                h.name as hackathon_title
                 FROM ressources r
                 JOIN users u ON r.created_by = u.id
                 JOIN hackathons h ON r.hackathon_id = h.id
@@ -1621,6 +1621,20 @@ private function calculatePointsChange($userId)
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode($result) !== false ? $result : [];
         exit;
+    }
+    public function getTopHackers()
+    {
+        try {
+            $query = "SELECT ranking, username, points FROM top_hackers ORDER BY points DESC LIMIT 10";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+            $hackers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            echo json_encode(['success' => true, 'data' => $hackers]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Erreur lors de la récupération du classement des hackers: ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -1820,7 +1834,7 @@ public function getHackers()
         $db = $database->getConnection();
 
         // Récupérer le challenge
-        $challengeQuery = "SELECT c.*, h.title as hackathon_title
+        $challengeQuery = "SELECT c.*, h.name as hackathon_title
                           FROM challenges c
                           JOIN hackathons h ON c.hackathon_id = h.id
                           WHERE c.id = :id";

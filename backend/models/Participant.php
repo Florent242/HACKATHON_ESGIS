@@ -67,7 +67,7 @@ class Participant{
     public function find($id) {
         try {
             $sql = "SELECT p.*, u.username, u.email,
-                    h.title as hackathon_title, h.start_date, h.end_date
+                    h.name as hackathon_title, h.start_date, h.end_date
                     FROM {$this->table} p
                     INNER JOIN users u ON p.user_id = u.id
                     INNER JOIN hackathons h ON p.hackathon_id = h.id
@@ -148,7 +148,7 @@ class Participant{
     // Récupérer les hackathons d'un participant
     public function getByUser($userId) {
         try {
-            $sql = "SELECT p.*, h.title as hackathon_title,
+            $sql = "SELECT p.*, h.name as hackathon_title,
                     h.start_date, h.end_date, h.status as hackathon_status,
                     e.id as equipe_id, e.name as equipe_name
                     FROM {$this->table} p
