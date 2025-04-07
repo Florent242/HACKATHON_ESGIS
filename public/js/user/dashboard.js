@@ -16,15 +16,13 @@ const DASHBOARD_ELEMENTS = {
     },
     currentChallenges: {
         container: '#current-challenges-container',
-        template: '.current-challenge-item' // Sélecteur du template existant dans le HTML
-    },
-    currentHackathons: {
-        container: '#current-hackathons-container',
-        template: '.current-hackathon-item' // Sélecteur du template existant dans le HTML
+        template: '.current-challenge-item',
+        emptyState: '#no-current-challenges'
     },
     recentActivities: {
         container: '#recent-activities-container',
-        template: '.recent-activity-item' 
+        template: '.recent-activity-item',
+        emptyState: '#no-recent-activities'
     },
     nextEvent: {
         container: '#next-event-container',
@@ -35,31 +33,31 @@ const DASHBOARD_ELEMENTS = {
         location: '.next-event-location',
         noEventMessage: '#no-next-event'
     },
-    upcomingHackathons: {
-        container: '#upcoming-hackathons-container',
-        item: '.upcoming-hackathon-item',
-        title: '.hackathon-title',
-        description: '.hackathon-description',
-        startDate: '.hackathon-start-date',
-        endDate: '.hackathon-end-date',
-        noHackathonsMessage: '#no-upcoming-hackathons'
-    }
 };
+
 /**
  * Met à jour la section des défis en cours
  * @param {Array} challenges - Liste des défis en cours
  */
 function updateCurrentChallenges(challenges) {
     const container = document.querySelector(DASHBOARD_ELEMENTS.currentChallenges.container);
+    const emptyState = document.querySelector(DASHBOARD_ELEMENTS.currentChallenges.emptyState);
+    
+    if (!container) {
+        console.error('Conteneur des défis en cours non trouvé');
+        return;
+    }
 
     // Cache le conteneur si aucun défi
     if (!challenges || challenges.length === 0) {
         container.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
         return;
     }
 
-    // Affiche le conteneur
+    // Affiche le conteneur et cache l'empty state
     container.style.display = 'block';
+    if (emptyState) emptyState.style.display = 'none';
 
     // Supprime tous les défis existants sauf le premier (qui sert de template)
     const items = container.querySelectorAll(DASHBOARD_ELEMENTS.currentChallenges.template);
@@ -67,7 +65,7 @@ function updateCurrentChallenges(challenges) {
         items[i].remove();
     }
 
-    // Clone et remplit le template pour chaque défi (en commençant par l'index 1)
+    // Clone et remplit le template pour chaque défi
     challenges.forEach((challenge, index) => {
         if (index === 0) {
             // Met à jour le premier élément (template)
@@ -85,10 +83,25 @@ function updateCurrentChallenges(challenges) {
  * Met à jour un élément de défi individuel
  */
 function updateChallengeItem(element, challenge) {
-    element.querySelector('.challenge-title').textContent = challenge.title || 'Titre inconnu';
+    element.querySelector('.challenge-title').textContent = challenge.title || challenge.name || 'Titre inconnu';
     element.querySelector('.challenge-description').textContent = challenge.description || 'Description non disponible';
-    element.querySelector('.challenge-deadline').textContent = challenge.deadline ? `Date limite: ${challenge.deadline}` : 'Pas de date limite';
-    element.querySelector('.challenge-progress').textContent = challenge.progress || 'Progression inconnue';
+    
+    if (challenge.deadline || challenge.end_date) {
+        const deadline = challenge.deadline || challenge.end_date;
+        const date = new Date(deadline);
+        element.querySelector('.challenge-deadline').textContent = `Date limite: ${date.toLocaleDateString()}`;
+    } else {
+        element.querySelector('.challenge-deadline').textContent = 'Pas de date limite';
+    }
+    
+    // Mise à jour de la barre de progression
+    const progress = challenge.progress || 0;
+    element.querySelector('.challenge-progress-text').textContent = `Progression: ${progress}%`;
+    const progressBar = element.querySelector('.challenge-progress-bar');
+    if (progressBar) {
+        progressBar.style.width = `${progress}%`;
+        progressBar.setAttribute('aria-valuenow', progress);
+    }
 }
 
 /**
@@ -97,6 +110,7 @@ function updateChallengeItem(element, challenge) {
  */
 function updateRecentActivities(activities) {
     const container = document.querySelector(DASHBOARD_ELEMENTS.recentActivities.container);
+    const emptyState = document.querySelector(DASHBOARD_ELEMENTS.recentActivities.emptyState);
     
     if (!container) {
         console.error('Conteneur des activités récentes non trouvé');
@@ -106,11 +120,13 @@ function updateRecentActivities(activities) {
     // Cache le conteneur si aucune activité
     if (!activities || activities.length === 0) {
         container.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
         return;
     }
 
-    // Affiche le conteneur
+    // Affiche le conteneur et cache l'empty state
     container.style.display = 'block';
+    if (emptyState) emptyState.style.display = 'none';
 
     // Supprime toutes les activités existantes sauf la première (qui sert de template)
     const items = container.querySelectorAll(DASHBOARD_ELEMENTS.recentActivities.template);
@@ -118,7 +134,7 @@ function updateRecentActivities(activities) {
         items[i].remove();
     }
 
-    // Clone et remplit le template pour chaque activité (en commençant par l'index 1)
+    // Clone et remplit le template pour chaque activité
     activities.forEach((activity, index) => {
         if (index === 0) {
             // Met à jour le premier élément (template)
@@ -133,152 +149,163 @@ function updateRecentActivities(activities) {
 }
 
 /**
+ * Nettoie le texte pour prévenir les attaques XSS
+ */
+function sanitizeText(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
  * Met à jour un élément d'activité individuelle
  */
 function updateActivityItem(element, activity) {
     const icon = element.querySelector('.activity-icon');
+    const textElement = element.querySelector('.activity-text');
+    const timeElement = element.querySelector('.activity-time');
+    
+    // Détermine la classe CSS en fonction du niveau d'activité
+    const activityClass = {
+        'info': 'activity-info',
+        'error': 'activity-error',
+        'success': 'activity-success',
+        'warning': 'activity-warning',
+        'register_error': 'activity-error'
+    }[activity.level] || 'activity-default';
+    
+    element.classList.add(activityClass);
     
     if (icon) {
-        // Vous pouvez personnaliser l'icône en fonction du type d'activité
+        // Détermine l'icône en fonction du type ou niveau d'activité
         const iconMap = {
-            'trophy': 'trophy',
-            'file': 'file-text',
-            'code': 'code',
-            'flag': 'flag'
+            'info': 'info',
+            'error': 'alert-circle',
+            'success': 'check-circle',
+            'warning': 'alert-triangle',
+            'register_error': 'alert-circle',
+            'default': 'activity'
         };
-        const iconName = iconMap[activity.type] || 'activity';
+        
+        const iconName = iconMap[activity.level] || 
+                        iconMap[activity.action] || 
+                        iconMap['default'];
         icon.setAttribute('data-lucide', iconName);
     }
     
-    element.querySelector('.activity-text').textContent = activity.text || 'Activité inconnue';
-    element.querySelector('.activity-time').textContent = activity.time || 'Récemment';
-}
-// Fonction utilitaire pour gérer les erreurs
-function handleError(title = 'Une erreur est survenue', error = null, type = 'error') {
-    console.error(title, error);
-    setFlashMessage(type,title, error.message);
-    // Vous pouvez ajouter ici une gestion d'erreur plus élaborée (affichage d'une modale, etc.)
-}
-/**
- * Met à jour la section des hackathons en cours
- * @param {Array} hackathons - Liste des hackathons en cours
- */
-function updateCurrentHackathons(hackathons) {
-    const container = document.querySelector(DASHBOARD_ELEMENTS.upcomingHackathons.container);
-    const noHackathonsMessage = document.querySelector(DASHBOARD_ELEMENTS.upcomingHackathons.noHackathonsMessage);
-
-    if (!container || !noHackathonsMessage) {
-        console.error('Éléments du DOM pour les hackathons introuvables');
-        return;
+    if (textElement) {
+        // Filtre les messages d'erreur SQL
+        let description = activity.description || activity.action || 'Activité inconnue';
+        if (activity.level === 'error' && description.includes('SQLSTATE')) {
+            description = "Une erreur système est survenue";
+        }
+        textElement.innerHTML = sanitizeText(description);
     }
-
-    // Cache le message si des hackathons existent
-    noHackathonsMessage.style.display = hackathons.length === 0 ? 'block' : 'none';
-
-    // Vide le conteneur
-    container.innerHTML = '';
-
-    // Ajoute chaque hackathon
-    hackathons.forEach(hackathon => {
-        const item = document.createElement('div');
-        item.className = 'upcoming-hackathon-item flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1 mb-3';
-        
-        item.innerHTML = `
-            <div>
-                <h4 class="text-md font-semibold hackathon-title">${hackathon.name || 'Hackathon sans nom'}</h4>
-                <p class="text-gray-400 text-sm hackathon-description">${hackathon.description || 'Aucune description disponible'}</p>
-            </div>
-            <div class="flex flex-row gap-4 mt-2">
-                <p class="flex items-center text-gray-500 text-sm">
-                    <i data-lucide="calendar" class="w-4 h-4 mr-1"></i>
-                    <span class="hackathon-start-date">${hackathon.start_date ? formatDate(hackathon.start_date) : 'Date inconnue'}</span>
-                </p>
-                <p class="flex items-center text-gray-500 text-sm">
-                    <i data-lucide="calendar" class="w-4 h-4 mr-1"></i>
-                    <span class="hackathon-end-date">${hackathon.end_date ? formatDate(hackathon.end_date) : 'Date inconnue'}</span>
-                </p>
-            </div>
-            <div class="flex justify-end mt-2">
-                <a href="/HACKATHON_ESGIS/public/user/hackathon/details/${hackathon.id}" class="text-blue-500 hover:underline text-sm">Voir les détails</a>
-            </div>
-        `;
-        
-        container.appendChild(item);
-    });
-
-    // Rafraîchit les icônes Lucide
+    
+    if (timeElement) {
+        timeElement.textContent = activity.created_at ? 
+            formatDate(activity.created_at) : 
+            'Récemment';
+    }
+    
+    // Actualiser les icônes Lucide
     if (window.lucide) {
         window.lucide.createIcons();
     }
 }
-/**
- * Met à jour un élément de hackathon individuel
- */
-function updateHackathonItem(element, hackathon) {
-    if (!hackathon) {
-        console.error('Hackathon invalide:', hackathon);
-        return;
-    }
 
-    const titleElement = element.querySelector('.hackathon-title');
-    const descriptionElement = element.querySelector('.hackathon-description');
-    const startDateElement = element.querySelector('.hackathon-start-date');
-    const endDateElement = element.querySelector('.hackathon-end-date');
-
-    if (titleElement) {
-        titleElement.textContent = hackathon.title || 'Hackathon inconnu';
-    } else {
-        console.error('Élément de titre introuvable');
-    }
-
-    if (descriptionElement) {
-        descriptionElement.textContent = hackathon.description || 'Description non disponible';
-    } else {
-        console.error('Élément de description introuvable');
-    }
-
-    if (startDateElement) {
-        startDateElement.textContent = hackathon.start_date ? `Début: ${hackathon.start_date}` : 'Pas de date de début';
-    } else {
-        console.error('Élément de date de début introuvable');
-    }
-
-    if (endDateElement) {
-        endDateElement.textContent = hackathon.end_date ? `Fin: ${hackathon.end_date}` : 'Pas de date de fin';
-    } else {
-        console.error('Élément de date de fin introuvable');
+// Fonction pour formater les dates
+function formatDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return 'Date invalide';
+        
+        const options = { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        };
+        return date.toLocaleDateString('fr-FR', options);
+    } catch (e) {
+        console.error('Erreur de formatage de date', e);
+        return 'Date inconnue';
     }
 }
 
-
+// Fonction utilitaire pour gérer les erreurs
+function handleError(title = 'Une erreur est survenue', error = null, type = 'error') {
+    console.error(title, error);
+    
+    // Affiche une notification à l'utilisateur
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <i data-lucide="${type === 'error' ? 'alert-circle' : 'info'}"></i>
+        <span>${sanitizeText(title)}</span>
+    `;
+    
+    const notificationContainer = document.querySelector('.notifications-container') || document.body;
+    notificationContainer.appendChild(notification);
+    
+    // Supprime la notification après 5 secondes
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+    
+    // Actualise les icônes
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+}
 
 // Fonction utilitaire pour gérer les requêtes API
 async function apiRequest(endpoint, options = {}) {
+    showLoading();
+    
     try {
         const headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
-
         };
 
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             ...options,
-            headers: { ...headers, ...options.headers }
+            headers: { ...headers, ...options.headers },
+            credentials: 'include'
         });
 
         if (!response.ok) {
-            throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(
+                errorData.message || 
+                `Erreur API: ${response.status} ${response.statusText}`
+            );
         }
 
-        const data = await response.json();
-        return data;  // Retourne bien les données récupérées
+        return await response.json();
     } catch (error) {
         handleError('Erreur lors de la requête API', error, 'error');
         throw error;
+    } finally {
+        hideLoading();
     }
 }
 
+// Afficher le spinner de chargement
+function showLoading() {
+    const spinner = document.querySelector(DASHBOARD_ELEMENTS.loadingSpinner);
+    if (spinner) spinner.style.display = 'block';
+}
+
+// Cacher le spinner de chargement
+function hideLoading() {
+    const spinner = document.querySelector(DASHBOARD_ELEMENTS.loadingSpinner);
+    if (spinner) spinner.style.display = 'none';
+}
 
 // Fonction pour récupérer l'ID utilisateur
 async function getUserId() {
@@ -290,81 +317,44 @@ async function getUserId() {
         });
 
         if (!response.ok) {
-            throw new Error('Utilisateur non authentifié. Dashboard');
+            throw new Error('Utilisateur non authentifié');
         }
 
         const data = await response.json();
-        return data.data.id;  // Retourne bien l'ID utilisateur
+        return data.data?.id;
     } catch (error) {
-        handleError('Impossible de récupérer l\'ID utilisateur.', error, 'error');
+        handleError('Impossible de récupérer l\'ID utilisateur', error, 'error');
         return null;
     }
 }
 
-
 // Fonction pour mettre à jour les éléments du DOM
-/*
 function updateDOM(elements, data) {
     Object.entries(elements).forEach(([key, selector]) => {
-        const elements = document.querySelectorAll(selector);
-        if (elements.length > 0) {
-            elements.forEach(element => {
-                element.textContent = data.data[key] || 'N/A';
-            });
-        }else{
-            console.error('Éléments non trouvés', selector);
-        }
-    });
-}*/
-function updateDOM(elements, data) {
-    Object.entries(elements).forEach(([key, selector]) => {
-        const elements = document.querySelectorAll(selector);
-        if (elements.length > 0) {
-            elements.forEach(element => {
-                let value = 'N/A';
-                if (data && data.data) {
-                    if (data.data.stats && data.data.stats[key]) {
-                        value = data.data.stats[key];
-                    } else if (data.data[key]) {
-                        value = data.data[key];
-                    }
-                }
-                element.textContent = value;
-            });
-        } else {
-            console.error('Éléments non trouvés', selector);
+        const element = document.querySelector(selector);
+        if (element) {
+            let value = data.data?.stats?.[key] || 
+                       data.data?.[key] || 
+                       data[key] || 
+                       'N/A';
+            
+            if (typeof value === 'number') {
+                value = value.toString();
+            }
+            
+            element.textContent = value;
+            
+            // Ajoute des classes pour les états vides
+            if (value === '0' || value === 0) {
+                element.classList.add('empty-stat');
+            } else if (value === 'N/A' || !value) {
+                element.classList.add('na-stat');
+            }
         }
     });
 }
 
-// Fonction pour initialiser le dashboard
-async function initializeDashboard() {
-    try {
-        const userId = await getUserId();
-        if (!userId) {
-            console.error('Utilisateur non authentifié');
-            return;
-        }
-
-        // Charger les données de base
-        await Promise.all([
-            loadUserInfo(userId),
-            loadStatistics(),
-            loadNotifications(),
-            loadNextEvent(),
-            loadCurrentChallenges(userId),
-            loadCurrentHackathons(userId)
-        ]);
-
-        // Mettre en place les écouteurs d'événements
-        setupEventListeners();
-
-    } catch (error) {
-        handleError('Erreur lors de l\'initialisation du dashboard', error, 'error');
-    }
-}
-
-// Fonction pour charger les informations de l\'utilisateur
+// Fonction pour charger les informations de l'utilisateur
 async function loadUserInfo(userId) {
     try {
         const data = await apiRequest(`/users/${userId}`);
@@ -378,21 +368,6 @@ async function loadUserInfo(userId) {
 }
 
 // Fonction pour charger les statistiques
-/*
-async function loadStatistics() {
-    try {
-        const userId = await getUserId();
-        if (!userId) {
-            console.error('Utilisateur non authentifié');
-            return;
-        }
-        const data = await apiRequest(`/users/${userId}/stats`);
-        console.log(data);
-        updateDOM(DASHBOARD_ELEMENTS.stats, data);
-    } catch (error) {
-        handleError('Erreur lors de la récupération des statistiques', error, 'error');
-    }
-}*/
 async function loadStatistics() {
     try {
         const userId = await getUserId();
@@ -404,57 +379,44 @@ async function loadStatistics() {
         // Charge les statistiques
         const statsResponse = await apiRequest(`/users/${userId}/stats`);
         console.log('Stats:', statsResponse);
-        updateDOM(DASHBOARD_ELEMENTS.stats, statsResponse);
+        
+        if (statsResponse.success && statsResponse.data) {
+            updateDOM(DASHBOARD_ELEMENTS.stats, statsResponse);
+            
+            // Met à jour la barre de progression globale
+            const totalPoints = statsResponse.data.stats?.['total-points'] || 0;
+            const maxPoints = 56; // Valeur fixe selon votre dashboard
+            const progressPercent = Math.round((totalPoints / maxPoints) * 100);
+            
+            const progressBar = document.querySelector('.global-progress-bar');
+            if (progressBar) {
+                progressBar.style.width = `${progressPercent}%`;
+                progressBar.setAttribute('aria-valuenow', progressPercent);
+                progressBar.textContent = `${progressPercent}%`;
+            }
+        }
         
         // Charge les défis en cours
         const challengesResponse = await apiRequest(`/users/${userId}/current-challenges`);
         console.log('Défis en cours:', challengesResponse);
-        updateCurrentChallenges(challengesResponse.data || []);
+        
+        if (challengesResponse.success) {
+            updateCurrentChallenges(challengesResponse.data || []);
+        }
         
         // Charge les activités récentes
         const activitiesResponse = await apiRequest(`/users/${userId}/recent-activities`);
         console.log('Activités récentes:', activitiesResponse);
-        updateRecentActivities(activitiesResponse.data || []);
+        
+        if (activitiesResponse.success) {
+            updateRecentActivities(activitiesResponse.data || []);
+        }
         
     } catch (error) {
         handleError('Erreur lors de la récupération des données du dashboard', error, 'error');
     }
 }
 
-// Fonction pour charger les notifications
-async function loadNotifications() {
-    try {
-        const userId = await getUserId();
-        if (!userId) {
-            console.error('Utilisateur non authentifié');
-            return;
-        }
-        const data = await apiRequest(`/users/${userId}/notifications`);
-        console.log(data);
-        const notificationsContainer = document.querySelector('.notifications-list');
-        if (notificationsContainer) {
-            notificationsContainer.innerHTML = data.map(notification => `
-                <div class="notification-item ${notification.read ? 'read' : ''}" data-id="${notification.id}">
-                    <p>${notification.message}</p>
-                    <span class="timestamp">${notification.timestamp}</span>
-                </div>
-            `).join('');
-
-            // Ajouter les écouteurs pour les notifications
-            document.querySelectorAll('.notification-item').forEach(item => {
-                item.addEventListener('click', async (e) => {
-                    const notificationId = item.dataset.id;
-                    if (notificationId) {
-                        await markNotificationAsRead(notificationId);
-                        item.classList.add('read');
-                    }
-                });
-            });
-        }
-    } catch (error) {
-        handleError('Erreur lors de la récupération des notifications', error, 'error');
-    }
-}
 // Fonction pour charger le prochain événement
 async function loadNextEvent() {
     try {
@@ -469,19 +431,20 @@ async function loadNextEvent() {
         const noEventMessage = document.querySelector(DASHBOARD_ELEMENTS.nextEvent.noEventMessage);
 
         if (data.success && data.data) {
-            // Afficher le conteneur et masquer le message d'absence d'événement
             if (nextEventContainer) nextEventContainer.style.display = 'block';
             if (noEventMessage) noEventMessage.style.display = 'none';
 
-            // Mettre à jour les informations de l'événement
-            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.title).textContent = data.data.name || 'Événement inconnu';
-            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.description).textContent = data.data.description || 'Description non disponible';
-            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.startDate).textContent = data.data.start_date ? formatDate(data.data.start_date) : 'Date de début inconnue';
-            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.endDate).textContent = data.data.end_date ? formatDate(data.data.end_date) : 'Date de fin inconnue';
-            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.location).textContent = data.data.location || 'Lieu inconnu';
-
+            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.title).textContent = 
+                data.data.name || 'Événement inconnu';
+            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.description).textContent = 
+                data.data.description || 'Description non disponible';
+            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.startDate).textContent = 
+                data.data.start_date ? formatDate(data.data.start_date) : 'Date de début inconnue';
+            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.endDate).textContent = 
+                data.data.end_date ? formatDate(data.data.end_date) : 'Date de fin inconnue';
+            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.location).textContent = 
+                data.data.location || 'Lieu inconnu';
         } else {
-            // Masquer le conteneur et afficher le message d'absence d'événement
             if (nextEventContainer) nextEventContainer.style.display = 'none';
             if (noEventMessage) noEventMessage.style.display = 'block';
         }
@@ -494,65 +457,60 @@ async function loadNextEvent() {
         if (noEventMessage) noEventMessage.style.display = 'block';
     }
 }
-async function loadCurrentChallenges(userId) {
-    try {
-        const data = await apiRequest(`/users/${userId}/current-challenges`);
-        console.log('Défis en cours:', data);
-        updateCurrentChallenges(data.data || []);
-    } catch (error) {
-        handleError('Erreur lors de la récupération des défis en cours', error, 'error');
-    }
-}
-async function loadCurrentHackathons(userId) {
-    try {
-        const data = await apiRequest(`/users/${userId}/current-hackathons`);
-        console.log('Hackathons en cours:', data);
-        updateCurrentHackathons(data.data || []);
-    } catch (error) {
-        handleError('Erreur lors de la récupération des hackathons en cours', error, 'error');
-        // Affiche le message "Aucun hackathon" en cas d'erreur
-        const noHackathonsMessage = document.querySelector(DASHBOARD_ELEMENTS.upcomingHackathons.noHackathonsMessage);
-        if (noHackathonsMessage) noHackathonsMessage.style.display = 'block';
-    }
-}
-function formatDate(dateString) {
-    const options = { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    };
-    return new Date(dateString).toLocaleDateString('fr-FR', options);
-}
 
-
-// Fonction pour marquer une notification comme lue
-async function markNotificationAsRead(notificationId) {
+// Fonction pour initialiser le dashboard
+async function initializeDashboard() {
     try {
+        showLoading();
+        
         const userId = await getUserId();
         if (!userId) {
-            console.error('Utilisateur non authentifié');
+            window.location.href = '/HACKATHON_ESGIS/public/auth';
             return;
         }
-        await apiRequest(`/users/${userId}/notifications/${notificationId}/read`, { method: 'POST' });
+
+        // Charger les données de base
+        await Promise.all([
+            loadUserInfo(userId),
+            loadStatistics(),
+            loadNextEvent()
+        ]);
+
+        // Mettre en place les écouteurs d'événements
+        setupEventListeners();
+
+        // Configurer le rafraîchissement automatique
+        setupAutoRefresh();
+
     } catch (error) {
-        handleError('Erreur lors de la mise à jour de la notification', error, 'error');
+        handleError('Erreur lors de l\'initialisation du dashboard', error, 'error');
+    } finally {
+        hideLoading();
     }
+}
+
+// Configuration du rafraîchissement automatique
+function setupAutoRefresh() {
+    // Rafraîchir toutes les 5 minutes
+    setInterval(loadStatistics, 300000);
+    
+    // Rafraîchir lors du retour en ligne
+    window.addEventListener('online', () => {
+        loadStatistics();
+    });
 }
 
 // Fonction pour mettre en place les écouteurs d'événements
 function setupEventListeners() {
-    // Gestion des clics sur les notifications
-    document.querySelectorAll('.notification-item').forEach(item => {
-        item.addEventListener('click', async (e) => {
-            const notificationId = item.dataset.id;
-            if (notificationId) {
-                await markNotificationAsRead(notificationId);
-                item.classList.add('read');
-            }
+    // Gestion du bouton de déconnexion
+    const logoutButton = document.querySelector('.logout-button');
+    if (logoutButton) {
+        logoutButton.addEventListener('click', () => {
+            document.cookie = 'jwt_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'long_term_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            window.location.href = '/HACKATHON_ESGIS/public/auth';
         });
-    });
+    }
 
     // Gestion du bouton de mise à jour des statistiques
     const refreshStatsButton = document.querySelector('.refresh-stats');
@@ -565,87 +523,27 @@ function setupEventListeners() {
             }
         });
     }
-
-    // Gestion du bouton de déconnexion
-    const logoutButton = document.querySelector('.logout-button');
-    if (logoutButton) {
-        logoutButton.addEventListener('click', () => {
-            // Supprimer les cookies
-            document.cookie = 'jwt_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            document.cookie = 'long_term_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            
-            // Rediriger vers la page de connexion
-            window.location.href = '/HACKATHON_ESGIS/public/auth';
-        });
-    }
-
-    // Gestion du bouton de mise à jour du profil
-    const updateProfileButton = document.querySelector('.update-profile');
-    if (updateProfileButton) {
-        updateProfileButton.addEventListener('click', () => {
-            const modal = document.querySelector('.profile-modal');
-            if (modal) {
-                modal.classList.add('active');
-            }
-        });
-    }
-
-    // Gestion de la fermeture des modals
-    document.querySelectorAll('.modal-close').forEach(button => {
+    
+    // Gestion des notifications
+    const notificationButtons = document.querySelectorAll('.notification-dismiss');
+    notificationButtons.forEach(button => {
         button.addEventListener('click', (e) => {
-            const modal = e.target.closest('.modal');
-            if (modal) {
-                modal.classList.remove('active');
-            }
-        });
-    });
-
-    // Gestion des formulaires de mise à jour
-    const updateForms = document.querySelectorAll('form[data-action="update"]');
-    updateForms.forEach(form => {
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(form);
-            const endpoint = form.dataset.endpoint;
-            
-            try {
-                await apiRequest(endpoint, {
-                    method: 'POST',
-                    body: JSON.stringify(Object.fromEntries(formData))
-                });
-                
-                // Mettre à jour l'interface
-                const modal = form.closest('.modal');
-                if (modal) {
-                    modal.classList.remove('active');
-                }
-                
-                // Recharger les données
-                await Promise.all([
-                    loadUserInfo(await getUserId()),
-                    loadStatistics()
-                ]);
-            } catch (error) {
-                handleError('Erreur lors de la mise à jour', error, 'error');
-            }
+            e.target.closest('.notification').remove();
         });
     });
 }
 
-// Fonction pour mettre en place les écouteurs d'événements
+// Initialisation lorsque le DOM est chargé
 document.addEventListener('DOMContentLoaded', () => {
-
-
-    // Ajout du comportement de défilement en douceur
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            document.querySelector(this.getAttribute('href')).scrollIntoView({
-                behavior: 'smooth'
-            });
-        });
-    });
+    // Initialisation des icônes Lucide si disponible
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
 
     // Initialisation du dashboard
-    initializeDashboard();
+    initializeDashboard().then(() => {
+        console.log('Dashboard initialisé avec succès');
+    }).catch(error => {
+        console.error('Erreur lors de l\'initialisation du dashboard:', error);
+    });
 });
