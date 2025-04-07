@@ -132,69 +132,58 @@ function renderChallenges(challenges) {
     challenges.forEach(challenge => {
         const card = document.createElement('div');
         card.className = 'cyber-card';
-        card.setAttribute('data-title', challenge.title);
-        card.setAttribute('data-description', challenge.description);
-        card.setAttribute('data-difficulty', challenge.difficulty);
-        card.setAttribute('data-category', challenge.category); // Conservez ceci pour l'attribut
-        card.setAttribute('data-created-at', challenge.created_at); // Assurez-vous que votre API envoie created_at
-        card.setAttribute('data-time', challenge.time); // Vous n'aurez peut-être plus besoin de cet attribut
-        card.setAttribute('data-points', challenge.points);
-        card.setAttribute('data-hint', challenge.hint);
+        card.setAttribute('data-title', challenge.title || '');
+        card.setAttribute('data-description', challenge.description || '');
+        card.setAttribute('data-type', challenge.type || '');
+        card.setAttribute('data-difficulty', challenge.difficulty || 'Unknown');
+        card.setAttribute('data-category', challenge.category?.name || challenge.category || 'Unknown');
+        card.setAttribute('data-created-at', challenge.created_at || new Date().toISOString());
+        card.setAttribute('data-points', challenge.points || 0);
+        card.setAttribute('data-hint', challenge.hint || '');
         card.setAttribute('data-tags', Array.isArray(challenge.tags) ? challenge.tags.join(',') : '');
-        card.setAttribute('data-solved', challenge.solved || 'false');
+        card.setAttribute('data-solved', challenge.solved ? 'true' : 'false');
 
-        // Fonction pour formater la différence de temps
+        // Formatage du temps
         function formatTimeDifference(createdAt) {
+            if (!createdAt) return 'Récemment créé';
             const createdDate = new Date(createdAt);
             const now = new Date();
-            const timeDifference = now.getTime() - createdDate.getTime();
+            const diffInSeconds = Math.floor((now - createdDate) / 1000);
 
-            const seconds = Math.floor((timeDifference / 1000) % 60);
-            const minutes = Math.floor((timeDifference / (1000 * 60)) % 60);
-            const hours = Math.floor((timeDifference / (1000 * 60 * 60)) % 24);
-            const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
-
-            let formattedTime = '';
-            if (days > 0) formattedTime += `${days} jour${days > 1 ? 's' : ''} `;
-            if (hours > 0) formattedTime += `${hours} heure${hours > 1 ? 's' : ''} `;
-            if (minutes > 0 && days === 0) formattedTime += `${minutes} minute${minutes > 1 ? 's' : ''} `;
-            if (seconds >= 0 && hours === 0 && days === 0) formattedTime += `${seconds} seconde${seconds > 1 ? 's' : ''}`;
-
-            return formattedTime ? `Créé il y a ${formattedTime}` : 'Créé récemment';
+            if (diffInSeconds < 60) return `${diffInSeconds} seconde${diffInSeconds !== 1 ? 's' : ''}`;
+            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minute${Math.floor(diffInSeconds / 60) !== 1 ? 's' : ''}`;
+            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} heure${Math.floor(diffInSeconds / 3600) !== 1 ? 's' : ''}`;
+            return `${Math.floor(diffInSeconds / 86400)} jour${Math.floor(diffInSeconds / 86400) !== 1 ? 's' : ''}`;
         }
 
-        // Déterminez le type de catégorie (si votre backend le fournit)
-        let categoryDisplay = challenge.category;
-        if (typeof challenge.category === 'object' && challenge.category !== null) {
-            categoryDisplay = challenge.category.type || challenge.category.name || challenge.category;
-        }
+        const timeAgo = challenge.created_at ? `Il y a ${formatTimeDifference(challenge.created_at)}` : 'Nouveau challenge';
 
         card.innerHTML = `
             <div class="card-header">
                 <div class="card-header-info">
                     <div class="left-info">
                         <i data-lucide="file-text" style="color:var(--blue);"></i> 
-                        <span class="difficulty" style="color: ${getDifficultyColor(challenge.difficulty)};">${challenge.difficulty}</span>
+                        <span class="difficulty" style="color: ${getDifficultyColor(challenge.difficulty)};">${challenge.difficulty || 'Unknown'}</span>
                     </div>
                     <div class="right-info">
                         <i data-lucide="trophy" style="color: gold;"></i> 
-                        <span>${challenge.points} pts</span>
+                        <span>${challenge.points || 0} pts</span>
                     </div>
                 </div>
-                <h3>${challenge.title}</h3>
+                <h3>${challenge.title || 'Untitled Challenge'}</h3>
                 <div class="meta">
-                    <span class="category" style="background: rgba(59, 130, 246, 0.2);">${categoryDisplay}</span>
-                    <div><i data-lucide="timer"></i><span class="time">${challenge.created_at ? formatTimeDifference(challenge.created_at) : ''}</span></div>
+                    <span class="category" style="background: rgba(59, 130, 246, 0.2);">${challenge.category?.name || challenge.category || 'Web'}</span>
+                    <div><i data-lucide="timer"></i><span class="time">${timeAgo}</span></div>
                 </div>
             </div>
-            <p class="description">${challenge.description}</p>
+            <p class="description">${challenge.description || 'No description provided'}</p>
             <div class="tags">
                 ${Array.isArray(challenge.tags) ? challenge.tags.map(tag => `<span class="tag">${tag.toUpperCase()}</span>`).join('') : ''}
             </div>
             <div class="stats-table">
                 <div class="stat">
                     <i data-lucide="user"></i>
-                    <span class="value">${challenge.solves || 0} solves</span>
+                    <span class="value">${challenge.solves || 0} solve${challenge.solves !== 1 ? 's' : ''}</span>
                 </div>
             </div>
             <div class="card-footer">
@@ -205,7 +194,12 @@ function renderChallenges(challenges) {
 
         container.appendChild(card);
     });
+
+    // Réinitialiser les icônes Lucide
     lucide.createIcons();
+    
+    // Reconfigurer les boutons "Hack Now"
+    setupModal();
 }
 
 function getDifficultyColor(difficulty) {
@@ -242,6 +236,7 @@ function renderTopHackers(hackers) {
 }
 
 // Fonction pour mettre à jour le nombre de résolutions
+/*
 async function updateSolvesCount() {
     try {
         const data = await apiRequest('/challenges/solves');
@@ -262,7 +257,32 @@ async function updateSolvesCount() {
         });
     }
 }
-
+*/
+async function updateSolvesCount() {
+    try {
+        const data = await apiRequest('/challenges/solves');
+        const elements = document.querySelectorAll('.stat .value'); // Sélectionnez tous les compteurs
+        
+        if (data && Array.isArray(data.data)) {
+            // Mettre à jour chaque carte individuellement
+            document.querySelectorAll('.cyber-card').forEach((card, index) => {
+                const challengeData = data.data[index];
+                if (challengeData) {
+                    const solveCount = card.querySelector('.stat .value');
+                    if (solveCount) {
+                        solveCount.textContent = `${challengeData.solves || 0} solve${challengeData.solves !== 1 ? 's' : ''}`;
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        handleError('Erreur lors de la mise à jour des résolutions', error);
+        // Valeur par défaut
+        document.querySelectorAll('.stat .value').forEach(el => {
+            el.textContent = '0 solves';
+        });
+    }
+}
 // Gestion des filtres
 function setupFilters() {
     document.querySelectorAll(CHALLENGE_ELEMENTS.filterGroups).forEach(group => {
@@ -286,7 +306,7 @@ function setupFilters() {
         });
     }
 }
-
+/*
 function applyFilters() {
     const filters = {};
     document.querySelectorAll(CHALLENGE_ELEMENTS.filterGroups).forEach(group => {
@@ -319,7 +339,45 @@ function applyFilters() {
         card.style.display = show ? "" : "none";
     });
 }
+*/
+function applyFilters() {
+    const filters = {};
+    document.querySelectorAll(CHALLENGE_ELEMENTS.filterGroups).forEach(group => {
+        const type = group.getAttribute("data-type");
+        const activeBtn = group.querySelector(".filter-btn.active");
+        if (activeBtn) {
+            filters[type] = activeBtn.textContent.trim().toLowerCase();
+        }
+    });
 
+    document.querySelectorAll(".cyber-card").forEach(card => {
+        let show = true;
+        
+        // Filtre par difficulté
+        if (filters.difficulty) {
+            const cardDifficulty = card.getAttribute("data-difficulty")?.toLowerCase();
+            show = show && cardDifficulty === filters.difficulty;
+        }
+        
+        // Filtre par catégorie
+        if (filters.category) {
+            const cardCategory = card.querySelector('.category')?.textContent.toLowerCase();
+            show = show && cardCategory === filters.category.toLowerCase();
+        }
+        
+        // Filtre par statut
+        if (filters.status) {
+            const cardStatus = card.getAttribute("data-solved");
+            if (filters.status === "solved") {
+                show = show && cardStatus === "true";
+            } else if (filters.status === "unsolved") {
+                show = show && cardStatus === "false";
+            }
+        }
+        
+        card.style.display = show ? "" : "none";
+    });
+}
 // Gestion de la recherche
 function setupSearch() {
     const searchInput = document.querySelector(CHALLENGE_ELEMENTS.searchInput);

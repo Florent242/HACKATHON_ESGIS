@@ -18,6 +18,10 @@ const DASHBOARD_ELEMENTS = {
         container: '#current-challenges-container',
         template: '.current-challenge-item' // Sélecteur du template existant dans le HTML
     },
+    currentHackathons: {
+        container: '#current-hackathons-container',
+        template: '.current-hackathon-item' // Sélecteur du template existant dans le HTML
+    },
     recentActivities: {
         container: '#recent-activities-container',
         template: '.recent-activity-item' 
@@ -30,6 +34,15 @@ const DASHBOARD_ELEMENTS = {
         endDate: '.next-event-end-date',
         location: '.next-event-location',
         noEventMessage: '#no-next-event'
+    },
+    upcomingHackathons: {
+        container: '#upcoming-hackathons-container',
+        item: '.upcoming-hackathon-item',
+        title: '.hackathon-title',
+        description: '.hackathon-description',
+        startDate: '.hackathon-start-date',
+        endDate: '.hackathon-end-date',
+        noHackathonsMessage: '#no-upcoming-hackathons'
     }
 };
 /**
@@ -146,6 +159,98 @@ function handleError(title = 'Une erreur est survenue', error = null, type = 'er
     setFlashMessage(type,title, error.message);
     // Vous pouvez ajouter ici une gestion d'erreur plus élaborée (affichage d'une modale, etc.)
 }
+/**
+ * Met à jour la section des hackathons en cours
+ * @param {Array} hackathons - Liste des hackathons en cours
+ */
+function updateCurrentHackathons(hackathons) {
+    const container = document.querySelector(DASHBOARD_ELEMENTS.upcomingHackathons.container);
+    const noHackathonsMessage = document.querySelector(DASHBOARD_ELEMENTS.upcomingHackathons.noHackathonsMessage);
+
+    if (!container || !noHackathonsMessage) {
+        console.error('Éléments du DOM pour les hackathons introuvables');
+        return;
+    }
+
+    // Cache le message si des hackathons existent
+    noHackathonsMessage.style.display = hackathons.length === 0 ? 'block' : 'none';
+
+    // Vide le conteneur
+    container.innerHTML = '';
+
+    // Ajoute chaque hackathon
+    hackathons.forEach(hackathon => {
+        const item = document.createElement('div');
+        item.className = 'upcoming-hackathon-item flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1 mb-3';
+        
+        item.innerHTML = `
+            <div>
+                <h4 class="text-md font-semibold hackathon-title">${hackathon.name || 'Hackathon sans nom'}</h4>
+                <p class="text-gray-400 text-sm hackathon-description">${hackathon.description || 'Aucune description disponible'}</p>
+            </div>
+            <div class="flex flex-row gap-4 mt-2">
+                <p class="flex items-center text-gray-500 text-sm">
+                    <i data-lucide="calendar" class="w-4 h-4 mr-1"></i>
+                    <span class="hackathon-start-date">${hackathon.start_date ? formatDate(hackathon.start_date) : 'Date inconnue'}</span>
+                </p>
+                <p class="flex items-center text-gray-500 text-sm">
+                    <i data-lucide="calendar" class="w-4 h-4 mr-1"></i>
+                    <span class="hackathon-end-date">${hackathon.end_date ? formatDate(hackathon.end_date) : 'Date inconnue'}</span>
+                </p>
+            </div>
+            <div class="flex justify-end mt-2">
+                <a href="/HACKATHON_ESGIS/public/user/hackathon/details/${hackathon.id}" class="text-blue-500 hover:underline text-sm">Voir les détails</a>
+            </div>
+        `;
+        
+        container.appendChild(item);
+    });
+
+    // Rafraîchit les icônes Lucide
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+}
+/**
+ * Met à jour un élément de hackathon individuel
+ */
+function updateHackathonItem(element, hackathon) {
+    if (!hackathon) {
+        console.error('Hackathon invalide:', hackathon);
+        return;
+    }
+
+    const titleElement = element.querySelector('.hackathon-title');
+    const descriptionElement = element.querySelector('.hackathon-description');
+    const startDateElement = element.querySelector('.hackathon-start-date');
+    const endDateElement = element.querySelector('.hackathon-end-date');
+
+    if (titleElement) {
+        titleElement.textContent = hackathon.title || 'Hackathon inconnu';
+    } else {
+        console.error('Élément de titre introuvable');
+    }
+
+    if (descriptionElement) {
+        descriptionElement.textContent = hackathon.description || 'Description non disponible';
+    } else {
+        console.error('Élément de description introuvable');
+    }
+
+    if (startDateElement) {
+        startDateElement.textContent = hackathon.start_date ? `Début: ${hackathon.start_date}` : 'Pas de date de début';
+    } else {
+        console.error('Élément de date de début introuvable');
+    }
+
+    if (endDateElement) {
+        endDateElement.textContent = hackathon.end_date ? `Fin: ${hackathon.end_date}` : 'Pas de date de fin';
+    } else {
+        console.error('Élément de date de fin introuvable');
+    }
+}
+
+
 
 // Fonction utilitaire pour gérer les requêtes API
 async function apiRequest(endpoint, options = {}) {
@@ -245,7 +350,10 @@ async function initializeDashboard() {
         await Promise.all([
             loadUserInfo(userId),
             loadStatistics(),
-            // loadNotifications()
+            loadNotifications(),
+            loadNextEvent(),
+            loadCurrentChallenges(userId),
+            loadCurrentHackathons(userId)
         ]);
 
         // Mettre en place les écouteurs d'événements
@@ -385,6 +493,37 @@ async function loadNextEvent() {
         if (nextEventContainer) nextEventContainer.style.display = 'none';
         if (noEventMessage) noEventMessage.style.display = 'block';
     }
+}
+async function loadCurrentChallenges(userId) {
+    try {
+        const data = await apiRequest(`/users/${userId}/current-challenges`);
+        console.log('Défis en cours:', data);
+        updateCurrentChallenges(data.data || []);
+    } catch (error) {
+        handleError('Erreur lors de la récupération des défis en cours', error, 'error');
+    }
+}
+async function loadCurrentHackathons(userId) {
+    try {
+        const data = await apiRequest(`/users/${userId}/current-hackathons`);
+        console.log('Hackathons en cours:', data);
+        updateCurrentHackathons(data.data || []);
+    } catch (error) {
+        handleError('Erreur lors de la récupération des hackathons en cours', error, 'error');
+        // Affiche le message "Aucun hackathon" en cas d'erreur
+        const noHackathonsMessage = document.querySelector(DASHBOARD_ELEMENTS.upcomingHackathons.noHackathonsMessage);
+        if (noHackathonsMessage) noHackathonsMessage.style.display = 'block';
+    }
+}
+function formatDate(dateString) {
+    const options = { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    };
+    return new Date(dateString).toLocaleDateString('fr-FR', options);
 }
 
 

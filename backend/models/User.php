@@ -443,23 +443,51 @@ public function findByEmail($email) {
     public function getCurrentChallenges(int $userId): array
     {
         try {
-            $query = "SELECT
-                c.id,
-                c.title,
-                c.description,
-                c.difficulty,
-                c.type,
-                c.points
-                -- Ajoutez d'autres colonnes de la table 'challenges' que vous souhaitez récupérer
-            FROM challenges c
-            INNER JOIN challenge_submission uc ON c.id = uc.challenge_id
-            WHERE uc.user_id = :userId AND uc.status = 'active'"; // Adaptez la condition 'status' si nécessaire
+            $query = "SELECT 
+                    c.id,
+                    c.title,
+                    c.description,
+                    c.difficulty,
+                    c.type,
+                    c.points,
+                    c.hackathon_id,
+                    c.created_at,
+                    c.created_by
+                FROM 
+                    challenges AS c
+                JOIN 
+                    challenge_submissions AS uc ON uc.challenge_id = c.id
+                WHERE 
+                    uc.user_id = :userId 
+                    AND uc.status = 'active';";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();   
+            $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Traiter les données JSON dans la colonne 'data' (si nécessaire)
+            foreach ($activities as &$activity) {
+                if (!empty($activity['data'])) {
+                    $activity['data'] = json_decode($activity['data'], true);
+                }
+            }
+            return $activities;
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération des défis en cours: ' . $e->getMessage());
+            return [];
+        }
+    }
+    public function getCurrentHackathons(int $userId, $jwt): array
+    {
+        try {
+            $query = "SELECT id, name, start_date, end_date, status 
+                        FROM hackathons 
+                        WHERE status = 'active';";
+            $stmt = $this->db->prepare($query);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération des défis en cours: ' . $e->getMessage());
+            error_log('Erreur lors de la récupération des hackathons en cours: ' . $e->getMessage());
             return [];
         }
     }

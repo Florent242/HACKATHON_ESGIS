@@ -220,7 +220,7 @@ class UserController extends Controller
         }
     }
 
-    public function delete($id)
+    public function delete($id, $jwt)
     {
         try {
             $this->validateMethod('POST');
@@ -249,7 +249,7 @@ class UserController extends Controller
      * Met à jour le rôle d'un utilisateur
      * @param int $id ID de l'utilisateur
      */
-    public function updateRole($id)
+    public function updateRole($id, $jwt)
     {
         try {
             $this->validateMethod('POST');
@@ -531,25 +531,6 @@ class UserController extends Controller
     /**
      * Récupère les hackathons de l'utilisateur et renvoie un JSON
      */
-    public function getUserHackathons($userId, $jwt)
-    {
-        $currentUserId = $this->getUserIdFromJWT($jwt);
-        if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
-            $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-            return;
-        }
-        
-        $database = Database::getInstance();
-        $db = $database->getConnection();
-        $participant = new Participant($db);
-
-        $hackathons = $participant->getByUser($userId);
-        
-        $this->jsonResponse([
-            'success' => true, 
-            'data' => $hackathons
-        ]);
-    }
     public function getOngoingChallenges($userId, $jwt)
     {
         header('Content-Type: application/json');
@@ -606,6 +587,16 @@ class UserController extends Controller
         $challenges = $this->user->getCurrentChallenges($userId);
         $this->jsonResponse(['success' => true, 'data' => $challenges]);
     }
+    public function getCurrentHackathons($userId, $jwt)
+    {
+        $currentUserId = $this->getUserIdFromJWT($jwt);
+        if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+            $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+            return;
+        }
+        $hackathons = $this->user->getCurrentHackathons($userId, $jwt);
+        $this->jsonResponse(['success' => true, 'data' => $hackathons]);
+    }
     
     public function getRecentActivities($userId, $jwt)
     {
@@ -624,7 +615,7 @@ class UserController extends Controller
     {
         $db = $this->db;
 
-        $stmt = $db->prepare("SELECT e.* FROM equipes e JOIN equipe_membres em ON e.id = em.equipe_id WHERE em.user_id = :user_id");
+        $stmt = $db->prepare("SELECT e.* FROM team e JOIN team_members em ON e.id = em.team_id WHERE em.user_id = :user_id");
         $stmt->execute([':user_id' => $userId]);
 
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
@@ -1273,7 +1264,7 @@ private function calculatePointsChange($userId)
         $challengesCount = $stmt->fetchColumn();
 
         // Nombre d'équipes
-        $teamsQuery = "SELECT COUNT(*) FROM equipes";
+        $teamsQuery = "SELECT COUNT(*) FROM team";
         $stmt = $db->prepare($teamsQuery);
         $stmt->execute();
         $teamsCount = $stmt->fetchColumn();
@@ -1317,7 +1308,7 @@ private function calculatePointsChange($userId)
 
         $query = "SELECT u.*,
                 (SELECT COUNT(*) FROM participants p WHERE p.user_id = u.id) as participations,
-                (SELECT COUNT(*) FROM equipe_membres em WHERE em.user_id = u.id) as teams
+                (SELECT COUNT(*) FROM team_members em WHERE em.user_id = u.id) as teams
                 FROM users u";
 
         if ($filter) {
@@ -1484,11 +1475,11 @@ private function calculatePointsChange($userId)
 
         $query = "SELECT e.*,
                 h.name as hackathon_title,
-                (SELECT COUNT(*) FROM equipe_membres em WHERE em.equipe_id = e.id) as members_count,
+                (SELECT COUNT(*) FROM team_members em WHERE em.team_id = e.id) as members_count,
                 (SELECT SUM(points) FROM challenge_submissions cs
-                 JOIN equipe_membres em ON cs.user_id = em.user_id
-                 WHERE em.equipe_id = e.id AND cs.status = 'accepted') as total_points
-                FROM equipes e
+                 JOIN team_members em ON cs.user_id = em.user_id
+                 WHERE em.team_id = e.id AND cs.status = 'accepted') as total_points
+                FROM team e
                 JOIN hackathons h ON e.hackathon_id = h.id";
 
         if ($hackathonId) {
@@ -1511,10 +1502,10 @@ private function calculatePointsChange($userId)
     }
 
     /**
-     * Récupère les membres d'une équipe
+     * Récupère les members d'une équipe
      *
      * @param int $teamId ID de l'équipe
-     * @return array Liste des membres
+     * @return array Liste des members
      */
     public function getTeamMembers($teamId)
     {
@@ -1523,8 +1514,8 @@ private function calculatePointsChange($userId)
 
         $query = "SELECT u.*, em.role as team_role
                 FROM users u
-                JOIN equipe_membres em ON u.id = em.user_id
-                WHERE em.equipe_id = :team_id";
+                JOIN team_members em ON u.id = em.user_id
+                WHERE em.team_id = :team_id";
 
         $stmt = $db->prepare($query);
         $stmt->bindValue(':team_id', $teamId);
@@ -1777,7 +1768,7 @@ public function getHackers()
         $participantsCount = $stmt->fetchColumn();
 
         // Nombre d'équipes
-        $teamsQuery = "SELECT COUNT(*) FROM equipes WHERE hackathon_id = :id";
+        $teamsQuery = "SELECT COUNT(*) FROM team WHERE hackathon_id = :id";
         $stmt = $db->prepare($teamsQuery);
         $stmt->bindValue(':id', $hackathonId);
         $stmt->execute();
@@ -1977,57 +1968,54 @@ public function getUserChallengeIds($userId) {
             'error' => $e->getMessage()
         ], 500);
     }
-}   public function getNextEvent($userId, $jwt)
-    {
-        header('Content-Type: application/json');
+}   
+public function getNextEvent($userId, $jwt)
+{
+    header('Content-Type: application/json');
 
-        try {
-            $currentUserId = $this->getUserIdFromJWT($jwt);
-            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
-                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                return;
-            }
-
-            $database = Database::getInstance();
-            $db = $database->getConnection();
-
-            // Récupérer les hackathons auxquels l'utilisateur participe et qui sont futurs
-            $stmt = $db->prepare("
-                SELECT
-                    h.id,
-                    h.name,
-                    h.description,
-                    h.start_date,
-                    h.end_date,
-                    h.location
-                FROM hackathons h
-                INNER JOIN hackathon_participants hp ON h.id = hp.hackathon_id
-                WHERE hp.user_id = :user_id
-                  AND h.start_date > NOW()
-                ORDER BY h.start_date ASC
-                LIMIT 1
-            ");
-            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $stmt->execute();
-            $nextHackathon = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if ($nextHackathon) {
-                $this->jsonResponse([
-                    'success' => true,
-                    'data' => $nextHackathon
-                ]);
-            } else {
-                $this->jsonResponse([
-                    'success' => true,
-                    'message' => 'Aucun événement futur trouvé pour cet utilisateur.'
-                ]);
-            }
-
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 500);
+    try {
+        $currentUserId = $this->getUserIdFromJWT($jwt);
+        if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+            $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+            return;
         }
+
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+
+        // Récupérer les hackathons futurs
+        $stmt = $db->prepare("
+            SELECT
+                h.id,
+                h.name,
+                h.start_date
+            FROM hackathons h
+            WHERE h.start_date > NOW()  
+            ORDER BY h.start_date ASC   
+        ");
+        
+        // Exécution de la requête sans bindParam
+        $stmt->execute();
+        $nextHackathon = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($nextHackathon) {
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $nextHackathon
+            ]);
+        } else {
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Aucun événement futur trouvé.'
+            ]);
+        }
+
+    } catch (Exception $e) {
+        $this->jsonResponse([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 }

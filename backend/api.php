@@ -396,8 +396,14 @@ try {
                                         }
                                         // **Assurez-vous que vous avez une méthode `getCurrentChallenges()` dans UserController**
                                         $controller->getCurrentChallenges($id, $token);
-                                        $controller->getUserHackathons($îd, $token);
                                         break;
+                                case 'current-hackathons':
+                                    // Un utilisateur peut voir ses propres hackathons ou un admin peut voir n'importe quels hackathons
+                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    }
+                                    $controller->getCurrentHackathons($id, $token);
+                                    break;
                                 
                                 case 'recent-activities':
                                     // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
