@@ -63,6 +63,7 @@ async function loadChallenges() {
 }
 
 // Fonction pour afficher les challenges
+/*
 function renderChallenges(challenges) {
     const container = document.querySelector(CHALLENGE_ELEMENTS.cardsContainer);
     if (!container) return;
@@ -120,6 +121,90 @@ function renderChallenges(challenges) {
     });
 
     // Initialiser les icônes Lucide
+    lucide.createIcons();
+}*/
+function renderChallenges(challenges) {
+    const container = document.querySelector(CHALLENGE_ELEMENTS.cardsContainer);
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    challenges.forEach(challenge => {
+        const card = document.createElement('div');
+        card.className = 'cyber-card';
+        card.setAttribute('data-title', challenge.title);
+        card.setAttribute('data-description', challenge.description);
+        card.setAttribute('data-difficulty', challenge.difficulty);
+        card.setAttribute('data-category', challenge.category); // Conservez ceci pour l'attribut
+        card.setAttribute('data-created-at', challenge.created_at); // Assurez-vous que votre API envoie created_at
+        card.setAttribute('data-time', challenge.time); // Vous n'aurez peut-être plus besoin de cet attribut
+        card.setAttribute('data-points', challenge.points);
+        card.setAttribute('data-hint', challenge.hint);
+        card.setAttribute('data-tags', Array.isArray(challenge.tags) ? challenge.tags.join(',') : '');
+        card.setAttribute('data-solved', challenge.solved || 'false');
+
+        // Fonction pour formater la différence de temps
+        function formatTimeDifference(createdAt) {
+            const createdDate = new Date(createdAt);
+            const now = new Date();
+            const timeDifference = now.getTime() - createdDate.getTime();
+
+            const seconds = Math.floor((timeDifference / 1000) % 60);
+            const minutes = Math.floor((timeDifference / (1000 * 60)) % 60);
+            const hours = Math.floor((timeDifference / (1000 * 60 * 60)) % 24);
+            const days = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+
+            let formattedTime = '';
+            if (days > 0) formattedTime += `${days} jour${days > 1 ? 's' : ''} `;
+            if (hours > 0) formattedTime += `${hours} heure${hours > 1 ? 's' : ''} `;
+            if (minutes > 0 && days === 0) formattedTime += `${minutes} minute${minutes > 1 ? 's' : ''} `;
+            if (seconds >= 0 && hours === 0 && days === 0) formattedTime += `${seconds} seconde${seconds > 1 ? 's' : ''}`;
+
+            return formattedTime ? `Créé il y a ${formattedTime}` : 'Créé récemment';
+        }
+
+        // Déterminez le type de catégorie (si votre backend le fournit)
+        let categoryDisplay = challenge.category;
+        if (typeof challenge.category === 'object' && challenge.category !== null) {
+            categoryDisplay = challenge.category.type || challenge.category.name || challenge.category;
+        }
+
+        card.innerHTML = `
+            <div class="card-header">
+                <div class="card-header-info">
+                    <div class="left-info">
+                        <i data-lucide="file-text" style="color:var(--blue);"></i> 
+                        <span class="difficulty" style="color: ${getDifficultyColor(challenge.difficulty)};">${challenge.difficulty}</span>
+                    </div>
+                    <div class="right-info">
+                        <i data-lucide="trophy" style="color: gold;"></i> 
+                        <span>${challenge.points} pts</span>
+                    </div>
+                </div>
+                <h3>${challenge.title}</h3>
+                <div class="meta">
+                    <span class="category" style="background: rgba(59, 130, 246, 0.2);">${categoryDisplay}</span>
+                    <div><i data-lucide="timer"></i><span class="time">${challenge.created_at ? formatTimeDifference(challenge.created_at) : ''}</span></div>
+                </div>
+            </div>
+            <p class="description">${challenge.description}</p>
+            <div class="tags">
+                ${Array.isArray(challenge.tags) ? challenge.tags.map(tag => `<span class="tag">${tag.toUpperCase()}</span>`).join('') : ''}
+            </div>
+            <div class="stats-table">
+                <div class="stat">
+                    <i data-lucide="user"></i>
+                    <span class="value">${challenge.solves || 0} solves</span>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button class="badge hack-now">HACK NOW</button>
+                ${challenge.solved ? '<div class="status solved"><i data-lucide="check-circle"></i><span>Solved</span></div>' : ''}
+            </div>
+        `;
+
+        container.appendChild(card);
+    });
     lucide.createIcons();
 }
 
