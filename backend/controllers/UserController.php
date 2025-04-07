@@ -528,6 +528,36 @@ class UserController extends Controller
             exit;
         }
 }
+    public function getUserHackathons($userId, $jwt)
+    {
+        header('Content-Type: application/json');
+
+        try {
+            $currentUserId = $this->getUserIdFromJWT($jwt);
+            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                return;
+            }
+            $database = Database::getInstance();
+            $db = $database->getConnection();
+
+            $stmt = $db->prepare("SELECT * FROM hackathons WHERE id IN (SELECT hackathon_id FROM hackathon_participants WHERE user_id = :userId)");
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $hackathons = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $hackathons
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     /**
      * Récupère les hackathons de l'utilisateur et renvoie un JSON
      */

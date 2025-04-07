@@ -298,7 +298,7 @@ try {
                                     header('Location: ' . BASE_URL . '/user');
                                     exit();
                                 }
-                                $controller->delete($id);
+                                $controller->delete($id, $token);
                                 break;
                                 
                             default:
@@ -324,7 +324,7 @@ try {
                                     header('Location: ' . BASE_URL . '/user');
                                     exit();
                                 }
-                                $controller->updateRole($id);
+                                $controller->updateRole($id, $jwt);
                                 break;
                                 
                             case 'password':
@@ -451,7 +451,7 @@ try {
                     break;
 
         case 'hackathons':
-            $controller = new HackathonController($db);
+            $controller = new HackathonController($db, $tokenManager);
             if ($id === null) {
                 // Route /api/hackathons
                 if ($method === 'GET') {
@@ -500,7 +500,7 @@ try {
             break;
 
         case 'teams':
-            $controller = new TeamController($db);
+            $controller = new TeamController($db, $tokenManager);
             if ($id === null) {
                 // Route /api/teams
                 if ($method === 'GET') {
@@ -556,7 +556,7 @@ try {
             break;
 
         case 'projects':
-            $controller = new ProjectController($db);
+            $controller = new ProjectController($db, $tokenManager);
             if ($id === null) {
                 // Route /api/projects
                 if ($method === 'GET') {
@@ -644,7 +644,7 @@ try {
                 break;
 
         case 'evaluations':
-            $controller = new EvaluationController($db);
+            $controller = new EvaluationController($db, $tokenManager);
             if ($id === null) {
                 // Route /api/evaluations
                 if ($method === 'GET') {

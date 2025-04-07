@@ -14,8 +14,8 @@ class EvaluationController extends Controller {
     private $project;
     private $db;
 
-    public function __construct($db) {
-        parent::__construct();
+    public function __construct($db, $tokenManager) {
+        parent::__construct($tokenManager);
         $this->db = $db;
         $this->evaluation = new \Auth\Model\Evaluation($this->db);
         $this->project = new \Auth\Model\Project($this->db);
