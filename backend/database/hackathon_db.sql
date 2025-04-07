@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : localhost
--- Généré le : dim. 06 avr. 2025 à 17:59
+-- Généré le : lun. 07 avr. 2025 à 21:32
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -98,7 +98,7 @@ CREATE TABLE `challenges` (
   `difficulty` enum('easy','medium','hard') NOT NULL,
   `hackathon_id` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `created_by` int(20) NOT NULL,
+  `created_by` varchar(20) NOT NULL,
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -107,7 +107,8 @@ CREATE TABLE `challenges` (
 --
 
 INSERT INTO `challenges` (`id`, `title`, `type`, `points`, `description`, `difficulty`, `hackathon_id`, `created_at`, `created_by`, `updated_at`) VALUES
-(1, 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 'hacking', '150', 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 'medium', 2, '2025-04-03 21:52:00', 0, '2025-04-06 08:47:53');
+(1, 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 'hacking', '150', 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 'medium', 2, '2025-04-03 21:52:00', '0', '2025-04-06 08:47:53'),
+(2, 'Desamorce la bombe', 'Web', '1000', 'Il s\'agit de désamorcer une bombe posée par Kader et son groupe de pote', 'hard', 2, '2025-04-06 20:59:27', 'ESGIS_HUB', '2025-04-06 20:59:27');
 
 -- --------------------------------------------------------
 
@@ -121,6 +122,14 @@ CREATE TABLE `challenge_solves` (
   `challenge_id` int(11) NOT NULL,
   `solved_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Déchargement des données de la table `challenge_solves`
+--
+
+INSERT INTO `challenge_solves` (`solve_id`, `user_id`, `challenge_id`, `solved_at`) VALUES
+(1, 4, 1, '2025-04-06 18:06:37'),
+(2, 5, 1, '2025-04-06 18:06:49');
 
 -- --------------------------------------------------------
 
@@ -218,16 +227,18 @@ CREATE TABLE `hackathons` (
   `prizes` text DEFAULT NULL,
   `created_by` int(11) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `status` enum('active','inactive','draft') DEFAULT 'active'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Déchargement des données de la table `hackathons`
 --
 
-INSERT INTO `hackathons` (`id`, `name`, `description`, `start_date`, `end_date`, `location`, `max_teams`, `max_team_members`, `rules`, `prizes`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', '2025-04-03 23:49:43', '2025-04-03 23:49:43', 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 10, 4, 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', '1254', 3, '2025-04-03 21:51:24', '2025-04-03 21:51:24'),
-(2, '', '', '2025-04-03 23:49:43', '2025-04-03 23:49:43', NULL, 10, 4, '', NULL, 2, '2025-04-03 21:51:24', '2025-04-03 21:51:24');
+INSERT INTO `hackathons` (`id`, `name`, `description`, `start_date`, `end_date`, `location`, `max_teams`, `max_team_members`, `rules`, `prizes`, `created_by`, `created_at`, `updated_at`, `status`) VALUES
+(1, 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', '2025-04-03 23:49:43', '2025-04-03 23:49:43', 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', 10, 4, 'azertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfdazertyghfd', '1254', 3, '2025-04-03 21:51:24', '2025-04-03 21:51:24', 'active'),
+(2, 'sdfgh', 'sdfggfdfyui', '2025-04-03 23:49:43', '2025-04-03 23:49:43', 'BENIN', 10, 4, 'rfvbngfcv bnuyfgcv bn', '1547000', 2, '2025-04-03 21:51:24', '2025-04-07 00:22:54', 'active'),
+(4, 'wcvbvcx', 'Aller les buffles', '2025-04-30 20:44:00', '2025-05-10 20:44:00', 'ESGIS', 1000, 5, 'Consiste à bouffer de l\'argent ', '150000', 2, '2025-04-07 18:45:40', '2025-04-07 18:45:40', 'active');
 
 -- --------------------------------------------------------
 
@@ -249,7 +260,9 @@ CREATE TABLE `hackathon_participants` (
 --
 
 INSERT INTO `hackathon_participants` (`id`, `user_id`, `team_id`, `hackathon_id`, `participation_status`, `joined_at`) VALUES
-(1, 4, 0, 2, 'accepted', '2025-04-03 21:52:25');
+(1, 4, 0, 2, 'accepted', '2025-04-03 21:52:25'),
+(2, 4, 2, 1, 'accepted', '2025-04-07 00:20:43'),
+(3, 5, 2, 2, 'pending', '2025-04-07 00:24:31');
 
 -- --------------------------------------------------------
 
@@ -351,7 +364,8 @@ CREATE TABLE `teams` (
 --
 
 INSERT INTO `teams` (`id`, `name`, `hackathon_id`, `leader_id`, `created_at`, `updated_at`) VALUES
-(1, 'destroy', 1, 5, '2025-04-06 08:44:45', '2025-04-06 08:44:45');
+(1, 'destroy', 1, 5, '2025-04-06 08:44:45', '2025-04-06 08:44:45'),
+(2, 'aqwxs', 1, 6, '2025-04-07 00:21:13', '2025-04-07 00:21:27');
 
 -- --------------------------------------------------------
 
@@ -709,13 +723,13 @@ ALTER TABLE `activity_logs`
 -- AUTO_INCREMENT pour la table `challenges`
 --
 ALTER TABLE `challenges`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pour la table `challenge_solves`
 --
 ALTER TABLE `challenge_solves`
-  MODIFY `solve_id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `solve_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT pour la table `challenge_submissions`
@@ -739,13 +753,13 @@ ALTER TABLE `flags`
 -- AUTO_INCREMENT pour la table `hackathons`
 --
 ALTER TABLE `hackathons`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT pour la table `hackathon_participants`
 --
 ALTER TABLE `hackathon_participants`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pour la table `messages`
@@ -775,7 +789,7 @@ ALTER TABLE `security_logs`
 -- AUTO_INCREMENT pour la table `teams`
 --
 ALTER TABLE `teams`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT pour la table `team_members`
