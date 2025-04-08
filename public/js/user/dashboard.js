@@ -1,8 +1,10 @@
+import { createEle } from '/HACKATHON_ESGIS/public/js/dom.js';
 // Configuration de base
 const API_BASE_URL = '/HACKATHON_ESGIS/public/api';
 const DASHBOARD_ELEMENTS = {
     username: '.Username',
     email: '.Email',
+    loadingSpinner: '#global-loading-spinner',
     stats: {
         devChallenges: '#number-dev-challenges',
         hackingChallenges: '#number-hacking-challenges',
@@ -42,7 +44,7 @@ const DASHBOARD_ELEMENTS = {
 function updateCurrentChallenges(challenges) {
     const container = document.querySelector(DASHBOARD_ELEMENTS.currentChallenges.container);
     const emptyState = document.querySelector(DASHBOARD_ELEMENTS.currentChallenges.emptyState);
-    
+
     if (!container) {
         console.error('Conteneur des défis en cours non trouvé');
         return;
@@ -50,13 +52,11 @@ function updateCurrentChallenges(challenges) {
 
     // Cache le conteneur si aucun défi
     if (!challenges || challenges.length === 0) {
-        container.style.display = 'none';
-        if (emptyState) emptyState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'flex';
         return;
     }
 
     // Affiche le conteneur et cache l'empty state
-    container.style.display = 'block';
     if (emptyState) emptyState.style.display = 'none';
 
     // Supprime tous les défis existants sauf le premier (qui sert de template)
@@ -85,7 +85,7 @@ function updateCurrentChallenges(challenges) {
 function updateChallengeItem(element, challenge) {
     element.querySelector('.challenge-title').textContent = challenge.title || challenge.name || 'Titre inconnu';
     element.querySelector('.challenge-description').textContent = challenge.description || 'Description non disponible';
-    
+
     if (challenge.deadline || challenge.end_date) {
         const deadline = challenge.deadline || challenge.end_date;
         const date = new Date(deadline);
@@ -93,15 +93,15 @@ function updateChallengeItem(element, challenge) {
     } else {
         element.querySelector('.challenge-deadline').textContent = 'Pas de date limite';
     }
-    
+
     // Mise à jour de la barre de progression
-    const progress = challenge.progress || 0;
-    element.querySelector('.challenge-progress-text').textContent = `Progression: ${progress}%`;
-    const progressBar = element.querySelector('.challenge-progress-bar');
-    if (progressBar) {
-        progressBar.style.width = `${progress}%`;
-        progressBar.setAttribute('aria-valuenow', progress);
-    }
+    // const progress = challenge.progress || 0;
+    // element.querySelector('.challenge-progress-text').textContent = `Progression: ${progress}%`;
+    // const progressBar = element.querySelector('.challenge-progress-bar');
+    // if (progressBar) {
+    //     progressBar.style.width = `${progress}%`;
+    //     progressBar.setAttribute('aria-valuenow', progress);
+    // }
 }
 
 /**
@@ -111,7 +111,7 @@ function updateChallengeItem(element, challenge) {
 function updateRecentActivities(activities) {
     const container = document.querySelector(DASHBOARD_ELEMENTS.recentActivities.container);
     const emptyState = document.querySelector(DASHBOARD_ELEMENTS.recentActivities.emptyState);
-    
+
     if (!container) {
         console.error('Conteneur des activités récentes non trouvé');
         return;
@@ -119,13 +119,12 @@ function updateRecentActivities(activities) {
 
     // Cache le conteneur si aucune activité
     if (!activities || activities.length === 0) {
-        container.style.display = 'none';
-        if (emptyState) emptyState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'flex';
         return;
     }
 
     // Affiche le conteneur et cache l'empty state
-    container.style.display = 'block';
+    container.style.display = 'flex';
     if (emptyState) emptyState.style.display = 'none';
 
     // Supprime toutes les activités existantes sauf la première (qui sert de template)
@@ -165,7 +164,7 @@ function updateActivityItem(element, activity) {
     const icon = element.querySelector('.activity-icon');
     const textElement = element.querySelector('.activity-text');
     const timeElement = element.querySelector('.activity-time');
-    
+
     // Détermine la classe CSS en fonction du niveau d'activité
     const activityClass = {
         'info': 'activity-info',
@@ -174,9 +173,9 @@ function updateActivityItem(element, activity) {
         'warning': 'activity-warning',
         'register_error': 'activity-error'
     }[activity.level] || 'activity-default';
-    
+
     element.classList.add(activityClass);
-    
+
     if (icon) {
         // Détermine l'icône en fonction du type ou niveau d'activité
         const iconMap = {
@@ -187,13 +186,13 @@ function updateActivityItem(element, activity) {
             'register_error': 'alert-circle',
             'default': 'activity'
         };
-        
-        const iconName = iconMap[activity.level] || 
-                        iconMap[activity.action] || 
-                        iconMap['default'];
+
+        const iconName = iconMap[activity.level] ||
+            iconMap[activity.action] ||
+            iconMap['default'];
         icon.setAttribute('data-lucide', iconName);
     }
-    
+
     if (textElement) {
         // Filtre les messages d'erreur SQL
         let description = activity.description || activity.action || 'Activité inconnue';
@@ -202,13 +201,13 @@ function updateActivityItem(element, activity) {
         }
         textElement.innerHTML = sanitizeText(description);
     }
-    
+
     if (timeElement) {
-        timeElement.textContent = activity.created_at ? 
-            formatDate(activity.created_at) : 
+        timeElement.textContent = activity.created_at ?
+            formatDate(activity.created_at) :
             'Récemment';
     }
-    
+
     // Actualiser les icônes Lucide
     if (window.lucide) {
         window.lucide.createIcons();
@@ -220,13 +219,13 @@ function formatDate(dateString) {
     try {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return 'Date invalide';
-        
-        const options = { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric', 
-            hour: '2-digit', 
-            minute: '2-digit' 
+
+        const options = {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         };
         return date.toLocaleDateString('fr-FR', options);
     } catch (e) {
@@ -238,7 +237,7 @@ function formatDate(dateString) {
 // Fonction utilitaire pour gérer les erreurs
 function handleError(title = 'Une erreur est survenue', error = null, type = 'error') {
     console.error(title, error);
-    
+
     // Affiche une notification à l'utilisateur
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
@@ -246,15 +245,15 @@ function handleError(title = 'Une erreur est survenue', error = null, type = 'er
         <i data-lucide="${type === 'error' ? 'alert-circle' : 'info'}"></i>
         <span>${sanitizeText(title)}</span>
     `;
-    
+
     const notificationContainer = document.querySelector('.notifications-container') || document.body;
     notificationContainer.appendChild(notification);
-    
+
     // Supprime la notification après 5 secondes
     setTimeout(() => {
         notification.remove();
     }, 5000);
-    
+
     // Actualise les icônes
     if (window.lucide) {
         window.lucide.createIcons();
@@ -264,7 +263,7 @@ function handleError(title = 'Une erreur est survenue', error = null, type = 'er
 // Fonction utilitaire pour gérer les requêtes API
 async function apiRequest(endpoint, options = {}) {
     showLoading();
-    
+
     try {
         const headers = {
             'Content-Type': 'application/json',
@@ -281,7 +280,7 @@ async function apiRequest(endpoint, options = {}) {
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             throw new Error(
-                errorData.message || 
+                errorData.message ||
                 `Erreur API: ${response.status} ${response.statusText}`
             );
         }
@@ -291,20 +290,28 @@ async function apiRequest(endpoint, options = {}) {
         handleError('Erreur lors de la requête API', error, 'error');
         throw error;
     } finally {
-        hideLoading();
+        setTimeout(() => {
+            hideLoading();
+        }, 1000);
     }
 }
 
 // Afficher le spinner de chargement
 function showLoading() {
     const spinner = document.querySelector(DASHBOARD_ELEMENTS.loadingSpinner);
-    if (spinner) spinner.style.display = 'block';
+    if (spinner) {
+        spinner.classList.remove('opacity-0', 'pointer-events-none');
+        spinner.classList.add('opacity-100');
+    }
 }
 
 // Cacher le spinner de chargement
 function hideLoading() {
     const spinner = document.querySelector(DASHBOARD_ELEMENTS.loadingSpinner);
-    if (spinner) spinner.style.display = 'none';
+    if (spinner) {
+        spinner.classList.remove('opacity-100');
+        spinner.classList.add('opacity-0', 'pointer-events-none');
+    }
 }
 
 // Fonction pour récupérer l'ID utilisateur
@@ -331,25 +338,28 @@ async function getUserId() {
 // Fonction pour mettre à jour les éléments du DOM
 function updateDOM(elements, data) {
     Object.entries(elements).forEach(([key, selector]) => {
-        const element = document.querySelector(selector);
+        const element = document.querySelectorAll(selector);
         if (element) {
-            let value = data.data?.stats?.[key] || 
-                       data.data?.[key] || 
-                       data[key] || 
-                       'N/A';
-            
-            if (typeof value === 'number') {
-                value = value.toString();
-            }
-            
-            element.textContent = value;
-            
-            // Ajoute des classes pour les états vides
-            if (value === '0' || value === 0) {
-                element.classList.add('empty-stat');
-            } else if (value === 'N/A' || !value) {
-                element.classList.add('na-stat');
-            }
+            element.forEach(element => {
+
+                let value = data.data?.stats?.[key] ||
+                    data.data?.[key] ||
+                    data[key] ||
+                    'N/A';
+
+                if (typeof value === 'number') {
+                    value = value.toString();
+                }
+
+                element.textContent = value;
+
+                // Ajoute des classes pour les états vides
+                if (value === '0' || value === 0) {
+                    element.classList.add('empty-stat');
+                } else if (value === 'N/A' || !value) {
+                    element.classList.add('na-stat');
+                }
+            });
         }
     });
 }
@@ -357,6 +367,10 @@ function updateDOM(elements, data) {
 // Fonction pour charger les informations de l'utilisateur
 async function loadUserInfo(userId) {
     try {
+        if (!userId) {
+            console.error('Utilisateur non authentifié');
+            return;
+        }
         const data = await apiRequest(`/users/${userId}`);
         updateDOM({
             username: DASHBOARD_ELEMENTS.username,
@@ -375,19 +389,19 @@ async function loadStatistics() {
             console.error('Utilisateur non authentifié');
             return;
         }
-        
+
         // Charge les statistiques
         const statsResponse = await apiRequest(`/users/${userId}/stats`);
         console.log('Stats:', statsResponse);
-        
+
         if (statsResponse.success && statsResponse.data) {
             updateDOM(DASHBOARD_ELEMENTS.stats, statsResponse);
-            
+
             // Met à jour la barre de progression globale
             const totalPoints = statsResponse.data.stats?.['total-points'] || 0;
             const maxPoints = 56; // Valeur fixe selon votre dashboard
             const progressPercent = Math.round((totalPoints / maxPoints) * 100);
-            
+
             const progressBar = document.querySelector('.global-progress-bar');
             if (progressBar) {
                 progressBar.style.width = `${progressPercent}%`;
@@ -395,25 +409,57 @@ async function loadStatistics() {
                 progressBar.textContent = `${progressPercent}%`;
             }
         }
-        
-        // Charge les défis en cours
-        const challengesResponse = await apiRequest(`/users/${userId}/current-challenges`);
-        console.log('Défis en cours:', challengesResponse);
-        
-        if (challengesResponse.success) {
-            updateCurrentChallenges(challengesResponse.data || []);
-        }
-        
+
         // Charge les activités récentes
         const activitiesResponse = await apiRequest(`/users/${userId}/recent-activities`);
         console.log('Activités récentes:', activitiesResponse);
-        
+
         if (activitiesResponse.success) {
             updateRecentActivities(activitiesResponse.data || []);
         }
-        
+
     } catch (error) {
         handleError('Erreur lors de la récupération des données du dashboard', error, 'error');
+    }
+}
+
+async function loadCurrentChalenge() {
+    try {
+        const userId = await getUserId();
+        if (!userId) {
+            console.error('Utilisateur non authentifié');
+            return;
+        }
+
+        // Charge les défis en cours
+        const challengesResponse = await apiRequest(`/users/${userId}/current-challenges`);
+        console.log('Défis en cours:', challengesResponse);
+
+        if (challengesResponse.success) {
+            updateCurrentChallenges(challengesResponse.data || []);
+        }
+    } catch (error) {
+        handleError('Erreur lors de la récupération des défis en cours', error, 'error');
+    }
+}
+
+async function loadRecentActivity() {
+    try {
+        const userId = await getUserId();
+        if (!userId) {
+            console.error('Utilisateur non authentifié');
+            return;
+        }
+
+        // Charge les activités récentes
+        const activitiesResponse = await apiRequest(`/users/${userId}/recent-activities`);
+        console.log('Activités récentes:', activitiesResponse);
+
+        if (activitiesResponse.success) {
+            updateRecentActivities(activitiesResponse.data || []);
+        }
+    } catch (error) {
+        handleError('Erreur lors de la récupération des activités récentes', error, 'error');
     }
 }
 
@@ -431,22 +477,20 @@ async function loadNextEvent() {
         const noEventMessage = document.querySelector(DASHBOARD_ELEMENTS.nextEvent.noEventMessage);
 
         if (data.success && data.data) {
-            if (nextEventContainer) nextEventContainer.style.display = 'block';
-            if (noEventMessage) noEventMessage.style.display = 'none';
-
-            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.title).textContent = 
-                data.data.name || 'Événement inconnu';
-            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.description).textContent = 
-                data.data.description || 'Description non disponible';
-            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.startDate).textContent = 
-                data.data.start_date ? formatDate(data.data.start_date) : 'Date de début inconnue';
-            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.endDate).textContent = 
-                data.data.end_date ? formatDate(data.data.end_date) : 'Date de fin inconnue';
-            document.querySelector(DASHBOARD_ELEMENTS.nextEvent.location).textContent = 
-                data.data.location || 'Lieu inconnu';
+            noEventMessage.style.display = 'none';
+            console.log('Prochain événement:', data.data);
+            const eventDiv = createEle('div', {
+                class: 'flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1'
+            })
+            eventDiv.innerHTML = `
+                    <p class="text-md font-semibold">${data.data.name || 'Événement inconnu'}</p>
+                    <p class="text-gray-500 text-sm">${data.data.start_date ? formatDate(data.data.start_date) : 'Date de début inconnue'}</p>
+                    <span class="text-green-400 bg-emerald-950 flex self-start text-xs p-2 rounded-xl">Bientôt</span>
+            `;
+            if (nextEventContainer) nextEventContainer.appendChild(eventDiv);
         } else {
             if (nextEventContainer) nextEventContainer.style.display = 'none';
-            if (noEventMessage) noEventMessage.style.display = 'block';
+            if (noEventMessage) noEventMessage.style.display = 'flex';
         }
 
     } catch (error) {
@@ -454,7 +498,7 @@ async function loadNextEvent() {
         const nextEventContainer = document.querySelector(DASHBOARD_ELEMENTS.nextEvent.container);
         const noEventMessage = document.querySelector(DASHBOARD_ELEMENTS.nextEvent.noEventMessage);
         if (nextEventContainer) nextEventContainer.style.display = 'none';
-        if (noEventMessage) noEventMessage.style.display = 'block';
+        if (noEventMessage) noEventMessage.style.display = 'flex';
     }
 }
 
@@ -462,17 +506,14 @@ async function loadNextEvent() {
 async function initializeDashboard() {
     try {
         showLoading();
-        
-        const userId = await getUserId();
-        if (!userId) {
-            window.location.href = '/HACKATHON_ESGIS/public/auth';
-            return;
-        }
 
+        const userId = await getUserId();
         // Charger les données de base
         await Promise.all([
             loadUserInfo(userId),
             loadStatistics(),
+            loadCurrentChalenge(),
+            // loadRecentActivity(),
             loadNextEvent()
         ]);
 
@@ -485,7 +526,9 @@ async function initializeDashboard() {
     } catch (error) {
         handleError('Erreur lors de l\'initialisation du dashboard', error, 'error');
     } finally {
-        hideLoading();
+        setTimeout(() => {
+            hideLoading();
+        }, 1000);
     }
 }
 
@@ -493,7 +536,7 @@ async function initializeDashboard() {
 function setupAutoRefresh() {
     // Rafraîchir toutes les 5 minutes
     setInterval(loadStatistics, 300000);
-    
+
     // Rafraîchir lors du retour en ligne
     window.addEventListener('online', () => {
         loadStatistics();
@@ -502,16 +545,6 @@ function setupAutoRefresh() {
 
 // Fonction pour mettre en place les écouteurs d'événements
 function setupEventListeners() {
-    // Gestion du bouton de déconnexion
-    const logoutButton = document.querySelector('.logout-button');
-    if (logoutButton) {
-        logoutButton.addEventListener('click', () => {
-            document.cookie = 'jwt_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            document.cookie = 'long_term_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            window.location.href = '/HACKATHON_ESGIS/public/auth';
-        });
-    }
-
     // Gestion du bouton de mise à jour des statistiques
     const refreshStatsButton = document.querySelector('.refresh-stats');
     if (refreshStatsButton) {
@@ -523,7 +556,7 @@ function setupEventListeners() {
             }
         });
     }
-    
+
     // Gestion des notifications
     const notificationButtons = document.querySelectorAll('.notification-dismiss');
     notificationButtons.forEach(button => {

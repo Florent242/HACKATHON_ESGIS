@@ -1,9 +1,10 @@
 <?php
+
 namespace Auth\Controller;
 
 use Exception;
 
-class Controller 
+class Controller
 {
     private $tokenManager;
     protected $publicRoutes = [
@@ -15,10 +16,10 @@ class Controller
         'auth/check-auth'
     ];
 
-    public function __construct($tokenManager) 
+    public function __construct($tokenManager)
     {
         $this->tokenManager = $tokenManager;
-        
+
         // Vérification CSRF pour les méthodes non-GET
         if ($_SERVER['REQUEST_METHOD'] !== 'GET' && !$this->validateCsrfToken()) {
             $this->jsonResponse([
@@ -42,7 +43,7 @@ class Controller
     protected function isPublicRoute(): bool
     {
         $requestPath = $this->getRequestPath();
-        
+
         foreach ($this->publicRoutes as $route) {
             if (strpos($requestPath, $route) === 0) {
                 return true;
@@ -59,14 +60,13 @@ class Controller
     {
         try {
             $token = $this->getBearerToken();
-            
+
             if (empty($token)) {
                 return false;
             }
 
             $validation = $this->tokenManager->validateToken($token);
             return $validation['valid'];
-            
         } catch (Exception $e) {
             error_log('Authentication error: ' . $e->getMessage());
             return false;
@@ -79,28 +79,28 @@ class Controller
     protected function getBearerToken(): ?string
     {
         $headers = $this->getAuthorizationHeader();
-        
+
         if (isset($_COOKIE['long_term_token'])) {
             return $_COOKIE['long_term_token'];
         }
-        
+
         if (isset($_COOKIE['jwt_token'])) {
             return $_COOKIE['jwt_token'];
         }
         if (!empty($headers) && preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
             return $matches[1];
         }
-        
+
         return null;
     }
-    
+
     /**
      * Récupère le header Authorization
      */
     private function getAuthorizationHeader(): ?string
     {
         $headers = null;
-        
+
         if (isset($_SERVER['Authorization'])) {
             $headers = trim($_SERVER['Authorization']);
         } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
@@ -109,7 +109,7 @@ class Controller
             $requestHeaders = apache_request_headers();
             $headers = trim($requestHeaders['Authorization'] ?? '');
         }
-        
+
         return $headers;
     }
 
@@ -144,9 +144,9 @@ class Controller
             header('Content-Type: application/json');
             http_response_code($statusCode);
         }
-        
+
         echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-        
+
         if (php_sapi_name() !== 'cli') {
             exit;
         }
@@ -185,7 +185,7 @@ class Controller
             }
             return $_POST;
         }
-        
+
         return $_GET;
     }
 
