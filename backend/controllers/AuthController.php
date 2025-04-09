@@ -105,11 +105,12 @@ class AuthController
         try {
             // Vérifier d'abord la session
             if (isset($_SESSION['user']) && $_SESSION['user']['logged_in']) {
-                return json_encode([
+                echo json_encode([
                     'authenticated' => true,
                     'id' => $_SESSION['user']['id'],
                     'role' => $_SESSION['user']['role']
                 ]);
+                return;
             }
 
             // Puis vérifier les tokens
@@ -129,21 +130,22 @@ class AuthController
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
+            $userInfo = $this->user->find($user['user_id']);
             $_SESSION['user'] = [
                 'id' => $user['user_id'],
-                'email' => $user['email'],
-                'role' => $user['role'],
+                'email' => $userInfo['email'],
+                'role' => $userInfo['role'],
                 'logged_in' => true,
                 'last_activity' => time()
             ];
 
-            return json_encode([
+            echo json_encode([
                 'authenticated' => true,
                 'id' => $user['user_id'],
-                'role' => $user['role']
+                'role' => $userInfo['role']
             ]);
         } catch (Exception $e) {
-            return json_encode([
+            echo json_encode([
                 'authenticated' => false,
                 'error' => $e->getMessage()
             ], $e->getCode() ?: 401);
@@ -181,9 +183,9 @@ class AuthController
 
     private function setAuthCookies($token, $longTermToken = null)
     {
-        // Cookie court terme (1 jour)
+        // Cookie court terme (1 heure)
         setcookie("jwt_token", $token, [
-            "expires" => time() + (60 * 60 * 24),
+            "expires" => time() + (60 * 60 ),
             "path" => "/",
             "httponly" => true,
             "secure" => true,
@@ -356,6 +358,11 @@ class AuthController
             // Suppression des cookies
             setcookie("jwt_token", "", time() - 3600, "/");
             setcookie("long_term_token", "", time() - 3600, "/");
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            unset($_SESSION['user']);
+            session_destroy();
 
             // Réponse JSON
             echo json_encode([
@@ -728,6 +735,4 @@ class AuthController
             throw new Exception($e->getMessage());
         }
     }
-
-    
 }

@@ -4,7 +4,7 @@
 require_once __DIR__ . '/../backend/includes/authMiddleware.php';
 
 // Vérifier l'authentification
-$user = AuthMiddleware::checkAuth();
+AuthMiddleware::checkAuth();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

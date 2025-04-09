@@ -5,7 +5,6 @@ if (!defined('CONFIG_INCLUDED')) {
 // Configuration des routes par rôle
 define('ROLE_REDIRECTIONS', [
     'admin' => '/HACKATHON_ESGIS/public/admin',
-    'organizer' => '/HACKATHON_ESGIS/public/admin/hackathon',
     'participant' => '/HACKATHON_ESGIS/public/user',
     'guest' => '/HACKATHON_ESGIS/public/auth'
 ]);
@@ -14,7 +13,12 @@ define('ROLE_REDIRECTIONS', [
 define('PUBLIC_ROUTES', [
     '/^\/HACKATHON_ESGIS\/public\/?$/', // Page visiteur
     '/^\/HACKATHON_ESGIS\/public\/auth\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/auth\/login\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/challenges\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/contact\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/hackathon\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/resources\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/leaderboard\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/sponsors\/?$/',
     '/^\/HACKATHON_ESGIS\/public\/auth\/register\/?$/',
     '/^\/HACKATHON_ESGIS\/public\/auth\/forgot-password\/?$/',
     '/^\/HACKATHON_ESGIS\/public\/auth\/reset-password\/?$/',
@@ -30,30 +34,13 @@ define('PUBLIC_ROUTES', [
     '/^\/HACKATHON_ESGIS\/public\/api\/auth\/reset-password\/?$/',
     '/^\/HACKATHON_ESGIS\/public\/api\/auth\/verify-email\/?$/',
     '/^\/HACKATHON_ESGIS\/public\/api\/auth\/confirm-email\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/verify-otp\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/send-otp\/?$/',
     '/^\/HACKATHON_ESGIS\/public\/api\/auth\/logout\/?$/',
     '/^\/HACKATHON_ESGIS\/public\/api\/auth\/refresh-token\/?$/',
     '/^\/HACKATHON_ESGIS\/public\/api\/auth\/validate-token\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/public\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/public\/.*$/',
-    '/^\/HACKATHON_ESGIS\/public\/assets\/.*$/',
-    '/^\/HACKATHON_ESGIS\/public\/docs\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/docs\/.*$/',
     '/^\/HACKATHON_ESGIS\/public\/about\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/contact\/?$/',
     '/^\/HACKATHON_ESGIS\/public\/privacy\/?$/',
     '/^\/HACKATHON_ESGIS\/public\/terms\/?$/',
     '/^\/HACKATHON_ESGIS\/public\/faq\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/health-check\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/error\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/error\/.*$/',
-    '/^\/HACKATHON_ESGIS\/public\/robots.txt$/',
-    '/^\/HACKATHON_ESGIS\/public\/sitemap.xml$/',
-    '/^\/HACKATHON_ESGIS\/public\/favicon.ico$/',
-    '/^\/HACKATHON_ESGIS\/public\/opensearch.xml$/',
-    '/^\/HACKATHON_ESGIS\/public\/apple-touch-icon.png$/',
-    '/^\/HACKATHON_ESGIS\/public\/.well-known\/.*$/'
 ]);
 
 // Durée de vie des sessions (en secondes)
