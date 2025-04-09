@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // constante pour les message d'erreur pour la validation a l'inscription
 
     const form = document.getElementById('registrationForm');
+    const signinForm = document.getElementById('signinForm');
 
     // Éléments du formulaire
     const fullName = document.getElementById('fullname');
@@ -285,14 +286,14 @@ document.addEventListener("DOMContentLoaded", function () {
         switch (currentStep) {
             case 1: // Étape 1: Informations personnelles
                 canProceed = validateFullName(fullName.value, fullNameError) &&
-                           validateUsername(username.value, usernameError) &&
-                           validateEmail(email.value, emailError) &&
-                           validateSchool(school.value, schoolError);
+                    validateUsername(username.value, usernameError) &&
+                    validateEmail(email.value, emailError) &&
+                    validateSchool(school.value, schoolError);
                 break;
 
             case 2: // Étape 2: Sécurité
                 canProceed = validatePassword(password.value, password, passwordError) &&
-                           validateConfirmPassword(confirmPassword.value, confirmPassword, confirmPasswordError, password);
+                    validateConfirmPassword(confirmPassword.value, confirmPassword, confirmPasswordError, password);
                 break;
 
             case 3: // Étape 3: Hackathon
@@ -402,57 +403,141 @@ document.addEventListener("DOMContentLoaded", function () {
 
         let isValid = true;
 
-        // Validation du nom complet
-        if (fullName.value.length < 3 || fullName.value.trim() === '') {
-            showError(fullName, fullNameError, "Le nom complet doit contenir au moins 3 caractères");
-            isValid = false;
-        }
+        // Désactiver le bouton de soumission et afficher l'indicateur de traitement
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i data-lucide="loader-circle" class="animate-spin"></i> Traitement...';
+        lucide.createIcons();
 
-        // Validation du nom d'utilisateur
-        if (username.value.length < 3 || username.value.trim() === '') {
-            showError(username, usernameError, "Le nom d'utilisateur doit contenir au moins 3 caractères");
-            isValid = false;
-        }
-
-        // Validation de l'email
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email.value) || email.value.trim() === '') {
-            showError(email, emailError, "Veuillez entrer une adresse email valide");
-            isValid = false;
-        }
-
-        // Validation du champ d'école
-        if (school.value.trim() === '') {
-            showError(school, schoolError, 'Veuillez entrer le nom de votre école');
-            isValid = false;
-        }
-
-        // Validation du mot de passe
-        if (!validatePassword(password.value, password, passwordError) || password.value.trim() === '') {
-            showError(password, passwordError, "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial");
-            isValid = false;
-        }
-
-        // Validation de la confirmation du mot de passe
-        if (confirmPassword.value !== password.value || confirmPassword.value.trim() === '') {
-            showError(confirmPassword, confirmPasswordError, "Les mots de passe ne correspondent pas");
-            isValid = false;
-        }
-
-        // Validation asynchrone
-        if (isValid) {
-            try {
-                const [usernameAvailable, emailAvailable] = await Promise.all([
-                    checkUsername(username.value),
-                    checkEmail(email.value)
-                ]);
-
-                if (!usernameAvailable && !emailAvailable) {
-                    form.submit(); // Soumettre seulement si tout est valide
-                }
-            } catch (error) {
-                console.error('Validation error:', error);
+        try {
+            // Validation du nom complet
+            if (fullName.value.length < 3 || fullName.value.trim() === '') {
+                showError(fullName, fullNameError, "Le nom complet doit contenir au moins 3 caractères");
+                isValid = false;
             }
+
+            // Validation du nom d'utilisateur
+            if (username.value.length < 3 || username.value.trim() === '') {
+                showError(username, usernameError, "Le nom d'utilisateur doit contenir au moins 3 caractères");
+                isValid = false;
+            }
+
+            // Validation de l'email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email.value) || email.value.trim() === '') {
+                showError(email, emailError, "Veuillez entrer une adresse email valide");
+                isValid = false;
+            }
+
+            // Validation du champ d'école
+            if (school.value.trim() === '') {
+                showError(school, schoolError, 'Veuillez entrer le nom de votre école');
+                isValid = false;
+            }
+
+            // Validation du mot de passe
+            if (!validatePassword(password.value, password, passwordError) || password.value.trim() === '') {
+                showError(password, passwordError, "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial");
+                isValid = false;
+            }
+
+            // Validation de la confirmation du mot de passe
+            if (confirmPassword.value !== password.value || confirmPassword.value.trim() === '') {
+                showError(confirmPassword, confirmPasswordError, "Les mots de passe ne correspondent pas");
+                isValid = false;
+            }
+
+            // Validation synchrone
+            if (!isValid) { return; }
+
+            // Vérifications asynchrones
+            const [usernameAvailable, emailAvailable] = await Promise.all([
+                checkUsername(username.value),
+                checkEmail(email.value)
+            ]);
+
+            if (usernameAvailable || emailAvailable) {
+                showNotification(usernameAvailable ? "Email déjà utilisé" : "Nom d'utilisateur déjà pris", 'Veuillez corriger les erreurs', 'warning');
+                return;
+            }
+
+            // Envoi des données via Fetch
+            const formData = new FormData(event.target);
+            const response = await fetch(event.target.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Stockage du token côté client
+                // if (data.token) {
+                //     localStorage.setItem('auth_token', data.token);
+                // }
+
+                // Redirection
+                window.location.href = data.redirect || '/user';
+            } else {
+                showNotification(data.message || "Erreur lors de l'inscription", 'Veuillez corriger les erreurs', 'warning');
+            }
+        } catch (error) {
+            console.error('Validation error:', error.message);
+            showNotification('Une erreur est survenue', error.message, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i data-lucide="send"></i>S\'inscrire';
+            lucide.createIcons();
+        }
+    });
+
+    // Gestionnaire de formulaire de connexion
+    signinForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i data-lucide="loader-circle" class="animate-spin"></i> Traitement...';
+        lucide.createIcons();
+
+        try {
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Erreur de connexion');
+            }
+
+            // Stockage des tokens
+            if (data.success) {
+                console.log(data);
+                setFlashMessage('success', data.message, data.username);
+                window.location.href = data.redirect || '/user';
+            } else if (!data.success) {
+                showNotification(data.message || "Erreur lors de la connexion", 'Veuillez corriger les erreurs', 'warning');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i data-lucide="send"></i> Se connecter';
+                lucide.createIcons();
+                return;
+            }
+        } catch (error) {
+            showNotification(error.message, 'Veuillez corriger les erreurs', 'warning');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i data-lucide="send"></i> Se connecter';
+            lucide.createIcons();
         }
     });
 

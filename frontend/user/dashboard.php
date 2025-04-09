@@ -8,18 +8,22 @@
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/dashboard.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/header.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
-    <script defer src="/HACKATHON_ESGIS/public/js/user/dashboard.js"></script>
+    <script defer src="/HACKATHON_ESGIS/public/js/user/dashboard.js" type="module"></script>
     <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
 </head>
 
 <body>
+    <div id="global-loading-spinner" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-blue-500"></div>
+    </div>
+
     <!-- Navigation -->
     <?php require_once '../includes/user/header.php'; ?>
     <main>
         <section class="header-dashboard flex flex-col items-center justify-center gap-12 max-md:gap-10 max-w-[1200px] max-md:mx-[5%] my-1 mx-auto p-5">
             <div class="container flex flex-row w-full max-md:flex-col items-center justify-between gap-5 mx-auto">
 
-                <h1 class="text-3xl font-bold w-auto max-md:text-center max-md:text-3xl max-sm:text-2xl">Welcome to your Dashboard, 
+                <h1 class="text-3xl font-bold w-auto max-md:text-center max-md:text-3xl max-sm:text-2xl">Welcome to your Dashboard,
                     <span class="text-blue-500 Username">
                         [Username]
                     </span>
@@ -64,9 +68,9 @@
                                 <h3 class="text-md font-normal">Défis de développement</h3>
                                 <i data-lucide="code" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
-                            <div class="text-3xl font-bold mt-2" id="number-dev-challenges">0</div>
-                            <p class="text-gray-400"><span class="number-dev-challenges-on">0</span> défis en cours</p>
-                            <p class="text-green-400 text-sm mt-1"><span id="dev-stat">0</span> défis soumis</p>
+                            <div class="text-3xl font-bold mt-2" id="number-dev-challenges"><i data-lucide="loader-circle" class="animate-spin"></i></div>
+                            <p class="text-gray-400 flex items-center flex-row"><span id="number-dev-challenges-on"><i data-lucide="loader-circle" class="animate-spin"></i></span> défis en cours</p>
+                            <p class="text-green-400 text-sm mt-1 flex items-center flex-row"><span id="dev-stat"><i data-lucide="loader-circle" class="animate-spin"></i></span> défis soumis</p>
                         </div>
                     </div>
 
@@ -77,8 +81,10 @@
                                 <h3 class="text-md font-normal">Défis de hacking</h3>
                                 <i data-lucide="shield" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
-                            <div class="text-3xl font-bold mt-2" id="number-hacking-challenges">0</div>
-                            <p class="text-gray-400"><span class="number-hacking-challenges-validate">0</span> flags validés</p>
+                            <div class="text-3xl font-bold mt-2" id="number-hacking-challenges"><i data-lucide="loader-circle" class="animate-spin"></i></div>
+                            <p class="text-gray-400 flex items-center flex-row"><span id="number-hacking-challenges-validate"><i data-lucide="loader-circle" class="animate-spin"></i></span> flags validés</p>
+                            <p class="text-green-400 text-sm mt-1 flex items-center flex-row"><span id="hacking-stat"><i data-lucide="loader-circle" class="animate-spin"></i></span>% de réussite</p>
+
                         </div>
                     </div>
 
@@ -89,8 +95,8 @@
                                 <h3 class="text-md font-normal">Projets soumis</h3>
                                 <i data-lucide="file-text" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
-                            <div class="text-3xl font-bold mt-2" id="number-submitted-projects">0</div>
-                            <p class="text-gray-400"><span class="number-submitted-projects-wait">0</span> projet en attente d'évaluation</p>
+                            <div class="text-3xl font-bold mt-2" id="number-submitted-projects"><i data-lucide="loader-circle" class="animate-spin"></i></div>
+                            <p class="text-gray-400 flex items-center flex-row"><span id="number-submitted-projects-wait">0</span> projet en attente d'évaluation</p>
                         </div>
                     </div>
 
@@ -101,9 +107,9 @@
                                 <h3 class="text-md font-normal">Points totaux</h3>
                                 <i data-lucide="award" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
-                            <div class="text-3xl font-bold mt-2" id="total-points">0</div>
-                            <p class="text-gray-400"><span class="user-rank">12</span> sur <span class="rank-max">56</span></p>
-                            <p class="text-green-400 text-sm mt-1">↑ <span id="total-points-stat">0</span>% depuis la derniere connexion</p>
+                            <div class="text-3xl font-bold mt-2" id="total-points"><i data-lucide="loader-circle" class="animate-spin"></i></div>
+                            <p class="text-gray-400"><span class="user-rank">#</span> sur <span class="rank-max">#</span></p>
+                            <p class="text-green-400 text-sm mt-1 flex items-center flex-row">↑ <span id="total-points-stat"><i data-lucide="loader-circle" class="animate-spin"></i></span>% depuis la derniere connexion</p>
                         </div>
                     </div>
                 </div>
@@ -122,17 +128,19 @@
                             <i data-lucide="activity" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             <h3 class="text-lg font-medium">Défis en cours</h3>
                         </div>
-                        <div class="flex flex-row justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-                            <div class="flex flex-col justify-between gap-2">
-                                <h4 class="text-base font-semibold">API REST - Module d'authentification</h4>
-                                <p class="text-gray-400 text-sm">Créez une API REST sécurisée avec JWT.</p>
-                                <p class="flex flex-row items-center text-gray-500 text-sm">
-                                    <i data-lucide="calendar" class="w-4 h-4"></i> Date limite: 23 mai
-                                </p>
+                        <div id="current-challenges-container" class="flex flex-col gap-4">
+                            <div class="flex flex-row justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1 current-challenge-item">
+                                <div class="flex flex-col justify-between gap-2">
+                                    <h4 class="text-base font-semibold challenge-title">API REST - Module d'authentification</h4>
+                                    <p class="text-gray-400 text-sm challenge-description">Créez une API REST sécurisée avec JWT.</p>
+                                    <p class="flex flex-row items-center text-gray-500 text-sm">
+                                        <i data-lucide="calendar" class="w-4 h-4"></i> <span class="challenge-deadline">Date limite: 23 mai</span>
+                                    </p>
+                                </div>
+                                <button class="cursor-pointer relative flex items-center justify-center mb-auto w-auto h-auto top-0 right-0 bg-blue-500 text-white px-3 py-1 rounded-2xl transition delay-150 duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50">Soumettre le projet</button>
                             </div>
-                            <button class="cursor-pointer relative flex items-center justify-center mb-auto w-auto h-auto top-0 right-0 bg-blue-500 text-white px-3 py-1 rounded-2xl transition delay-150 duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50">Soumettre le projet</button>
-                        </div>
-                        <div class="flex flex-row justify-between p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
+                            <!-- 
+                            <div class="flex flex-row justify-between p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                             <div class="flex flex-col justify-between gap-2">
                                 <h4 class="text-base font-semibold">Challenge Sécurité Web</h4>
                                 <p class="text-gray-400 text-sm">Exploitez les vulnérabilités XSS et CSRF.</p>
@@ -141,25 +149,47 @@
                                 </p>
                             </div>
                             <button class="cursor-pointer relative flex items-center justify-center mb-auto w-auto h-auto top-0 right-0 border-none text-white px-3 py-1 rounded-2xl transition delay-150 duration-300 ease-in-out hover:bg-gray-700 hover:shadow-md hover:shadow-gray-500/50">Soumettre le flag</button>
+                        </div> -->
+                            <div class="flex flex-col items-center text-center gap-3 py-10 px-6" id="no-current-challenges">
+                                <div class="animate-bounce-slow mb-3">
+                                    <i data-lucide="activity" class="w-12 h-12 text-blue-400/60"></i>
+                                </div>
+                                <h3 class="text-gray-200 text-lg font-medium">Pas de défi disponible</h3>
+                                <p class="text-sm text-gray-400">Tu n'as pas encore rejoint ou commencé de défi. Explore-les pour te lancer !</p>
+                                <a href="/HACKATHON_ESGIS/public/user/challenge_security" class="text-blue-500 hover:underline text-sm cursor-pointer transition duration-300 ease-in-out">Explorer les défis</a>
+                            </div>
+
+
                         </div>
                     </section>
 
                     <!-- Activité récente -->
                     <section class="fade-in flex flex-col gap-2 space-y-4 p-5 border border-gray-700 rounded-2xl shadow-xl card-bg">
                         <h2 class="text-lg font-medium">Activité récente</h2>
-                        <div class="flex flex-row justify-start items-center w-full card-bg rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-                            <i data-lucide="trophy" class="w-5 h-5 flex self-center stroke-current"></i>
-                            <div>
-                                <p class="text-gray-400">Flag validé pour "XSS Challenge"</p>
-                                <p class="text-gray-500 text-sm">Il y a 3 heures</p>
+                        <div class="flex flex-col items-center text-center" id="recent-activities-container">
+                            <div class="flex flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1 recent-activity-item">
+                                <i data-lucide="trophy" class="w-5 h-5 flex self-center stroke-current activity-icon"></i>
+                                <div class="flex flex-col items-start justify-between">
+                                    <p class="text-gray-400 activity-text">Flag validé pour "XSS Challenge"</p>
+                                    <p class="text-gray-500 text-sm activity-time">Il y a 3 heures</p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="flex flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-                            <i data-lucide="file-text" class="w-5 h-5 flex self-center stroke-current"></i>
-                            <div>
-                                <p class="text-gray-400">Projet "API REST" mis à jour</p>
-                                <p class="text-gray-500 text-sm">Il y a 1 jour</p>
+                            <!-- 
+                            <div class="flex flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1 recent-activity-item">
+                                <i data-lucide="file-text" class="w-5 h-5 flex self-center stroke-current"></i>
+                                <div>
+                                    <p class="text-gray-400 activity-text">Projet "API REST" mis à jour</p>
+                                    <p class="text-gray-500 text-sm activity-time">Il y a 1 jour</p>
+                                </div>
+                            </div> -->
+                            <div class="flex flex-col items-center text-center py-10 px-6" id="no-recent-activities">
+                                <div class="animate-fade-in mb-3">
+                                    <i data-lucide="history" class="w-12 h-12 text-emerald-400/60"></i>
+                                </div>
+                                <h3 class="text-gray-200 text-lg font-medium">Aucune activité enregistrée</h3>
+                                <p class="text-gray-400 text-sm mt-1">Commencez un défi ou explorez les challenges à venir.</p>
                             </div>
+
                         </div>
                         <button class="cursor-pointer flex items-center w-full justify-center text-center p-4 rounded-xl border-none text-white max-md:text-sm hover:bg-gray-700 hover:scale-103 transition duration-300 ease-in-out">Voir toutes les activités</button>
                     </section>
@@ -178,15 +208,27 @@
                                 <i data-lucide="bell" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                                 <h3 class="text-lg font-medium">Dernières notifications</h3>
                             </div>
-                            <div class="flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-                                <p class="font-medium">Nouveau challenge de développement</p>
-                                <p class="text-gray-400 text-sm">Un nouveau challenge "Architecture Microservices" ajouté.</p>
-                                <p class="text-gray-500 text-xs">Il y a environ 2 heures</p>
-                            </div>
-                            <div class="flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-                                <p class="font-medium">Flag validé</p>
-                                <p class="text-gray-400 text-sm">Félicitations ! Vous avez validé un flag.</p>
-                                <p class="text-gray-500 text-xs">Il y a 5 heures</p>
+                            <div class="flex flex-col gap-2" id="notifications-container">
+                                <div class="flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1 notification-item">
+                                    <p class="font-medium notification-title">Nouveau challenge de développement</p>
+                                    <p class="text-gray-400 text-sm notification-message">Un nouveau challenge "Architecture Microservices" ajouté.</p>
+                                    <p class="text-gray-500 text-xs notification-time">Il y a environ 2 heures</p>
+                                </div>
+                                <!-- 
+                                <div class="flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
+                                    <p class="font-medium">Flag validé</p>
+                                    <p class="text-gray-400 text-sm">Félicitations ! Vous avez validé un flag.</p>
+                                    <p class="text-gray-500 text-xs">Il y a 5 heures</p>
+                                </div> -->
+                                <div class="flex flex-col items-center text-center py-10 px-6" id="no-notifications">
+                                    <div class="animate-fade-in mb-3">
+                                        <i data-lucide="bell-off" class="w-12 h-12 text-purple-400/60"></i>
+                                    </div>
+                                    <h3 class="text-gray-200 text-lg font-medium">Rien à signaler</h3>
+                                    <p class="text-gray-400 text-sm mt-1">Vous êtes à jour. Nous vous tiendrons informé dès qu’il y a du nouveau !</p>
+                                </div>
+
+
                             </div>
                             <button class="cursor-pointer flex items-center w-full justify-center text-center p-4 rounded-xl border-none text-white max-md:text-sm hover:bg-gray-700 hover:scale-105 transition duration-300 ease-in-out">Voir toutes les notifications</button>
                         </div>
@@ -197,12 +239,20 @@
                         <div class="flex flex-row justify-start items-center gap-2">
                             <h3 class="text-xl font-medium">Prochains événements</h3>
                         </div>
-                        <div class="flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-                            <div>
+                        <div id="next-event-container" class="flex flex-col gap-2">
+                            <!-- <div class="flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                                 <p class="text-md font-semibold">Hackathon IA</p>
                                 <p class="text-gray-500 text-sm">25-26 juin 2023</p>
+                                <span class="text-green-400 bg-emerald-950 flex self-start text-xs p-2 rounded-xl">Bientôt</span>
+                            </div> -->
+                            <div class="flex flex-col items-center text-center py-12 px-6 border border-dashed border-gray-600/40 rounded-xl bg-gray-900/20" id="no-next-event">
+                                <div class="animate-fade-in mb-4">
+                                    <i data-lucide="calendar-x" class="w-14 h-14 text-red-400/70"></i>
+                                </div>
+                                <h3 class="text-gray-100 text-xl font-semibold">Aucun hackathon prévu</h3>
+                                <p class="text-gray-400 text-sm mt-2">Nous publierons bientôt de nouveaux événements passionnants. Restez à l'écoute !</p>
                             </div>
-                            <span class="text-green-400 bg-emerald-950 flex self-start text-xs p-2 rounded-xl">Bientôt</span>
+
                         </div>
                         <button class="cursor-pointer flex items-center w-full justify-center text-center p-4 rounded-xl text-white max-md:text-sm hover:bg-gray-700 hover:scale-105 transition duration-300 ease-in-out">Voir tous les événements</button>
                     </section>
@@ -261,7 +311,7 @@
 
         </section>
     </main>
-    <?php require_once '../includes/footer.php'; ?>
+    <?php require_once '../includes/user/footer.php'; ?>
 </body>
 
 </html>

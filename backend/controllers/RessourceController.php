@@ -22,8 +22,8 @@ class RessourceController extends Controller {
     private $ressource;
     private $db;
 
-    public function __construct($db) {
-        parent::__construct();
+    public function __construct($db, $tokenManager) {
+        parent::__construct($tokenManager);
         $this->db = $db;
         $this->ressource = new Ressource($this->db);
     }
