@@ -302,7 +302,6 @@ async function getUserId() {
         if (!response.ok) {
             throw new Error('Utilisateur non authentifié. Dashboard');
         }
-        console.log(response);
 
         const data = await response.json();
         return data.data.id;  // Retourne bien l'ID utilisateur
@@ -310,6 +309,34 @@ async function getUserId() {
         handleError('Impossible de récupérer l\'ID utilisateur.', error, 'error');
         return null;
     }
+}
+// Fonction pour mettre à jour les éléments du DOM
+function updateDOM(elements, data) {
+    Object.entries(elements).forEach(([key, selector]) => {
+        const element = document.querySelectorAll(selector);
+        if (element) {
+            element.forEach(element => {
+
+                let value = data.data?.stats?.[key] ||
+                    data.data?.[key] ||
+                    data[key] ||
+                    'N/A';
+
+                if (typeof value === 'number') {
+                    value = value.toString();
+                }
+
+                element.textContent = value;
+
+                // Ajoute des classes pour les états vides
+                if (value === '0' || value === 0) {
+                    element.classList.add('empty-stat');
+                } else if (value === 'N/A' || !value) {
+                    element.classList.add('na-stat');
+                }
+            });
+        }
+    });
 }
 document.addEventListener('DOMContentLoaded', async () => {
     // initialisation des notifications

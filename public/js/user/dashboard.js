@@ -26,6 +26,11 @@ const DASHBOARD_ELEMENTS = {
         template: '.recent-activity-item',
         emptyState: '#no-recent-activities'
     },
+    notifications: {
+        container: '#notifications-container',
+        template: '.notification-item',
+        emptyState: '#no-notifications'
+    },
     nextEvent: {
         container: '#next-event-container',
         title: '.next-event-title',
@@ -89,7 +94,7 @@ function updateChallengeItem(element, challenge) {
     if (challenge.deadline || challenge.end_date) {
         const deadline = challenge.deadline || challenge.end_date;
         const date = new Date(deadline);
-        element.querySelector('.challenge-deadline').textContent = `Date limite: ${date.toLocaleDateString()}`;
+        element.querySelector('.challenge-deadline').textContent = `Date limite: ${date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}`;
     } else {
         element.querySelector('.challenge-deadline').textContent = 'Pas de date limite';
     }
@@ -148,23 +153,13 @@ function updateRecentActivities(activities) {
 }
 
 /**
- * Nettoie le texte pour prévenir les attaques XSS
- */
-function sanitizeText(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-/**
- * Met à jour un élément d'activité individuelle
- */
+ * Met à jour un élément de notification individuelle
+*/
 function updateActivityItem(element, activity) {
     const icon = element.querySelector('.activity-icon');
     const textElement = element.querySelector('.activity-text');
     const timeElement = element.querySelector('.activity-time');
-
+    
     // Détermine la classe CSS en fonction du niveau d'activité
     const activityClass = {
         'info': 'activity-info',
@@ -173,9 +168,9 @@ function updateActivityItem(element, activity) {
         'warning': 'activity-warning',
         'register_error': 'activity-error'
     }[activity.level] || 'activity-default';
-
+    
     element.classList.add(activityClass);
-
+    
     if (icon) {
         // Détermine l'icône en fonction du type ou niveau d'activité
         const iconMap = {
@@ -188,11 +183,11 @@ function updateActivityItem(element, activity) {
         };
 
         const iconName = iconMap[activity.level] ||
-            iconMap[activity.action] ||
-            iconMap['default'];
+        iconMap[activity.action] ||
+        iconMap['default'];
         icon.setAttribute('data-lucide', iconName);
     }
-
+    
     if (textElement) {
         // Filtre les messages d'erreur SQL
         let description = activity.description || activity.action || 'Activité inconnue';
@@ -214,16 +209,75 @@ function updateActivityItem(element, activity) {
     }
 }
 
+function updateNotifications(notifications) {
+    const container = document.querySelector(DASHBOARD_ELEMENTS.notifications.container);
+    const emptyState = document.querySelector(DASHBOARD_ELEMENTS.notifications.emptyState);
+
+    if (!container) {
+        console.error('Conteneur des notifications non trouvé');
+        return;
+    }
+
+    // Cache le conteneur si aucune notification
+    if (!notifications || notifications.length === 0) {
+        if (emptyState) emptyState.style.display = 'flex';
+        return;
+    }
+
+    // Affiche le conteneur et cache l'empty state
+    container.style.display = 'flex';
+    if (emptyState) emptyState.style.display = 'none';
+
+    // Supprime toutes les notifications existantes sauf la première (qui sert de template)
+    const items = container.querySelectorAll(DASHBOARD_ELEMENTS.notifications.template);
+    for (let i = 1; i < items.length; i++) {
+        items[i].remove();
+    }
+
+    // Clone et remplit le template pour chaque notification
+    notifications.list.forEach((notification, index) => {
+        if (index === 0) {
+            // Met à jour le premier élément (template)
+            updateNotificationItem(items[0], notification);
+        } else {
+            // Clone et ajoute pour les autres notifications
+            const clone = items[0].cloneNode(true);
+            updateNotificationItem(clone, notification);
+            container.appendChild(clone);
+        }
+    });
+}
+function updateNotificationItem(element, notification) {
+    element.querySelector('.notification-title').textContent = notification.title;
+    element.querySelector('.notification-message').textContent = notification.message;
+    element.querySelector('.notification-time').textContent = notification.created_at ? formatDate(notification.created_at) : 'Récemment';
+
+    if (notification.created_at) {
+        const date = new Date(notification.created_at);
+        const time = date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        element.querySelector('.notification-time').textContent = `${time} - ${date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}`;
+    }
+}
+/**
+ * Nettoie le texte pour prévenir les attaques XSS
+ */
+function sanitizeText(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Fonction pour formater les dates
 function formatDate(dateString) {
     try {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return 'Date invalide';
-
+        
         const options = {
             year: 'numeric',
             month: 'short',
-            day: 'numeric',
+            day: '2-digit',
             hour: '2-digit',
             minute: '2-digit'
         };
@@ -409,15 +463,6 @@ async function loadStatistics() {
                 progressBar.textContent = `${progressPercent}%`;
             }
         }
-
-        // Charge les activités récentes
-        const activitiesResponse = await apiRequest(`/users/${userId}/recent-activities`);
-        console.log('Activités récentes:', activitiesResponse);
-
-        if (activitiesResponse.success) {
-            updateRecentActivities(activitiesResponse.data || []);
-        }
-
     } catch (error) {
         handleError('Erreur lors de la récupération des données du dashboard', error, 'error');
     }
@@ -460,6 +505,26 @@ async function loadRecentActivity() {
         }
     } catch (error) {
         handleError('Erreur lors de la récupération des activités récentes', error, 'error');
+    }
+}
+
+async function loadNotification() {
+    try {
+        const userId = await getUserId();
+        if (!userId) {
+            console.error('Utilisateur non authentifié');
+            return;
+        }
+
+        // Charge les notifications
+        const notificationsResponse = await apiRequest(`/users/${userId}/notifications`);
+        console.log('Notifications:', notificationsResponse.data);
+
+        if (notificationsResponse.success) {
+            updateNotifications(notificationsResponse.data || []);
+        }
+    } catch (error) {
+        handleError('Erreur lors de la récupération des notifications', error, 'error');
     }
 }
 
@@ -513,7 +578,8 @@ async function initializeDashboard() {
             loadUserInfo(userId),
             loadStatistics(),
             loadCurrentChalenge(),
-            // loadRecentActivity(),
+            loadRecentActivity(),
+            loadNotification(),
             loadNextEvent()
         ]);
 

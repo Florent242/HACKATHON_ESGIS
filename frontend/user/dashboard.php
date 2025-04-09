@@ -129,7 +129,6 @@
                             <h3 class="text-lg font-medium">Défis en cours</h3>
                         </div>
                         <div id="current-challenges-container" class="flex flex-col gap-4">
-                            <!-- 
                             <div class="flex flex-row justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1 current-challenge-item">
                                 <div class="flex flex-col justify-between gap-2">
                                     <h4 class="text-base font-semibold challenge-title">API REST - Module d'authentification</h4>
@@ -138,9 +137,10 @@
                                         <i data-lucide="calendar" class="w-4 h-4"></i> <span class="challenge-deadline">Date limite: 23 mai</span>
                                     </p>
                                 </div>
-                            <button class="cursor-pointer relative flex items-center justify-center mb-auto w-auto h-auto top-0 right-0 bg-blue-500 text-white px-3 py-1 rounded-2xl transition delay-150 duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50">Soumettre le projet</button>
-                        </div>
-                        <div class="flex flex-row justify-between p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
+                                <button class="cursor-pointer relative flex items-center justify-center mb-auto w-auto h-auto top-0 right-0 bg-blue-500 text-white px-3 py-1 rounded-2xl transition delay-150 duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50">Soumettre le projet</button>
+                            </div>
+                            <!-- 
+                            <div class="flex flex-row justify-between p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                             <div class="flex flex-col justify-between gap-2">
                                 <h4 class="text-base font-semibold">Challenge Sécurité Web</h4>
                                 <p class="text-gray-400 text-sm">Exploitez les vulnérabilités XSS et CSRF.</p>
@@ -166,14 +166,15 @@
                     <!-- Activité récente -->
                     <section class="fade-in flex flex-col gap-2 space-y-4 p-5 border border-gray-700 rounded-2xl shadow-xl card-bg">
                         <h2 class="text-lg font-medium">Activité récente</h2>
-                        <div id="recent-activities-container">
-                            <!-- <div class="flex flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1 recent-activity-item">
-                                <i data-lucide="trophy" class="w-5 h-5 flex self-center stroke-current"></i>
-                                <div>
+                        <div class="flex flex-col items-center text-center" id="recent-activities-container">
+                            <div class="flex flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1 recent-activity-item">
+                                <i data-lucide="trophy" class="w-5 h-5 flex self-center stroke-current activity-icon"></i>
+                                <div class="flex flex-col items-start justify-between">
                                     <p class="text-gray-400 activity-text">Flag validé pour "XSS Challenge"</p>
                                     <p class="text-gray-500 text-sm activity-time">Il y a 3 heures</p>
                                 </div>
                             </div>
+                            <!-- 
                             <div class="flex flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1 recent-activity-item">
                                 <i data-lucide="file-text" class="w-5 h-5 flex self-center stroke-current"></i>
                                 <div>
@@ -181,7 +182,7 @@
                                     <p class="text-gray-500 text-sm activity-time">Il y a 1 jour</p>
                                 </div>
                             </div> -->
-                            <div class="flex flex-col items-center text-center py-10 px-6 no-recent-activities">
+                            <div class="flex flex-col items-center text-center py-10 px-6" id="no-recent-activities">
                                 <div class="animate-fade-in mb-3">
                                     <i data-lucide="history" class="w-12 h-12 text-emerald-400/60"></i>
                                 </div>
@@ -207,18 +208,19 @@
                                 <i data-lucide="bell" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                                 <h3 class="text-lg font-medium">Dernières notifications</h3>
                             </div>
-                            <div class="flex flex-col gap-2">
-                                <!-- <div class="flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-                                    <p class="font-medium">Nouveau challenge de développement</p>
-                                    <p class="text-gray-400 text-sm">Un nouveau challenge "Architecture Microservices" ajouté.</p>
-                                    <p class="text-gray-500 text-xs">Il y a environ 2 heures</p>
+                            <div class="flex flex-col gap-2" id="notifications-container">
+                                <div class="flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1 notification-item">
+                                    <p class="font-medium notification-title">Nouveau challenge de développement</p>
+                                    <p class="text-gray-400 text-sm notification-message">Un nouveau challenge "Architecture Microservices" ajouté.</p>
+                                    <p class="text-gray-500 text-xs notification-time">Il y a environ 2 heures</p>
                                 </div>
+                                <!-- 
                                 <div class="flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
                                     <p class="font-medium">Flag validé</p>
                                     <p class="text-gray-400 text-sm">Félicitations ! Vous avez validé un flag.</p>
                                     <p class="text-gray-500 text-xs">Il y a 5 heures</p>
                                 </div> -->
-                                <div class="flex flex-col items-center text-center py-10 px-6">
+                                <div class="flex flex-col items-center text-center py-10 px-6" id="no-notifications">
                                     <div class="animate-fade-in mb-3">
                                         <i data-lucide="bell-off" class="w-12 h-12 text-purple-400/60"></i>
                                     </div>

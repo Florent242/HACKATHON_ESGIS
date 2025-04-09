@@ -23,15 +23,15 @@
                 <i data-lucide="circle-user" class="w-24 h-24 stroke-current"></i>
                 <!-- <img src="https://via.placeholder.com/100" alt="Profile Picture" class="rounded-full mx-auto"> -->
                 <div class="flex flex-col items-start gap-1">
-                    <h3 class="text-center text-2xl font-semibold">John Doe</h3>
-                    <p class="max-lg:text-xs text-center text-blue-400">@hackmaster</p>
-                    <p class="max-lg:text-xs text-center text-sm text-gray-400">Security Engineer | Bug Hunter</p>
+                    <h3 class="text-center text-2xl font-semibold fullName">John Doe</h3>
+                    <p class="max-lg:text-xs text-center text-blue-400">@<span class="Username">hackmaster</span></p>
+                    <p class="max-lg:text-xs text-center text-sm text-gray-400 special_comp">Security Engineer | Bug Hunter</p>
                 </div>
 
                 <div class="flex flex-row gap-2 justify-center space-x-2">
-                    <span class="bg-blue-600 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center gap-1"><i class="w-4 h-4 stroke-current" data-lucide="star"></i>Top 50</span>
-                    <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center gap-1"><i class="w-4 h-4 stroke-current" data-lucide="flag"></i>45 Flags</span>
-                    <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center gap-1"><i class="w-4 h-4 stroke-current" data-lucide="users"></i>12 Teams</span>
+                    <span class="bg-blue-600 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center gap-1"><i class="w-4 h-4 stroke-current" data-lucide="star"></i>Top #</span>
+                    <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center gap-1"><i class="w-4 h-4 stroke-current" data-lucide="flag"></i>0 Flags</span>
+                    <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center gap-1"><i class="w-4 h-4 stroke-current" data-lucide="users"></i>0 Teams</span>
                 </div>
 
                 <div class="modify-profile cursor-pointer w-full flex flex-row items-center justify-center gap-2 rounded-xl transition-all duration-300 ease-in-out text-white hover:bg-gray-700 p-1 max-md:w-full border border-gray-700">
@@ -43,10 +43,11 @@
                 <div class="space-y-4 w-full flex flex-col gap-4 border border-gray-700 p-5 rounded-2xl shadow-lg card-bg">
                     <h3 class="text-lg font-semibold m-0">Personal Information</h3>
                     <ul class="space-y-2 text-sm text-gray-400">
-                        <li id="mail" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="mail"></i>john.doe@example.com</li>
-                        <li id="university" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="university"></i>ESGIS University</li>
-                        <li id="web-security" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="shield"></i>Web Security</li>
-                        <li id="languages" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="globe"></i>English, French</li>
+                        <li id="mail" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="mail"></i><span class="Email"><i data-lucide="loader-circle" class="animate-spin"></i></span></li>
+                        <li id="university" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="university"></i><span class="university"><i data-lucide="loader-circle" class="animate-spin"></i></span></li>
+                        <li id="study_level" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="graduation-cap"></i><span class="study_level"><i data-lucide="loader-circle" class="animate-spin"></i></span></li>
+                        <li id="number" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="contact"></i><span class="number"><i data-lucide="loader-circle" class="animate-spin"></i></span></li>
+                        <li id="web-security" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="shield"></i><span class="special_comp"><i data-lucide="loader-circle" class="animate-spin"></i></span></li>
                     </ul>
                 </div>
             </div>
@@ -90,8 +91,8 @@
                                         <i data-lucide="flag" class="w-8 h-8 p-2 stroke-current bg-(--blue-opac) text-blue-600 rounded-lg"></i>
                                     </div>
                                     <div class="w-full flex flex-col gap-1 items-start">
-                                        <h3 class="text-3xl font-bold text-white m-0">37</h3>
-                                        <p class="max-lg:text-xs text-gray-400">12 this month</p>
+                                        <h3 class="text-3xl font-bold text-white m-0" id="number-challenges-solved"><i data-lucide="loader-circle" class="stroke-current animate-spin w-8 h-8"></i></h3>
+                                        <p class="max-lg:text-xs text-gray-400">12 recent</p>
                                     </div>
                                 </div>
                             </div>
@@ -104,7 +105,7 @@
                                         <i data-lucide="trophy" class="w-8 h-8 p-2 stroke-current bg-(--blue-opac) text-purple-600 rounded-lg"></i>
                                     </div>
                                     <div class="w-full flex flex-col gap-1 items-start">
-                                        <h3 class="text-3xl font-bold text-white m-0">1,250</h3>
+                                        <h3 class="text-3xl font-bold text-white m-0" id="total-points"><i data-lucide="loader-circle" class="stroke-current animate-spin w-8 h-8"></i></h3>
                                         <p class="max-lg:text-xs text-green-400">+124 points last days</p>
                                     </div>
                                 </div>
@@ -118,7 +119,12 @@
                                         <i data-lucide="star" class="w-8 h-8 p-2 stroke-current bg-(--blue-opac) text-blue-600 rounded-lg"></i>
                                     </div>
                                     <div class="w-full flex flex-col gap-1 items-start">
-                                        <h3 class="text-3xl font-bold text-white m-0">#42</h3>
+                                        <h3 class="flex flex-row items-center text-3xl font-bold text-white m-0">
+                                            #
+                                            <span id="number-ranking">
+                                                <i data-lucide="loader-circle" class="stroke-current animate-spin w-8 h-8"></i>
+                                            </span>
+                                        </h3>
                                         <p class="max-lg:text-xs text-gray-400">Top 10%</p>
                                     </div>
                                 </div>
@@ -134,24 +140,24 @@
                             </div>
 
                             <!-- Activity Items -->
-                            <div class="space-y-4">
-                                <!-- Completed Challenge -->
-                                <div class="border-b border-slate-800 pb-4 transition duration-300 ease-in-out hover:-translate-y-1">
-                                    <div class="flex items-center justify-between">
+                            <div class="flex flex-col items-center text-center space-y-4" id="recent-activities-container">
+
+                                <div class="flex flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4 transition duration-300 ease-in-out hover:-translate-y-1 recent-activity-item">
+                                    <div class="flex items-center justify-between w-full">
                                         <div class="flex items-center">
                                             <div class="flex items-center justify-center size-fit bg-green-700/30 p-2 rounded-full mr-4">
-                                                <i data-lucide="check-square" class="w-4 h-4 stroke-current text-green-500"></i>
+                                                <i data-lucide="check-square" class="w-4 h-4 stroke-current text-green-500 activity-icon"></i>
                                             </div>
-                                            <div>
-                                                <p class="max-lg:text-xs text-white max-md:text-xs max-md:font-normal">Completed "SQL Injection Basics"</p>
-                                                <p class="max-lg:text-xs max-md:text-xs max-md:font-normal">+100 points</p>
+                                            <div class="flex flex-col items-start justify-between">
+                                                <p class="max-lg:text-xs text-white max-md:text-xs max-md:font-normal activity-text">Completed "SQL Injection Basics"</p>
+                                                <p class="max-lg:text-xs max-md:text-xs max-md:font-normal activity-details">+100 points</p>
                                             </div>
                                         </div>
-                                        <p class="max-lg:text-xs flex self-baseline text-gray-400 max-md:text-xs max-md:font-normal">2 days ago</p>
+                                        <p class="max-lg:text-xs flex self-baseline text-gray-400 max-md:text-xs max-md:font-normal activity-time">2 days ago</p>
                                     </div>
                                 </div>
-
-                                <!-- Started Challenge -->
+                                
+                                <!-- 
                                 <div class="border-b border-slate-800 pb-4 transition duration-300 ease-in-out hover:-translate-y-1">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center">
@@ -167,7 +173,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Feedback Item -->
                                 <div class="border-b border-slate-800 pb-4 transition duration-300 ease-in-out hover:-translate-y-1">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center">
@@ -181,6 +186,13 @@
                                         </div>
                                         <p class="max-lg:text-xs flex self-baseline text-gray-400 max-md:text-xs max-md:font-normal">1 week ago</p>
                                     </div>
+                                </div> -->
+                                <div class="flex flex-col items-center text-center py-10 px-6" id="no-recent-activities">
+                                    <div class="animate-fade-in mb-3">
+                                        <i data-lucide="history" class="w-12 h-12 text-emerald-400/60"></i>
+                                    </div>
+                                    <h3 class="text-gray-200 text-lg font-medium">Aucune activité enregistrée</h3>
+                                    <p class="text-gray-400 text-sm mt-1">Commencez un défi ou explorez les challenges à venir.</p>
                                 </div>
                             </div>
 
@@ -379,11 +391,11 @@
                             <div class="grid grid-cols-2 gap-4 mb-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Display Name</label>
-                                    <input type="text" value="hackmaster" class="input-gradient-royal block w-full rounded-md border border-gray-700/40 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm" disabled>
+                                    <input type="text" value="hackmaster" class="input-gradient-royal block w-full rounded-md border border-gray-700/40 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                    <input type="email" value="john.doe@example.com" class="input-gradient-royal block w-full rounded-md border border-gray-700/40 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm" disabled>
+                                    <input type="email" value="john.doe@example.com" class="input-gradient-royal block w-full rounded-md border border-gray-700/40 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm">
                                 </div>
                             </div>
 
@@ -391,18 +403,18 @@
                             <div class="grid grid-cols-2 gap-4 mb-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">School/University</label>
-                                    <input type="text" value="ESGIS University" class="input-gradient-royal block w-full rounded-md border border-gray-700/40 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm" disabled>
+                                    <input type="text" value="ESGIS University" class="input-gradient-royal block w-full rounded-md border border-gray-700/40 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                                    <input type="text" value="Paris, France" class="input-gradient-royal block w-full rounded-md border border-gray-700/40 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm" disabled>
+                                    <input type="text" value="Paris, France" class="input-gradient-royal block w-full rounded-md border border-gray-700/40 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm">
                                 </div>
                             </div>
 
                             <!-- Bio -->
                             <div class="mb-6">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Bio</label>
-                                <textarea class="input-gradient-royal block w-full rounded-md border border-gray-700/70 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm" rows="4" disabled>Security Engineer | Bug Hunter with expertise in Web Application Security and Network Penetration Testing.</textarea>
+                                <textarea class="input-gradient-royal block w-full rounded-md border border-gray-700/70 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm" rows="4">Security Engineer | Bug Hunter with expertise in Web Application Security and Network Penetration Testing.</textarea>
                             </div>
 
                             <!-- Update Profile Button -->
