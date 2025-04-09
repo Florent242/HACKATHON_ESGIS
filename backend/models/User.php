@@ -1,16 +1,19 @@
 <?php
+
 namespace Auth\Model;
 
 use Exception;
 use PDO;
 use PDOException;
 
-class User {
+class User
+{
     private $db;
     private $table = 'users';
     private $passwordColumn = 'password'; // Renommer la colonne pour plus de sécurité
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->db = $db;
     }
 
@@ -20,7 +23,8 @@ class User {
      * @param string $password Mot de passe non hashé
      * @return array|bool Les données de l'utilisateur ou false si non trouvé
      */
-    public function authenticate($email, $password) {
+    public function authenticate($email, $password)
+    {
         try {
             $query = "SELECT * FROM {$this->table} WHERE email = :email LIMIT 1";
             $stmt = $this->db->prepare($query);
@@ -54,8 +58,9 @@ class User {
      * @param array $data Les données de l'utilisateur
      * @return int|bool L'ID du nouvel utilisateur ou false si erreur
      */
-    public function create($Data) {
-        $data= $Data;
+    public function create($Data)
+    {
+        $data = $Data;
         try {
             if (!isset($data) || !is_array($data)) {
                 throw new Exception("Donnes d'inscription innexistante");
@@ -100,6 +105,21 @@ class User {
                 throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
             }
 
+            // Vérification du special_comp
+            if (empty($data['special_comp'])) {
+                throw new Exception("La spécialité est requise");
+            }
+
+            // Vérification du study_level
+            if (empty($data['study_level'])) {
+                throw new Exception("Le niveau d'étude est requis");
+            }
+
+            // Vérification du number
+            if (empty($data['number'])) {
+                throw new Exception("Le numéro de téléphone est requis");
+            }
+
             // Hash du mot de passe
             $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
 
@@ -109,7 +129,11 @@ class User {
             fullname, 
             school, 
             email, 
-            password, 
+            password,
+            special_comp,
+            idea_project,
+            study_level,
+            number,
             role, 
             status, 
             github_url, 
@@ -122,7 +146,11 @@ class User {
                     :fullname, 
                     :school, 
                     :email, 
-                    :password, 
+                    :password,
+                    :special_comp,
+                    :idea_project,
+                    :study_level,
+                    :number,
                     :role, 
                     :status, 
                     :github_url, 
@@ -138,6 +166,10 @@ class User {
             $stmt->bindValue(':school', $data['school'] ?? null);
             $stmt->bindValue(':email', $data['email']);
             $stmt->bindValue(':password', $hashedPassword);
+            $stmt->bindValue(':special_comp', $data['special_comp']);
+            $stmt->bindValue(':idea_project', $data['idea_project'] ?? null);
+            $stmt->bindValue(':study_level', $data['study_level']);
+            $stmt->bindValue(':number', $data['number']);
             $stmt->bindValue(':role', $data['role'] ?? 'participant');
             $stmt->bindValue(':status', $data['status'] ?? 'active');
             $stmt->bindValue(':github_url', $data['github_url'] ?? null);
@@ -163,7 +195,8 @@ class User {
      * @param array $data Les données à mettre à jour
      * @return bool true si succès, sinon false
      */
-    public function update($id, $data) {
+    public function update($id, $data)
+    {
         try {
             // Vérification si l'utilisateur existe
             $user = $this->find($id);
@@ -215,7 +248,8 @@ class User {
      * @param int $id ID de l'utilisateur
      * @return array|bool Les données de l'utilisateur ou false si non trouvé
      */
-    public function find($id) {
+    public function find($id)
+    {
         try {
             $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
             $stmt = $this->db->prepare($query);
@@ -239,39 +273,42 @@ class User {
      * @param string $email Email de l'utilisateur
      * @return array|bool Les données de l'utilisateur ou false si non trouvé
      */
-public function findByUsername($username) {
-    try {
-        $sql = "SELECT id, username, email, role FROM {$this->table} WHERE username = :username";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':username' => $username]);
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
-    } catch (PDOException $e) {
-        throw new Exception(message: 'Erreur lors de la recherche par username: ' . $e->getMessage());
+    public function findByUsername($username)
+    {
+        try {
+            $sql = "SELECT id, username, email, role FROM {$this->table} WHERE username = :username";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':username' => $username]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
+        } catch (PDOException $e) {
+            throw new Exception(message: 'Erreur lors de la recherche par username: ' . $e->getMessage());
+        }
     }
-}
 
-public function findByEmail($email) {
-    try {
-        $query = "SELECT id, username, email, role FROM {$this->table} WHERE email = :email";
-        $stmt = $this->db->prepare($query);
-        $stmt->execute([':email' => $email]);
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
-    } catch (PDOException $e) {
-        throw new Exception('Erreur lors de la recherche par email: ' . $e->getMessage());
+    public function findByEmail($email)
+    {
+        try {
+            $query = "SELECT id, username, email, role FROM {$this->table} WHERE email = :email";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([':email' => $email]);
+            return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
+        } catch (PDOException $e) {
+            throw new Exception('Erreur lors de la recherche par email: ' . $e->getMessage());
+        }
     }
-}
     /**
      * Récupère tous les utilisateurs
      * @return array Liste des utilisateurs
      */
-    public function getAll() {
+    public function getAll()
+    {
         try {
             $query = "SELECT id, username, fullname, school, email, role, status, github_url, linkedin_url, bio, profile_picture, created_at, updated_at FROM {$this->table}";
             $stmt = $this->db->prepare($query);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération des utilisateurs: ' . $e->getMessage());            
+            error_log('Erreur lors de la récupération des utilisateurs: ' . $e->getMessage());
             throw new Exception("Cette adresse email est déjà utilisée. User");
         }
     }
@@ -281,7 +318,8 @@ public function findByEmail($email) {
      * @param int $id ID de l'utilisateur
      * @return bool true si succès, sinon false
      */
-    public function delete($id) {
+    public function delete($id)
+    {
         try {
             $query = "DELETE FROM {$this->table} WHERE id = :id";
             $stmt = $this->db->prepare($query);
@@ -300,7 +338,8 @@ public function findByEmail($email) {
      * @param string $status Nouveau statut ('active' ou 'inactive')
      * @return bool true si succès, sinon false
      */
-    public function updateStatus($id, $status) {
+    public function updateStatus($id, $status)
+    {
         try {
             if (!in_array($status, ['active', 'inactive'])) {
                 throw new Exception('Statut invalide');
@@ -322,7 +361,8 @@ public function findByEmail($email) {
      * Obtient des statistiques sur les utilisateurs
      * @return array Statistiques des utilisateurs
      */
-    public function getStats() {
+    public function getStats()
+    {
         try {
             $stats = [
                 'total' => 0,
@@ -380,7 +420,8 @@ public function findByEmail($email) {
      * @param string $role Rôle des utilisateurs à récupérer
      * @return array Liste des utilisateurs ayant le rôle spécifié
      */
-    public function getByRole($role) {
+    public function getByRole($role)
+    {
         try {
             $query = "SELECT id, username, fullname, school, email, role, status, github_url, linkedin_url, bio, profile_picture, created_at, updated_at
                      FROM {$this->table}
@@ -395,8 +436,8 @@ public function findByEmail($email) {
             error_log('Erreur lors de la récupération des utilisateurs par rôle: ' . $e->getMessage());
             return [];
         }
-    } 
-    
+    }
+
     public function getById(int $id): array|false
     {
         try {
@@ -406,12 +447,111 @@ public function findByEmail($email) {
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
-    
+
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération de l\'utilisateur: ' . $e->getMessage());
             return false;
         }
     }
-    
+    public function getCurrentChallenges(int $userId): array
+    {
+        try {
+            $query = "SELECT 
+                    c.id,
+                    c.title,
+                    c.description,
+                    c.difficulty,
+                    c.type,
+                    c.points,
+                    c.hackathon_id,
+                    c.created_at,
+                    c.created_by
+                FROM 
+                    challenges AS c
+                JOIN 
+                    challenge_submissions AS uc ON uc.challenge_id = c.id
+                WHERE
+                    uc.user_id = :userId 
+                    AND uc.status = 'active';";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Traiter les données JSON dans la colonne 'data' (si nécessaire)
+            foreach ($activities as &$activity) {
+                if (!empty($activity['data'])) {
+                    $activity['data'] = json_decode($activity['data'], true);
+                }
+            }
+            return $activities;
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération des défis en cours: ' . $e->getMessage());
+            return [];
+        }
+    }
+    public function getCurrentHackathons(int $userId, $jwt): array
+    {
+        try {
+            $query = "SELECT id, name, start_date, end_date, status 
+                        FROM hackathons 
+                        WHERE status = 'active';";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération des hackathons en cours: ' . $e->getMessage());
+            return [];
+        }
+    }
+    public function getRecentActivities(int $userId): array
+    {
+        try {
+            $query = "SELECT
+                id,
+                action,
+                description,
+                data,
+                level,
+                created_at
+            FROM activity_logs
+            WHERE user_id = :userId
+            ORDER BY created_at DESC
+            LIMIT 10";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Traiter les données JSON dans la colonne 'data' (si nécessaire)
+            foreach ($activities as &$activity) {
+                if (!empty($activity['data'])) {
+                    $activity['data'] = json_decode($activity['data'], true);
+                }
+            }
+
+            return $activities;
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération de l\'activité récente: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    // In User.php
+    public function getChallengeIdsForUser($userId)
+    {
+        $query = "
+        SELECT DISTINCT c.id 
+        FROM challenges c
+        -- JOIN tables as needed to define the relationship between users and challenges
+        -- For example, if users submit solutions:
+        JOIN challenge_submissions cs ON c.id = cs.challenge_id
+        WHERE cs.user_id = :user_id
+    ";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_COLUMN); // Fetch IDs as a simple array
+    }
 }

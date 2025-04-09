@@ -2,7 +2,49 @@
 if (!defined('CONFIG_INCLUDED')) {
     define('CONFIG_INCLUDED', true);
 }
+// Configuration des routes par rôle
+define('ROLE_REDIRECTIONS', [
+    'admin' => '/HACKATHON_ESGIS/public/admin',
+    'participant' => '/HACKATHON_ESGIS/public/user',
+    'guest' => '/HACKATHON_ESGIS/public/auth'
+]);
 
+// Routes publiques qui ne nécessitent pas d'authentification
+define('PUBLIC_ROUTES', [
+    '/^\/HACKATHON_ESGIS\/public\/?$/', // Page visiteur
+    '/^\/HACKATHON_ESGIS\/public\/auth\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/challenges\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/contact\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/hackathon\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/resources\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/leaderboard\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/sponsors\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/register\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/forgot-password\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/reset-password\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/verify-email\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/confirm-email\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/verify-otp\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/send-otp\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/auth\/logout\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/register\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/login\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/forgot-password\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/reset-password\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/verify-email\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/confirm-email\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/logout\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/refresh-token\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/validate-token\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/about\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/privacy\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/terms\/?$/',
+    '/^\/HACKATHON_ESGIS\/public\/faq\/?$/',
+]);
+
+// Durée de vie des sessions (en secondes)
+define('SESSION_LIFETIME', 3600); // 1 heure
 // Configuration de la base de données SQLite
 define('DB_FILE', __DIR__ . '/../database/hackathon.db');
 
@@ -29,7 +71,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Fonction pour générer un token CSRF
-function generateCsrfToken() {
+function generateCsrfToken()
+{
     if (!isset($_SESSION['csrf_token'])) {
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
     }
@@ -37,43 +80,48 @@ function generateCsrfToken() {
 }
 
 // Fonction pour vérifier un token CSRF
-function verifyCsrfToken($token) {
+function verifyCsrfToken($token)
+{
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
 }
 
 // Fonction pour vérifier si l'utilisateur est connecté
-function isAuthenticated() {
+function isAuthenticated()
+{
     return isset($_SESSION['user_id']);
 }
 
 // Fonction pour vérifier le rôle de l'utilisateur
-function hasRole($role) {
+function hasRole($role)
+{
     return isset($_SESSION['user_role']) && $_SESSION['user_role'] === $role;
 }
 
 // Fonction pour la réponse JSON
-function jsonResponse($data, $statusCode = 200) {
+function jsonResponse($data, $statusCode = 200)
+{
     http_response_code($statusCode);
     header('Content-Type: application/json');
     echo json_encode($data);
     exit;
 }
 // Elements de cors.php
-    // Configuration CORS
-function configureCors() {
+// Configuration CORS
+function configureCors()
+{
     // Autoriser l'origine spécifique de votre frontend
     // En développement, vous pouvez utiliser '*' mais en production, spécifiez l'origine exacte
     header('Access-Control-Allow-Origin: *');
-    
+
     // Autoriser les méthodes HTTP
     header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    
+
     // Autoriser les en-têtes personnalisés
     header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-    
+
     // Autoriser l'envoi des credentials (cookies, en-têtes d'autorisation)
     header('Access-Control-Allow-Credentials: true');
-    
+
     // Durée de mise en cache des résultats du pre-flight
     header('Access-Control-Max-Age: 86400'); // 24 heures
 
@@ -85,11 +133,10 @@ function configureCors() {
 }
 
 // Fonction pour gérer les erreurs API
-function handleApiError($error, $statusCode = 400) {
+function handleApiError($error, $statusCode = 400)
+{
     jsonResponse([
         'error' => true,
         'message' => $error instanceof Exception ? $error->getMessage() : $error
     ], $statusCode);
 }
-
-

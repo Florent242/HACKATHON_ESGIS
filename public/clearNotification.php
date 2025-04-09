@@ -10,4 +10,5 @@ unset($_SESSION['notification']);
 
 // Répondre avec un statut HTTP 200 (succès)
 http_response_code(200);
+echo json_encode(['success' => true]);
 exit();

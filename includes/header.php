@@ -2,9 +2,10 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 ?>
-<script defer src="/HACKATHON_ESGIS/public/js/lucide.js"></script>
 <script defer src="/HACKATHON_ESGIS/public/js/header.js"></script>
 <header>
     <div class="header-container">
@@ -19,8 +20,8 @@ $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
                 <a href="/HACKATHON_ESGIS/public/hackathon" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/hackathon' ? 'active' : ''; ?>">Hackathons</a>
                 <a href="/HACKATHON_ESGIS/public/leaderboard" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/leaderboard' ? 'active' : ''; ?>">Leaderboard</a>
                 <a href="/HACKATHON_ESGIS/public/resources" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/resources' ? 'active' : ''; ?>">Resources</a>
-                <a href="/HACKATHON_ESGIS/frontend/Contact.php" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/frontend/Contact.php' ? 'active' : ''; ?>">Contact</a>
-                <a href="/HACKATHON_ESGIS/frontend/sponsors.php" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/frontend/sponsors.php' ? 'active' : ''; ?>">Sponsors</a>
+                <a href="/HACKATHON_ESGIS/public/contact" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/contact' ? 'active' : ''; ?>">Contact</a>
+                <a href="/HACKATHON_ESGIS/public/sponsors" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/sponsors' ? 'active' : ''; ?>">Sponsors</a>
             </nav>
         </div>
         <div class="header-actions">
