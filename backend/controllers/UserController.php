@@ -2026,7 +2026,7 @@ public function getNextEvent($userId, $jwt)
         
         // Exécution de la requête sans bindParam
         $stmt->execute();
-        $nextHackathon = $stmt->fetch(PDO::FETCH_ASSOC);
+        $nextHackathon = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if ($nextHackathon) {
             $this->jsonResponse([

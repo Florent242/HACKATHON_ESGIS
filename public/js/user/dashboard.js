@@ -57,6 +57,7 @@ function updateCurrentChallenges(challenges) {
 
     // Cache le conteneur si aucun défi
     if (!challenges || challenges.length === 0) {
+        container.querySelectorAll(DASHBOARD_ELEMENTS.currentChallenges.template).style.display = 'none';
         if (emptyState) emptyState.style.display = 'flex';
         return;
     }
@@ -124,6 +125,7 @@ function updateRecentActivities(activities) {
 
     // Cache le conteneur si aucune activité
     if (!activities || activities.length === 0) {
+        container.querySelector(DASHBOARD_ELEMENTS.recentActivities.template).style.display = 'none';
         if (emptyState) emptyState.style.display = 'flex';
         return;
     }
@@ -159,7 +161,7 @@ function updateActivityItem(element, activity) {
     const icon = element.querySelector('.activity-icon');
     const textElement = element.querySelector('.activity-text');
     const timeElement = element.querySelector('.activity-time');
-    
+
     // Détermine la classe CSS en fonction du niveau d'activité
     const activityClass = {
         'info': 'activity-info',
@@ -168,9 +170,9 @@ function updateActivityItem(element, activity) {
         'warning': 'activity-warning',
         'register_error': 'activity-error'
     }[activity.level] || 'activity-default';
-    
+
     element.classList.add(activityClass);
-    
+
     if (icon) {
         // Détermine l'icône en fonction du type ou niveau d'activité
         const iconMap = {
@@ -183,11 +185,11 @@ function updateActivityItem(element, activity) {
         };
 
         const iconName = iconMap[activity.level] ||
-        iconMap[activity.action] ||
-        iconMap['default'];
+            iconMap[activity.action] ||
+            iconMap['default'];
         icon.setAttribute('data-lucide', iconName);
     }
-    
+
     if (textElement) {
         // Filtre les messages d'erreur SQL
         let description = activity.description || activity.action || 'Activité inconnue';
@@ -219,7 +221,9 @@ function updateNotifications(notifications) {
     }
 
     // Cache le conteneur si aucune notification
-    if (!notifications || notifications.length === 0) {
+    if (!notifications.list || notifications.list.length === 0) {
+        console.log('Aucune notification');
+        container.querySelectorAll(DASHBOARD_ELEMENTS.notifications.template).forEach(item => item.style.display = 'none');
         if (emptyState) emptyState.style.display = 'flex';
         return;
     }
@@ -230,6 +234,7 @@ function updateNotifications(notifications) {
 
     // Supprime toutes les notifications existantes sauf la première (qui sert de template)
     const items = container.querySelectorAll(DASHBOARD_ELEMENTS.notifications.template);
+    console.log(items.length);
     for (let i = 1; i < items.length; i++) {
         items[i].remove();
     }
@@ -273,7 +278,7 @@ function formatDate(dateString) {
     try {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return 'Date invalide';
-        
+
         const options = {
             year: 'numeric',
             month: 'short',
@@ -542,17 +547,19 @@ async function loadNextEvent() {
         const noEventMessage = document.querySelector(DASHBOARD_ELEMENTS.nextEvent.noEventMessage);
 
         if (data.success && data.data) {
-            noEventMessage.style.display = 'none';
             console.log('Prochain événement:', data.data);
-            const eventDiv = createEle('div', {
-                class: 'flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1'
-            })
-            eventDiv.innerHTML = `
-                    <p class="text-md font-semibold">${data.data.name || 'Événement inconnu'}</p>
-                    <p class="text-gray-500 text-sm">${data.data.start_date ? formatDate(data.data.start_date) : 'Date de début inconnue'}</p>
+            data.data.forEach(event => {
+                noEventMessage.style.display = 'none';
+                const eventDiv = createEle('div', {
+                    class: 'flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1'
+                })
+                eventDiv.innerHTML = `
+                    <p class="text-md font-semibold">${event.name || 'Événement inconnu'}</p>
+                    <p class="text-gray-500 text-sm">${event.start_date ? formatDate(event.start_date) : 'Date de début inconnue'}</p>
                     <span class="text-green-400 bg-emerald-950 flex self-start text-xs p-2 rounded-xl">Bientôt</span>
             `;
-            if (nextEventContainer) nextEventContainer.appendChild(eventDiv);
+                if (nextEventContainer) nextEventContainer.appendChild(eventDiv);
+            })
         } else {
             if (nextEventContainer) nextEventContainer.style.display = 'none';
             if (noEventMessage) noEventMessage.style.display = 'flex';
