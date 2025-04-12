@@ -11,6 +11,7 @@ const DASHBOARD_ELEMENTS = {
         devChallengesOn: '#number-dev-challenges-on',
         hackingChallengesValidate: '#number-hacking-challenges-validate',
         submittedProjects: '#number-submitted-projects',
+        submittedProjectsWait: '#number-submitted-projects-wait',
         totalPoints: '#total-points',
         devStat: '#dev-stat',
         hackingStat: '#hacking-stat',
@@ -392,28 +393,36 @@ async function getUserId() {
 // Fonction pour mettre à jour les éléments du DOM
 function updateDOM(elements, data) {
     Object.entries(elements).forEach(([key, selector]) => {
-        const element = document.querySelectorAll(selector);
+        const element = document.querySelector(selector);
         if (element) {
-            element.forEach(element => {
+            let value = data[key];
+            
+            // Formater les valeurs spécifiques
+            if (key === 'total-points') {
+                value = value.toLocaleString();
+            } else if (key === 'hacking-stat' || key === 'total-points-stat' || key === 'points-change-percent') {
+                value = `${value}%`;
+            } else if (key === 'points-change') {
+                value = `${value} ↑`;
+            }
 
-                let value = data.data?.stats?.[key] ||
-                    data.data?.[key] ||
-                    data[key] ||
-                    'N/A';
+            // Gérer les états spéciaux
+            if (value === 0 || value === '0') {
+                element.classList.add('empty-stat');
+                element.classList.remove('na-stat');
+            } else if (value === 'N/A' || !value) {
+                element.classList.add('na-stat');
+                element.classList.remove('empty-stat');
+            } else {
+                element.classList.remove('empty-stat', 'na-stat');
+            }
 
-                if (typeof value === 'number') {
-                    value = value.toString();
-                }
-
+            // Mettre à jour le contenu
+            if (element.textContent.includes('<i data-lucide="loader-circle" class="animate-spin">')) {
+                element.innerHTML = value;
+            } else {
                 element.textContent = value;
-
-                // Ajoute des classes pour les états vides
-                if (value === '0' || value === 0) {
-                    element.classList.add('empty-stat');
-                } else if (value === 'N/A' || !value) {
-                    element.classList.add('na-stat');
-                }
-            });
+            }
         }
     });
 }
@@ -421,15 +430,24 @@ function updateDOM(elements, data) {
 // Fonction pour charger les informations de l'utilisateur
 async function loadUserInfo(userId) {
     try {
-        if (!userId) {
-            console.error('Utilisateur non authentifié');
-            return;
+        const response = await apiRequest(`/users/${userId}`);
+        console.log('Informations utilisateur:', response);
+
+        if (response.success && response.data) {
+            const user = response.data;
+            
+            // Mettre à jour tous les éléments avec la classe Username
+            const usernameElements = document.querySelectorAll('.Username');
+            usernameElements.forEach(element => {
+                element.textContent = user.username || user.name || 'Utilisateur';
+            });
+
+            // Mettre à jour l'email
+            const emailElement = document.querySelector(DASHBOARD_ELEMENTS.email);
+            if (emailElement) {
+                emailElement.textContent = user.email || 'Email non disponible';
+            }
         }
-        const data = await apiRequest(`/users/${userId}`);
-        updateDOM({
-            username: DASHBOARD_ELEMENTS.username,
-            email: DASHBOARD_ELEMENTS.email
-        }, data);
     } catch (error) {
         handleError('Erreur lors de la récupération des informations utilisateur', error, 'error');
     }
@@ -444,30 +462,52 @@ async function loadStatistics() {
             return;
         }
 
-        // Charge les statistiques
+        // Afficher le spinner de chargement
+        showLoading();
+
+        // Charger les statistiques
         const statsResponse = await apiRequest(`/users/${userId}/stats`);
         console.log('Stats:', statsResponse);
 
         if (statsResponse.success && statsResponse.data) {
-            updateDOM(DASHBOARD_ELEMENTS.stats, statsResponse);
+            const stats = statsResponse.data.stats;
+            
+            // Préparer les données formatées
+            const formattedStats = {
+                'devChallenges': stats['number-dev-challenges'] || 0,
+                'devChallengesOn': stats['number-dev-challenges-on'] || 0,
+                'hackingChallenges': stats['number-hacking-challenges'] || 0,
+                'hackingChallengesValidate': stats['number-hacking-challenges-validate'] || 0,
+                'submittedProjects': stats['number-submitted-projects'] || 0,
+                'submittedProjectsWait': stats['number-submitted-projects'] || 0,
+                'totalPoints': stats['total-points'] || 0,
+                'devStat': stats['number-dev-challenges'] || 0,
+                'hackingStat': stats['hacking-stat'] || 0,
+                'totalPointsStat': stats['total-points-stat'] || 0,
+                'pointsChange': stats['points-change'] || 0,
+                'pointsChangePercent': stats['points-change-percent'] || 0
+            };
 
-            // Met à jour la barre de progression globale
-            const totalPoints = statsResponse.data.stats?.['total-points'] || 0;
-            const maxPoints = 56; // Valeur fixe selon votre dashboard
-            const progressPercent = Math.round((totalPoints / maxPoints) * 100);
+            // Mettre à jour toutes les statistiques
+            updateDOM(DASHBOARD_ELEMENTS.stats, formattedStats);
 
+            // Mettre à jour la barre de progression globale
             const progressBar = document.querySelector('.global-progress-bar');
             if (progressBar) {
-                progressBar.style.width = `${progressPercent}%`;
-                progressBar.setAttribute('aria-valuenow', progressPercent);
-                progressBar.textContent = `${progressPercent}%`;
+                progressBar.style.width = `${stats['total-points-stat']}%`;
+                progressBar.setAttribute('aria-valuenow', stats['total-points-stat']);
+                progressBar.textContent = `${stats['total-points-stat']}%`;
             }
         }
     } catch (error) {
         handleError('Erreur lors de la récupération des données du dashboard', error, 'error');
+    } finally {
+        // Cacher le spinner de chargement
+        hideLoading();
     }
 }
 
+// Fonction pour charger les défis en cours
 async function loadCurrentChalenge() {
     try {
         const userId = await getUserId();
@@ -476,7 +516,7 @@ async function loadCurrentChalenge() {
             return;
         }
 
-        // Charge les défis en cours
+        // Charger les défis en cours
         const challengesResponse = await apiRequest(`/users/${userId}/current-challenges`);
         console.log('Défis en cours:', challengesResponse);
 
@@ -488,6 +528,7 @@ async function loadCurrentChalenge() {
     }
 }
 
+// Fonction pour charger les activités récentes
 async function loadRecentActivity() {
     try {
         const userId = await getUserId();
@@ -496,7 +537,7 @@ async function loadRecentActivity() {
             return;
         }
 
-        // Charge les activités récentes
+        // Charger les activités récentes
         const activitiesResponse = await apiRequest(`/users/${userId}/recent-activities`);
         console.log('Activités récentes:', activitiesResponse);
 
@@ -508,6 +549,7 @@ async function loadRecentActivity() {
     }
 }
 
+// Fonction pour charger les notifications
 async function loadNotification() {
     try {
         const userId = await getUserId();
@@ -516,7 +558,7 @@ async function loadNotification() {
             return;
         }
 
-        // Charge les notifications
+        // Charger les notifications
         const notificationsResponse = await apiRequest(`/users/${userId}/notifications`);
         console.log('Notifications:', notificationsResponse.data);
 
