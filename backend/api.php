@@ -25,7 +25,6 @@ if (!defined('CONFIG_INCLUDED')) {
 // ✅ Inclure les fichiers contenant des fonctions
 if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/includes/functions.php';
-    require_once __DIR__ . '/includes/auth_functions.php';
 }
 
 
