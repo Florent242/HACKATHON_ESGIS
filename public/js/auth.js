@@ -480,7 +480,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 // }
 
                 // Redirection
-                window.location.href = data.redirect || '/user';
+                window.location.href = data.redirect;
             } else {
                 showNotification(data.message || "Erreur lors de l'inscription", 'Veuillez corriger les erreurs', 'warning');
             }
@@ -524,7 +524,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (data.success) {
                 console.log(data);
                 setFlashMessage('success', data.message, data.username);
-                window.location.href = data.redirect || '/user';
+                window.location.href = data.redirect;
             } else if (!data.success) {
                 showNotification(data.message || "Erreur lors de la connexion", 'Veuillez corriger les erreurs', 'warning');
                 submitBtn.disabled = false;

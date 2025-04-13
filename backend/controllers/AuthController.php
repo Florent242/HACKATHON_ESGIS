@@ -320,13 +320,14 @@ class AuthController
                 $this->setAuthCookies($token, $longTermToken);
 
                 // Réponse JSON
+                $redirectPath = $user['role'] === 'admin' ? self::BASE_URL . "/admin" : self::BASE_URL . "/user";
                 echo json_encode([
                     'success' => true,
                     'token' => $token,
                     'refresh_token' => $longTermToken,
                     'user' => $user,
                     'message' => 'Connexion reussie',
-                    'redirect' => self::BASE_URL . "/user"
+                    'redirect' => $redirectPath
                 ]);
                 exit();
             } else {
