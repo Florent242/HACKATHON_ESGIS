@@ -537,13 +537,133 @@ class UserController extends Controller
      */
     public function getCurrentChallenges($userId, $jwt)
     {
-        $currentUserId = $this->getUserIdFromJWT($jwt);
-        if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
-            $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-            return;
+        try {
+            $currentUserId = $this->getUserIdFromJWT($jwt);
+            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                return;
+            }
+        
+            $database = Database::getInstance();
+            $db = $database->getConnection();
+        
+            // Récupérer les défis en cours de l'utilisateur
+            $stmt = $db->prepare("
+                SELECT 
+                    c.id,
+                    c.title,
+                    c.description,
+                    c.difficulty,
+                    c.type,
+                    c.points,
+                    cs.created_at as start_date
+                FROM challenges c
+                JOIN challenge_submissions cs ON c.id = cs.challenge_id
+                WHERE cs.user_id = :userId 
+                AND cs.status = 'pending'
+                ORDER BY cs.created_at DESC
+            ");
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+        
+            $challenges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $challenges
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
         }
-        $challenges = $this->user->getCurrentChallenges($userId);
-        $this->jsonResponse(['success' => true, 'data' => $challenges]);
+    }
+    
+    public function getCompletedChallenges($userId, $jwt)
+    {
+        try {
+            $currentUserId = $this->getUserIdFromJWT($jwt);
+            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                return;
+            }
+        
+            $database = Database::getInstance();
+            $db = $database->getConnection();
+        
+            // Récupérer les défis complétés de l'utilisateur
+            $stmt = $db->prepare("
+                SELECT 
+                    c.id,
+                    c.title,
+                    c.description,
+                    c.difficulty,
+                    c.type,
+                    c.points,
+                    cs.created_at as completed_date
+                FROM challenges c
+                JOIN challenge_submissions cs ON c.id = cs.challenge_id
+                WHERE cs.user_id = :userId 
+                AND cs.status = 'validated'
+                ORDER BY cs.created_at DESC
+            ");
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+        
+            $challenges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $challenges
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function getRecentActivities($userId, $jwt)
+    {
+        try {
+            $currentUserId = $this->getUserIdFromJWT($jwt);
+            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                return;
+            }
+        
+            $database = Database::getInstance();
+            $db = $database->getConnection();
+        
+            // Récupérer les activités récentes de l'utilisateur
+            $stmt = $db->prepare("
+                SELECT 
+                    action as type,
+                    description,
+                    level,
+                    created_at as timestamp
+                FROM activity_logs
+                WHERE user_id = :userId
+                ORDER BY created_at DESC
+                LIMIT 10
+            ");
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+        
+            $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $activities
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
     public function getCurrentHackathons($userId, $jwt)
     {
@@ -556,16 +676,7 @@ class UserController extends Controller
         $this->jsonResponse(['success' => true, 'data' => $hackathons]);
     }
     
-    public function getRecentActivities($userId, $jwt)
-    {
-        $currentUserId = $this->getUserIdFromJWT($jwt);
-        if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
-            $this->jsonResponse(['success' => false, 'error' => 'Non autorisé'], 403);
-            return;
-        }
-        $activities = $this->user->getRecentActivities($userId);
-        $this->jsonResponse(['success' => true, 'data' => $activities]);
-    }
+    
     /**
      * Récupère les équipes de l'utilisateur et renvoie un JSON
      */

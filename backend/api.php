@@ -739,6 +739,13 @@ try {
                                         jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                                     }
                                     $controller->getNotifications($id, $token);
+                                    break;
+                                case 'completed-challenges':
+                                    // Vérification d'autorisation
+                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    }
+                                    $controller->getCompletedChallenges($id, $token);
                                     break;                    
                             default:
                                 if (isAjaxRequest()) {

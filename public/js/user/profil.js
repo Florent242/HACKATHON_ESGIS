@@ -110,6 +110,7 @@ function hideLoading() {
  * Met à jour la section des activités récentes
  * @param {Array} activities - Liste des activités récentes
  */
+/*
 function updateRecentActivities(activities) {
   const container = document.querySelector(PROFILE_ELEMENTS.recentActivities.container)
   const emptyState = document.querySelector(PROFILE_ELEMENTS.recentActivities.emptyState)
@@ -144,7 +145,37 @@ function updateRecentActivities(activities) {
     window.lucide.createIcons()
   }
 }
+*/
+function updateRecentActivities(activities = []) {
+  const container = document.querySelector(PROFILE_ELEMENTS.recentActivities.container)
+  const emptyState = document.querySelector(PROFILE_ELEMENTS.recentActivities.emptyState)
 
+  if (!container) return
+
+  // Vider le contenu
+  container.innerHTML = ""
+
+  // Vérifier si c'est un tableau
+  if (!Array.isArray(activities)) {
+    console.error("Données d'activités invalides:", activities)
+    activities = []
+  }
+
+  if (activities.length === 0) {
+    if (emptyState) emptyState.style.display = "flex"
+    return
+  }
+
+  if (emptyState) emptyState.style.display = "none"
+
+  // Ajouter chaque activité
+  activities.forEach((activity) => {
+    const element = createActivityElement(activity)
+    container.appendChild(element)
+  })
+
+  if (window.lucide) window.lucide.createIcons()
+}
 /**
  * Crée un élément d'activité
  * @param {Object} activity - Données de l'activité
@@ -250,6 +281,7 @@ function updateUserStats(stats) {
  * Met à jour les défis en cours
  * @param {Array} challenges - Liste des défis en cours
  */
+/*
 function updateCurrentChallenges(challenges) {
   const container = document.querySelector(PROFILE_ELEMENTS.currentChallenges.container)
   const emptyState = document.querySelector(PROFILE_ELEMENTS.currentChallenges.emptyState)
@@ -308,11 +340,69 @@ function updateCurrentChallenges(challenges) {
     window.lucide.createIcons()
   }
 }
+*/
+function updateCurrentChallenges(challenges) {
+  const container = document.querySelector(PROFILE_ELEMENTS.currentChallenges.container)
+  const emptyState = document.querySelector(PROFILE_ELEMENTS.currentChallenges.emptyState)
 
+  if (!container) {
+    console.error("Conteneur des défis en cours non trouvé")
+    return
+  }
+
+  // Vider le contenu existant
+  container.innerHTML = ""
+
+  // Créer la grille si elle n'existe pas
+  const grid = document.createElement("div")
+  grid.className = "w-full grid grid-cols-2 max-md:grid-cols-1 gap-4 rounded-lg shadow-md mx-auto"
+  container.appendChild(grid)
+
+  // Afficher l'état vide si pas de défis
+  if (!Array.isArray(challenges)) {
+    console.error("Données de défis invalides:", challenges)
+    challenges = []
+  }
+
+  if (challenges.length === 0) {
+    if (emptyState) {
+      emptyState.style.display = "flex"
+    } else {
+      const emptyStateDiv = document.createElement("div")
+      emptyStateDiv.id = "no-current-challenges"
+      emptyStateDiv.className = "flex flex-col items-center justify-center p-8 text-center"
+      emptyStateDiv.innerHTML = `
+        <i data-lucide="flag-off" class="w-12 h-12 text-gray-500 mb-4"></i>
+        <h3 class="text-lg font-medium text-gray-300">Aucun défi en cours</h3>
+        <p class="text-sm text-gray-400 mt-2">Explorez les défis disponibles pour commencer.</p>
+        <button class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+          Découvrir les défis
+        </button>
+      `
+      container.appendChild(emptyStateDiv)
+    }
+    return
+  }
+
+  // Masquer l'état vide
+  if (emptyState) emptyState.style.display = "none"
+
+  // Ajouter chaque défi
+  challenges.forEach((challenge) => {
+    const challengeElement = createChallengeElement(challenge, "current")
+    grid.appendChild(challengeElement)
+  })
+
+  // Actualiser les icônes Lucide
+  if (window.lucide) {
+    window.lucide.createIcons()
+  }
+}
 /**
  * Met à jour les défis complétés
  * @param {Array} challenges - Liste des défis complétés
  */
+/*
 function updateCompletedChallenges(challenges) {
   const container = document.querySelector(PROFILE_ELEMENTS.completedChallenges.container)
   const emptyState = document.querySelector(PROFILE_ELEMENTS.completedChallenges.emptyState)
@@ -361,6 +451,60 @@ function updateCompletedChallenges(challenges) {
   challenges.forEach((challenge) => {
     const challengeElement = createChallengeElement(challenge, "completed")
     container.querySelector(".grid").appendChild(challengeElement)
+  })
+
+  // Actualiser les icônes Lucide
+  if (window.lucide) {
+    window.lucide.createIcons()
+  }
+}*/
+function updateCompletedChallenges(challenges) {
+  const container = document.querySelector(PROFILE_ELEMENTS.completedChallenges.container)
+  const emptyState = document.querySelector(PROFILE_ELEMENTS.completedChallenges.emptyState)
+
+  if (!container) {
+    console.error("Conteneur des défis complétés non trouvé")
+    return
+  }
+
+  // Vider le contenu existant
+  container.innerHTML = ""
+
+  // Créer la grille si elle n'existe pas
+  const grid = document.createElement("div")
+  grid.className = "w-full grid grid-cols-2 max-md:grid-cols-1 gap-4 rounded-lg shadow-md mx-auto"
+  container.appendChild(grid)
+
+  // Afficher l'état vide si pas de défis
+  if (!Array.isArray(challenges)) {
+    console.error("Données de défis invalides:", challenges)
+    challenges = []
+  }
+
+  if (challenges.length === 0) {
+    if (emptyState) {
+      emptyState.style.display = "flex"
+    } else {
+      const emptyStateDiv = document.createElement("div")
+      emptyStateDiv.id = "no-completed-challenges"
+      emptyStateDiv.className = "flex flex-col items-center justify-center p-8 text-center"
+      emptyStateDiv.innerHTML = `
+        <i data-lucide="trophy" class="w-12 h-12 text-gray-500 mb-4"></i>
+        <h3 class="text-lg font-medium text-gray-300">Aucun défi complété</h3>
+        <p class="text-sm text-gray-400 mt-2">Terminez des défis pour les voir apparaître ici.</p>
+      `
+      container.appendChild(emptyStateDiv)
+    }
+    return
+  }
+
+  // Masquer l'état vide
+  if (emptyState) emptyState.style.display = "none"
+
+  // Ajouter chaque défi
+  challenges.forEach((challenge) => {
+    const challengeElement = createChallengeElement(challenge, "completed")
+    grid.appendChild(challengeElement)
   })
 
   // Actualiser les icônes Lucide
@@ -562,19 +706,23 @@ function handleError(title = "Une erreur est survenue", error = null, type = "er
   }
 }
 
-/**
- * Récupère l'ID de l'utilisateur connecté
- * @returns {Promise<string>} - ID de l'utilisateur
- */
+// Fonction pour récupérer l'ID utilisateur
 async function getUserId() {
   try {
-    const response = await apiRequest(`/user/${userId}`)
-    if (response.success && response.data && response.data.id) {
-      return response.data.id
+    const response = await fetch("/HACKATHON_ESGIS/public/api/users/me", {
+      method: "GET",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    })
+
+    if (!response.ok) {
+      throw new Error("Utilisateur non authentifié")
     }
-    throw new Error("Utilisateur non authentifié")
+
+    const data = await response.json()
+    return data.data?.id
   } catch (error) {
-    handleError("Erreur d'authentification", error, "error")
+    handleError("Impossible de récupérer l'ID utilisateur", error, "error")
     return null
   }
 }
@@ -639,6 +787,7 @@ async function loadUserStats(userId) {
  * Charge les défis en cours de l'utilisateur
  * @param {string} userId - ID de l'utilisateur
  */
+/*
 async function loadCurrentChallenges(userId) {
   try {
     if (!userId) {
@@ -646,7 +795,7 @@ async function loadCurrentChallenges(userId) {
       return
     }
 
-    const response = await apiRequest(`/users/${userId}/challenges/current`)
+    const response = await apiRequest(`/users/me/${userId}/challenges/current`)
     console.log("Défis en cours:", response)
 
     if (response.success) {
@@ -655,12 +804,27 @@ async function loadCurrentChallenges(userId) {
   } catch (error) {
     handleError("Erreur lors de la récupération des défis en cours", error, "error")
   }
+}*/
+async function loadCurrentChallenges(userId) {
+  try {
+    if (!userId) return
+
+    const response = await apiRequest(`/users/${userId}/current-challenges`)
+    console.log("Défis en cours:", response)
+
+    if (response.success) {
+      updateCurrentChallenges(response.data || [])
+    }
+  } catch (error) {
+    handleError("Erreur lors de la récupération des défis en cours", error)
+  }
 }
 
 /**
  * Charge les défis complétés de l'utilisateur
  * @param {string} userId - ID de l'utilisateur
  */
+/*
 async function loadCompletedChallenges(userId) {
   try {
     if (!userId) {
@@ -668,7 +832,7 @@ async function loadCompletedChallenges(userId) {
       return
     }
 
-    const response = await apiRequest(`/users/${userId}/challenges/completed`)
+    const response = await apiRequest(`/users/me/${userId}/challenges/completed`)
     console.log("Défis complétés:", response)
 
     if (response.success) {
@@ -677,12 +841,26 @@ async function loadCompletedChallenges(userId) {
   } catch (error) {
     handleError("Erreur lors de la récupération des défis complétés", error, "error")
   }
+}*/
+async function loadCompletedChallenges(userId) {
+  try {
+    if (!userId) return
+
+    const response = await apiRequest(`/users/${userId}/completed-challenges`)
+    console.log("Défis complétés:", response)
+
+    if (response.success) {
+      updateCompletedChallenges(response.data || [])
+    }
+  } catch (error) {
+    handleError("Erreur lors de la récupération des défis complétés", error)
+  }
 }
 
 /**
  * Charge les activités récentes de l'utilisateur
  * @param {string} userId - ID de l'utilisateur
- */
+ */ /*
 async function loadRecentActivity(userId) {
   try {
     if (!userId) {
@@ -691,7 +869,7 @@ async function loadRecentActivity(userId) {
     }
 
     // Charge les activités récentes
-    const activitiesResponse = await apiRequest(`/users/${userId}/recent-activities`)
+    const activitiesResponse = await apiRequest(`/users/me/${userId}/recent-activities`)
     console.log("Activités récentes:", activitiesResponse)
 
     if (activitiesResponse.success) {
@@ -699,6 +877,20 @@ async function loadRecentActivity(userId) {
     }
   } catch (error) {
     handleError("Erreur lors de la récupération des activités récentes", error, "error")
+  }
+}*/
+async function loadRecentActivity(userId) {
+  try {
+    if (!userId) return
+
+    const response = await apiRequest(`/users/${userId}/recent-activities`)
+    console.log("Activités récentes:", response)
+
+    if (response.success) {
+      updateRecentActivities(response.data || [])
+    }
+  } catch (error) {
+    handleError("Erreur lors de la récupération des activités récentes", error)
   }
 }
 
