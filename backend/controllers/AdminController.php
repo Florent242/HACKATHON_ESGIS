@@ -387,15 +387,16 @@ class AdminController extends Controller
             $this->validateMethod('GET');
             
             $query = "SELECT c.*, 
-                     (SELECT COUNT(*) FROM challenge_submissions cs WHERE cs.challenge_id = c.id) as participants,
-                     CASE 
-                         WHEN c.end_date < NOW() THEN 'completed'
-                         WHEN c.start_date > NOW() THEN 'upcoming'
-                         ELSE 'active'
-                     END as status
-                     FROM challenges c
-                     ORDER BY participants DESC
-                     LIMIT 5";
+                        (SELECT COUNT(*) FROM challenge_submissions cs WHERE cs.challenge_id = c.id) as participants,
+                        CASE 
+                            WHEN h.end_date < NOW() THEN 'completed'
+                            WHEN h.start_date > NOW() THEN 'upcoming'
+                            ELSE 'active'
+                        END as status
+                    FROM challenges c
+                    JOIN hackathons h ON c.hackathon_id = h.id
+                    ORDER BY participants DESC
+                    LIMIT 5";
             $stmt = $this->db->prepare($query);
             $stmt->execute();
             $challenges = $stmt->fetchAll(PDO::FETCH_ASSOC);
