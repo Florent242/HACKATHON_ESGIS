@@ -14,7 +14,7 @@ use Auth\Controller\UserController;
 use Auth\Controller\NotificationController;
 use Auth\Controller\ChallengeController;
 use Auth\Controller\EvaluationController;
-use Auth\Controller\AdminController; 
+use Auth\Controller\AdminController;
 use Auth\Model\TokenManager;
 
 // ✅ Inclure une seule fois le fichier de configuration
@@ -38,8 +38,8 @@ $files = [
     'TeamController'      => '/controllers/TeamController.php',
     'ProjectController'   => '/controllers/ProjectController.php',
     'ChallengeController' => '/controllers/ChallengeController.php',
-    'EvaluationController'=> '/controllers/EvaluationController.php',
-    'AdminController'     => '/controllers/AdminController.php', 
+    'EvaluationController' => '/controllers/EvaluationController.php',
+    'AdminController'     => '/controllers/AdminController.php',
     'TokenManager'        => '/models/TokenManager.php'
 ];
 
@@ -120,11 +120,11 @@ try {
                             setFlashMessage('error', 'Connexion echouée', $e->getMessage());
                             header('Location: ' . BASE_URL . '/auth');
                         }
-                        exit();  
+                        exit();
                     }
                     break;
-                
-               case 'check-email':
+
+                case 'check-email':
                     if ($method === 'POST') {
                         $email = $input['email'] ?? '';
                         $controller->checkEmail($email);
@@ -137,19 +137,18 @@ try {
                         $controller->checkUsername($username);
                     }
                     break;
-                      
+
                 case 'register':
                     try {
                         $controller->register();
                     } catch (Exception $e) {
-                        if (isAjaxRequest()){
+                        if (isAjaxRequest()) {
                             header('Content-Type: application/json');
                             http_response_code(400);
                             echo json_encode(['error' => $e->getMessage()]);
-                        }
-                        else
-                        setFlashMessage('error', 'Inscription echouée', $e->getMessage());
-                        
+                        } else
+                            setFlashMessage('error', 'Inscription echouée', $e->getMessage());
+
                         //redirection vers la page d'inscription
                         header('Location: ' . BASE_URL . '/auth');
                         exit();
@@ -168,10 +167,10 @@ try {
                     throw new Exception('Endpoint non trouvé. - api ' . var_dump($uri), 404);
             }
             break;
-            
+
         case 'admin':
             $controllerAdmin = new AdminController($db, $tokenManager);
-            
+
             // Vérification du token JWT pour toutes les routes sauf OPTIONS
             if ($method !== 'OPTIONS') {
                 try {
@@ -179,21 +178,20 @@ try {
                     if (!$token) {
                         throw new Exception('Token manquant', 401);
                     }
-                    
+
                     // Valider le token et récupérer l'utilisateur
                     $tokenValidation = $tokenManager->validateToken($token);
                     if (!$tokenValidation['valid']) {
                         throw new Exception('Token invalide: ' . ($tokenValidation['error'] ?? ''), 401);
                     }
-                    
+
                     // Stocker l'ID utilisateur pour les vérifications ultérieures
                     $AdminUserId = $tokenValidation['user_id'];
-                    
+
                     // Vérifier si l'utilisateur est admin
                     if (!$controllerAdmin->isAdmin($AdminUserId)) {
                         throw new Exception('Accès non autorisé', 403);
                     }
-                    
                 } catch (Exception $e) {
                     jsonResponse([
                         'success' => false,
@@ -202,10 +200,10 @@ try {
                     exit();
                 }
             }
-            
+
             // Routage des endpoints administrateur
             $adminAction = $request[1] ?? null;
-            
+
             // Gestion des routes admin directes
             switch ($adminAction) {
                 case 'stats':
@@ -256,7 +254,7 @@ try {
                     if (is_numeric($adminAction)) {
                         $id = $adminAction;
                         $action = $request[2] ?? null;
-                        
+
                         if ($action === null) {
                             switch ($method) {
                                 case 'GET':
@@ -297,9 +295,9 @@ try {
             }
             break;
 
-// Le reste du fichier reste inchangé...
+        // Le reste du fichier reste inchangé...
 
-            /*
+        /*
             case 'admin':
                 $controllerAdmin = new AdminController($db, $tokenManager);
                 
@@ -520,256 +518,251 @@ try {
                 }
                 break;
 */
-            case 'users':
-                $controller = new UserController($db, $tokenManager);                
-                // Vérification du token JWT pour toutes les routes sauf OPTIONS
-                if ($method !== 'OPTIONS') {
-                    try {
-                        $token = $controller->getBearerToken();
-                        if (!$token) {
-                            throw new Exception('Token manquant', 401);
-                        }
-                        
-                        // Valider le token et récupérer l'utilisateur
-                        $tokenValidation = $controller->validateToken($token);
-                        if (!$tokenValidation['valid']) {
-                            throw new Exception('Token invalide: ' . ($tokenValidation['error'] ?? ''), 401);
-                        }
-                        
-                        // Stocker l'ID utilisateur pour les vérifications ultérieures
-                        $currentUserId = $tokenValidation['user_id'];
-                        
-                    } catch (Exception $e) {
-                        if (isAjaxRequest()) {
-                            jsonResponse([
-                                'success' => false,
-                                'error' => 'api.php ' . $e->getMessage()
-                            ], $e->getCode() ?: 401);
-                        }
-                        else{
-                            setFlashMessage('error', 'Erreur de connexion', $e->getMessage());
-                            header('Location: ' . BASE_URL . '/user');
-                            exit();
-                        }
+        case 'users':
+            $controller = new UserController($db, $tokenManager);
+            // Vérification du token JWT pour toutes les routes sauf OPTIONS
+            if ($method !== 'OPTIONS') {
+                try {
+                    $token = $controller->getBearerToken();
+                    if (!$token) {
+                        throw new Exception('Token manquant', 401);
+                    }
+
+                    // Valider le token et récupérer l'utilisateur
+                    $tokenValidation = $controller->validateToken($token);
+                    if (!$tokenValidation['valid']) {
+                        throw new Exception('Token invalide: ' . ($tokenValidation['error'] ?? ''), 401);
+                    }
+
+                    // Stocker l'ID utilisateur pour les vérifications ultérieures
+                    $currentUserId = $tokenValidation['user_id'];
+                } catch (Exception $e) {
+                    if (isAjaxRequest()) {
+                        jsonResponse([
+                            'success' => false,
+                            'error' => 'api.php ' . $e->getMessage()
+                        ], $e->getCode() ?: 401);
+                    } else {
+                        setFlashMessage('error', 'Erreur de connexion', $e->getMessage());
+                        header('Location: ' . BASE_URL . '/user');
+                        exit();
                     }
                 }
-            
-                if (!is_numeric($id)) {
-                    // Route /api/users
-                    switch ($method) {
-                        case 'GET':
-                            if ($request[1] === 'me')
-                            {
-                                // Vérifier l'authentification
-                                if (!$currentUserId)
-                                {
-                                    jsonResponse(['error' => 'Non authentifié. api.php ' . $currentUserId.' !='.$request[1]], 401);
-                                    return;
-                                }
-                        
-                                // Récupérer les informations de l'utilisateur
-                                try {
-                                    $controller->get($currentUserId);
-                                    $controller->getUserStats($currentUserId);
-                                } catch (Exception $e) {
-                                    if (isAjaxRequest()) {
-                                        jsonResponse([
-                                            'success' => false,
-                                            'error' => 'api.php ' . $e->getMessage()
-                                        ], $e->getCode() ?: 404);
-                                    }
-                                    else{
-                                        setFlashMessage('error', 'Erreur de connexion', $e->getMessage());
-                                        header('Location: ' . BASE_URL . '/user');
-                                        exit();
-                                    }
+            }
+
+            if (!is_numeric($id)) {
+                // Route /api/users
+                switch ($method) {
+                    case 'GET':
+                        if ($request[1] === 'me') {
+                            // Vérifier l'authentification
+                            if (!$currentUserId) {
+                                jsonResponse(['error' => 'Non authentifié. api.php ' . $currentUserId . ' !=' . $request[1]], 401);
+                                return;
+                            }
+
+                            // Récupérer les informations de l'utilisateur
+                            try {
+                                $controller->get($currentUserId);
+                                $controller->getUserStats($currentUserId);
+                            } catch (Exception $e) {
+                                if (isAjaxRequest()) {
+                                    jsonResponse([
+                                        'success' => false,
+                                        'error' => 'api.php ' . $e->getMessage()
+                                    ], $e->getCode() ?: 404);
+                                } else {
+                                    setFlashMessage('error', 'Erreur de connexion', $e->getMessage());
+                                    header('Location: ' . BASE_URL . '/user');
+                                    exit();
                                 }
                             }
-                            break;
-                            
-                        case 'OPTIONS':
-                            // Gestion des pré-vol CORS
-                            header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-                            header('Access-Control-Allow-Headers: Authorization, Content-Type');
-                            exit;
-                            
-                        default:
-                            jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
-                    }
-                } elseif (is_numeric($id)) {
-                    // Route /api/users/{id}
-                    if ($action === null) {
-                        switch ($method) {
-                            case 'GET':
-                                // Un utilisateur peut voir son propre profil ou un admin peut voir n'importe quel profil
-                                if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                    if (isAjaxRequest()) {
-                                        jsonResponse(['success' => false, 'error' => "Accès non autorisé "], 403);
-                                        return;
-                                    }
-                                    setFlashMessage('error', 'Erreur de connexion', "Accès non autorisé ");
-                                    header('Location: ' . BASE_URL . '/user');
-                                    exit();
-                                }
-                                $controller->get($id);
-                                break;
-                                
-                            case 'POST':
-                            case 'PUT':
-                                // Un utilisateur peut mettre à jour son propre profil ou un admin peut mettre à jour n'importe quel profil
-                                if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                    if (isAjaxRequest()) {
-                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                        return;
-                                    }
-                                    setFlashMessage('error', 'Erreur de mise à jour', 'Accès non autorisé');
-                                    header('Location: ' . BASE_URL . '/user');
-                                    exit();
-                                }
-                                $controller->update($id, $token);
-                                break;
-                                
-                            default:
-                                if (isAjaxRequest()) {
-                                    jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
-                                    return;
-                                }
-                                setFlashMessage('error', 'Erreur de connexion', 'Méthode non autorisée');
-                                header('Location: ' . BASE_URL . '/user');
-                                exit();
                         }
-                    } else {
-                        // Routes avec action spécifique /api/users/{id}/{action}
-                        switch ($action) {
-                            case 'password':
-                                // Un utilisateur peut changer son propre mot de passe
-                                if ($currentUserId != $id) {
-                                    if (isAjaxRequest()) {
-                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                        return;
-                                    }
-                                    setFlashMessage('error', 'Erreur de modification', 'Accès non autorisé');
-                                    header('Location: ' . BASE_URL . '/user');
-                                    exit();
-                                }
-                                $controller->updatePassword($id, $token);
-                                break;
-                                
-                            case 'stats':
-                                // Un utilisateur peut voir ses propres stats ou un admin peut voir n'importe quelles stats
-                                if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                    if (isAjaxRequest()) {
-                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                        return;
-                                    }
-                                    setFlashMessage('error', 'Erreur de connexion', 'Accès non autorisé');
-                                    header('Location: ' . BASE_URL . '/user');
-                                    exit();
-                                }
-                                $controller->getUserStats($id);
-                                break;
-                                
-                            case 'hackathons':
-                                // Un utilisateur peut voir ses propres hackathons ou un admin peut voir n'importe quels hackathons
-                                if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                }
-                                $controller->getUserHackathons($id, $token);
-                                break;
-                                
-                            case 'teams':
-                                // Un utilisateur peut voir ses propres équipes ou un admin peut voir n'importe quelles équipes
-                                if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                    if (isAjaxRequest()) {
-                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                        return;
-                                    }
-                                    setFlashMessage('error', 'Erreur de connexion', 'Accès non autorisé');
-                                    header('Location: ' . BASE_URL . '/user');
-                                    exit();
-                                }
-                                $controller->getUserTeams($id);
-                                break;
-                                case 'ongoing-challenges':
+                        break;
 
-                                    // Un utilisateur peut voir ses propres défis en cours ou un admin peut voir ceux des autres
-                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                    }
-                                    // Before calling $controller->getOngoingChallenges($id);
-                                    if (!method_exists($controller, 'getOngoingChallenges')) {
-                                        jsonResponse(['success' => false, 'error' => 'Endpoint not implemented'], 501);
-                                        return;
-                                    }
-                                    $controller->getOngoingChallenges($id, $token);
-                                    break;
-                                case 'current-challenges':
-                                        // Vérification d'autorisation (similaire à ongoing-challenges)
-                                        if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                            jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                        }
-                                        // **Assurez-vous que vous avez une méthode `getCurrentChallenges()` dans UserController**
-                                        $controller->getCurrentChallenges($id, $token);
-                                        break;
-                                case 'current-hackathons':
-                                    // Un utilisateur peut voir ses propres hackathons ou un admin peut voir n'importe quels hackathons
-                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                    }
-                                    $controller->getCurrentHackathons($id, $token);
-                                    break;
-                                
-                                case 'recent-activities':
-                                    // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
-                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                    }
-                                    $controller->getRecentActivities($id, $token);
-                                    break;
-                                case 'next-event':
-                                    // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
-                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                    }
-                                    $controller->getNextEvent($id, $token);
-                                    break; 
-                                case 'notifications':
-                                    // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
-                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                    }
-                                    $controller->getNotifications($id, $token);
-                                    break;
-                                case 'completed-challenges':
-                                    // Vérification d'autorisation
-                                    if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
-                                        jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
-                                    }
-                                    $controller->getCompletedChallenges($id, $token);
-                                    break;                    
-                            default:
+                    case 'OPTIONS':
+                        // Gestion des pré-vol CORS
+                        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+                        header('Access-Control-Allow-Headers: Authorization, Content-Type');
+                        exit;
+
+                    default:
+                        jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
+                }
+            } elseif (is_numeric($id)) {
+                // Route /api/users/{id}
+                if ($action === null) {
+                    switch ($method) {
+                        case 'GET':
+                            // Un utilisateur peut voir son propre profil ou un admin peut voir n'importe quel profil
+                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                 if (isAjaxRequest()) {
-                                    jsonResponse(['success' => false, 'error' => 'Action non reconnue'], 404);
+                                    jsonResponse(['success' => false, 'error' => "Accès non autorisé "], 403);
                                     return;
                                 }
-                                setFlashMessage('error', 'Erreur de connexion', 'Action non reconnue');
+                                setFlashMessage('error', 'Erreur de connexion', "Accès non autorisé ");
                                 header('Location: ' . BASE_URL . '/user');
                                 exit();
-                        }
+                            }
+                            $controller->get($id);
+                            break;
+
+                        case 'POST':
+                        case 'PUT':
+                            // Un utilisateur peut mettre à jour son propre profil ou un admin peut mettre à jour n'importe quel profil
+                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                if (isAjaxRequest()) {
+                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    return;
+                                }
+                                setFlashMessage('error', 'Erreur de mise à jour', 'Accès non autorisé');
+                                header('Location: ' . BASE_URL . '/user');
+                                exit();
+                            }
+                            $controller->update($id, $token);
+                            break;
+
+                        default:
+                            if (isAjaxRequest()) {
+                                jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
+                                return;
+                            }
+                            setFlashMessage('error', 'Erreur de connexion', 'Méthode non autorisée');
+                            header('Location: ' . BASE_URL . '/user');
+                            exit();
                     }
                 } else {
-                    jsonResponse(['success' => false, 'error' => 'Identifiant invalide: ' . $id], 400);
-                }
-                break;
-        case 'hackers': 
-                    $controller = new UserController($db, $tokenManager); // Ou créez un HackerController si nécessaire
-                    if ($id === 'top' && $method === 'GET') {
-                        $controller->getTopHackers(); 
-                    } else {
-                        http_response_code(404);
-                        echo json_encode(['error' => 'Endpoint non trouvé ou méthode non autorisée pour /hackers/top']);
+                    // Routes avec action spécifique /api/users/{id}/{action}
+                    switch ($action) {
+                        case 'password':
+                            // Un utilisateur peut changer son propre mot de passe
+                            if ($currentUserId != $id) {
+                                if (isAjaxRequest()) {
+                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    return;
+                                }
+                                setFlashMessage('error', 'Erreur de modification', 'Accès non autorisé');
+                                header('Location: ' . BASE_URL . '/user');
+                                exit();
+                            }
+                            $controller->updatePassword($id, $token);
+                            break;
+
+                        case 'stats':
+                            // Un utilisateur peut voir ses propres stats ou un admin peut voir n'importe quelles stats
+                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                if (isAjaxRequest()) {
+                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    return;
+                                }
+                                setFlashMessage('error', 'Erreur de connexion', 'Accès non autorisé');
+                                header('Location: ' . BASE_URL . '/user');
+                                exit();
+                            }
+                            $controller->getUserStats($id);
+                            break;
+
+                        case 'hackathons':
+                            // Un utilisateur peut voir ses propres hackathons ou un admin peut voir n'importe quels hackathons
+                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                            }
+                            $controller->getUserHackathons($id, $token);
+                            break;
+
+                        case 'teams':
+                            // Un utilisateur peut voir ses propres équipes ou un admin peut voir n'importe quelles équipes
+                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                if (isAjaxRequest()) {
+                                    jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                                    return;
+                                }
+                                setFlashMessage('error', 'Erreur de connexion', 'Accès non autorisé');
+                                header('Location: ' . BASE_URL . '/user');
+                                exit();
+                            }
+                            $controller->getUserTeams($id);
+                            break;
+                        case 'ongoing-challenges':
+
+                            // Un utilisateur peut voir ses propres défis en cours ou un admin peut voir ceux des autres
+                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                            }
+                            // Before calling $controller->getOngoingChallenges($id);
+                            if (!method_exists($controller, 'getOngoingChallenges')) {
+                                jsonResponse(['success' => false, 'error' => 'Endpoint not implemented'], 501);
+                                return;
+                            }
+                            $controller->getOngoingChallenges($id, $token);
+                            break;
+                        case 'current-challenges':
+                            // Vérification d'autorisation (similaire à ongoing-challenges)
+                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                            }
+                            // **Assurez-vous que vous avez une méthode `getCurrentChallenges()` dans UserController**
+                            $controller->getCurrentChallenges($id, $token);
+                            break;
+                        case 'current-hackathons':
+                            // Un utilisateur peut voir ses propres hackathons ou un admin peut voir n'importe quels hackathons
+                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                            }
+                            $controller->getCurrentHackathons($id, $token);
+                            break;
+
+                        case 'recent-activities':
+                            // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
+                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                            }
+                            $controller->getRecentActivities($id, $token);
+                            break;
+                        case 'next-event':
+                            // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
+                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                            }
+                            $controller->getNextEvent($id, $token);
+                            break;
+                        case 'notifications':
+                            // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
+                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                            }
+                            $controller->getNotifications($id, $token);
+                            break;
+                        case 'completed-challenges':
+                            // Vérification d'autorisation
+                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                            }
+                            $controller->getCompletedChallenges($id, $token);
+                            break;
+                        default:
+                            if (isAjaxRequest()) {
+                                jsonResponse(['success' => false, 'error' => 'Action non reconnue'], 404);
+                                return;
+                            }
+                            setFlashMessage('error', 'Erreur de connexion', 'Action non reconnue');
+                            header('Location: ' . BASE_URL . '/user');
+                            exit();
                     }
-                    break;
+                }
+            } else {
+                jsonResponse(['success' => false, 'error' => 'Identifiant invalide: ' . $id], 400);
+            }
+            break;
+        case 'hackers':
+            $controller = new UserController($db, $tokenManager); // Ou créez un HackerController si nécessaire
+            if ($id === 'top' && $method === 'GET') {
+                $controller->getTopHackers();
+            } else {
+                http_response_code(404);
+                echo json_encode(['error' => 'Endpoint non trouvé ou méthode non autorisée pour /hackers/top']);
+            }
+            break;
 
         case 'hackathons':
             $controller = new HackathonController($db, $tokenManager);
@@ -926,43 +919,43 @@ try {
             }
             break;
 
-            case 'challenges':
-                $controller = new ChallengeController($db, $tokenManager);
-                if ($id === null) {
-                    // Route /api/challenges
-                    if ($method === 'GET') {
-                        $controller->getAll();
-                    } elseif ($method === 'POST') {
-                        $controller->create();
-                    } else {
-                        throw new Exception('Méthode non autorisée', 405);
-                    }
-                } elseif ($id === 'solves') {
-                    // Nouvelle route /api/challenges/solves
-                    if ($method === 'GET') {
-                        $controller->getSolvesCount();
-                    } else {
-                        throw new Exception('Méthode non autorisée', 405);
-                    }
-                } elseif (is_numeric($id)) {
-                    // Route /api/challenges/{id}
-                    if ($action === null) {
-                        if ($method === 'GET') {
-                            $controller->get($id);
-                        } elseif ($method === 'POST' || $method === 'PUT') {
-                            $controller->update($id);
-                        } elseif ($method === 'DELETE') {
-                            $controller->delete($id);
-                        } else {
-                            throw new Exception('Méthode non autorisée', 405);
-                        }
-                    }
-                } elseif ($id === 'hackathon' && is_numeric($action)) {
-                    $controller->getByHackathon($action);
+        case 'challenges':
+            $controller = new ChallengeController($db, $tokenManager);
+            if ($id === null) {
+                // Route /api/challenges
+                if ($method === 'GET') {
+                    $controller->getAll();
+                } elseif ($method === 'POST') {
+                    $controller->create();
                 } else {
-                    throw new Exception('ID non valide', 400);
+                    throw new Exception('Méthode non autorisée', 405);
                 }
-                break;
+            } elseif ($id === 'solves') {
+                // Nouvelle route /api/challenges/solves
+                if ($method === 'GET') {
+                    $controller->getSolvesCount();
+                } else {
+                    throw new Exception('Méthode non autorisée', 405);
+                }
+            } elseif (is_numeric($id)) {
+                // Route /api/challenges/{id}
+                if ($action === null) {
+                    if ($method === 'GET') {
+                        $controller->get($id);
+                    } elseif ($method === 'POST' || $method === 'PUT') {
+                        $controller->update($id);
+                    } elseif ($method === 'DELETE') {
+                        $controller->delete($id);
+                    } else {
+                        throw new Exception('Méthode non autorisée', 405);
+                    }
+                }
+            } elseif ($id === 'hackathon' && is_numeric($action)) {
+                $controller->getByHackathon($action);
+            } else {
+                throw new Exception('ID non valide', 400);
+            }
+            break;
 
         case 'evaluations':
             $controller = new EvaluationController($db, $tokenManager);
@@ -1012,7 +1005,7 @@ try {
                 // Route /api/notifications/{id}
                 if ($action === null) {
                     if ($method === 'GET') {
-                        $controller->getNotifications( $userId);
+                        $controller->getNotifications($userId);
                     } elseif ($method === 'POST' || $method === 'PUT') {
                         $controller->update($id);
                     } elseif ($method === 'DELETE') {
@@ -1048,7 +1041,8 @@ try {
         . '/HACKATHON_ESGIS/public/auth');
     exit();
 }
-function isAjaxRequest() {
-    return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) 
-           && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+function isAjaxRequest()
+{
+    return !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+        && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
 }

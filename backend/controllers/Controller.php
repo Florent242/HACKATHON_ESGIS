@@ -24,7 +24,7 @@ class Controller
         if ($_SERVER['REQUEST_METHOD'] !== 'GET' && !$this->validateCsrfToken()) {
             $this->jsonResponse([
                 'success' => false,
-                'error' => 'Token CSRF invalide'
+                'error' => 'Token CSRF invalide - controller'
             ], 403);
         }
 
@@ -49,7 +49,7 @@ class Controller
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -122,7 +122,16 @@ class Controller
             return true;
         }
 
-        $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        // Pour les requêtes PUT, récupérer le token du corps de la requête
+        if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+            $rawData = file_get_contents('php://input');
+            $data = json_decode($rawData, true);
+            $token = $data['csrf_token'] ?? '';
+        } else {
+            // Pour les autres méthodes (POST), utiliser $_POST ou l'en-tête
+            $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        }
+
         return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
     }
 
@@ -159,20 +168,20 @@ class Controller
     {
         foreach ($fields as $field) {
             if (empty($data[$field])) {
-                throw new Exception("Le champ '$field' est requis");
+                throw new Exception("Le champ '$field' est requis" . print_r($data, true));
             }
         }
     }
 
     /**
-     * Valide la méthode HTTP
-     */
-    protected function validateMethod(string $method): void
-    {
-        if ($_SERVER['REQUEST_METHOD'] !== strtoupper($method)) {
-            throw new Exception("Méthode {$_SERVER['REQUEST_METHOD']} non autorisée");
-        }
+ * Valide les méthodes HTTP autorisées
+ */
+protected function validateMethod(string $method, string $method2 = ''): void
+{
+    if ($_SERVER['REQUEST_METHOD'] !== strtoupper($method) && $_SERVER['REQUEST_METHOD'] !== strtoupper($method2)) {
+        throw new Exception("Méthode {$_SERVER['REQUEST_METHOD']} non autorisée");
     }
+}
 
     /**
      * Récupère les données de la requête

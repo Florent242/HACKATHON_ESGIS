@@ -58,6 +58,7 @@ function updateCurrentChallenges(challenges) {
 
     // Cache le conteneur si aucun défi
     if (!challenges || challenges.length === 0) {
+        container.querySelector(DASHBOARD_ELEMENTS.currentChallenges.template).style.display = 'none';
         if (emptyState) emptyState.style.display = 'flex';
         return;
     }
@@ -125,6 +126,7 @@ function updateRecentActivities(activities) {
 
     // Cache le conteneur si aucune activité
     if (!activities || activities.length === 0) {
+        container.querySelector(DASHBOARD_ELEMENTS.recentActivities.template).style.display = 'none';
         if (emptyState) emptyState.style.display = 'flex';
         return;
     }
@@ -160,7 +162,7 @@ function updateActivityItem(element, activity) {
     const icon = element.querySelector('.activity-icon');
     const textElement = element.querySelector('.activity-text');
     const timeElement = element.querySelector('.activity-time');
-    
+
     // Détermine la classe CSS en fonction du niveau d'activité
     const activityClass = {
         'info': 'activity-info',
@@ -169,9 +171,9 @@ function updateActivityItem(element, activity) {
         'warning': 'activity-warning',
         'register_error': 'activity-error'
     }[activity.level] || 'activity-default';
-    
+
     element.classList.add(activityClass);
-    
+
     if (icon) {
         // Détermine l'icône en fonction du type ou niveau d'activité
         const iconMap = {
@@ -184,11 +186,11 @@ function updateActivityItem(element, activity) {
         };
 
         const iconName = iconMap[activity.level] ||
-        iconMap[activity.action] ||
-        iconMap['default'];
+            iconMap[activity.action] ||
+            iconMap['default'];
         icon.setAttribute('data-lucide', iconName);
     }
-    
+
     if (textElement) {
         // Filtre les messages d'erreur SQL
         let description = activity.description || activity.action || 'Activité inconnue';
@@ -220,7 +222,8 @@ function updateNotifications(notifications) {
     }
 
     // Cache le conteneur si aucune notification
-    if (!notifications || notifications.length === 0) {
+    if (!notifications.list || notifications.list.length === 0) {
+        container.querySelector(DASHBOARD_ELEMENTS.notifications.template).style.display = 'none';
         if (emptyState) emptyState.style.display = 'flex';
         return;
     }
@@ -274,7 +277,7 @@ function formatDate(dateString) {
     try {
         const date = new Date(dateString);
         if (isNaN(date.getTime())) return 'Date invalide';
-        
+
         const options = {
             year: 'numeric',
             month: 'short',
@@ -375,7 +378,10 @@ async function getUserId() {
         const response = await fetch('/HACKATHON_ESGIS/public/api/users/me', {
             method: 'GET',
             credentials: 'include',
-            headers: { 'Accept': 'application/json' }
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
         });
 
         if (!response.ok) {
@@ -396,7 +402,7 @@ function updateDOM(elements, data) {
         const element = document.querySelector(selector);
         if (element) {
             let value = data[key];
-            
+
             // Formater les valeurs spécifiques
             if (key === 'total-points') {
                 value = value.toLocaleString();
@@ -435,7 +441,7 @@ async function loadUserInfo(userId) {
 
         if (response.success && response.data) {
             const user = response.data;
-            
+
             // Mettre à jour tous les éléments avec la classe Username
             const usernameElements = document.querySelectorAll('.Username');
             usernameElements.forEach(element => {
@@ -471,7 +477,7 @@ async function loadStatistics() {
 
         if (statsResponse.success && statsResponse.data) {
             const stats = statsResponse.data.stats;
-            
+
             // Préparer les données formatées
             const formattedStats = {
                 'devChallenges': stats['number-dev-challenges'] || 0,
