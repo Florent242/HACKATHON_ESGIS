@@ -85,11 +85,7 @@ function updateRecentActivities(activities) {
 
     // Cache le conteneur si aucune activité
     if (!activities || activities.length === 0) {
-<<<<<<< Updated upstream
         overviewContainer.querySelector(PROFILE_ELEMENTS.recentActivities.template).style.display = 'none';
-=======
-        container.querySelector(PROFILE_ELEMENTS.recentActivities.template).style.display = 'none';
->>>>>>> Stashed changes
         if (emptyState) emptyState.style.display = 'flex';
         return;
     }
@@ -147,7 +143,6 @@ function updateActivityItem(element, activity) {
             'register_error': 'alert-circle',
             'default': 'activity'
         };
-<<<<<<< Updated upstream
 
         const iconColor = {
             'info': 'text-blue-500',
@@ -157,9 +152,6 @@ function updateActivityItem(element, activity) {
             'register_error': 'text-red-500'
         }[activity.level] || 'text-gray-500';
 
-=======
-        
->>>>>>> Stashed changes
         const iconName = iconMap[activity.level] ||
             iconMap[activity.action] ||
             iconMap['default'];
@@ -182,15 +174,9 @@ function updateActivityItem(element, activity) {
     }
     
     if (timeElement) {
-<<<<<<< Updated upstream
         timeElement.textContent = activity.timestamp ?
             formatDate(activity.timestamp) :
             'Récemment';
-=======
-        timeElement.textContent = activity.created_at ?
-        formatDate(activity.created_at) :
-        'Récemment';
->>>>>>> Stashed changes
     }
 
     // Actualiser les icônes Lucide
@@ -199,7 +185,6 @@ function updateActivityItem(element, activity) {
     }
 }
 
-<<<<<<< Updated upstream
 function updateChallengesInprogress(challenges) {
     const container = document.querySelector(PROFILE_ELEMENTS.challenges.inProgress.container);
     const emptyState = document.querySelector(PROFILE_ELEMENTS.challenges.inProgress.emptyState);
@@ -208,79 +193,6 @@ function updateChallengesInprogress(challenges) {
         if (emptyState) emptyState.style.display = 'flex';
         console.log('Aucun challenge en cours');
         return;
-=======
-function updateChallengesInprogress (challenges){
-    if (!challenges || challenges.length === 0) {
-        console.log('Aucun défi en cours');
-        return;
-    }
-
-    // Affiche le conteneur et cache l'empty state
-    container.style.display = 'flex';
-    if (emptyState) emptyState.style.display = 'none';
-
-    // Supprime toutes les défis existants sauf le premier (qui sert de template)
-    const items = container.querySelector(PROFILE_ELEMENTS.challenges.inProgress.template);
-    for (let i = 1; i < items.length; i++) {
-        items[i].remove();
-    }
-
-    // Clone et remplit le template pour chaque défi
-    challenges.forEach((challenge, index) => {
-        if (index === 0) {
-            // Met à jour le premier élément (template)
-            updateChallengeInProgressItem(items[0], challenge);
-        } else {
-            // Clone et ajoute pour les autres défis
-            const clone = items[0].cloneNode(true);
-            updateChallengeInProgressItem(clone, challenge);
-            container.appendChild(clone);
-        }
-    });
-}
-
-function updateChallengeInProgressItem(element, challenge){
-    element.querySelector('.chaenge-tag').textContent= challenge.tag;
-    element.querySelector('.chaenge-level').textContent= challenge.level;
-    element.querySelector('.challenge-title').textContent = challenge.title;
-    element.querySelector('.challenge-description').textContent = challenge.description;
-    element.querySelector('.challenge-progress').textContent = `${challenge.progress}%`;
-    element.querySelector('.challenge-end-date').textContent = formatDate(challenge.end_date);
-    
-    // Actualiser les icônes Lucide
-    if (window.lucide) {
-        window.lucide.createIcons();
-    }
-}
-
-/**
- * Nettoie le texte pour prévenir les attaques XSS
-*/
-function sanitizeText(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Fonction pour formater les dates
-function formatDate(dateString) {
-    try {
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return 'Date invalide';
-        
-        const options = {
-            year: 'numeric',
-            month: 'short',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        };
-        return date.toLocaleDateString('fr-FR', options);
-    } catch (e) {
-        console.error('Erreur de formatage de date', e);
-        return 'Date inconnue';
->>>>>>> Stashed changes
     }
 
     if (!container) {
