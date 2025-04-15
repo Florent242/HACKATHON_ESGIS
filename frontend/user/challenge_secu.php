@@ -1,23 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EsgisHub - Challenges</title>
-  <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/challenge_secu.css">
-  <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/header.css">
-  <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script defer src="/HACKATHON_ESGIS/public/js/user/challenge_secu.js"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EsgisHub - Challenges</title>
+    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/challenge_secu.css">
+    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/header.css">
+    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script defer src="/HACKATHON_ESGIS/public/js/user/challenge_secu.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
-  <!-- Header -->
-  <?php require_once '../includes/user/header.php'; ?>
 
-  <!-- Main structure -->
-  <section class="main-container">
+<body>
+    <!-- Header -->
+    <?php require_once '../includes/user/header.php'; ?>
+
+    <!-- Main structure -->
+    <section class="main-container">
 
     <div>
 
@@ -313,62 +313,60 @@
             </div>
         </section>
     </div>
-  </section>
+    </section>
 
 
 
 
-  <!-- Modal pour Hack Now -->
-  <div id="challenge-modal" class="modal">
-    <div class="modal-content">
-       <h2><strong>Challenge Details</strong></h2>
-       <p class="subheading">
-        Solve the challenge to earn points and improve your hacking skills
-       </p>
-      <!-- Bouton de fermeture --> 
-      <span class="close-modal">&times;</span>
-      <!-- Informations du challenge -->
-      <div class="challenge-info">
-        <span class="challenge-difficulty" id="challenge-difficulty"></span>
-        <span class="challenge-category" id="challenge-category"></span>
-        <span class="challenge-points" id="challenge-points"></span>
-      </div>
-      <!-- Titre du challenge -->
-      <h2 class="challenge-title" id="challenge-title">Challenge Title</h2>
+    <!-- Modal pour Hack Now -->
+    <div id="challenge-modal" class="modal">
+        <div class="modal-content">
+        <h2><strong>Challenge Details</strong></h2>
+        <p class="subheading">
+            Solve the challenge to earn points and improve your hacking skills
+        </p>
+        <!-- Bouton de fermeture --> 
+        <span class="close-modal">&times;</span>
+        <!-- Informations du challenge -->
+        <div class="challenge-info">
+            <span class="challenge-difficulty" id="challenge-difficulty"></span>
+            <span class="challenge-category" id="challenge-category"></span>
+            <span class="challenge-points" id="challenge-points"></span>
+        </div>
+        <!-- Titre du challenge -->
+        <h2 class="challenge-title" id="challenge-title">Challenge Title</h2>
 
-      <!-- Nombre de resolutions -->
-      <p>
-        Solved by 
-        <span class="challenge-solved" id="challenge-solved">432</span> users
-      </p>
+        <!-- Nombre de resolutions -->
+        <p>
+            Solved by 
+            <span class="challenge-solved" id="challenge-solved">432</span> users
+        </p>
 
-      <!-- Description du challenge -->
-      <p class="challenge-description" id="challenge-description">Challenge description goes here.</p>
+        <!-- Description du challenge -->
+        <p class="challenge-description" id="challenge-description">Challenge description goes here.</p>
 
-      <!-- Tags -->
-      <div class="tags">
-        <span class="tag" id="challenge-tags"></span>
-      </div>
+        <!-- Tags -->
+        <div class="tags">
+            <span class="tag" id="challenge-tags"></span>
+        </div>
 
-      <!-- Resources -->
-      <div class="resources">
-        <button class="resource-btn"><i data-lucide="download"></i>Download files</button>
-        <button class="resource-btn"><i data-lucide="play-circle"></i>Launch instance</button>
-      </div>
-      
-      <!-- Hint -->
-      <div class="hint">
-        <strong>Hint: </strong> <span id="challenge-hint"></span>
-      </div>
-      <div class="submit-flag">
-        <input type="text" placeholder="Flag{...}">
-        <button id="submit-flag-btn" class="submit-flag-btn">Submit</button>
-      </div>
-    </div> 
-  </div>
+        <!-- Resources -->
+        <div class="resources">
+            <button class="resource-btn"><i data-lucide="download"></i>Download files</button>
+            <button class="resource-btn"><i data-lucide="play-circle"></i>Launch instance</button>
+        </div>
+        
+        <!-- Hint -->
+        <div class="hint">
+            <strong>Hint: </strong> <span id="challenge-hint"></span>
+        </div>
+        <div class="submit-flag">
+            <input type="text" placeholder="Flag{...}">
+            <button id="submit-flag-btn" class="submit-flag-btn">Submit</button>
+        </div>
+        </div> 
+    </div>
 
-
-   
 
 
 </body>
