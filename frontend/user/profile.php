@@ -234,11 +234,7 @@
                                     <div class="card-bg w-full flex flex-col justify-between gap-2 p-4 border border-gray-700 rounded-xl shadow-md mx-auto transition delay-150 duration-300 ease-in-out hover:-translate-y-1 in-progress-challenge-item">
                                         <div class="flex items-center justify-between mb-2">
                                             <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center challenge-tag">web</span>
-<<<<<<< Updated upstream
                                             <span class="rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center challenge-level">Medium</span>
-=======
-                                            <span class="bg-orange-500/20 text-orange-500 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center challenge-level">Medium</span>
->>>>>>> Stashed changes
                                         </div>
                                         <h2 class="text-xl font-bold text-md text-white max-lg:text-sm max-md:font-normal challenge-title">XSS Attack Simulation</h2>
                                         <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal challenge-description">Find and exploit cross-site scripting vulnerabilities</p>
@@ -266,7 +262,6 @@
                                         </div>
                                         <button class="max-lg:text-sm bg-blue-500 text-white px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50 max-md:font-normal">Continue Challenge</button>
                                     </div> -->
-<<<<<<< Updated upstream
                                     
                                 </div>
                                 <div
@@ -274,10 +269,6 @@
                                     class="flex flex-col items-center justify-center text-center py-12 px-6 border border-dashed border-gray-700/50 rounded-xl bg-gray-800/40 shadow-inner">
                                     <div class="animate-bounce-slow mb-4">
                                         <i data-lucide="clock" class="w-12 h-12 text-yellow-400/80"></i>
-=======
-                                    <div id="no-in-progress-chalenges">
-                                        <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">No in-progress challenges</p>
->>>>>>> Stashed changes
                                     </div>
                                     <h3 class="text-white text-lg font-semibold">Aucun challenge en cours</h3>
                                     <p class="text-gray-400 text-sm mt-1">Commence un challenge pour qu’il apparaisse ici.</p>
@@ -301,12 +292,8 @@
                                         <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal challenge-end-date">Completed on: March 15, 2023</p>
                                     </div>
 
-<<<<<<< Updated upstream
                                     <!-- 
                                     <div class="card-bg w-full flex flex-col justify-between gap-2 p-4 border border-gray-700 rounded-xl shadow-md mx-auto transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-=======
-                                    <!-- <div class="card-bg w-full flex flex-col justify-between gap-2 p-4 border border-gray-700 rounded-xl shadow-md mx-auto transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
->>>>>>> Stashed changes
                                         <div class="flex items-center justify-between mb-4">
                                             <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">Cryptography</span>
                                             <span class="bg-green-500/20 text-green-500 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">Easy</span>
@@ -319,7 +306,6 @@
                                         </div>
                                         <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">Completed on: March 15, 2023</p>
                                     </div> -->
-<<<<<<< Updated upstream
                                     
                                 </div>
                                 <div
@@ -327,10 +313,6 @@
                                     class="flex-col items-center justify-center text-center py-12 px-6 border border-dashed border-gray-700/50 rounded-xl bg-gray-800/40 shadow-inner hidden">
                                     <div class="animate-bounce-slow mb-4">
                                         <i data-lucide="check-circle" class="w-12 h-12 text-emerald-400/80"></i>
-=======
-                                    <div id="no-completed-challenges">
-                                        <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">No completed challenges</p>
->>>>>>> Stashed changes
                                     </div>
                                     <h3 class="text-white text-lg font-semibold">Rien de terminé… encore</h3>
                                     <p class="text-gray-400 text-sm mt-1">Complète un challenge pour le voir ici.</p>
@@ -338,15 +320,10 @@
                             </div>
 
                             <div class="sub-tab-content hidden" id="subTab3">
-<<<<<<< Updated upstream
                                 <div id="all-challenges-container">
                                     <div class="All-challenges cursor-pointer w-fit mx-auto flex flex-row items-center justify-center gap-2 rounded-full transition-all duration-300 ease-in-out text-white hover:bg-gray-700 py-2 px-4 max-md:w-full border border-gray-700 hover:-translate-y-1 all-challenge-item">
                                         <i data-lucide="link-2"></i><span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs">All challenges</span>
                                     </div>
-=======
-                                <div class="All-challenges cursor-pointer w-fit mx-auto flex flex-row items-center justify-center gap-2 rounded-full transition-all duration-300 ease-in-out text-white hover:bg-gray-700 py-2 px-4 max-md:w-full border border-gray-700 hover:-translate-y-1" id="all-challenges">
-                                    <i data-lucide="link-2"></i><span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs">All challenges</span>
->>>>>>> Stashed changes
                                 </div>
                                 <div id="no-all-challenges" class="flex-col items-center justify-center text-center py-12 px-6 border border-dashed border-gray-700/50 rounded-xl bg-gray-800/40 shadow-inner hidden">
                                     <div class="animate-bounce-slow mb-4">
@@ -389,12 +366,8 @@
                             </div>
 
                             <!-- Started Challenge -->
-<<<<<<< Updated upstream
                             <!-- 
                             <div class="border-b border-slate-800 pb-4 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-=======
-                            <!-- <div class="border-b border-slate-800 pb-4 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
->>>>>>> Stashed changes
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
                                         <div class="flex items-center justify-center size-fit bg-blue-700/30 p-2 rounded-full mr-4">
@@ -423,7 +396,6 @@
                                     <p class="max-lg:text-xs flex self-baseline text-gray-400 max-md:text-xs max-md:font-normal">1 week ago</p>
                                 </div>
                             </div> -->
-<<<<<<< Updated upstream
                             <div class="flex flex-col items-center justify-center text-center py-12 px-6 border border-dashed border-gray-700/50 rounded-xl bg-gray-800/40 shadow-inner" id="no-activities">
                                 <div class="animate-bounce-slow mb-4">
                                     <i data-lucide="activity" class="w-12 h-12 text-sky-400/80"></i>
@@ -434,8 +406,6 @@
                                 </p>
                             </div>
 
-=======
->>>>>>> Stashed changes
                         </div>
 
                         <!-- Load more button -->
