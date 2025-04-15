@@ -21,8 +21,8 @@ class ProjectController extends Controller {
     private $project;
     private $db;
 
-    public function __construct($db) {
-        parent::__construct();
+    public function __construct($db, $tokenManager) {
+        parent::__construct($tokenManager);
         $this->db = $db;
         $this->project = new Project($this->db);
     }

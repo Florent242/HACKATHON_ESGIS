@@ -5,9 +5,13 @@ namespace Auth\Controller;
 use Exception;
 use Auth\Model\Database;
 use Auth\Model\User;
+use Auth\Model\TokenManager;
 use PDO;
 use PDOException;
 
+if (!class_exists('Auth\Model\TokenManager')) {
+    require_once __DIR__ . '/../models/TokenManager.php';
+}
 if (!class_exists('Database')) {
     require_once __DIR__ . '/../models/Database.php';
 }
@@ -23,6 +27,7 @@ class AuthController
     private const BASE_URL = '/HACKATHON_ESGIS/public';
     private $user;
     private $db;
+    private $tokenManager;
 
     public function __construct($db = null)
     {
@@ -37,6 +42,10 @@ class AuthController
         }
 
         $this->user = new User($this->db);
+        $this->tokenManager = new TokenManager($_ENV['JWT_SECRET'] ?? 'your-secret-key', $this->db, [
+            'shortTermExpiry' => 3600, // 1 heure
+            'longTermExpiry' => 2592000 // 30 jours
+        ]);
 
         // Générer un token CSRF s'il n'existe pas
         if (empty($_SESSION['csrf_token'])) {
@@ -44,13 +53,154 @@ class AuthController
         }
     }
 
+    /**
+     * Récupère le token JWT depuis les headers
+     */
+    public function getBearerToken(): ?string
+    {
+        // D'abord essayer le header Authorization
+        $headers = $this->getAuthorizationHeader();
+        if (!empty($headers) && preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
+            return $matches[1];
+        }
+
+        // Si pas dans les headers, chercher dans les cookies
+        if (isset($_COOKIE['long_term_token'])) {
+            return $_COOKIE['long_term_token'];
+        }
+
+        if (isset($_COOKIE['jwt_token'])) {
+            return $_COOKIE['jwt_token'];
+        }
+
+        return null;
+    }
+
+    /**
+     * Récupère le header Authorization
+     */
+    public function getAuthorizationHeader(): ?string
+    {
+        $headers = null;
+        if (isset($_SERVER['Authorization'])) {
+            $headers = trim($_SERVER['Authorization']);
+        } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $headers = trim($_SERVER['HTTP_AUTHORIZATION']);
+        } elseif (function_exists('apache_request_headers')) {
+            $requestHeaders = apache_request_headers();
+            $requestHeaders = array_combine(
+                array_map('ucwords', array_keys($requestHeaders)),
+                array_values($requestHeaders)
+            );
+            if (isset($requestHeaders['Authorization'])) {
+                $headers = trim($requestHeaders['Authorization']);
+            }
+        }
+        return $headers;
+    }
+    public function checkAuth()
+    {
+        header('Content-Type: application/json');
+
+        try {
+            // Vérifier d'abord la session
+            if (isset($_SESSION['user']) && $_SESSION['user']['logged_in']) {
+                echo json_encode([
+                    'authenticated' => true,
+                    'id' => $_SESSION['user']['id'],
+                    'role' => $_SESSION['user']['role']
+                ]);
+                return;
+            }
+
+            // Puis vérifier les tokens
+            $token = $this->getBearerToken();
+            if (!$token) {
+                throw new Exception('Token manquant', 401);
+            }
+
+            $tokenManager = $this->tokenManager;
+            $user = $tokenManager->validateToken($token);
+
+            if (!$user || !$user['valid']) {
+                throw new Exception('Token invalide', 401);
+            }
+
+            // Mettre à jour la session
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $userInfo = $this->user->find($user['user_id']);
+            $_SESSION['user'] = [
+                'id' => $user['user_id'],
+                'email' => $userInfo['email'],
+                'role' => $userInfo['role'],
+                'logged_in' => true,
+                'last_activity' => time()
+            ];
+
+            echo json_encode([
+                'authenticated' => true,
+                'id' => $user['user_id'],
+                'role' => $userInfo['role']
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'authenticated' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 401);
+        }
+    }
+
     private function validateCsrfToken()
     {
-        if (
-            !isset($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) ||
-            !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])
-        ) {
-            throw new Exception('Token CSRF invalide');
+        // Récupérer le token CSRF de la requête
+        $requestToken = filter_input(INPUT_POST, 'csrf_token', FILTER_DEFAULT) ?: null;
+
+        // Vérifier si le token est présent dans la requête
+        if (empty($requestToken)) {
+            throw new Exception('Token CSRF manquant', 400);
+        }
+
+        // Récupérer le token CSRF de la session
+        $sessionToken = $_SESSION['csrf_token'] ?? null;
+
+        // Vérifier si le token est présent dans la session
+        if (empty($sessionToken)) {
+            throw new Exception('Session CSRF invalide', 400);
+        }
+
+        // Comparer les tokens avec hash_equals pour éviter les attaques de timing
+        if (!hash_equals($sessionToken, $requestToken)) {
+            throw new Exception('Token CSRF invalide', 403);
+        }
+
+        // Optionnel : régénérer le token CSRF après utilisation
+        if (empty($_SESSION['csrf_token']) || $_SESSION['csrf_token'] === $requestToken) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+    }
+
+    private function setAuthCookies($token, $longTermToken = null)
+    {
+        // Cookie court terme (1 heure)
+        setcookie("jwt_token", $token, [
+            "expires" => time() + (60 * 60 ),
+            "path" => "/",
+            "httponly" => true,
+            "secure" => true,
+            "samesite" => "Strict"
+        ]);
+
+        // Cookie long terme (30 jours) si demandé
+        if ($longTermToken) {
+            setcookie("long_term_token", $longTermToken, [
+                "expires" => time() + (60 * 60 * 24 * 30),
+                "path" => "/",
+                "httponly" => true,
+                "secure" => true,
+                "samesite" => "Strict"
+            ]);
         }
     }
 
@@ -68,15 +218,11 @@ class AuthController
                 'email'       => trim(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?: ''),
                 'school'      => trim(filter_input(INPUT_POST, 'school', FILTER_DEFAULT) ?: ''),
                 'password'    => trim(filter_input(INPUT_POST, 'password', FILTER_UNSAFE_RAW) ?: ''), // Ne pas filtrer le mot de passe
+                'number'      => trim(filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_NUMBER_INT) ?: ''),
+                'special_comp' => trim(filter_input(INPUT_POST, 'main_skill', FILTER_DEFAULT) ?: ''),
+                'study_level' => trim(filter_input(INPUT_POST, 'education_level', FILTER_DEFAULT) ?: ''),
                 'role'        => 'participant'
             ];
-
-            error_log("Tentative d'inscription avec les données : " . json_encode($data));
-            if (!$data && $_SERVER['REQUEST_METHOD'] === 'POST') {
-                $data = $_POST;
-            }
-
-            error_log("Tentative d'inscription avec les données : " . json_encode($data));
 
             // Validation des données
             if (empty($data['username']) || empty($data['email']) || empty($data['password'])) {
@@ -93,37 +239,37 @@ class AuthController
                 throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
             }
 
-            // Hash du mot de passe avant création
+            // Création de l'utilisateur
             $userId = $this->user->create($data);
 
             if ($userId) {
-                error_log("Utilisateur créé avec succès. ID: " . $userId);
-                $_SESSION['user_id'] = $userId;
-                $_SESSION['username'] = $data['username'];
-                $_SESSION['role'] = $data['role'];
+                // Générer un token court terme
+                $token = $this->tokenManager->generateJwt($userId);
+
+                // Définir le cookie
+                $this->setAuthCookies($token);
+
                 setFlashMessage('success', 'Inscription réussie');
 
-                // Redirection selon le rôle
-
-                header("Location: " . self::BASE_URL . "/auth");
-
+                echo json_encode([
+                    'success' => true,
+                    'redirect' => self::BASE_URL . "/user"
+                ]);
                 exit();
             } else {
                 throw new Exception("Erreur lors de la création de l'utilisateur");
             }
         } catch (Exception $e) {
-            error_log("Erreur d'inscription : " . $e->getMessage());
-
             logActivity('register_error', $e->getMessage(), [
                 'email' => $data['email'] ?? 'non fourni',
                 'error' => $e->getMessage()
             ], 'error');
-            // un echo pour les requetes frontend
+
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
             ]);
-            throw new Exception($e->getMessage());
+            exit();
         }
     }
 
@@ -131,75 +277,72 @@ class AuthController
     public function login()
     {
         try {
-            // Get JSON data
+            // Récupérer les données
             $data = json_decode(file_get_contents("php://input"), true);
             if ($data === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $data = $_POST;
             }
 
             if (!isset($data['email']) || !isset($data['password'])) {
-                throw new Exception('Email et mot de passe requis' . print_r($data, true) . 'auth');
+                throw new Exception('Email et mot de passe requis');
             }
 
-            $email = $data['email'];
-            $password = $data['password'];
-            // =======
-            //             $user = $this->user->findByEmail($email);
+            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+            $password = filter_input(INPUT_POST, 'password', FILTER_DEFAULT);
+            $rememberMe = isset($data['remember_me']) && $data['remember_me'] === 'on';
 
-            //             if ($user && password_verify($password, $user['mot_de_passe'])) {
-            //                 // Créer un token JWT
-            //                 $jwt = $this->generateToken($user['id']);
-
-            //                 // Stocker les informations de session
-            //                 $_SESSION['user_id'] = htmlspecialchars($user['id']);
-            //                 $_SESSION['username'] = htmlspecialchars($user['username']);
-            //                 $_SESSION['role'] = htmlspecialchars($user['role']);
-            //                 setFlashMessage('success', 'Connexion réussie');
-            // >>>>>>> frontend
-
-            // Log the login attempt (without password)
-            logActivity('login_attempt', 'Tentative de connexion', ['email' => $email], 'info');
-
+            // Authentifier l'utilisateur en verifiant son statut et son mot de passe
             $user = $this->user->authenticate($email, $password);
 
-            if ($user) {
-                // Login successful
-                $_SESSION['user'] = $user;
-                $_SESSION['is_logged_in'] = true;
+            if (isset($user) && $user) {
+                if (session_status() === PHP_SESSION_NONE) {
+                    session_start();
+                }
+                // Créer la session
+                $_SESSION['user'] = [
+                    'id' => $user['id'],
+                    'email' => $user['email'],
+                    'role' => $user['role'],
+                    'logged_in' => true,
+                    'last_activity' => time()
+                ];
 
-                // Log successful login
-                logActivity('login_success', 'Connexion réussie', [
-                    'user_id' => $user['id'],
-                    'role' => $user['role']
-                ], 'info');
+                // Générer les tokens
+                $token = $this->tokenManager->generateJwt($user['id']);
+                $longTermToken = null;
 
-                // un echo pour les requetes frontend
+                if ($rememberMe) {
+                    $longTermTokenData = $this->tokenManager->generateLongTermToken($user['id']);
+                    $longTermToken = $longTermTokenData['token'];
+                }
+
+                // Définir les cookies
+                $this->setAuthCookies($token, $longTermToken);
+
+                // Réponse JSON
                 echo json_encode([
                     'success' => true,
-                    'user' => $user
+                    'token' => $token,
+                    'refresh_token' => $longTermToken,
+                    'user' => $user,
+                    'message' => 'Connexion reussie',
+                    'redirect' => self::BASE_URL . "/user"
                 ]);
-                setFlashMessage('success', 'Connexion réussie');
-                header("Location: " . self::BASE_URL . "/user");
                 exit();
             } else {
-                // Log failed login
-                logActivity('login_failed', 'Échec de connexion', ['email' => $email], 'warning');
-
-                throw new Exception('Email ou mot de passe incorrect');
+                throw new Exception("Email ou mot de passe incorrect.");
             }
         } catch (Exception $e) {
-            // Log exception
             logActivity('login_error', $e->getMessage(), [
                 'email' => $email ?? 'non fourni',
                 'error' => $e->getMessage()
             ], 'error');
 
-            // un echo pour les requetes frontend
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
             ]);
-            throw new Exception($e->getMessage());
+            exit();
         }
     }
 
@@ -207,30 +350,34 @@ class AuthController
     public function logout()
     {
         try {
-            // Log user logout before clearing session
-            if (isset($_SESSION['user'])) {
-                logActivity('logout', 'Déconnexion réussie', [
-                    'user_id' => $_SESSION['user']['id'],
-                    'role' => $_SESSION['user']['role']
-                ], 'info');
+            // Révocation des tokens
+            if (isset($_COOKIE['long_term_token'])) {
+                $this->tokenManager->revokeToken($_COOKIE['long_term_token']);
             }
 
-            // Détruire la session
-            session_unset();
+            // Suppression des cookies
+            setcookie("jwt_token", "", time() - 3600, "/");
+            setcookie("long_term_token", "", time() - 3600, "/");
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            unset($_SESSION['user']);
             session_destroy();
 
-            // Rediriger vers la page d'accueil
-            header('Location: ' . self::BASE_URL);
+            // Réponse JSON
+            echo json_encode([
+                'success' => true,
+                'redirect' => self::BASE_URL
+            ]);
             exit();
         } catch (Exception $e) {
             logActivity('logout_error', 'Erreur lors de la déconnexion', ['error' => $e->getMessage()], 'error');
 
-            // Gérer l'erreur
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
             ]);
-            throw new Exception($e->getMessage());
+            exit();
         }
     }
 

@@ -26,8 +26,8 @@ class ParticipantController extends Controller {
     private $notification;
     private $db;
 
-    public function __construct($db) {
-        parent::__construct();
+    public function __construct($db, $tokenManager) {
+        parent::__construct($tokenManager);
         $this->db = $db;
         $this->participant = new Participant($this->db);
         $this->notification = new Notification($this->db);
@@ -258,7 +258,7 @@ class ParticipantController extends Controller {
     }
 
     // Afficher mes participations
-    public function myParticipations() {
+    public function myParticipations($jwt) {
         try {
             // Vérifier si l'utilisateur est connecté
             if (!isAuthenticated()) {
@@ -266,7 +266,7 @@ class ParticipantController extends Controller {
             }
 
             // Récupérer les participations
-            $participations = $this->participant->getByUser($_SESSION['user_id']);
+            $participations = $this->participant->getByUser($_SESSION['user_id'], $jwt);
 
             $this->jsonResponse([
                 'success' => true,

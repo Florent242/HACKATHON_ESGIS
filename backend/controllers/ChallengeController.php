@@ -4,6 +4,7 @@ namespace Auth\Controller;
 use Exception;
 use Auth\Model\Challenge;
 use Auth\Model\Hackathon;
+use Auth\Model\TokenManager; 
 
 if(!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
@@ -26,8 +27,8 @@ class ChallengeController extends Controller {
     private $hackathon;
     private $db;
 
-    public function __construct($db) {
-        parent::__construct();
+    public function __construct($db, $tokenManager) {
+        parent::__construct($tokenManager);
         $this->db = $db;
         $this->challenge = new Challenge($db);
         $this->hackathon = new Hackathon($db);
@@ -88,7 +89,7 @@ class ChallengeController extends Controller {
                 throw new Exception('Non autorisé');
             }
 
-            $requiredFields = ['titre', 'description', 'hackathon_id', 'points'];
+            $requiredFields = ['title', 'description', 'hackathon_id', 'points'];
             $this->validateRequiredFields($_POST, $requiredFields);
 
             if (!is_numeric($_POST['points']) || $_POST['points'] < 0) {
@@ -96,7 +97,7 @@ class ChallengeController extends Controller {
             }
 
             $data = [
-                'titre' => $_POST['titre'],
+                'title' => $_POST['titre'],
                 'description' => $_POST['description'],
                 'hackathon_id' => (int)$_POST['hackathon_id'],
                 'points' => (int)$_POST['points'],
@@ -174,6 +175,7 @@ class ChallengeController extends Controller {
             ], 400);
         }
     }
+    
 
     public function get($id) {
         try {
@@ -195,7 +197,22 @@ class ChallengeController extends Controller {
             ], 404);
         }
     }
-
+    public function getSolvesCount() {
+        try {
+            $this->validateMethod('GET');
+            $count = $this->challenge->getTotalSolvesCount();
+    
+            $this->jsonResponse([
+                'success' => true,
+                'count' => $count
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
     /**
      * Récupère les challenges d'un hackathon
      * @param int $id ID du hackathon

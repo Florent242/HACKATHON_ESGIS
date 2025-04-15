@@ -15,8 +15,8 @@ class ResetPasswordController extends Controller {
     private $db;
     private $mailer;
 
-    public function __construct($db) {
-        parent::__construct();
+    public function __construct($db, $tokenManager) {
+        parent::__construct($tokenManager);
         $this->db = $db;
         $this->user = new User($this->db);
         $this->mailer = new PHPMailer(true);

@@ -1,9 +1,13 @@
 <?php
 namespace Auth\Model;
+
+use Auth\Controller\Controller;
 use Exception;
 use PDOException;
 use PDO;
-class Participant {
+use Auth\Controller\UserController;
+
+class Participant{
     private $db;
     private $table = 'participants';
 
@@ -12,12 +16,12 @@ class Participant {
     }
 
     // Inscrire un participant à un hackathon
-    public function register($data) {
+    public function register($data, $jwt) {
         try {
             $this->validate($data);
 
             // Vérifier si le participant n'est pas déjà inscrit
-            if ($this->isRegistered($data['hackathon_id'], $data['user_id'])) {
+            if ($this->isRegistered($data['hackathon_id'], $data['user_id'], $jwt)) {
                 throw new Exception("Vous êtes déjà inscrit à ce hackathon");
             }
 
@@ -38,12 +42,12 @@ class Participant {
     }
 
     // Alias de register pour la cohérence avec les autres modèles
-    public function create($data) {
-        return $this->register($data);
+    public function create($data, $jwt) {
+        return $this->register($data, $jwt);
     }
 
     // Vérifier si un utilisateur est déjà inscrit à un hackathon
-    public function isRegistered($hackathonId, $userId) {
+    public function isRegistered($hackathonId, $userId, $jwt) {
         try {
             $sql = "SELECT COUNT(*) FROM {$this->table}
                     WHERE hackathon_id = :hackathon_id
@@ -64,7 +68,7 @@ class Participant {
     public function find($id) {
         try {
             $sql = "SELECT p.*, u.username, u.email,
-                    h.title as hackathon_title, h.start_date, h.end_date
+                    h.name as hackathon_title, h.start_date, h.end_date
                     FROM {$this->table} p
                     INNER JOIN users u ON p.user_id = u.id
                     INNER JOIN hackathons h ON p.hackathon_id = h.id
@@ -114,11 +118,11 @@ class Participant {
     public function getByHackathon($hackathonId, $status = null) {
         try {
             $sql = "SELECT p.*, u.username, u.email,
-                    e.id as equipe_id, e.name as equipe_name
+                    e.id as team_id, e.name as team_name
                     FROM {$this->table} p
                     INNER JOIN users u ON p.user_id = u.id
-                    LEFT JOIN equipe_membres em ON u.id = em.user_id
-                    LEFT JOIN equipes e ON em.equipe_id = e.id AND e.hackathon_id = p.hackathon_id
+                    LEFT JOIN team_members em ON u.id = em.user_id
+                    LEFT JOIN team e ON em.team_id = e.id AND e.hackathon_id = p.hackathon_id
                     WHERE p.hackathon_id = :hackathon_id";
 
             if ($status) {
@@ -140,20 +144,18 @@ class Participant {
             throw new Exception("Erreur lors de la récupération des participants : " . $e->getMessage());
         }
     }
+    
 
     // Récupérer les hackathons d'un participant
-    public function getByUser($userId) {
+    public function getByUser($userId, $jwt) {
         try {
-            $sql = "SELECT p.*, h.title as hackathon_title,
-                    h.start_date, h.end_date, h.status as hackathon_status,
-                    e.id as equipe_id, e.name as equipe_name
-                    FROM {$this->table} p
-                    INNER JOIN hackathons h ON p.hackathon_id = h.id
-                    LEFT JOIN equipe_membres em ON p.user_id = em.user_id
-                    LEFT JOIN equipes e ON em.equipe_id = e.id AND e.hackathon_id = p.hackathon_id
-                    WHERE p.user_id = :user_id
-                    ORDER BY h.start_date DESC";
-
+            $sql = "SELECT p.*, h.name as hackathon_title, h.start_date, h.end_date, e.id as team_id,
+             e.name as team_name 
+             FROM {$this->table} p 
+             INNER JOIN hackathons h ON p.hackathon_id = h.id 
+             LEFT JOIN team_members em ON p.user_id = em.user_id 
+             LEFT JOIN team e ON em.team_id = e.id AND e.hackathon_id = p.hackathon_id 
+             WHERE p.user_id = :user_id ORDER BY h.start_date DESC";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':user_id' => $userId]);
             return $stmt->fetchAll();

@@ -2,8 +2,9 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-// $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-$errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -11,14 +12,13 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EsgisHub - S'inscrire</title>
+    <title>EsgisHub - Authentification</title>
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/auth.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
     <script defer src="/HACKATHON_ESGIS/public/js/auth.js"></script>
     <!-- Lucide Icons -->
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.280.0/dist/umd/lucide.min.js"></script>
-
+    <script src="https://unpkg.com/lucide@latest"></script>
 
 
 </head>
@@ -37,7 +37,7 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
             <div class="auth-form" id="loginForm">
                 <h1>Espace Utilisateur</h1>
                 <p>Connectez-vous à votre compte étudiant</p> <br>
-                <form action="/HACKATHON_ESGIS/public/api/auth/login" method="POST">
+                <form action="/HACKATHON_ESGIS/public/api/auth/login" method="POST"  id="signinForm">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="form-group">
                         <label for="email_user">Email</label>
@@ -240,12 +240,6 @@ $errorMessage = isset($_GET['error']) ? urldecode($_GET['error']) : null;
         </div>
         <br>
     </div>
-
-    <script>
-        window.addEventListener("load", function() {
-            lucide.createIcons();
-        });
-    </script>
 
 </body>
 

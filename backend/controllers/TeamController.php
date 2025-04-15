@@ -21,8 +21,8 @@ class TeamController extends Controller {
     private $team;
     private $db;
 
-    public function __construct($db) {
-        parent::__construct();
+    public function __construct($db, $tokenManager) {
+        parent::__construct($tokenManager);
         $this->db = $db;
         $this->team = new Team($this->db);
     }

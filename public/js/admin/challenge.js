@@ -1,6 +1,3 @@
-// Initialize Lucide icons
-lucide.createIcons();
-
 // Add event listeners for interactive elements
 document.addEventListener('DOMContentLoaded', () => {
     // Search functionality

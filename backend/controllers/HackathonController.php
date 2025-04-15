@@ -21,8 +21,8 @@ class HackathonController extends Controller {
     private $hackathon;
     private $db;
 
-    public function __construct($db) {
-        parent::__construct();
+    public function __construct($db, $tokenManager) {
+        parent::__construct($tokenManager);
         $this->db = $db;
         $this->hackathon = new Hackathon($this->db);
     }
