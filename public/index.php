@@ -100,6 +100,9 @@ switch ($url) {
     case '/HACKATHON_ESGIS/public/user/challenge_security':
         require_once '../frontend/user/challenge_secu.php'; // Inclure la page "user/challenges"
         break;
+    case '/HACKATHON_ESGIS/public/user/challenge_dev':
+        require_once '../frontend/user/challenge_dev.php'; // Inclure la page "user/challenges"
+        break;
     case '/HACKATHON_ESGIS/public/user/hackathon':
         require_once '../frontend/user/hackathon.php'; // Inclure la page "user/hacka"
         break;

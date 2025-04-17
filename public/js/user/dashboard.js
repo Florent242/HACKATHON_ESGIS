@@ -234,6 +234,7 @@ function updateNotifications(notifications) {
 
     // Supprime toutes les notifications existantes sauf la première (qui sert de template)
     const items = container.querySelectorAll(DASHBOARD_ELEMENTS.notifications.template);
+    console.log(items.length);
     for (let i = 1; i < items.length; i++) {
         items[i].remove();
     }
@@ -590,17 +591,19 @@ async function loadNextEvent() {
         const noEventMessage = document.querySelector(DASHBOARD_ELEMENTS.nextEvent.noEventMessage);
 
         if (data.success && data.data) {
-            noEventMessage.style.display = 'none';
             console.log('Prochain événement:', data.data);
-            const eventDiv = createEle('div', {
-                class: 'flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1'
-            })
-            eventDiv.innerHTML = `
-                    <p class="text-md font-semibold">${data.data.name || 'Événement inconnu'}</p>
-                    <p class="text-gray-500 text-sm">${data.data.start_date ? formatDate(data.data.start_date) : 'Date de début inconnue'}</p>
+            data.data.forEach(event => {
+                noEventMessage.style.display = 'none';
+                const eventDiv = createEle('div', {
+                    class: 'flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1'
+                })
+                eventDiv.innerHTML = `
+                    <p class="text-md font-semibold">${event.name || 'Événement inconnu'}</p>
+                    <p class="text-gray-500 text-sm">${event.start_date ? formatDate(event.start_date) : 'Date de début inconnue'}</p>
                     <span class="text-green-400 bg-emerald-950 flex self-start text-xs p-2 rounded-xl">Bientôt</span>
             `;
-            if (nextEventContainer) nextEventContainer.appendChild(eventDiv);
+                if (nextEventContainer) nextEventContainer.appendChild(eventDiv);
+            })
         } else {
             if (nextEventContainer) nextEventContainer.style.display = 'none';
             if (noEventMessage) noEventMessage.style.display = 'flex';
