@@ -8,6 +8,7 @@
         opacity: 0;
         transform: translateX(100%) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateX(0) scale(1);
@@ -19,6 +20,7 @@
         opacity: 1;
         transform: translateX(0) scale(1);
     }
+
     to {
         opacity: 0;
         transform: translateX(100%) scale(0.95);
@@ -39,6 +41,7 @@
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -50,10 +53,27 @@
         opacity: 1;
         transform: translateY(0);
     }
+
     to {
         opacity: 0;
         transform: translateY(-10px);
     }
+}
+
+@keyframes bounce-slow {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+.animate-bounce-slow {
+    animation: bounce-slow 2.5s infinite;
 }
 
 /* 🔹 Classes d'animation */
@@ -67,13 +87,14 @@
 
 /* 🔹 Input en erreur */
 .input-error {
-    border-color: rgb(239 68 68); /* Rouge Tailwind */
+    border-color: rgb(239 68 68);
+    /* Rouge Tailwind */
     box-shadow: 0 0 0 1px rgb(239 68 68);
 }
 
 /* Styles pour l'autofill */
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
+input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
     -webkit-text-fill-color: var(--text) !important;

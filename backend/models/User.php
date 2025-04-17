@@ -248,7 +248,7 @@ class User
      * @param int $id ID de l'utilisateur
      * @return array|bool Les données de l'utilisateur ou false si non trouvé
      */
-    public function find($id)
+    public function find($id, $withPass = false)
     {
         try {
             $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
@@ -257,7 +257,7 @@ class User
             $stmt->execute();
 
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($user) {
+            if ($user && !$withPass) {
                 unset($user['password']); // Ne pas renvoyer le mot de passe
             }
 

@@ -2,35 +2,29 @@
 const API_BASE_URL = "/HACKATHON_ESGIS/public/api"
 
 // Sélecteurs pour les éléments de la page
-const CHALLENGE_ELEMENTS = {
+const HACKATHON_ELEMENTS = {
   loadingSpinner: "#global-loading-spinner",
-  stats: {
-    totalChallenges: ".stat-card:nth-child(1) .number",
-    activeChallenges: ".stat-card:nth-child(2) .number",
-    completedChallenges: ".stat-card:nth-child(3) .number",
-    averagePoints: ".stat-card:nth-child(4) .number",
+  hackathonsTable: {
+    container: "#hackathonsTable tbody",
+    rows: "#hackathonsTable tbody tr",
   },
-  challengesTable: {
-    container: "#challengesTable tbody",
-    rows: "#challengesTable tbody tr",
+  activityFeed: {
+    container: ".activity-feed",
+    items: ".activity-item",
   },
-  pointsTable: {
-    container: "table:nth-of-type(2) tbody",
-    rows: "table:nth-of-type(2) tbody tr",
-  },
-  newChallengeModal: "#newChallengeModal",
+  newHackathonModal: "#newHackathonModal",
   searchInput: ".search-input",
 }
 
 /**
- * Initialise la page de gestion des challenges
+ * Initialise la page de gestion des hackathons
  */
-async function initializeChallengePage() {
+async function initializeHackathonPage() {
   try {
     showLoading()
 
     // Charger toutes les données en parallèle
-    await Promise.all([loadChallenges(), loadChallengeStats(), loadChallengePoints()])
+    await Promise.all([loadHackathons(), loadHackathonActivity()])
 
     // Configurer les gestionnaires d'événements
     setupEventListeners()
@@ -42,44 +36,44 @@ async function initializeChallengePage() {
 }
 
 /**
- * Charge la liste des challenges
+ * Charge la liste des hackathons
  */
-async function loadChallenges() {
+async function loadHackathons() {
   try {
-    const response = await apiRequest("/admin/challenges")
+    const response = await apiRequest("/admin/hackathons")
 
     if (response.success && response.data) {
-      updateChallengesTable(response.data)
+      updateHackathonsTable(response.data)
     }
   } catch (error) {
-    handleError("Erreur lors du chargement des challenges", error)
+    handleError("Erreur lors du chargement des hackathons", error)
   }
 }
 
 /**
- * Met à jour le tableau des challenges
- * @param {Array} challenges - Liste des challenges
+ * Met à jour le tableau des hackathons
+ * @param {Array} hackathons - Liste des hackathons
  */
-function updateChallengesTable(challenges) {
-  const container = document.querySelector(CHALLENGE_ELEMENTS.challengesTable.container)
+function updateHackathonsTable(hackathons) {
+  const container = document.querySelector(HACKATHON_ELEMENTS.hackathonsTable.container)
 
   if (!container) return
 
   // Vider le conteneur
   container.innerHTML = ""
 
-  // Afficher l'état vide si aucun challenge
-  if (!challenges || !challenges.length) {
+  // Afficher l'état vide si aucun hackathon
+  if (!hackathons || !hackathons.length) {
     container.innerHTML = `
       <tr>
         <td colspan="5">
           <div class="empty-state">
             <div class="empty-state-icon">
-              <i class="fas fa-trophy"></i>
+              <i class="fas fa-laptop-code"></i>
             </div>
             <div class="empty-state-text">
-              <h3>Aucun challenge</h3>
-              <p>Créez votre premier challenge en cliquant sur le bouton "Nouveau Challenge".</p>
+              <h3>Aucun hackathon</h3>
+              <p>Créez votre premier hackathon en cliquant sur le bouton "Nouveau Hackathon".</p>
             </div>
           </div>
         </td>
@@ -88,52 +82,33 @@ function updateChallengesTable(challenges) {
     return
   }
 
-  // Ajouter chaque challenge
-  challenges.forEach((challenge) => {
+  // Ajouter chaque hackathon
+  hackathons.forEach((hackathon) => {
     const row = document.createElement("tr")
-
-    // Déterminer la difficulté et l'icône
-    let difficultyClass = "badge-primary"
-    let difficultyText = "Intermédiaire"
-
-    switch (challenge.difficulty) {
-      case "easy":
-        difficultyClass = "badge-success"
-        difficultyText = "Débutant"
-        break
-      case "medium":
-        difficultyClass = "badge-primary"
-        difficultyText = "Intermédiaire"
-        break
-      case "hard":
-        difficultyClass = "badge-danger"
-        difficultyText = "Avancé"
-        break
-      case "expert":
-        difficultyClass = "badge-dark"
-        difficultyText = "Expert"
-        break
-    }
 
     // Déterminer le statut et l'icône
     let statusClass = "badge-primary"
-    let statusIcon = "play-circle"
-    let statusText = "En cours"
+    let statusIcon = "calendar-alt"
+    let statusText = "À venir"
 
-    if (challenge.status === "completed") {
+    const now = new Date()
+    const startDate = new Date(hackathon.start_date)
+    const endDate = new Date(hackathon.end_date)
+
+    if (now > endDate) {
       statusClass = "badge-success"
       statusIcon = "check-circle"
       statusText = "Terminé"
-    } else if (challenge.status === "upcoming") {
-      statusClass = "badge-info"
-      statusIcon = "hourglass-start"
-      statusText = "À venir"
+    } else if (now >= startDate && now <= endDate) {
+      statusClass = "badge-warning"
+      statusIcon = "play-circle"
+      statusText = "En cours"
     }
 
     row.innerHTML = `
-      <td>${sanitizeText(challenge.title)}</td>
-      <td><span class="badge ${difficultyClass}"><i class="fas fa-fire"></i> ${difficultyText}</span></td>
-      <td>${challenge.participants_count || 0}</td>
+      <td>${sanitizeText(hackathon.name || hackathon.title)}</td>
+      <td>${formatDate(hackathon.start_date, true)}</td>
+      <td>${hackathon.participants_count || 0}</td>
       <td><span class="badge ${statusClass}"><i class="fas fa-${statusIcon}"></i> ${statusText}</span></td>
       <td>
         <div class="dropdown">
@@ -141,9 +116,10 @@ function updateChallengesTable(challenges) {
             <i class="fas fa-ellipsis-v"></i>
           </button>
           <div class="dropdown-menu">
-            <a href="#" class="dropdown-item action-button" data-action="edit" data-id="${challenge.id}"><i class="fas fa-edit"></i> Modifier</a>
-            <a href="#" class="dropdown-item action-button" data-action="view" data-id="${challenge.id}"><i class="fas fa-eye"></i> Voir détails</a>
-            <a href="#" class="dropdown-item action-button" data-action="delete" data-id="${challenge.id}"><i class="fas fa-trash"></i> Supprimer</a>
+            <a href="#" class="dropdown-item action-button" data-action="edit" data-id="${hackathon.id}"><i class="fas fa-edit"></i> Modifier</a>
+            <a href="#" class="dropdown-item action-button" data-action="view" data-id="${hackathon.id}"><i class="fas fa-eye"></i> Voir détails</a>
+            <div class="dropdown-divider"></div>
+            <a href="#" class="dropdown-item action-button" data-action="delete" data-id="${hackathon.id}"><i class="fas fa-trash"></i> Supprimer</a>
           </div>
         </div>
       </td>
@@ -157,115 +133,151 @@ function updateChallengesTable(challenges) {
 }
 
 /**
- * Charge les statistiques des challenges
+ * Charge les activités récentes des hackathons
  */
-async function loadChallengeStats() {
+async function loadHackathonActivity() {
   try {
-    const response = await apiRequest("/admin/challenge-stats")
+    const response = await apiRequest("/admin/activity")
 
     if (response.success && response.data) {
-      updateChallengeStats(response.data)
+      // Filtrer pour obtenir uniquement les activités liées aux hackathons
+      const hackathonActivities = response.data
+        .filter((activity) => {
+          const type = activity.type || activity.action_type || ""
+          return type.includes("hackathon") || type.includes("team") || type.includes("user")
+        })
+        .slice(0, 5) // Limiter à 5 activités
+
+      updateActivityFeed(hackathonActivities)
     }
   } catch (error) {
-    handleError("Erreur lors du chargement des statistiques", error)
+    handleError("Erreur lors du chargement des activités", error)
   }
 }
 
 /**
- * Met à jour les statistiques des challenges
- * @param {Object} stats - Statistiques à afficher
+ * Met à jour le flux d'activité
+ * @param {Array} activities - Liste des activités
  */
-function updateChallengeStats(stats) {
-  if (!stats) return
-
-  // Mettre à jour les compteurs
-  const elements = CHALLENGE_ELEMENTS.stats
-  Object.keys(elements).forEach((key) => {
-    const element = document.querySelector(elements[key])
-    if (element && stats[key] !== undefined) {
-      element.textContent = stats[key]
-    }
-  })
-}
-
-/**
- * Charge les points des challenges
- */
-async function loadChallengePoints() {
-  try {
-    const response = await apiRequest("/admin/submission-stats")
-
-    if (response.success && response.data) {
-      updateChallengePointsTable(response.data)
-    }
-  } catch (error) {
-    handleError("Erreur lors du chargement des points", error)
-  }
-}
-
-/**
- * Met à jour le tableau des points des challenges
- * @param {Array} points - Liste des points
- */
-function updateChallengePointsTable(points) {
-  const container = document.querySelector(CHALLENGE_ELEMENTS.pointsTable.container)
+function updateActivityFeed(activities) {
+  const container = document.querySelector(HACKATHON_ELEMENTS.activityFeed.container)
 
   if (!container) return
 
   // Vider le conteneur
   container.innerHTML = ""
 
-  // Afficher l'état vide si aucun point
-  if (!points || !points.length) {
+  // Afficher l'état vide si aucune activité
+  if (!activities || !activities.length) {
     container.innerHTML = `
-      <tr>
-        <td colspan="4">
-          <div class="empty-state">
-            <div class="empty-state-icon">
-              <i class="fas fa-star"></i>
-            </div>
-            <div class="empty-state-text">
-              <h3>Aucun point attribué</h3>
-              <p>Les points attribués aux défis apparaîtront ici.</p>
-            </div>
-          </div>
-        </td>
-      </tr>
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-history"></i>
+        </div>
+        <div class="empty-state-text">
+          <h3>Aucune activité récente</h3>
+          <p>Les activités récentes apparaîtront ici.</p>
+        </div>
+      </div>
     `
     return
   }
 
-  // Ajouter chaque point
-  points.forEach((point) => {
-    const row = document.createElement("tr")
-
-    row.innerHTML = `
-      <td>${sanitizeText(point.username)}</td>
-      <td>${sanitizeText(point.challenge_title)}</td>
-      <td><span class="badge badge-warning"><i class="fas fa-star"></i> ${point.points}</span></td>
-      <td>${formatDate(point.created_at)}</td>
-    `
-
-    container.appendChild(row)
+  // Ajouter chaque activité
+  activities.forEach((activity) => {
+    const activityElement = createActivityElement(activity)
+    container.appendChild(activityElement)
   })
+}
+
+/**
+ * Crée un élément d'activité
+ * @param {Object} activity - Données de l'activité
+ * @returns {HTMLElement} - Élément DOM de l'activité
+ */
+function createActivityElement(activity) {
+  const div = document.createElement("div")
+  div.className = "activity-item"
+
+  // Déterminer l'icône et la classe en fonction du type d'activité
+  let iconClass = "background-color: rgba(59, 130, 246, 0.2); color: #3b82f6;"
+  let iconName = "activity"
+
+  // Adapter en fonction de la structure de données renvoyée par l'API
+  const activityType = activity.type || activity.action_type || "default"
+
+  switch (activityType) {
+    case "hackathon":
+    case "create_hackathon":
+    case "update_hackathon":
+      iconName = "calendar-alt"
+      iconClass = "background-color: rgba(109, 40, 217, 0.2); color: #6d28d9;"
+      break
+    case "challenge":
+    case "create_challenge":
+    case "solve_challenge":
+      iconName = "trophy"
+      iconClass = "background-color: rgba(16, 185, 129, 0.2); color: #10b981;"
+      break
+    case "user":
+    case "register":
+    case "login":
+      iconName = "user"
+      iconClass = "background-color: rgba(59, 130, 246, 0.2); color: #3b82f6;"
+      break
+    case "team":
+    case "create_team":
+    case "join_team":
+      iconName = "users"
+      iconClass = "background-color: rgba(245, 158, 11, 0.2); color: #f59e0b;"
+      break
+    case "submission":
+    case "submit_solution":
+      iconName = "file-code"
+      iconClass = "background-color: rgba(16, 185, 129, 0.2); color: #10b981;"
+      break
+  }
+
+  // Formater la date
+  const date =
+    activity.timestamp || activity.created_at ? formatDate(activity.timestamp || activity.created_at) : "Récemment"
+
+  // Déterminer le texte de l'activité
+  const activityText = activity.description || activity.action || "Activité inconnue"
+  const username = activity.username || activity.user_name || ""
+
+  div.innerHTML = `
+    <div class="activity-icon" style="${iconClass}">
+      <i class="fas fa-${iconName}"></i>
+    </div>
+    <div class="activity-content">
+      <div class="activity-title">${sanitizeText(username)}</div>
+      <div class="activity-subtitle">${sanitizeText(activityText)}</div>
+    </div>
+    <div class="activity-time">
+      <i class="fas fa-clock"></i> ${date}
+    </div>
+  `
+
+  return div
 }
 
 /**
  * Configure les gestionnaires d'événements
  */
 function setupEventListeners() {
-  // Gestionnaire pour le bouton "Nouveau Challenge"
-  const newChallengeButton = document.querySelector('[data-modal="newChallengeModal"]')
-  if (newChallengeButton) {
-    newChallengeButton.addEventListener("click", () => {
-      openModal("newChallengeModal")
+  // Gestionnaire pour le bouton "Nouveau Hackathon"
+  const newHackathonButton = document.querySelector('[data-modal="newHackathonModal"]')
+  if (newHackathonButton) {
+    newHackathonButton.addEventListener("click", () => {
+      openModal("newHackathonModal")
     })
   }
 
-  // Gestionnaire pour le formulaire de nouveau challenge
-  const newChallengeForm = document.querySelector("#newChallengeModal form")
-  if (newChallengeForm) {
-    newChallengeForm.addEventListener("submit", handleNewChallengeSubmit)
+  // Gestionnaire pour le formulaire de nouveau hackathon
+  const newHackathonForm = document.querySelector("#newHackathonModal form")
+  if (newHackathonForm) {
+    newHackathonForm.addEventListener("submit", handleNewHackathonSubmit)
   }
 
   // Gestionnaire pour les boutons d'action
@@ -278,20 +290,20 @@ function setupEventListeners() {
 
       switch (action) {
         case "edit":
-          editChallenge(id)
+          editHackathon(id)
           break
         case "view":
-          viewChallenge(id)
+          viewHackathon(id)
           break
         case "delete":
-          deleteChallenge(id)
+          deleteHackathon(id)
           break
       }
     }
   })
 
   // Gestionnaire pour la recherche
-  const searchInput = document.querySelector(CHALLENGE_ELEMENTS.searchInput)
+  const searchInput = document.querySelector(HACKATHON_ELEMENTS.searchInput)
   if (searchInput) {
     searchInput.addEventListener("input", handleSearch)
   }
@@ -301,10 +313,10 @@ function setupEventListeners() {
 }
 
 /**
- * Gère la soumission du formulaire de nouveau challenge
+ * Gère la soumission du formulaire de nouveau hackathon
  * @param {Event} e - Événement de soumission
  */
-async function handleNewChallengeSubmit(e) {
+async function handleNewHackathonSubmit(e) {
   e.preventDefault()
 
   try {
@@ -312,113 +324,111 @@ async function handleNewChallengeSubmit(e) {
 
     // Récupérer les données du formulaire
     const formData = new FormData(e.target)
-    const challengeData = {
-      title: formData.get("challengeTitle"),
-      category: formData.get("challengeCategory"),
-      difficulty: formData.get("challengeDifficulty"),
-      points: formData.get("challengePoints"),
-      duration: formData.get("challengeDuration"),
-      start_date: formData.get("challengeStartDate"),
-      end_date: formData.get("challengeEndDate"),
-      skills: formData.get("challengeSkills"),
-      description: formData.get("challengeDescription"),
-      criteria: formData.get("challengeCriteria"),
+    const hackathonData = {
+      name: formData.get("hackathonName"),
+      start_date: formData.get("hackathonStartDate"),
+      end_date: formData.get("hackathonEndDate"),
+      location: formData.get("hackathonLocation"),
+      max_participants: formData.get("hackathonMaxParticipants"),
+      team_size: formData.get("hackathonTeamSize"),
+      duration: formData.get("hackathonDuration"),
+      prizes: formData.get("hackathonPrizes"),
+      description: formData.get("hackathonDescription"),
     }
 
     // Envoyer les données à l'API
-    const response = await apiRequest("/admin/challenges", {
+    const response = await apiRequest("/admin/hackathons", {
       method: "POST",
-      body: JSON.stringify(challengeData),
+      body: JSON.stringify(hackathonData),
     })
 
     if (response.success) {
       // Fermer le modal
-      closeModal("newChallengeModal")
+      closeModal("newHackathonModal")
 
-      // Recharger les challenges
-      await loadChallenges()
+      // Recharger les hackathons
+      await loadHackathons()
 
       // Afficher un message de succès
-      showNotification("Challenge créé avec succès", "success")
+      showNotification("Hackathon créé avec succès", "success")
     }
   } catch (error) {
-    handleError("Erreur lors de la création du challenge", error)
+    handleError("Erreur lors de la création du hackathon", error)
   } finally {
     hideLoading()
   }
 }
 
 /**
- * Édite un challenge
- * @param {string} id - ID du challenge
+ * Édite un hackathon
+ * @param {string} id - ID du hackathon
  */
-async function editChallenge(id) {
+async function editHackathon(id) {
   try {
     showLoading()
 
-    // Récupérer les données du challenge
-    const response = await apiRequest(`/admin/challenges/${id}`)
+    // Récupérer les données du hackathon
+    const response = await apiRequest(`/admin/hackathons/${id}`)
 
     if (response.success && response.data) {
       // Remplir le formulaire
-      const challenge = response.data
-      document.querySelector("#challengeTitle").value = challenge.title
-      document.querySelector("#challengeCategory").value = challenge.category
-      document.querySelector("#challengeDifficulty").value = challenge.difficulty
-      document.querySelector("#challengePoints").value = challenge.points
-      document.querySelector("#challengeDuration").value = challenge.duration
-      document.querySelector("#challengeStartDate").value = formatDateForInput(challenge.start_date)
-      document.querySelector("#challengeEndDate").value = formatDateForInput(challenge.end_date)
-      document.querySelector("#challengeSkills").value = challenge.skills
-      document.querySelector("#challengeDescription").value = challenge.description
-      document.querySelector("#challengeCriteria").value = challenge.criteria
+      const hackathon = response.data
+      document.querySelector("#hackathonName").value = hackathon.name || hackathon.title
+      document.querySelector("#hackathonStartDate").value = formatDateForInput(hackathon.start_date)
+      document.querySelector("#hackathonEndDate").value = formatDateForInput(hackathon.end_date)
+      document.querySelector("#hackathonLocation").value = hackathon.location
+      document.querySelector("#hackathonMaxParticipants").value = hackathon.max_participants
+      document.querySelector("#hackathonTeamSize").value = hackathon.team_size
+      document.querySelector("#hackathonDuration").value = hackathon.duration
+      document.querySelector("#hackathonPrizes").value = hackathon.prizes
+      document.querySelector("#hackathonDescription").value = hackathon.description
 
       // Modifier le titre du modal
-      const modalTitle = document.querySelector("#newChallengeModal .modal-header h2")
+      const modalTitle = document.querySelector("#newHackathonModal .modal-header h2")
       if (modalTitle) {
-        modalTitle.innerHTML = '<i class="fas fa-edit"></i> Modifier le Challenge'
+        modalTitle.innerHTML = '<i class="fas fa-edit"></i> Modifier le Hackathon'
       }
 
       // Modifier le bouton de soumission
-      const submitButton = document.querySelector("#newChallengeModal .btn-primary")
+      const submitButton = document.querySelector("#newHackathonModal .btn-primary")
       if (submitButton) {
         submitButton.innerHTML = '<i class="fas fa-save"></i> Mettre à jour'
         submitButton.dataset.id = id
       }
 
       // Ouvrir le modal
-      openModal("newChallengeModal")
+      openModal("newHackathonModal")
     }
   } catch (error) {
-    handleError("Erreur lors de la récupération du challenge", error)
+    handleError("Erreur lors de la récupération du hackathon", error)
   } finally {
     hideLoading()
   }
 }
 
 /**
- * Affiche les détails d'un challenge
- * @param {string} id - ID du challenge
+ * Affiche les détails d'un hackathon
+ * @param {string} id - ID du hackathon
  */
-async function viewChallenge(id) {
+async function viewHackathon(id) {
   try {
     showLoading()
 
     // Rediriger vers la page de détails
-    window.location.href = `/HACKATHON_ESGIS/public/admin/challenges/view.php?id=${id}`
+    window.location.href = `/HACKATHON_ESGIS/public/admin/hackathons/view.php?id=${id}`
   } catch (error) {
-    handleError("Erreur lors de la récupération du challenge", error)
+    handleError("Erreur lors de la récupération du hackathon", error)
   } finally {
     hideLoading()
   }
 }
 
 /**
- * Supprime un challenge
- * @param {string} id - ID du challenge
+ * Supprime un hackathon
+ * @param {string} id - ID du hackathon
  */
-async function deleteChallenge(id) {
-  if (!confirm("Êtes-vous sûr de vouloir supprimer ce challenge ?")) {
+async function deleteHackathon(id) {
+  if (!confirm("Êtes-vous sûr de vouloir supprimer ce hackathon ?")) {
     return
   }
 
@@ -426,19 +436,19 @@ async function deleteChallenge(id) {
     showLoading()
 
     // Envoyer la requête de suppression
-    const response = await apiRequest(`/admin/challenges/${id}`, {
+    const response = await apiRequest(`/admin/hackathons/${id}`, {
       method: "DELETE",
     })
 
     if (response.success) {
-      // Recharger les challenges
-      await loadChallenges()
+      // Recharger les hackathons
+      await loadHackathons()
 
       // Afficher un message de succès
-      showNotification("Challenge supprimé avec succès", "success")
+      showNotification("Hackathon supprimé avec succès", "success")
     }
   } catch (error) {
-    handleError("Erreur lors de la suppression du challenge", error)
+    handleError("Erreur lors de la suppression du hackathon", error)
   } finally {
     hideLoading()
   }
@@ -850,10 +860,5 @@ function formatDateForInput(dateString) {
 // Initialiser la page lorsque le DOM est chargé
 document.addEventListener("DOMContentLoaded", () => {
   // Initialiser la page
-  initializeChallengePage()
-
-  // Initialiser les icônes Lucide
-  if (window.lucide) {
-    window.lucide.createIcons()
-  }
+  initializeHackathonPage()
 })

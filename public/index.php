@@ -8,7 +8,7 @@ AuthMiddleware::checkAuth();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-// echo print_r($_SESSION, true);
+// echo print_r($_SESSION, true); 
 // Récupérer l'URL demandée (par exemple /home ou /about)
 $url = $_SERVER['REQUEST_URI'] ?? "/HACKATHON_ESGIS/public/";
 

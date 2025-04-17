@@ -2,35 +2,34 @@
 const API_BASE_URL = "/HACKATHON_ESGIS/public/api"
 
 // Sélecteurs pour les éléments de la page
-const CHALLENGE_ELEMENTS = {
+const USER_ELEMENTS = {
   loadingSpinner: "#global-loading-spinner",
   stats: {
-    totalChallenges: ".stat-card:nth-child(1) .number",
-    activeChallenges: ".stat-card:nth-child(2) .number",
-    completedChallenges: ".stat-card:nth-child(3) .number",
-    averagePoints: ".stat-card:nth-child(4) .number",
+    totalUsers: ".stat-card:nth-child(1) .number",
+    admins: ".stat-card:nth-child(2) .number",
+    activeUsers: ".stat-card:nth-child(3) .number",
+    suspendedUsers: ".stat-card:nth-child(4) .number",
   },
-  challengesTable: {
-    container: "#challengesTable tbody",
-    rows: "#challengesTable tbody tr",
+  usersTable: {
+    container: "#usersTable tbody",
+    rows: "#usersTable tbody tr",
   },
-  pointsTable: {
-    container: "table:nth-of-type(2) tbody",
-    rows: "table:nth-of-type(2) tbody tr",
+  activityFeed: {
+    container: ".activity-feed",
+    items: ".activity-item",
   },
-  newChallengeModal: "#newChallengeModal",
   searchInput: ".search-input",
 }
 
 /**
- * Initialise la page de gestion des challenges
+ * Initialise la page de gestion des utilisateurs
  */
-async function initializeChallengePage() {
+async function initializeUserPage() {
   try {
     showLoading()
 
     // Charger toutes les données en parallèle
-    await Promise.all([loadChallenges(), loadChallengeStats(), loadChallengePoints()])
+    await Promise.all([loadUsers(), loadUserStats(), loadUserActivity()])
 
     // Configurer les gestionnaires d'événements
     setupEventListeners()
@@ -42,44 +41,44 @@ async function initializeChallengePage() {
 }
 
 /**
- * Charge la liste des challenges
+ * Charge la liste des utilisateurs
  */
-async function loadChallenges() {
+async function loadUsers() {
   try {
-    const response = await apiRequest("/admin/challenges")
+    const response = await apiRequest("/admin/users")
 
     if (response.success && response.data) {
-      updateChallengesTable(response.data)
+      updateUsersTable(response.data)
     }
   } catch (error) {
-    handleError("Erreur lors du chargement des challenges", error)
+    handleError("Erreur lors du chargement des utilisateurs", error)
   }
 }
 
 /**
- * Met à jour le tableau des challenges
- * @param {Array} challenges - Liste des challenges
+ * Met à jour le tableau des utilisateurs
+ * @param {Array} users - Liste des utilisateurs
  */
-function updateChallengesTable(challenges) {
-  const container = document.querySelector(CHALLENGE_ELEMENTS.challengesTable.container)
+function updateUsersTable(users) {
+  const container = document.querySelector(USER_ELEMENTS.usersTable.container)
 
   if (!container) return
 
   // Vider le conteneur
   container.innerHTML = ""
 
-  // Afficher l'état vide si aucun challenge
-  if (!challenges || !challenges.length) {
+  // Afficher l'état vide si aucun utilisateur
+  if (!users || !users.length) {
     container.innerHTML = `
       <tr>
         <td colspan="5">
           <div class="empty-state">
             <div class="empty-state-icon">
-              <i class="fas fa-trophy"></i>
+              <i class="fas fa-users"></i>
             </div>
             <div class="empty-state-text">
-              <h3>Aucun challenge</h3>
-              <p>Créez votre premier challenge en cliquant sur le bouton "Nouveau Challenge".</p>
+              <h3>Aucun utilisateur</h3>
+              <p>Ajoutez des utilisateurs en cliquant sur le bouton "Ajouter utilisateur".</p>
             </div>
           </div>
         </td>
@@ -88,62 +87,52 @@ function updateChallengesTable(challenges) {
     return
   }
 
-  // Ajouter chaque challenge
-  challenges.forEach((challenge) => {
+  // Ajouter chaque utilisateur
+  users.forEach((user) => {
     const row = document.createElement("tr")
 
-    // Déterminer la difficulté et l'icône
-    let difficultyClass = "badge-primary"
-    let difficultyText = "Intermédiaire"
+    // Déterminer le rôle et la classe
+    let roleClass = "badge-info"
+    let roleText = "Utilisateur"
 
-    switch (challenge.difficulty) {
-      case "easy":
-        difficultyClass = "badge-success"
-        difficultyText = "Débutant"
-        break
-      case "medium":
-        difficultyClass = "badge-primary"
-        difficultyText = "Intermédiaire"
-        break
-      case "hard":
-        difficultyClass = "badge-danger"
-        difficultyText = "Avancé"
-        break
-      case "expert":
-        difficultyClass = "badge-dark"
-        difficultyText = "Expert"
-        break
+    if (user.role === "admin") {
+      roleClass = "badge-primary"
+      roleText = "Admin"
+    } else if (user.role === "moderator") {
+      roleClass = "badge-info"
+      roleText = "Modérateur"
     }
 
-    // Déterminer le statut et l'icône
-    let statusClass = "badge-primary"
-    let statusIcon = "play-circle"
-    let statusText = "En cours"
+    // Déterminer le statut et la classe
+    let statusClass = "badge-success"
+    let statusText = "Actif"
 
-    if (challenge.status === "completed") {
-      statusClass = "badge-success"
-      statusIcon = "check-circle"
-      statusText = "Terminé"
-    } else if (challenge.status === "upcoming") {
-      statusClass = "badge-info"
-      statusIcon = "hourglass-start"
-      statusText = "À venir"
+    if (user.status === "suspended") {
+      statusClass = "badge-warning"
+      statusText = "Suspendu"
+    } else if (user.status === "inactive") {
+      statusClass = "badge-danger"
+      statusText = "Inactif"
     }
 
     row.innerHTML = `
-      <td>${sanitizeText(challenge.title)}</td>
-      <td><span class="badge ${difficultyClass}"><i class="fas fa-fire"></i> ${difficultyText}</span></td>
-      <td>${challenge.participants_count || 0}</td>
-      <td><span class="badge ${statusClass}"><i class="fas fa-${statusIcon}"></i> ${statusText}</span></td>
+      <td>${sanitizeText(user.name || user.username)}</td>
+      <td>${sanitizeText(user.email)}</td>
+      <td><span class="badge ${roleClass}">${roleText}</span></td>
+      <td><span class="badge ${statusClass}">${statusText}</span></td>
       <td>
         <div class="dropdown">
           <button class="dropdown-toggle">
             <i class="fas fa-ellipsis-v"></i>
           </button>
           <div class="dropdown-menu">
-            <a href="#" class="dropdown-item action-button" data-action="edit" data-id="${challenge.id}"><i class="fas fa-edit"></i> Modifier</a>
-            <a href="#" class="dropdown-item action-button" data-action="view" data-id="${challenge.id}"><i class="fas fa-eye"></i> Voir détails</a>
-            <a href="#" class="dropdown-item action-button" data-action="delete" data-id="${challenge.id}"><i class="fas fa-trash"></i> Supprimer</a>
+            <a href="#" class="dropdown-item action-button" data-action="edit" data-id="${user.id}">Modifier</a>
+            <a href="#" class="dropdown-item action-button" data-action="view" data-id="${user.id}">Voir profil</a>
+            ${
+              user.status === "suspended"
+                ? `<a href="#" class="dropdown-item action-button" data-action="activate" data-id="${user.id}">Activer</a>`
+                : `<a href="#" class="dropdown-item action-button" data-action="suspend" data-id="${user.id}">Suspendre</a>`
+            }
           </div>
         </div>
       </td>
@@ -157,14 +146,14 @@ function updateChallengesTable(challenges) {
 }
 
 /**
- * Charge les statistiques des challenges
+ * Charge les statistiques des utilisateurs
  */
-async function loadChallengeStats() {
+async function loadUserStats() {
   try {
-    const response = await apiRequest("/admin/challenge-stats")
+    const response = await apiRequest("/admin/user-stats")
 
     if (response.success && response.data) {
-      updateChallengeStats(response.data)
+      updateUserStats(response.data)
     }
   } catch (error) {
     handleError("Erreur lors du chargement des statistiques", error)
@@ -172,14 +161,14 @@ async function loadChallengeStats() {
 }
 
 /**
- * Met à jour les statistiques des challenges
+ * Met à jour les statistiques des utilisateurs
  * @param {Object} stats - Statistiques à afficher
  */
-function updateChallengeStats(stats) {
+function updateUserStats(stats) {
   if (!stats) return
 
   // Mettre à jour les compteurs
-  const elements = CHALLENGE_ELEMENTS.stats
+  const elements = USER_ELEMENTS.stats
   Object.keys(elements).forEach((key) => {
     const element = document.querySelector(elements[key])
     if (element && stats[key] !== undefined) {
@@ -189,83 +178,144 @@ function updateChallengeStats(stats) {
 }
 
 /**
- * Charge les points des challenges
+ * Charge les activités récentes des utilisateurs
  */
-async function loadChallengePoints() {
+async function loadUserActivity() {
   try {
-    const response = await apiRequest("/admin/submission-stats")
+    const response = await apiRequest("/admin/activity")
 
     if (response.success && response.data) {
-      updateChallengePointsTable(response.data)
+      // Filtrer pour obtenir uniquement les activités liées aux utilisateurs
+      const userActivities = response.data
+        .filter((activity) => {
+          const type = activity.type || activity.action_type || ""
+          return type.includes("user") || type.includes("login") || type.includes("register")
+        })
+        .slice(0, 3) // Limiter à 3 activités
+
+      updateActivityFeed(userActivities)
     }
   } catch (error) {
-    handleError("Erreur lors du chargement des points", error)
+    handleError("Erreur lors du chargement des activités", error)
   }
 }
 
 /**
- * Met à jour le tableau des points des challenges
- * @param {Array} points - Liste des points
+ * Met à jour le flux d'activité
+ * @param {Array} activities - Liste des activités
  */
-function updateChallengePointsTable(points) {
-  const container = document.querySelector(CHALLENGE_ELEMENTS.pointsTable.container)
+function updateActivityFeed(activities) {
+  const container = document.querySelector(USER_ELEMENTS.activityFeed.container)
 
   if (!container) return
 
   // Vider le conteneur
   container.innerHTML = ""
 
-  // Afficher l'état vide si aucun point
-  if (!points || !points.length) {
+  // Afficher l'état vide si aucune activité
+  if (!activities || !activities.length) {
     container.innerHTML = `
-      <tr>
-        <td colspan="4">
-          <div class="empty-state">
-            <div class="empty-state-icon">
-              <i class="fas fa-star"></i>
-            </div>
-            <div class="empty-state-text">
-              <h3>Aucun point attribué</h3>
-              <p>Les points attribués aux défis apparaîtront ici.</p>
-            </div>
-          </div>
-        </td>
-      </tr>
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-history"></i>
+        </div>
+        <div class="empty-state-text">
+          <h3>Aucune activité récente</h3>
+          <p>Les activités récentes apparaîtront ici.</p>
+        </div>
+      </div>
     `
     return
   }
 
-  // Ajouter chaque point
-  points.forEach((point) => {
-    const row = document.createElement("tr")
-
-    row.innerHTML = `
-      <td>${sanitizeText(point.username)}</td>
-      <td>${sanitizeText(point.challenge_title)}</td>
-      <td><span class="badge badge-warning"><i class="fas fa-star"></i> ${point.points}</span></td>
-      <td>${formatDate(point.created_at)}</td>
-    `
-
-    container.appendChild(row)
+  // Ajouter chaque activité
+  activities.forEach((activity) => {
+    const activityElement = createActivityElement(activity)
+    container.appendChild(activityElement)
   })
+}
+
+/**
+ * Crée un élément d'activité
+ * @param {Object} activity - Données de l'activité
+ * @returns {HTMLElement} - Élément DOM de l'activité
+ */
+function createActivityElement(activity) {
+  const div = document.createElement("div")
+  div.className = "activity-item"
+
+  // Déterminer l'icône et la classe en fonction du type d'activité
+  let iconClass = "background-color: rgba(59, 130, 246, 0.2); color: #3b82f6;"
+  let iconName = "user"
+
+  // Adapter en fonction de la structure de données renvoyée par l'API
+  const activityType = activity.type || activity.action_type || "default"
+
+  switch (activityType) {
+    case "login":
+      iconName = "sign-in-alt"
+      iconClass = "background-color: rgba(59, 130, 246, 0.2); color: #3b82f6;"
+      break
+    case "register":
+      iconName = "user-plus"
+      iconClass = "background-color: rgba(16, 185, 129, 0.2); color: #10b981;"
+      break
+    case "submission":
+    case "submit_solution":
+      iconName = "file-code"
+      iconClass = "background-color: rgba(16, 185, 129, 0.2); color: #10b981;"
+      break
+    case "hackathon":
+      iconName = "calendar-alt"
+      iconClass = "background-color: rgba(109, 40, 217, 0.2); color: #6d28d9;"
+      break
+  }
+
+  // Formater la date
+  const date =
+    activity.timestamp || activity.created_at ? formatDate(activity.timestamp || activity.created_at) : "Récemment"
+
+  // Déterminer le texte de l'activité
+  const activityText = activity.description || activity.action || "Activité inconnue"
+  const username = activity.username || activity.user_name || ""
+
+  div.innerHTML = `
+    <div class="activity-icon" style="${iconClass}">
+      <i class="fas fa-${iconName}"></i>
+    </div>
+    <div class="activity-content">
+      <div class="activity-title">${sanitizeText(username)}</div>
+      <div class="activity-subtitle">${sanitizeText(activityText)}</div>
+    </div>
+    <div class="activity-time">
+      ${date}
+    </div>
+  `
+
+  return div
 }
 
 /**
  * Configure les gestionnaires d'événements
  */
 function setupEventListeners() {
-  // Gestionnaire pour le bouton "Nouveau Challenge"
-  const newChallengeButton = document.querySelector('[data-modal="newChallengeModal"]')
-  if (newChallengeButton) {
-    newChallengeButton.addEventListener("click", () => {
-      openModal("newChallengeModal")
+  // Gestionnaire pour le bouton "Ajouter utilisateur"
+  const addUserButton = document.querySelector(".btn-primary:nth-of-type(2)")
+  if (addUserButton) {
+    addUserButton.addEventListener("click", () => {
+      // Rediriger vers la page d'ajout d'utilisateur ou ouvrir un modal
+      // window.location.href = "/HACKATHON_ESGIS/public/admin/utilisateurs/add.php"
+      alert("Fonctionnalité d'ajout d'utilisateur à implémenter")
     })
   }
 
-  // Gestionnaire pour le formulaire de nouveau challenge
-  const newChallengeForm = document.querySelector("#newChallengeModal form")
-  if (newChallengeForm) {
-    newChallengeForm.addEventListener("submit", handleNewChallengeSubmit)
+  // Gestionnaire pour le bouton "Notification globale"
+  const notificationButton = document.querySelector(".btn-primary:nth-of-type(1)")
+  if (notificationButton) {
+    notificationButton.addEventListener("click", () => {
+      // Ouvrir un modal pour envoyer une notification globale
+      alert("Fonctionnalité de notification globale à implémenter")
+    })
   }
 
   // Gestionnaire pour les boutons d'action
@@ -278,167 +328,102 @@ function setupEventListeners() {
 
       switch (action) {
         case "edit":
-          editChallenge(id)
+          editUser(id)
           break
         case "view":
-          viewChallenge(id)
+          viewUser(id)
           break
-        case "delete":
-          deleteChallenge(id)
+        case "suspend":
+          suspendUser(id)
+          break
+        case "activate":
+          activateUser(id)
           break
       }
     }
   })
 
   // Gestionnaire pour la recherche
-  const searchInput = document.querySelector(CHALLENGE_ELEMENTS.searchInput)
+  const searchInput = document.querySelector(USER_ELEMENTS.searchInput)
   if (searchInput) {
     searchInput.addEventListener("input", handleSearch)
   }
 
-  // Initialiser les modals
-  initializeModals()
+  // Initialiser les dropdowns
+  initializeDropdowns()
 }
 
 /**
- * Gère la soumission du formulaire de nouveau challenge
- * @param {Event} e - Événement de soumission
+ * Édite un utilisateur
+ * @param {string} id - ID de l'utilisateur
  */
-async function handleNewChallengeSubmit(e) {
-  e.preventDefault()
-
-  try {
-    showLoading()
-
-    // Récupérer les données du formulaire
-    const formData = new FormData(e.target)
-    const challengeData = {
-      title: formData.get("challengeTitle"),
-      category: formData.get("challengeCategory"),
-      difficulty: formData.get("challengeDifficulty"),
-      points: formData.get("challengePoints"),
-      duration: formData.get("challengeDuration"),
-      start_date: formData.get("challengeStartDate"),
-      end_date: formData.get("challengeEndDate"),
-      skills: formData.get("challengeSkills"),
-      description: formData.get("challengeDescription"),
-      criteria: formData.get("challengeCriteria"),
-    }
-
-    // Envoyer les données à l'API
-    const response = await apiRequest("/admin/challenges", {
-      method: "POST",
-      body: JSON.stringify(challengeData),
-    })
-
-    if (response.success) {
-      // Fermer le modal
-      closeModal("newChallengeModal")
-
-      // Recharger les challenges
-      await loadChallenges()
-
-      // Afficher un message de succès
-      showNotification("Challenge créé avec succès", "success")
-    }
-  } catch (error) {
-    handleError("Erreur lors de la création du challenge", error)
-  } finally {
-    hideLoading()
-  }
+function editUser(id) {
+  // Rediriger vers la page d'édition d'utilisateur
+  window.location.href = `/HACKATHON_ESGIS/public/admin/utilisateurs/edit.php?id=${id}`
 }
 
 /**
- * Édite un challenge
- * @param {string} id - ID du challenge
+ * Affiche les détails d'un utilisateur
+ * @param {string} id - ID de l'utilisateur
  */
-async function editChallenge(id) {
-  try {
-    showLoading()
-
-    // Récupérer les données du challenge
-    const response = await apiRequest(`/admin/challenges/${id}`)
-
-    if (response.success && response.data) {
-      // Remplir le formulaire
-      const challenge = response.data
-      document.querySelector("#challengeTitle").value = challenge.title
-      document.querySelector("#challengeCategory").value = challenge.category
-      document.querySelector("#challengeDifficulty").value = challenge.difficulty
-      document.querySelector("#challengePoints").value = challenge.points
-      document.querySelector("#challengeDuration").value = challenge.duration
-      document.querySelector("#challengeStartDate").value = formatDateForInput(challenge.start_date)
-      document.querySelector("#challengeEndDate").value = formatDateForInput(challenge.end_date)
-      document.querySelector("#challengeSkills").value = challenge.skills
-      document.querySelector("#challengeDescription").value = challenge.description
-      document.querySelector("#challengeCriteria").value = challenge.criteria
-
-      // Modifier le titre du modal
-      const modalTitle = document.querySelector("#newChallengeModal .modal-header h2")
-      if (modalTitle) {
-        modalTitle.innerHTML = '<i class="fas fa-edit"></i> Modifier le Challenge'
-      }
-
-      // Modifier le bouton de soumission
-      const submitButton = document.querySelector("#newChallengeModal .btn-primary")
-      if (submitButton) {
-        submitButton.innerHTML = '<i class="fas fa-save"></i> Mettre à jour'
-        submitButton.dataset.id = id
-      }
-
-      // Ouvrir le modal
-      openModal("newChallengeModal")
-    }
-  } catch (error) {
-    handleError("Erreur lors de la récupération du challenge", error)
-  } finally {
-    hideLoading()
-  }
+function viewUser(id) {
+  // Rediriger vers la page de détails d'utilisateur
+  window.location.href = `/HACKATHON_ESGIS/public/admin/utilisateurs/view.php?id=${id}`
 }
 
 /**
- * Affiche les détails d'un challenge
- * @param {string} id - ID du challenge
+ * Suspend un utilisateur
+ * @param {string} id - ID de l'utilisateur
  */
-async function viewChallenge(id) {
-  try {
-    showLoading()
-
-    // Rediriger vers la page de détails
-    window.location.href = `/HACKATHON_ESGIS/public/admin/challenges/view.php?id=${id}`
-  } catch (error) {
-    handleError("Erreur lors de la récupération du challenge", error)
-  } finally {
-    hideLoading()
-  }
-}
-
-/**
- * Supprime un challenge
- * @param {string} id - ID du challenge
- */
-async function deleteChallenge(id) {
-  if (!confirm("Êtes-vous sûr de vouloir supprimer ce challenge ?")) {
+async function suspendUser(id) {
+  if (!confirm("Êtes-vous sûr de vouloir suspendre cet utilisateur ?")) {
     return
   }
 
   try {
     showLoading()
 
-    // Envoyer la requête de suppression
-    const response = await apiRequest(`/admin/challenges/${id}`, {
-      method: "DELETE",
+    // Envoyer la requête de suspension
+    const response = await apiRequest(`/admin/users/${id}/suspend`, {
+      method: "POST",
     })
 
     if (response.success) {
-      // Recharger les challenges
-      await loadChallenges()
+      // Recharger les utilisateurs
+      await loadUsers()
 
       // Afficher un message de succès
-      showNotification("Challenge supprimé avec succès", "success")
+      showNotification("Utilisateur suspendu avec succès", "success")
     }
   } catch (error) {
-    handleError("Erreur lors de la suppression du challenge", error)
+    handleError("Erreur lors de la suspension de l'utilisateur", error)
+  } finally {
+    hideLoading()
+  }
+}
+
+/**
+ * Active un utilisateur
+ * @param {string} id - ID de l'utilisateur
+ */
+async function activateUser(id) {
+  try {
+    showLoading()
+
+    // Envoyer la requête d'activation
+    const response = await apiRequest(`/admin/users/${id}/activate`, {
+      method: "POST",
+    })
+
+    if (response.success) {
+      // Recharger les utilisateurs
+      await loadUsers()
+
+      // Afficher un message de succès
+      showNotification("Utilisateur activé avec succès", "success")
+    }
+  } catch (error) {
+    handleError("Erreur lors de l'activation de l'utilisateur", error)
   } finally {
     hideLoading()
   }
@@ -456,38 +441,6 @@ function handleSearch(e) {
   rows.forEach((row) => {
     const text = row.textContent.toLowerCase()
     row.style.display = text.includes(searchTerm) ? "" : "none"
-  })
-}
-
-/**
- * Initialise les modals
- */
-function initializeModals() {
-  // Gestionnaire pour les boutons d'ouverture de modal
-  document.querySelectorAll("[data-modal]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const modalId = button.dataset.modal
-      openModal(modalId)
-    })
-  })
-
-  // Gestionnaire pour les boutons de fermeture de modal
-  document.querySelectorAll(".modal-close").forEach((button) => {
-    button.addEventListener("click", () => {
-      const modal = button.closest(".modal")
-      if (modal) {
-        closeModal(modal.id)
-      }
-    })
-  })
-
-  // Fermer le modal quand on clique en dehors
-  document.querySelectorAll(".modal").forEach((modal) => {
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) {
-        closeModal(modal.id)
-      }
-    })
   })
 }
 
@@ -512,30 +465,6 @@ function initializeDropdowns() {
       })
     }
   })
-}
-
-/**
- * Ouvre un modal
- * @param {string} modalId - ID du modal
- */
-function openModal(modalId) {
-  const modal = document.getElementById(modalId)
-  if (modal) {
-    modal.style.display = "flex"
-    document.body.style.overflow = "hidden"
-  }
-}
-
-/**
- * Ferme un modal
- * @param {string} modalId - ID du modal
- */
-function closeModal(modalId) {
-  const modal = document.getElementById(modalId)
-  if (modal) {
-    modal.style.display = "none"
-    document.body.style.overflow = ""
-  }
 }
 
 /**
@@ -826,34 +755,8 @@ function formatDate(dateString, shortFormat = false) {
   }
 }
 
-/**
- * Formate une date pour un champ input
- * @param {string} dateString - Chaîne de date à formater
- * @returns {string} - Date formatée (YYYY-MM-DD)
- */
-function formatDateForInput(dateString) {
-  try {
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return ""
-
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, "0")
-    const day = String(date.getDate()).padStart(2, "0")
-
-    return `${year}-${month}-${day}`
-  } catch (e) {
-    console.error("Erreur de formatage de date pour input", e)
-    return ""
-  }
-}
-
 // Initialiser la page lorsque le DOM est chargé
 document.addEventListener("DOMContentLoaded", () => {
   // Initialiser la page
-  initializeChallengePage()
-
-  // Initialiser les icônes Lucide
-  if (window.lucide) {
-    window.lucide.createIcons()
-  }
+  initializeUserPage()
 })

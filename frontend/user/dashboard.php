@@ -59,7 +59,7 @@
 
             <div class="text-white w-full max-w-[1200px]">
                 <!-- Grid des cartes -->
-                <div class="grid grid-cols-4 max-lg:grid-cols-2 max-md:grid-cols-1 items-stretch justify-between max-md:flex-col max-md:w-full max-md:justify-center gap-4 w-full">
+                <div class="grid grid-cols-4 max-lg:grid-cols-2 max-md:grid-cols-1 items-stretch  justify-between max-md:flex-col max-md:w-full max-md:justify-center gap-4 w-full">
 
                     <!-- Carte Défis de développement -->
                     <div class="fade-in-left">
