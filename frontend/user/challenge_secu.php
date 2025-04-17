@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,357 +18,269 @@
     <?php require_once '../includes/user/header.php'; ?>
 
     <!-- Main structure -->
-    <section class="main-container">
+    <section class="main-container mb-10">
 
-    <div>
+        <div>
 
-        <!-- Sidebar Filters -->
-        <div class="filters-container">
-        <aside class="filters-sidebar">
+            <!-- Sidebar Filters -->
+            <div class="filters-container">
+                <aside class="filters-sidebar">
 
-            <!-- Filtre global -->
-            <div class="filter-group">
-                <h2 style="display: flex; align-items: center; gap: 0.5rem;"> <i data-lucide="filter"></i> <span>Filters</span></h2>
+                    <!-- Filtre global -->
+                    <div class="filter-group">
+                        <h2 style="display: flex; align-items: center; gap: 0.5rem;"> <i class="w-4 h-4 stroke-current" data-lucide="filter"></i> <span>Filters</span></h2>
 
-                <!-- Difficulté sous forme de boutons -->
-                <h3 style="display: flex; align-items: center; gap: 0.5rem;"> <i data-lucide="gauge"></i> <span>Difficulty</span></h3>
-                <div class="filter-buttons" data-type="difficulty">
-                <button class="filter-btn" id="easy" style="background-color: var(--green); color: var(--text); border-color: var(--green);">
-                    Easy
-                </button>
-                <button class="filter-btn" id="medium" style="background-color: var(--yellow); color: var(--text); border-color: var(--yellow);">
-                    Medium
-                </button>
-                <button class="filter-btn" id="hard" style="background-color: var(--red); color: var(--text); border-color: var(--red);">
-                    Hard
-                </button>
-                <button class="filter-btn" id="expert" style="background-color: var(--purple); color: var(--text); border-color: var(--purple);">
-                    Expert
-                </button>
-                </div>
+                        <!-- Difficulté sous forme de boutons -->
+                        <h3 style="display: flex; align-items: center; gap: 0.5rem;"> <i class="w-4 h-4 stroke-current" data-lucide="gauge"></i> <span>Difficulty</span></h3>
+                        <div class="filter-buttons" data-type="difficulty">
+                            <button class="filter-btn" id="easy" style="background-color: var(--green); color: var(--text); border-color: var(--green);">
+                                Easy
+                            </button>
+                            <button class="filter-btn" id="medium" style="background-color: var(--yellow); color: var(--text); border-color: var(--yellow);">
+                                Medium
+                            </button>
+                            <button class="filter-btn" id="hard" style="background-color: var(--red); color: var(--text); border-color: var(--red);">
+                                Hard
+                            </button>
+                            <button class="filter-btn" id="expert" style="background-color: var(--purple); color: var(--text); border-color: var(--purple);">
+                                Expert
+                            </button>
+                        </div>
 
-                <!-- Catégorie en liste -->
-                <h3 style="display: flex; align-items: center; gap: 0.5rem;"> <i data-lucide="layers"></i> <span>Category</span></h3>
-                <div class="filter-buttons" data-type="category">
-                <button class="filter-btn">
-                    <i data-lucide="globe"></i>
-                    <span>Web</span>
-                </button>
-                <button class="filter-btn">
-                    <i data-lucide="code"></i>
-                    <span>Binary</span>
-                </button>
-                <button class="filter-btn">
-                    <i data-lucide="lock-keyhole"></i>
-                    <span>Crypto</span>
-                </button>
-                <button class="filter-btn">
-                    <i data-lucide="server"></i>
-                    <span>Network</span>
-                </button>
-                <button class="filter-btn">
-                    <i data-lucide="rotate-ccw"></i>
-                    <span>Reversing</span>
-                </button>
-                <button class="filter-btn">
-                    <i data-lucide="eye-off"></i>
-                    <span>Steganography</span>
-                </button>
-                </div>
-                <br>
+                        <!-- Catégorie en liste -->
+                        <h3 style="display: flex; align-items: center; gap: 0.5rem;"> <i class="w-4 h-4 stroke-current" data-lucide="layers"></i> <span>Category</span></h3>
+                        <div class="filter-buttons" data-type="category">
+                            <button class="filter-btn">
+                                <i class="w-4 h-4 stroke-current" data-lucide="globe"></i>
+                                <span>Web</span>
+                            </button>
+                            <button class="filter-btn">
+                                <i class="w-4 h-4 stroke-current" data-lucide="code"></i>
+                                <span>Binary</span>
+                            </button>
+                            <button class="filter-btn">
+                                <i class="w-4 h-4 stroke-current" data-lucide="lock-keyhole"></i>
+                                <span>Crypto</span>
+                            </button>
+                            <button class="filter-btn">
+                                <i class="w-4 h-4 stroke-current" data-lucide="server"></i>
+                                <span>Network</span>
+                            </button>
+                            <button class="filter-btn">
+                                <i class="w-4 h-4 stroke-current" data-lucide="rotate-ccw"></i>
+                                <span>Reversing</span>
+                            </button>
+                            <button class="filter-btn">
+                                <i class="w-4 h-4 stroke-current" data-lucide="eye-off"></i>
+                                <span>Steganography</span>
+                            </button>
+                        </div>
+                        <br>
 
-                <!-- Statut en liste -->
-                <h3 style="display: flex; align-items: center; gap: 0.5rem;"> <i data-lucide="activity"></i> <span>Status</span></h3>
-                <div class="filter-buttons" data-type="status">
-                <button class="filter-btn">
-                    <i data-lucide="check-circle"></i>
-                    <span>Solved</span>
-                </button>
-                <button class="filter-btn">
-                    <i data-lucide="x-circle"></i>
-                    <span>Unsolved</span>
-                </button>
-                </div>
-                <br>
+                        <!-- Statut en liste -->
+                        <h3 style="display: flex; align-items: center; gap: 0.5rem;"> <i class="w-4 h-4 stroke-current" data-lucide="activity"></i> <span>Status</span></h3>
+                        <div class="filter-buttons" data-type="status">
+                            <button class="filter-btn">
+                                <i class="w-4 h-4 stroke-current" data-lucide="check-circle"></i>
+                                <span>Solved</span>
+                            </button>
+                            <button class="filter-btn">
+                                <i class="w-4 h-4 stroke-current" data-lucide="x-circle"></i>
+                                <span>Unsolved</span>
+                            </button>
+                        </div>
+                        <br>
 
-                <!-- Bouton Clear Filters -->
-                <button class="clear-filters">
-                <i data-lucide="refresh-ccw"></i>
-                Clear Filters
-                </button>
+                        <!-- Bouton Clear Filters -->
+                        <button class="clear-filters bg-blue-600 text-white rounded-lg p-2">
+                            <i class="w-4 h-4 stroke-current" data-lucide="refresh-ccw"></i>
+                            Clear Filters
+                        </button>
+                    </div>
+
+                </aside>
             </div>
 
-        </aside>
-        </div>
 
-        
-        <div class="filters-container">
-            <aside class="filters-sidebar">
-                <h3 style="display: flex; align-items: center; gap: 0.5rem;">
-                    <i data-lucide="users"></i> <span>Top Users</span>
+            <aside class="filters-sidebar flex flex-col gap-5">
+                <h3 class="flex items-center justify-center gap-0.5 text-lg font-bold">
+                    <i class="w-4 h-4 stroke-current" data-lucide="users"></i> <span>Top Hackers</span>
                 </h3>
-                <br>
-                <ol id="top-hackers">
+
+                <ol id="top-hackers" class="flex flex-col gap-1">
                     <li>Chargement...</li> <!-- Contenu remplacé dynamiquement -->
                 </ol>
-                <br>
-                <button id="view-leaderboard" onclick="window.location.href='leaderboard.php'">
+
+                <div id="hacker-list-empty-state" class="py-4 hidden items-center justify-center flex-col">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4">
+                        <i data-lucide="user-x" class="w-6 h-6 text-gray-400"></i>
+                    </div>
+                    <h3 class="text-base font-medium text-white mb-1">Aucun hacker trouvé</h3>
+                    <p class="text-gray-500 text-center">Aucun hacker en tête de liste pour l'instant.</p>
+                </div>
+
+                <button id="view-leaderboard" class=" text-sm font-medium rounded-lg p-2" onclick="window.location.href='/HACKATHON_ESGIS/public/user/leaderboard'">
                     View Full Leaderboard
                 </button>
-                
+
             </aside>
+
+
         </div>
 
-
-    </div>
-
-    <!-- Main content -->
-    <div class="challenges-main">
-        <!-- Search and filters -->
-        <div class="search-container" style="background: var(--card-bg); border-radius: 1rem; padding: 1rem; margin-bottom: 1.5rem;">
-            <div class="search-bar" style="width: 100%;">
-                <div class="search-input-wrapper">
-                    <i data-lucide="search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
-                    <input type="text" placeholder="Search challenges by name, category, or tag..." style="width: 100%; padding: 1rem 1rem 1rem 2.5rem; background: transparent; border: none; color: white; font-size: 0.875rem;">
+        <!-- Main content -->
+        <div class="challenges-main">
+            <!-- Search and filters -->
+            <div class="search-container" style="background: var(--card-bg); border-radius: 1rem; padding: 1rem; margin-bottom: 1.5rem;">
+                <div class="search-bar" style="width: 100%;">
+                    <div class="search-input-wrapper">
+                        <i class="w-4 h-4 stroke-current" data-lucide="search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
+                        <input type="text" placeholder="Search challenges by name, category, or tag..." style="width: 100%; padding: 1rem 1rem 1rem 2.5rem; background: transparent; border: none; color: white; font-size: 0.875rem;">
+                    </div>
+                </div>
+                <div class="popular-tags">
+                    <span>Popular:</span>
+                    <div class="tags">
+                        <button class="tag">SQL Injection</button>
+                        <button class="tag">XSS</button>
+                        <button class="tag">Buffer Overflow</button>
+                        <button class="tag">Password Cracking</button>
+                    </div>
                 </div>
             </div>
-            <div class="popular-tags">
-                <span>Popular:</span>
-                <div class="tags">
-                    <button class="tag">SQL Injection</button>
-                    <button class="tag">XSS</button>
-                    <button class="tag">Buffer Overflow</button>
-                    <button class="tag">Password Cracking</button>
+
+            <!-- Challenges section -->
+            <section class="challenges-section">
+                <!-- Section header with filters -->
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div class="filters-section" style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="filter-btn-group" style="display: flex; gap: 0.5rem;">
+                            <button class="filter-btn active">All Challenges</button>
+                        </div>
+                    </div>
+                    <div class="sort-filter" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: var(--text-secondary); font-size: 0.875rem;">Sort By</span>
+                        <div class="sort-select" style="position: relative;">
+                            <button class="sort-btn" style="background: transparent; border: none; color: white; font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                                <span>Latest</span>
+                                <i class="w-4 h-4 stroke-current" data-lucide="chevron-down" style="color: var(--text-secondary);"></i>
+                            </button>
+                            <div class="sort-options" style="position: absolute; top: 100%; right: 0; background: var(--card-bg); border-radius: 0.5rem; padding: 0.5rem; margin-top: 0.25rem; display: none;">
+                                <div class="sort-option" style="padding: 0.5rem; cursor: pointer; color: white; font-size: 0.875rem;">Latest</div>
+                                <div class="sort-option" style="padding: 0.5rem; cursor: pointer; color: white; font-size: 0.875rem;">Most Solved</div>
+                                <div class="sort-option" style="padding: 0.5rem; cursor: pointer; color: white; font-size: 0.875rem;">Difficulty</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+
+                <!-- Challenge grid -->
+                <div class="challenge-grid grid-cols-2 grid max-md:grid-cols-3 gap-4">
+                    <!-- Challenge card -->
+
+                </div>
+
+                <!-- Empty state -->
+                <div id="challenges-empty-state" class="w-full py-4 hidden items-center justify-center flex-col">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-800/30 mb-4">
+                        <i data-lucide="file-text" class="w-6 h-6 stroke-current"></i>
+                    </div>
+                    <h3 class="text-lg font-medium text-white mb-1">Aucun challenge trouvé</h3>
+                    <p class="text-gray-500 text-center">Aucun challenge disponible pour l'instant.</p>
+                </div>
+
+            </section>
         </div>
-
-        <!-- Challenges section -->
-        <section class="challenges-section">
-            <!-- Section header with filters -->
-            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <div class="filters-section" style="display: flex; align-items: center; gap: 1rem;">
-                    <div class="filter-btn-group" style="display: flex; gap: 0.5rem;">
-                        <button class="filter-btn active">All Challenges</button>
-                        <button class="filter-btn">Recent</button>
-                        <button class="filter-btn">Popular</button>
-                    </div>
-                    <div class="progress-section" style="display: flex; align-items: center; gap: 1rem;">
-                        <span style="color: var(--text-secondary); font-size: 0.875rem;">My Progress</span>
-                        
-                    </div>
-                </div>
-                <div class="sort-filter" style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span style="color: var(--text-secondary); font-size: 0.875rem;">Sort By</span>
-                    <div class="sort-select" style="position: relative;">
-                        <button class="sort-btn" style="background: transparent; border: none; color: white; font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-                            <span>Latest</span>
-                            <i data-lucide="chevron-down" style="color: var(--text-secondary);"></i>
-                        </button>
-                        <div class="sort-options" style="position: absolute; top: 100%; right: 0; background: var(--card-bg); border-radius: 0.5rem; padding: 0.5rem; margin-top: 0.25rem; display: none;">
-                            <div class="sort-option" style="padding: 0.5rem; cursor: pointer; color: white; font-size: 0.875rem;">Latest</div>
-                            <div class="sort-option" style="padding: 0.5rem; cursor: pointer; color: white; font-size: 0.875rem;">Most Solved</div>
-                            <div class="sort-option" style="padding: 0.5rem; cursor: pointer; color: white; font-size: 0.875rem;">Difficulty</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Challenge grid -->
-            <div class="challenge-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
-                <!-- Challenge card -->
-                <div class="cyber-card" 
-                    data-title="SQL Injection Basics"
-                    data-description="Learn the fundamentals of SQL injection attacks and how to prevent them. Explore how to bypass authentication and extra..."
-                    data-difficulty="Easy"
-                    data-category="Web"
-                    data-time="30 min"
-                    data-points="100"
-                    data-hint="Hint"
-                    data-tags="database, sql, authentication bypass"
-                    style="background: var(--card-bg); border-radius: 1rem; overflow: hidden; transition: transform 0.3s ease;">
-                    <div class="card-header" style="padding: 1.5rem;">
-                        <div class="card-header-info">
-                            <div class="left-info"><i data-lucide="file-text" style="color:var(--blue);"></i> <span class="difficulty" style="color: var(--green); ">Easy</span></div>
-                            <div class="right-info"><i data-lucide="trophy" style="color: gold;"></i> <span>100 pts</span></div>
-                        </div>
-                        <h3 style="color: white; font-size: 1.125rem; margin-bottom: 0.75rem;">SQL Injection Basics</h3>
-                        <div class="meta" style="display: flex; gap: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
-                            <span class="category" style="background: rgba(59, 130, 246, 0.2); padding: 0.25rem 0.75rem; border-radius: 0.5rem;">Web</span>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="timer"></i><span class="time" style="color: var(--text-secondary);">30 min</span></div>
-                        </div>
-                    </div>
-                    <p class="description" style="padding: 1.5rem; color: var(--text-secondary); font-size: 0.875rem; line-height: 1.4;">
-                        Learn the fundamentals of SQL injection attacks and how to prevent them. Explore how to bypass authentication and extra...
-                    </p>
-                    <div class="tags">
-                        <span class="tag">AUTHENTICATION BYPASS</span>
-                        <span class="tag">DATABASES</span>
-                        <span class="tag">SQL</span>
-                    </div>
-                    <div class="stats-table" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; padding: 1.5rem;">
-                        <div class="stat" style="display: flex; flex-direction: row; gap: 0.25rem;">
-                            <i data-lucide="user" style="gap: 0.5rem;"></i>
-                            <span class="value" id="solves-count" style="color: white; font-size: 1rem; font-weight: 500;">432 solves</span>     
-                        </div>
-                    </div>
-                    <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border);">
-                        <button class="badge hack-now" id="hack-now-btn">HACK NOW</button>
-                        <div class="status solved" id="status" style="display: none;">
-                            <i data-lucide="check-circle" style="color: var(--green);"></i>
-                            <span>Solved</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 2nd challenge -->
-                <div class="cyber-card" 
-                    data-title="XSS Attack Simulation"
-                    data-description="Simulate cross-site scripting attacks and learn defensive techniques. Find vulnerabilities in a simulated web application..."
-                    data-difficulty="Medium"
-                    data-category="Web"
-                    data-time="45 min"
-                    data-points="150"
-                    data-hint="Hint"
-                    data-tags="web, xss, attack, simulation"
-                    style="background: var(--card-bg); border-radius: 1rem; overflow: hidden; transition: transform 0.3s ease;">
-                    <div class="card-header" style="padding: 1.5rem;">
-                        <div class="card-header-info">
-                            <div class="left-info"><i data-lucide="file-text" style="color:var(--blue);"></i> <span class="difficulty" style="color: var(--yellow); ">Medium</span></div>
-                            <div class="right-info"><i data-lucide="trophy" style="color: gold;"></i> <span>150 pts</span></div>
-                        </div>
-                        <h3 style="color: white; font-size: 1.125rem; margin-bottom: 0.75rem;">XSS Attack Simulation</h3>
-                        <div class="meta" style="display: flex; gap: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
-                            <span class="category" style="background: rgba(59, 130, 246, 0.2); padding: 0.25rem 0.75rem; border-radius: 0.5rem;">Web</span>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="timer"></i><span class="time" style="color: var(--text-secondary);">45 min</span></div>
-                        </div>
-                    </div>
-                    <p class="description" style="padding: 1.5rem; color: var(--text-secondary); font-size: 0.875rem; line-height: 1.4;">
-                        Simulate cross-site scripting attacks and learn defensive techniques. Find vulnerabilities in a simulated web application...
-                    </p>
-                    <div class="tags">
-                        <span class="tag">WEB</span>
-                        <span class="tag">JAVASCRIPT</span>
-                        <span class="tag">CLIENT SIDE</span>
-                    </div>
-                    <div class="stats-table" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; padding: 1.5rem;">
-                        <div class="stat" style="display: flex; flex-direction: row; gap: 0.25rem;">
-                            <i data-lucide="user" style="gap: 0.5rem;"></i>
-                            <span class="value" id="solves-count" style="color: white; font-size: 1rem; font-weight: 500;">287 solves</span>
-                        </div>
-                    </div>
-                    <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border);">
-                        <button class="badge hack-now" id="hack-now-btn">HACK NOW</button>
-                        <div class="status solved" id="status" style="display: none;">
-                            <i data-lucide="check-circle"></i>
-                            <span>Solved</span>
-                        </div>
-                    </div>
-                </div>   
-
-                <!-- 3rd challenge -->
-                <div class="cyber-card" 
-                    data-title="Password Cracking"
-                    data-description="Use various techniques to crack encrypted passwords. Apply dictionary attacks, rainbow tables, and brute force methods to recover credentials."
-                    data-difficulty="Medium"
-                    data-category="Cryptography"
-                    data-time="45 min"
-                    data-points="200"
-                    data-hint="Hint"
-                    data-tags="cryptography, password, cracking, security"
-                    style="background: var(--card-bg); border-radius: 1rem; overflow: hidden; transition: transform 0.3s ease;">
-                    <div class="card-header" style="padding: 1.5rem;">
-                        <div class="card-header-info">
-                            <div class="left-info"><i data-lucide="file-text" style="color:var(--blue);"></i> <span class="difficulty" style="color: var(--yellow); ">Medium</span></div>
-                            <div class="right-info"><i data-lucide="trophy" style="color: gold;"></i> <span>200 pts</span></div>
-                        </div>
-                        <h3 style="color: white; font-size: 1.125rem; margin-bottom: 0.75rem;">Password Cracking</h3>
-                        <div class="meta" style="display: flex; gap: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
-                            <span class="category" style="background: rgba(59, 130, 246, 0.2); padding: 0.25rem 0.75rem; border-radius: 0.5rem;">Cryptography</span>
-                            <div style="display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="timer"></i><span class="time" style="color: var(--text-secondary);">45 min</span></div>
-                        </div>
-                    </div>
-                    <p class="description" style="padding: 1.5rem; color: var(--text-secondary); font-size: 0.875rem; line-height: 1.4;">
-                        Use various techniques to crack encrypted passwords. Apply dictionary attacks, rainbow tables, and brute force methods to recover credentials...
-                    </p>
-                    <div class="tags">
-                        <span class="tag">CRYPTOGRAPHY</span>
-                        <span class="tag">PASSWORD</span>
-                        <span class="tag">CRACKING</span>
-                    </div>
-                    <div class="stats-table" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; padding: 1.5rem;">
-                        <div class="stat" style="display: flex; flex-direction: row; gap: 0.25rem;">
-                            <i data-lucide="user" style="gap: 0.5rem;"></i>
-                            <span class="value" id="solves-count" style="color: white; font-size: 1rem; font-weight: 500;">287 solves</span>
-                        </div>
-                    </div>
-                    <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-top: 1px solid var(--border);">
-                        <button class="badge hack-now" id="hack-now-btn">HACK NOW</button>
-                        <div class="status solved" id="status" style="display: none;">
-                            <i data-lucide="check-circle"></i>
-                            <span>Solved</span>
-                        </div>
-                    </div>
-                </div> 
-                
-            </div>
-        </section>
-    </div>
     </section>
 
 
 
 
-    <!-- Modal pour Hack Now -->
-    <div id="challenge-modal" class="modal">
-        <div class="modal-content">
-        <h2><strong>Challenge Details</strong></h2>
-        <p class="subheading">
-            Solve the challenge to earn points and improve your hacking skills
-        </p>
-        <!-- Bouton de fermeture --> 
-        <span class="close-modal">&times;</span>
-        <!-- Informations du challenge -->
-        <div class="challenge-info">
-            <span class="challenge-difficulty" id="challenge-difficulty"></span>
-            <span class="challenge-category" id="challenge-category"></span>
-            <span class="challenge-points" id="challenge-points"></span>
-        </div>
-        <!-- Titre du challenge -->
-        <h2 class="challenge-title" id="challenge-title">Challenge Title</h2>
 
-        <!-- Nombre de resolutions -->
-        <p>
-            Solved by 
-            <span class="challenge-solved" id="challenge-solved">432</span> users
-        </p>
+    <!-- Overlay -->
+    <div class="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm hidden" id="challenge-modal">
 
-        <!-- Description du challenge -->
-        <p class="challenge-description" id="challenge-description">Challenge description goes here.</p>
+        <!-- Modal -->
+        <div class="fixed z-50 inset-0 flex items-center justify-center px-4 w-fit mx-auto">
+            <div id="modal-content" class="bg-[#0f172a] text-white w-full max-w-3xl rounded-xl shadow-xl p-6 space-y-6 border border-white/10">
 
-        <!-- Tags -->
-        <div class="tags">
-            <span class="tag" id="challenge-tags"></span>
-        </div>
+                <!-- Header -->
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-lg font-semibold">Details Du Challenge</h2>
+                        <p class="text-sm text-gray-400">Resolvez le challenge pour gagner des points et améliorer vos compétences en hacking !</p>
+                    </div>
+                    <button class="text-gray-400 hover:text-white" id="close-modal">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
 
-        <!-- Resources -->
-        <div class="resources">
-            <button class="resource-btn"><i data-lucide="download"></i>Download files</button>
-            <button class="resource-btn"><i data-lucide="play-circle"></i>Launch instance</button>
+                <!-- Challenge info -->
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="px-2 py-1 text-xs bg-green-800/30 text-green-400 rounded-full" id="challenge-difficulty"></span>
+                        <span class="px-2 py-1 text-xs bg-slate-700/40 text-gray-300 rounded-full" id="challenge-category"></span>
+                    </div>
+                    <h3 class="text-2xl font-bold" id="challenge-title"></h3>
+                    <div class="flex items-center text-sm text-gray-400 gap-4 mt-1">
+                        <span class="flex items-center"><i data-lucide="clock" class="inline w-4 h-4 mr-1"></i><span id="challenge-time"></span></span>
+                        <span class="flex items-center"><i data-lucide="users" class="inline w-4 h-4 mr-1"></i><span id="challenge-hackers"></span></span>
+                        <span class="flex items-center"><i data-lucide="user" class="inline w-4 h-4 mr-1"></i><span id="challenge-author">#</span></span>
+                        <span class="ml-auto text-yellow-400 font-semibold flex items-center"><i data-lucide="trophy" class="inline w-4 h-4 mr-1"></i><span id="challenge-points"></span>pts</span>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <h4 class="font-semibold text-base mb-1">Description</h4>
+                    <div class="bg-slate-800/50 p-3 rounded-lg text-sm text-gray-300 border border-white/10" id="challenge-description">
+
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-3" id="challenge-tags">
+                        <span class="bg-slate-700/50 text-xs flex items-center justify-center px-2 py-1 rounded-full border border-white/10 hover:bg-slate-700" id="challenge-tag-1">SQLi</span>
+                        <span class="bg-slate-700/50 text-xs flex items-center justify-center px-2 py-1 rounded-full border border-white/10 hover:bg-slate-700" id="challenge-tag-2">Authentication Bypass</span>
+                        <span class="bg-slate-700/50 text-xs flex items-center justify-center px-2 py-1 rounded-full border border-white/10 hover:bg-slate-700" id="challenge-tag-3">Databases</span>
+                    </div>
+                </div>
+
+                <!-- Resources -->
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-base">Resources</h4>
+                    <div class="flex gap-3 w-full justify-between">
+                        <button class="flex items-center gap-2 w-1/2 border border-white/10 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-md text-sm">
+                            <i data-lucide="download" class="w-4 h-4"></i> Download files
+                        </button>
+                        <button class="flex items-center gap-2 w-1/2 border border-white/10 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-md text-sm">
+                            <i data-lucide="play-circle" class="w-4 h-4"></i> Launch instance
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hint -->
+                <div class="bg-slate-800/50 p-4 rounded-lg text-sm text-gray-300 flex flex-col items-start gap-2 border border-yellow-500/30">
+                    <div class="flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-yellow-300 mt-0.5"></i>Indice :</div>
+                    <p><strong class="text-gray-300" id="challenge-hint"></strong></p>
+                </div>
+
+                <!-- Submit flag -->
+                <div>
+                    <h4 class="font-semibold mb-1 flex items-center gap-2 text-blue-400">
+                        <i data-lucide="flag" class="w-5 h-5"></i> Soumettre Flag
+                    </h4>
+                    <div class="flex gap-2">
+                        <input type="text" placeholder="EsgisHub{. . .}" class="flex-1 px-4 py-2 rounded-md bg-slate-900 text-sm text-white placeholder-gray-400 focus:outline-none border border-slate-700" />
+                        <button class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm">
+                            <i data-lucide="send" class="inline w-4 h-4 mr-1"></i> Soumettre Flag
+                        </button>
+                    </div>
+                </div>
+
+            </div>
         </div>
-        
-        <!-- Hint -->
-        <div class="hint">
-            <strong>Hint: </strong> <span id="challenge-hint"></span>
-        </div>
-        <div class="submit-flag">
-            <input type="text" placeholder="Flag{...}">
-            <button id="submit-flag-btn" class="submit-flag-btn">Submit</button>
-        </div>
-        </div> 
     </div>
 
 
 
 </body>
+
 </html>

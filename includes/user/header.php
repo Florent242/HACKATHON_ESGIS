@@ -32,6 +32,11 @@ if (!isset($_SESSION['csrf_token'])) {
                                         Challenges de sécurité
                                     </li>
                                 </a>
+                                <a href="/HACKATHON_ESGIS/public/user/challenge_dev">
+                                    <li>
+                                        Challenges de développement
+                                    </li>
+                                </a>
                                 <a href="/HACKATHON_ESGIS/public/user/hackathon">
                                     <li>
                                         Hackathons
