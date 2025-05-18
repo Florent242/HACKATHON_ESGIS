@@ -108,6 +108,7 @@ try {
                 case 'check':
                     $controller->checkAuth();
                     break;
+
                 case 'login':
                     try {
                         $controller->login();
@@ -557,7 +558,7 @@ try {
                         if ($request[1] === 'me') {
                             // Vérifier l'authentification
                             if (!$currentUserId) {
-                                jsonResponse(['error' => 'Non authentifié. api.php ' . $currentUserId . ' !=' . $request[1]], 401);
+                                jsonResponse(['error' => 'Non authentifié. api'], 401);
                                 return;
                             }
 

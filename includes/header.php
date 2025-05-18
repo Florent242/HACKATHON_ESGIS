@@ -16,9 +16,7 @@ if (!isset($_SESSION['csrf_token'])) {
             </a>
             <nav class="header-nav">
                 <!-- verifie et attribut la classe active au lien correspondant -->
-                <a href="/HACKATHON_ESGIS/public/challenges" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/challenges' ? 'active' : ''; ?>">Challenges</a>
                 <a href="/HACKATHON_ESGIS/public/hackathon" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/hackathon' ? 'active' : ''; ?>">Hackathons</a>
-                <a href="/HACKATHON_ESGIS/public/leaderboard" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/leaderboard' ? 'active' : ''; ?>">Leaderboard</a>
                 <a href="/HACKATHON_ESGIS/public/resources" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/resources' ? 'active' : ''; ?>">Resources</a>
                 <a href="/HACKATHON_ESGIS/public/contact" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/contact' ? 'active' : ''; ?>">Contact</a>
                 <a href="/HACKATHON_ESGIS/public/sponsors" class="<?php echo $_SERVER['REQUEST_URI'] == '/HACKATHON_ESGIS/public/sponsors' ? 'active' : ''; ?>">Sponsors</a>

@@ -75,6 +75,74 @@
     /* Remet à sa position d'origine */
 }
 
+.mymodal{
+    opacity: 0;
+    visibility: hidden;   
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    text-align: center;
+    position: fixed;
+    left: 0;
+    top: 0;
+    margin: 0 auto;
+    width: 100vw;
+    height: 100vh;
+    background-position: center;
+    background-size: cover;
+    z-index: 1000;
+    /* ... other styles ... */
+    -webkit-backdrop-filter: blur(1rem); /* Added for compatibility with webkit browsers */
+    backdrop-filter: blur(1rem);
+    transition: opacity 0.5s ease, visibility 0.5s linear, backdrop-filter 0.5s ease;
+}
+
+.mymodal.show{
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.5s ease, visibility 0.5s linear, backdrop-filter 0.5s ease-out;
+}
+.modal_content{
+    margin: auto;
+    width: 50%;
+    height: auto;
+    padding: 1%;
+    border-radius: 1rem;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.2);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.modal_content button{
+    width: auto;
+    padding: 0.2rem 0.5rem;
+    flex-direction: row;
+    font-size: 16px;
+    font-weight: 400;
+    text-align: center;
+    background-color:gray;
+    color: #FFFFFF;
+    border-radius: 10rem;
+    border: 0;
+    cursor: pointer;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 3px 10px 0 rgba(0, 0, 0, 0.2);
+    transition: background-color 0.5s ease-in, box-shadow 0.5s ease-in;
+}
+#deconnexion:hover{
+    background-color: tomato;
+    color: #FFFFFF;
+    transition: background-color 1s ease-out;
+    box-shadow: 0 4px 8px 0 rgba(255, 0, 0, 0.2), 0 6px 20px 0 rgba(255, 0, 0, 0.2);
+}
+#fermer_modal:hover{
+    color: #FFFFFF;
+    transition: box-shadow 0.5s ease-out;
+    box-shadow: 0 4px 8px 0 rgba(128, 128, 128, 0.5), 0 6px 20px 0 rgba(128, 128, 128, 0.5);
+}
+
 /* HEADER */
 header {
     border-bottom: 1px solid var(--border);
@@ -208,13 +276,14 @@ header {
     width: 100%;
     overflow: hidden;
     margin-top: 1rem;
-    transition: opacity 0.2s ease-in 0.1s, visibility 0.1s ease-in 0.1s;
+    will-change: height;
+    transition: opacity 0.2s ease-in 0.1s, visibility 0.1s ease-in 0.1s, height 0.2s ease-in;
 }
 
 .header-dropdown.visible {
     opacity: 1;
     visibility: visible; 
-    transition: opacity 0.2s ease-in 0.2s, visibility 0.1s ease-in 0.1s; 
+    transition: opacity 0.2s ease-in 0.2s, visibility 0.1s ease-in 0.1s, height 0.2s ease-in;
 }
 
 .dropdown-container {
@@ -230,7 +299,8 @@ header {
     display: flex;
     flex-direction: row;
     width: 100%;
-    transition: transform 0.2s ease-in;
+    will-change: height;
+    transition: transform 0.2s ease-in, height 0.2s ease-in;
 }
 
 .dropdown-item {

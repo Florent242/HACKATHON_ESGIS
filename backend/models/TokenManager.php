@@ -92,7 +92,7 @@ class TokenManager
                 'refresh_token' => $refreshToken,
                 'expires_at' => date('Y-m-d H:i:s', $expiryTime)
             ];
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             $this->db->rollBack();
             error_log('Erreur de génération de token: ' . $e->getMessage());
             throw new Exception('Génération de token impossible: ' . $e->getMessage());
@@ -114,27 +114,17 @@ class TokenManager
     public function validateToken(string $token): array
     {
         try {
-            // Vérifier d'abord dans la base de données
-            // $stmt = $this->db->prepare(
-            //     "SELECT * FROM user_tokens WHERE token = :token AND revoked = 0"
-            // );
-            // $stmt->execute([':token' => $token]);
-            // $tokenData = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            // if (!$tokenData) {
-            //     return ['valid' => false, 'error' => 'Token invalide ou révoqué'];
-            // }
-
-            // Vérifier l'expiré
-            // if (strtotime($tokenData['expires_at']) < time()) {
-            //     return ['valid' => false, 'error' => 'Token expiré'];
-            // }
 
             $decoded = JWT::decode($token, new Key($this->key, $this->algorithm));
 
             // Vérifications supplémentaires
             if ($decoded->iss !== $this->domain) {
                 throw new Exception('Invalid issuer');
+            }
+
+            // Vérifier l'expiration
+            if ($decoded->exp < time()) {
+                throw new Exception('Token expiré');
             }
 
             // Pour les tokens long terme
@@ -155,7 +145,7 @@ class TokenManager
                 $tokenData = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 if (!$tokenData) {
-                    throw new Exception('Token revoked or not found');
+                    throw new Exception('Token revoked or not found !');
                 }
 
                 // Vérification de sécurité supplémentaire
@@ -175,6 +165,15 @@ class TokenManager
 
                     throw new Exception('Security validation failed');
                 }
+            }else if($decoded->exp < time() + 86400) // < 24h
+            {
+                // $refreshedToken = $this->refreshToken($decoded->jti);
+                // return [
+                //     'valid' => true,
+                //     'user_id' => $decoded->sub,
+                //     'payload' => (array)$decoded,
+                //     'refreshed_longTermToken' => $refreshedToken
+                // ];
             }
 
             return [
@@ -216,7 +215,7 @@ class TokenManager
         try {
             $stmt = $this->db->prepare("DELETE FROM user_tokens WHERE token = :token");
             return $stmt->execute([':token' => $token]);
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             error_log('Erreur lors de la révocation du token: ' . $e->getMessage());
             return false;
         }
@@ -244,7 +243,7 @@ class TokenManager
 
             // Générer un nouveau token
             return $this->generateLongTermToken($tokenData['user_id']);
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             error_log('Refresh token error: ' . $e->getMessage());
             throw new Exception('Could not refresh token');
         }
@@ -258,7 +257,7 @@ class TokenManager
             WHERE refresh_token = :refresh_token"
             );
             return $stmt->execute([':refresh_token' => $refreshToken]);
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             error_log('Token revocation error: ' . $e->getMessage());
             return false;
         }
@@ -280,7 +279,7 @@ class TokenManager
                 ':ua' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
                 ':details' => json_encode($details)
             ]);
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             error_log('Failed to log security event: ' . $e->getMessage());
         }
     }

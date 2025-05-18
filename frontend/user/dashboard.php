@@ -13,7 +13,7 @@
 </head>
 
 <body>
-    <div id="global-loading-spinner" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300 opacity-0 pointer-events-none">
+    <div id="global-loading-spinner" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-300">
         <div class="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent border-blue-500"></div>
     </div>
 
@@ -129,7 +129,7 @@
                             <h3 class="text-lg font-medium">Défis en cours</h3>
                         </div>
                         <div id="current-challenges-container" class="flex flex-col gap-4">
-                            <div class="flex flex-row justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1 current-challenge-item">
+                            <div class="hidden flex-row justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1 current-challenge-item">
                                 <div class="flex flex-col justify-between gap-2">
                                     <h4 class="text-base font-semibold challenge-title">API REST - Module d'authentification</h4>
                                     <p class="text-gray-400 text-sm challenge-description">Créez une API REST sécurisée avec JWT.</p>
@@ -139,17 +139,7 @@
                                 </div>
                                 <button class="cursor-pointer relative flex items-center justify-center mb-auto w-auto h-auto top-0 right-0 bg-blue-500 text-white px-3 py-1 rounded-2xl transition delay-150 duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50">Soumettre le projet</button>
                             </div>
-                            <!-- 
-                            <div class="flex flex-row justify-between p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-                            <div class="flex flex-col justify-between gap-2">
-                                <h4 class="text-base font-semibold">Challenge Sécurité Web</h4>
-                                <p class="text-gray-400 text-sm">Exploitez les vulnérabilités XSS et CSRF.</p>
-                                <p class="flex flex-row items-center text-gray-500 text-sm">
-                                    <i data-lucide="calendar" class="w-4 h-4"></i> 8/10 flags
-                                </p>
-                            </div>
-                            <button class="cursor-pointer relative flex items-center justify-center mb-auto w-auto h-auto top-0 right-0 border-none text-white px-3 py-1 rounded-2xl transition delay-150 duration-300 ease-in-out hover:bg-gray-700 hover:shadow-md hover:shadow-gray-500/50">Soumettre le flag</button>
-                        </div> -->
+                            
                             <div class="flex flex-col items-center text-center gap-3 py-10 px-6" id="no-current-challenges">
                                 <div class="animate-bounce-slow mb-3">
                                     <i data-lucide="activity" class="w-12 h-12 text-blue-400/60"></i>
@@ -167,7 +157,7 @@
                     <section class="fade-in flex flex-col gap-2 space-y-4 p-5 border border-gray-700 rounded-2xl shadow-xl card-bg">
                         <h2 class="text-lg font-medium">Activité récente</h2>
                         <div class="flex flex-col items-center text-center" id="recent-activities-container">
-                            <div class="flex flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1 recent-activity-item">
+                            <div class="hidden flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1 recent-activity-item">
                                 <i data-lucide="trophy" class="w-5 h-5 flex self-center stroke-current activity-icon"></i>
                                 <div class="flex flex-col items-start justify-between">
                                     <p class="text-gray-400 activity-text">Flag validé pour "XSS Challenge"</p>
@@ -209,7 +199,7 @@
                                 <h3 class="text-lg font-medium">Dernières notifications</h3>
                             </div>
                             <div class="flex flex-col gap-2" id="notifications-container">
-                                <div class="flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1 notification-item">
+                                <div class="hidden flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1 notification-item">
                                     <p class="font-medium notification-title">Nouveau challenge de développement</p>
                                     <p class="text-gray-400 text-sm notification-message">Un nouveau challenge "Architecture Microservices" ajouté.</p>
                                     <p class="text-gray-500 text-xs notification-time">Il y a environ 2 heures</p>
@@ -240,11 +230,6 @@
                             <h3 class="text-xl font-medium">Prochains événements</h3>
                         </div>
                         <div id="next-event-container" class="flex flex-col gap-2">
-                            <!-- <div class="flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-                                <p class="text-md font-semibold">Hackathon IA</p>
-                                <p class="text-gray-500 text-sm">25-26 juin 2023</p>
-                                <span class="text-green-400 bg-emerald-950 flex self-start text-xs p-2 rounded-xl">Bientôt</span>
-                            </div> -->
                             <div class="flex flex-col items-center text-center py-12 px-6 border border-dashed border-gray-600/40 rounded-xl bg-gray-900/20" id="no-next-event">
                                 <div class="animate-fade-in mb-4">
                                     <i data-lucide="calendar-x" class="w-14 h-14 text-red-400/70"></i>
@@ -311,7 +296,6 @@
 
         </section>
     </main>
-    <?php require_once '../includes/user/footer.php'; ?>
 </body>
 
 </html>

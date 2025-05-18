@@ -23,12 +23,17 @@ class User
      * @param string $password Mot de passe non hashé
      * @return array|bool Les données de l'utilisateur ou false si non trouvé
      */
-    public function authenticate($email, $password)
+    public function authenticate($identifier, $password)
     {
         try {
-            $query = "SELECT * FROM {$this->table} WHERE email = :email LIMIT 1";
+            if (empty($identifier)) {
+                throw new Exception("L'identifiant ne peut pas être vide.");
+            }
+
+            $query = "SELECT * FROM {$this->table} WHERE email = :email OR username = :username LIMIT 1";
             $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':email', $identifier);
+            $stmt->bindParam(':username', $identifier);
             $stmt->execute();
 
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -44,10 +49,12 @@ class User
             if (password_verify($password, $user['password'])) {
                 unset($user['password']); // Ne pas renvoyer le mot de passe
                 return $user;
+            }else{
+                return false;
             }
 
-            return false;
-        } catch (PDOException $e) {
+            // return false;
+        } catch (Exception $e) {
             error_log('Erreur d\'authentification: ' . $e->getMessage());
             return false;
         }

@@ -7,7 +7,14 @@ if (!isset($_SESSION['csrf_token'])) {
 }
 
 ?>
-<script defer src="/HACKATHON_ESGIS/public/js/user/header.js"></script>
+<script defer type="module" src="/HACKATHON_ESGIS/public/js/user/header.js"></script>
+<div id="fenetre_modal" class="mymodal">
+    <div class="modal_content">
+        <p>Souhaitez-vous vraiment vous deconnecter ?</p>
+        <button id="logout-btn">Déconnexion</button>
+        <button id="fermer_modal">Annuler</button>
+    </div>
+</div>
 <header>
     <div class="header-container">
         <div class="logo-nav">
@@ -114,18 +121,12 @@ if (!isset($_SESSION['csrf_token'])) {
                         </a>
                         <a href="/HACKATHON_ESGIS/public/user/profile">
                             <li class="flex items-center gap-2 p-1 rounded-lg text-white hover:text-blue-500 hover:bg-slate-900">
-                                <i data-lucide="trophy" class="w-4 h-4 stroke-current"></i>
-                                Mes défis
-                            </li>
-                        </a>
-                        <a href="/HACKATHON_ESGIS/public/user/profile">
-                            <li class="flex items-center gap-2 p-1 rounded-lg text-white hover:text-blue-500 hover:bg-slate-900">
                                 <i data-lucide="settings" class="w-4 h-4 stroke-current"></i>
                                 Paramètres
                             </li>
                         </a>
                     </div>
-                    <div class="p-2 logout-btn cursor-pointer">
+                    <div id="deco" class="p-2 cursor-pointer">
                         <li class="flex items-center gap-2 p-1 rounded-lg text-red-500 hover:bg-slate-900">
                             <i data-lucide="log-out" class="w-4 h-4 stroke-current"></i>
                             Logout
@@ -135,7 +136,6 @@ if (!isset($_SESSION['csrf_token'])) {
             </div>
         </div>
     </div>
-    </div>
-    </div>
+
 </header>
 <div id="notification-data" data-notification='<?= json_encode($_SESSION['notification'] ?? null) ?>'></div>

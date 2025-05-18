@@ -160,22 +160,23 @@
                     </div>
                     <div class="sort-filter" style="display: flex; align-items: center; gap: 0.5rem;">
                         <span style="color: var(--text-secondary); font-size: 0.875rem;">Sort By</span>
-                        <div class="sort-select" style="position: relative;">
-                            <button class="sort-btn" style="background: transparent; border: none; color: white; font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="sort-select relative">
+                            <button class="sort-btn">
                                 <span>Latest</span>
                                 <i class="w-4 h-4 stroke-current" data-lucide="chevron-down" style="color: var(--text-secondary);"></i>
                             </button>
-                            <div class="sort-options" style="position: absolute; top: 100%; right: 0; background: var(--card-bg); border-radius: 0.5rem; padding: 0.5rem; margin-top: 0.25rem; display: none;">
-                                <div class="sort-option" style="padding: 0.5rem; cursor: pointer; color: white; font-size: 0.875rem;">Latest</div>
-                                <div class="sort-option" style="padding: 0.5rem; cursor: pointer; color: white; font-size: 0.875rem;">Most Solved</div>
-                                <div class="sort-option" style="padding: 0.5rem; cursor: pointer; color: white; font-size: 0.875rem;">Difficulty</div>
+                            <div class="sort-options text-center align-middle whitespace-nowrap flex-col items-start justify-start absolute top-[100%] right-0 bg-[#0f172a] border border-white/10 rounded-lg p-2 z-5" style="display: none;">
+                                <button class="sort-option active" data-direction="desc">Latest</button>    
+                                <button class="sort-option" data-direction="desc">Most Solved</button>
+                                <button class="sort-option" data-direction="asc">Difficulty</button>
+                                <button class="sort-option" data-direction="asc">Title</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Challenge grid -->
-                <div class="challenge-grid grid-cols-2 grid max-md:grid-cols-3 gap-4">
+                <div class="challenge-grid grid-cols-3 grid max-lg:grid-cols-2 max-sm:grid-cols-1 gap-4">
                     <!-- Challenge card -->
 
                 </div>
@@ -218,7 +219,7 @@
                 <!-- Challenge info -->
                 <div>
                     <div class="flex items-center gap-2 mb-1">
-                        <span class="px-2 py-1 text-xs bg-green-800/30 text-green-400 rounded-full" id="challenge-difficulty"></span>
+                        <span class="px-2 py-1 text-xs rounded-full" id="challenge-difficulty"></span>
                         <span class="px-2 py-1 text-xs bg-slate-700/40 text-gray-300 rounded-full" id="challenge-category"></span>
                     </div>
                     <h3 class="text-2xl font-bold" id="challenge-title"></h3>

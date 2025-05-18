@@ -221,7 +221,7 @@ function getFlashMessage() {
 }
 
 // Fonction pour enregistrer les activités
-function logActivity($action, $description, $data = [], $level = 'info') {
+function logActivity($action, $description, $data = [], $userId = null, $level = 'info') {
     // Vérifier si la table existe
     global $db;
 
@@ -237,8 +237,10 @@ function logActivity($action, $description, $data = [], $level = 'info') {
         }
     }
 
+    // Vérifier si l'utilisateur est connecté
+
     // Données utilisateur
-    $userId = isset($_SESSION['user']) && isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
+    $userId = isset($_SESSION['user']) && isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : $userId ?? $data['identifier'] ?? null;
     $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
     $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
 

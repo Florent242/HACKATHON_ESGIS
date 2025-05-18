@@ -197,13 +197,6 @@ main {
     margin-bottom: 2rem; /* Ajoute un espacement entre deux asides */
 }
 
-.filters-sidebar h2 {
-    font-size: 1.25rem;
-    font-weight: bold;
-    margin-bottom: 1.5rem;
-    color: var(--text);
-}
-
 .filter-group {
     margin-bottom: 1.5rem;
 }
@@ -321,19 +314,17 @@ main {
     font-size: 0.875rem;
 }
 
-.sort-select {
-    position: relative;
-}
-
 .sort-btn {
     background: transparent;
+    position: relative;
+    width: 100%;
+    size: 100%;
     border: none;
     color: white;
     font-size: 0.875rem;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
     padding: 0.5rem;
     border-radius: 0.5rem;
     transition: all 0.3s ease;
@@ -344,23 +335,18 @@ main {
 }
 
 .sort-options {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background: var(--card-bg);
-    border-radius: 0.5rem;
-    padding: 0.5rem;
-    margin-top: 0.25rem;
-    display: none;
-    z-index: 10;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 2;
 }
 
 .sort-options.active {
-    display: block;
+    display: flex;
 }
 
 .sort-option {
+    display: flex;
+    align-items: start;
+    border-radius: 0.5rem;
+    width: 100%;
     padding: 0.5rem;
     cursor: pointer;
     color: white;
@@ -374,6 +360,7 @@ main {
 
 .cyber-card {
     background: var(--card-bg);
+    z-index: 1;
     transition: transform 0.3s ease;
 }
 
@@ -430,12 +417,6 @@ main {
     gap: 1rem;
     color: var(--text-secondary);
     font-size: 0.875rem;
-}
-
-.category {
-    background: rgba(59, 130, 246, 0.2);
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.5rem;
 }
 
 /* Description */
