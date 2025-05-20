@@ -59,6 +59,9 @@ class AuthMiddleware
         if ((isset($_COOKIE['jwt_token']) && !empty($_COOKIE['jwt_token'])) || (isset($_COOKIE['long_term_token']) && !empty($_COOKIE['long_term_token']))) {
             try {
                 $token = $_COOKIE['long_term_token'] ?? $_COOKIE['jwt_token'];
+                if (empty($token)) {
+                    throw new Exception('Token manquant');
+                }
                 $database = Database::getInstance();
                 $db = $database->getConnection();
                 $tokenManager = new TokenManager($_ENV['JWT_SECRET'] ?? 'your-secret-key', $db, [
@@ -66,6 +69,10 @@ class AuthMiddleware
                     'longTermExpiry' => 2592000 // 30 jours
                 ]);
                 $user = $tokenManager->validateToken($token);
+                if(!$user['valid'])
+                {
+                    self::logout();
+                }
                 // Recréer la session à partir du token
                 $_SESSION['user'] = [
                     'id' => $user['user_id'],
@@ -106,6 +113,10 @@ class AuthMiddleware
                     'longTermExpiry' => 2592000 // 30 jours
                 ]);
                 $user = $tokenManager->validateToken($token);
+                if(!$user['valid'])
+                {
+                    self::logout();
+                }
                 // Recréer la session à partir du token
                 $_SESSION['user'] = [
                     'id' => $user['user_id'],
@@ -127,8 +138,30 @@ class AuthMiddleware
         session_unset();
         session_destroy();
         setcookie('jwt_token', '', time() - 3600, '/');
+        setcookie('long_term_token', '', time() - 2592000, '/');
     }
+    public static function refreshToken($token)
+    {
+        $database = Database::getInstance();
+        $db = $database->getConnection();
+        $tokenManager = new TokenManager($_ENV['JWT_SECRET'] ?? 'your-secret-key', $db, [
+            'shortTermExpiry' => 3600, // 1 heure
+            'longTermExpiry' => 2592000 // 30 jours
+        ]);
+        $user = $tokenManager->validateToken($token);
+        if(!$user['valid'])
+        {
+            self::logout();
+        }
+        // Recréer la session à partir du token
+        $_SESSION['user'] = [
+            'id' => $user['user_id'],
+            'logged_in' => true,
+            'last_activity' => time()
+        ];
 
+        return $user['valid'];
+    }
     private static function redirectToLogin()
     {
         $currentUri = $_SERVER['REQUEST_URI'] ?? '';

@@ -1,5 +1,5 @@
-<script src="/HACKATHON_ESGIS/public/js/lucide.min.js"></script>
-<script src="/HACKATHON_ESGIS/public/js/main.js"></script>
+<script defer src="/HACKATHON_ESGIS/public/js/lucide.min.js"></script>
+<script defer src="/HACKATHON_ESGIS/public/js/main.js"></script>
 <?php
 require_once __DIR__ . '/../backend/includes/authMiddleware.php';
 
@@ -17,18 +17,13 @@ switch ($url) {
     case '/HACKATHON_ESGIS/public/':
         require_once '../frontend/home.php';  // Inclure la page d'accueil
         break;
-    case '/HACKATHON_ESGIS/public/challenges':
-        require_once '../frontend/challenge.php';  // Inclure la page "Challenge"
-        break;
     case '/HACKATHON_ESGIS/public/hackathon':
         require_once '../frontend/hackathon.php'; // Inclure la page "Hackaton"
         break;
     case '/HACKATHON_ESGIS/public/resources':
         require_once '../frontend/resources.php'; // Inclure la page "Ressources"
         break;
-    case '/HACKATHON_ESGIS/public/leaderboard':
-        require_once '../frontend/leaderboard.php'; // Inclure la page "Leaderboard"
-        break;
+
     case '/HACKATHON_ESGIS/public/auth':
         require_once '../frontend/auth.php'; // Inclure la page "auth"
         break;

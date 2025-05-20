@@ -10,5 +10,23 @@ RewriteRule ^api/(.*)$ ../backend/api.php [QSA,L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 
-# 🔹 Rediriger toutes les autres requêtes vers index.php (pour le frontend)
+# 🔹 Rediriger toutes les autres requêtes vers index.php (pour le frontend SPA)
 RewriteRule ^(.*)$ index.php [QSA,L]
+
+# 🚫 Désactiver l'affichage de l'index des dossiers
+Options -Indexes
+
+# 🚫 Bloquer l'accès aux fichiers sensibles
+<FilesMatch "\.(env|git|htaccess|htpasswd|ini|bak|log|sql|sh|zip)$">
+  Require all denied
+</FilesMatch>
+
+# 🔒 Empêcher l’exécution des fichiers PHP dans certains dossiers
+<IfModule mod_rewrite.c>
+  RewriteCond %{REQUEST_URI} ^/HACKATHON_ESGIS/public/(uploads|assets|static)/.*\.php$ [NC]
+  RewriteRule .* - [F]
+</IfModule>
+
+# 🔒 Interdire l'accès direct aux dossiers sensibles via l'URL
+RewriteCond %{REQUEST_URI} ^/HACKATHON_ESGIS/(frontend|backend|includes)/ [NC]
+RewriteRule .* - [F]
