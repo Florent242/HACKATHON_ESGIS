@@ -28,14 +28,16 @@
                     <p style="color: var(--text-secondary); margin: 0;">Choisissez parmi notre liste de défis de développement et de sécurité</p>
                 </div>
                 <div class="header-actions">
-                    <a href="/HACKATHON_ESGIS/frontend/user/dashboard.php" class="back-link" style="color: var(--blue); text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+                    <a href="/HACKATHON_ESGIS/public/user" class="back-link" style="color: var(--blue); text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
                         <i data-lucide="arrow-left" style="color: var(--blue);"></i>
                         Retour au Dashboard
                     </a>
-                    <button class="ranking-button" style="background-color: var(--blue); color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <i data-lucide="trophy" style="color: white;"></i>
-                        Classement
-                    </button>
+                    <a href="/HACKATHON_ESGIS/public/user/leaderboard">
+                        <button class="ranking-button" style="background-color: var(--blue); color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i data-lucide="trophy" style="color: white;"></i>
+                            Classement
+                        </button>
+                    </a>
                 </div>
             </div>
 
@@ -96,7 +98,7 @@
                         <span class="filter-tag" data-category="devops">DevOps</span>
                     </div>
                 </div>
-                
+
                 <div class="difficulty-levels">
                     <h3>Niveau de difficulté</h3>
                     <div class="difficulty-buttons">
@@ -259,12 +261,12 @@
             </div>
 
 
-    
+
 
 
     </main>
 
-    
+
 
 </body>
 

@@ -202,7 +202,7 @@
     <div class="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm hidden" id="challenge-modal">
 
         <!-- Modal -->
-        <div class="fixed z-50 inset-0 flex items-center justify-center px-4 w-fit mx-auto">
+        <div id="modal-container" class="fixed z-50 inset-0 flex items-center justify-center px-4 w-fit mx-auto">
             <div id="modal-content" class="bg-[#0f172a] text-white w-full max-w-3xl rounded-xl shadow-xl p-6 space-y-6 border border-white/10">
 
                 <!-- Header -->

@@ -363,7 +363,6 @@ function debounce(func, delay) {
 function setupSorting() {
     const sortBtn = document.querySelector(CHALLENGE_ELEMENTS.sortBtn);
     const sortOptions = document.querySelectorAll(CHALLENGE_ELEMENTS.sortOptions);
-    console.log(sortOptions[0].parentElement.style.display)
 
     if (!sortBtn) {
         console.error('Sort button not found');
@@ -395,8 +394,14 @@ function setupSorting() {
     sortBtn.addEventListener('click', () => {
         const options = sortBtn.parentElement.querySelector('.sort-options');
         if (options) {
-            console.log(options.style.display)
-            options.style.display = options.style.display === 'none' ? 'flex' : 'none';
+            if (options.classList.contains('slide-in-blurred-left')) {
+                options.classList.remove('slide-in-blurred-left');
+                options.classList.add('slide-out-blurred-left');
+            } else {
+                options.classList.add('slide-in-blurred-left');
+                options.classList.remove('slide-out-blurred-left');
+                options.style.display = 'flex';
+            }
         }
     });
 
@@ -448,7 +453,6 @@ function sortChallenges(sortBy, direction = 'asc') {
                 // Tri par date (plus récent en premier)
                 aValue = new Date(a.getAttribute('data-created-at') || '0');
                 bValue = new Date(b.getAttribute('data-created-at') || '0');
-                console.log(a, b);
                 return direction === 'asc' ? bValue - aValue : aValue - bValue;
                 
             case 'most solved':
@@ -492,6 +496,7 @@ function sortChallenges(sortBy, direction = 'asc') {
 // Gestion de la modale
 function setupModal() {
     const modal = document.querySelector(CHALLENGE_ELEMENTS.modal);
+    const modalContainer = document.querySelector(CHALLENGE_ELEMENTS.modalContainer);
     if (!modal) {
         console.log('Modal not found');
         return;
@@ -518,6 +523,7 @@ function setupModal() {
 function openModal(card) {
     if (!card) return;
     const modal = document.querySelector(CHALLENGE_ELEMENTS.modal);
+    const modalContainer = document.querySelector('#modal-container');
     const timeAgo = card.getAttribute("data-created-at") ? `Il y a ${formatTimeDifference(card.getAttribute("data-created-at"))}` : 'Nouveau challenge';
 
     const challengeDetails = {
@@ -561,11 +567,18 @@ function openModal(card) {
     }
 
     modal.style.display = "flex";
+    modalContainer.classList.add('scale-in-center');
+    modal.classList.remove('fade-out-bck');
 }
 
 function closeModal() {
     const modal = document.querySelector(CHALLENGE_ELEMENTS.modal);
-    if (modal) modal.style.display = "none";
+    const modalContainer = document.querySelector('#modal-container');
+    modalContainer.classList.remove('scale-in-center');
+    modal.classList.add('fade-out-bck');
+    setTimeout(() => {
+        modal ? modal.style.display = "none" : null;
+    }, 350);
 }
 
 // Initialisation de l'application

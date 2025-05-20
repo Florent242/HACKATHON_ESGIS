@@ -98,7 +98,6 @@ document.querySelectorAll('.main-nav li').forEach(link => {
         const initialHeight = calculateTotalHeight(dropdownItems[itemIndex]);
         if (activeItem) {
             const height = calculateTotalHeight(activeItem);
-            console.log(height);
         }
         dropdown.style.height = `${initialHeight}px`;
         dropdownContainer.style.height = `${initialHeight}px`;
@@ -198,3 +197,139 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 })
+// Ajoutez ce code à votre fichier header.js existant ou remplacez le code JS précédent
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // Code existant maintenu...
+    
+    // Gestion du menu mobile avec style modal
+    const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    const mobileNav = document.querySelector('.mobile-nav');
+    const mobileNavOverlay = document.querySelector('.mobile-nav-overlay');
+    const closeMobileNav = document.querySelector('.close-mobile-nav');
+    const mobileNavCategoryHeaders = document.querySelectorAll('.mobile-nav-category-header');
+    const mobileLogout = document.querySelector('#mobile-logout');
+    
+    // Fonction pour ouvrir le menu mobile
+    const openMobileMenu = () => {
+        mobileNav.classList.add('active');
+        mobileNavOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Empêche le défilement du body
+    };
+    
+    // Fonction pour fermer le menu mobile
+    const closeMobileMenu = () => {
+        mobileNav.classList.remove('active');
+        mobileNavOverlay.classList.remove('active');
+        document.body.style.overflow = ''; // Rétablit le défilement du body
+    };
+    
+    // Ouvrir le menu mobile
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', openMobileMenu);
+    }
+    
+    // Fermer le menu mobile
+    if (closeMobileNav) {
+        closeMobileNav.addEventListener('click', closeMobileMenu);
+    }
+    
+    // Fermer le menu en cliquant sur l'overlay
+    if (mobileNavOverlay) {
+        mobileNavOverlay.addEventListener('click', closeMobileMenu);
+    }
+    
+    // Gérer les catégories déroulantes dans le menu mobile
+    if (mobileNavCategoryHeaders) {
+        mobileNavCategoryHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const categoryIndex = header.getAttribute('data-category');
+                const content = document.querySelector(`.mobile-nav-category-content[data-category="${categoryIndex}"]`);
+                
+                // Toggle la classe active pour afficher/masquer le contenu
+                content.classList.toggle('active');
+                
+                // Rotation de l'icône
+                const icon = header.querySelector('[data-lucide="chevron-down"]');
+                if (content.classList.contains('active')) {
+                    icon.style.transform = 'rotate(180deg)';
+                } else {
+                    icon.style.transform = 'rotate(0deg)';
+                }
+            });
+        });
+    }
+    
+    // Gestion de la déconnexion mobile
+    if (mobileLogout) {
+        mobileLogout.addEventListener('click', () => {
+            // Ferme d'abord le menu mobile
+            closeMobileMenu();
+            
+            // Ouvre la fenêtre modale de déconnexion après un court délai
+            setTimeout(() => {
+                const modal = document.querySelector('#fenetre_modal');
+                if (modal) {
+                    modal.classList.add('show');
+                }
+            }, 300); // Délai pour permettre la transition de fermeture du menu
+        });
+    }
+    
+    // Adaptation pour les grands et petits écrans
+    const adjustForScreenSize = () => {
+        // Éléments à ajuster
+        const profileDropdownContainer = document.querySelector('.profile-dropdown-container');
+        
+        if (window.innerWidth <= 768) {
+            // Mobile: cacher le dropdown du profil
+            if (profileDropdownContainer) {
+                profileDropdownContainer.style.display = 'none';
+            }
+        } else {
+            // Desktop: afficher le dropdown du profil
+            if (profileDropdownContainer) {
+                profileDropdownContainer.style.display = 'block';
+            }
+            
+            // Fermer le menu mobile si on revient en vue desktop
+            if (mobileNav && mobileNav.classList.contains('active')) {
+                closeMobileMenu();
+            }
+        }
+        
+        // Adapter la taille des icônes pour mobile
+        const icons = document.querySelectorAll('[data-lucide]');
+        if (window.innerWidth <= 480) {
+            icons.forEach(icon => {
+                if (!icon.hasAttribute('width')) {
+                    icon.setAttribute('width', '18');
+                    icon.setAttribute('height', '18');
+                }
+            });
+        } else {
+            icons.forEach(icon => {
+                if (icon.getAttribute('width') === '18') {
+                    icon.removeAttribute('width');
+                    icon.removeAttribute('height');
+                }
+            });
+        }
+    };
+    
+    // Appeler la fonction d'ajustement au chargement et au redimensionnement
+    adjustForScreenSize();
+    window.addEventListener('resize', adjustForScreenSize);
+    
+    // Gestion des touches clavier (fermer le menu avec Echap)
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && mobileNav.classList.contains('active')) {
+            closeMobileMenu();
+        }
+    });
+    
+    // Initialisation des icônes Lucide pour les nouveaux éléments
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+});

@@ -116,7 +116,7 @@
             </div>
 
             <!-- Section Défis en cours et Notifications -->
-            <div class="flex flex-col md:flex-row gap-6 bg-(--card-bg) w-full text-white">
+            <div class="flex flex-row max-md:flex-col gap-6 bg-(--card-bg) w-full text-white">
                 <!-- Colonne principale -->
                 <div class="flex-1 space-y-6">
                     <div class="flex flex-row gap-4">
@@ -173,7 +173,7 @@
                                 </div>
                             </div> -->
                             <div class="flex flex-col items-center text-center py-10 px-6" id="no-recent-activities">
-                                <div class="animate-fade-in mb-3">
+                                <div class="animate-bounce-slow mb-3">
                                     <i data-lucide="history" class="w-12 h-12 text-emerald-400/60"></i>
                                 </div>
                                 <h3 class="text-gray-200 text-lg font-medium">Aucune activité enregistrée</h3>
@@ -186,9 +186,9 @@
                 </div>
 
                 <!-- Colonne latérale (Notifications et événements) -->
-                <aside class="md:w-1/3 flex flex-col gap-6 w-full text-white">
+                <aside class="md:w-1/3 flex flex-col gap-6 w-full">
                     <!-- Notifications -->
-                    <section class="flex-1 space-y-6">
+                    <section class="space-y-6">
                         <div class="flex flex-row gap-4">
                             <h3 class="text-xl font-medium">Notifications</h3>
                         </div>
@@ -211,7 +211,7 @@
                                     <p class="text-gray-500 text-xs">Il y a 5 heures</p>
                                 </div> -->
                                 <div class="flex flex-col items-center text-center py-10 px-6" id="no-notifications">
-                                    <div class="animate-fade-in mb-3">
+                                    <div class="animate-bounce-slow mb-3">
                                         <i data-lucide="bell-off" class="w-12 h-12 text-purple-400/60"></i>
                                     </div>
                                     <h3 class="text-gray-200 text-lg font-medium">Rien à signaler</h3>
@@ -231,7 +231,7 @@
                         </div>
                         <div id="next-event-container" class="flex flex-col gap-2">
                             <div class="flex flex-col items-center text-center py-12 px-6 border border-dashed border-gray-600/40 rounded-xl bg-gray-900/20" id="no-next-event">
-                                <div class="animate-fade-in mb-4">
+                                <div class="animate-bounce-slow mb-4">
                                     <i data-lucide="calendar-x" class="w-14 h-14 text-red-400/70"></i>
                                 </div>
                                 <h3 class="text-gray-100 text-xl font-semibold">Aucun hackathon prévu</h3>
@@ -251,7 +251,7 @@
 
                     <!-- Carte 1 -->
                     <div class="fade-in-left flex-1/3">
-                        <a href="#" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
+                        <a href="/HACKATHON_ESGIS/public/user/challenge_dev" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
                             <div class="bg-blue-900 text-blue-400 p-3 rounded-full">
                                 <i data-lucide="code"></i>
                             </div>
@@ -265,7 +265,7 @@
 
                     <!-- Carte 2 -->
                     <div class="fade-in-right flex-1/3">
-                        <a href="#" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
+                        <a href="/HACKATHON_ESGIS/public/user/challenge_hacking" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
                             <div class="bg-gray-800 text-gray-400 p-3 rounded-full">
                                 <i data-lucide="shield"></i>
                             </div>
@@ -279,7 +279,7 @@
 
                     <!-- Carte 3 -->
                     <div class="fade-in flex-1/3">
-                        <a href="#" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
+                        <a href="/HACKATHON_ESGIS/public/user/profile" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
                             <div class="bg-gray-800 text-gray-400 p-3 rounded-full">
                                 <i data-lucide="user"></i>
                             </div>
