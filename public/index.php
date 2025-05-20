@@ -1,5 +1,5 @@
-<script src="/HACKATHON_ESGIS/public/js/lucide.min.js"></script>
-<script src="/HACKATHON_ESGIS/public/js/main.js"></script>
+<script defer src="/HACKATHON_ESGIS/public/js/lucide.min.js"></script>
+<script defer src="/HACKATHON_ESGIS/public/js/main.js"></script>
 <?php
 require_once __DIR__ . '/../backend/includes/authMiddleware.php';
 
@@ -8,7 +8,7 @@ AuthMiddleware::checkAuth();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-// echo print_r($_SESSION, true);
+// echo print_r($_SESSION, true); 
 // Récupérer l'URL demandée (par exemple /home ou /about)
 $url = $_SERVER['REQUEST_URI'] ?? "/HACKATHON_ESGIS/public/";
 
@@ -17,18 +17,13 @@ switch ($url) {
     case '/HACKATHON_ESGIS/public/':
         require_once '../frontend/home.php';  // Inclure la page d'accueil
         break;
-    case '/HACKATHON_ESGIS/public/challenges':
-        require_once '../frontend/challenge.php';  // Inclure la page "Challenge"
-        break;
     case '/HACKATHON_ESGIS/public/hackathon':
         require_once '../frontend/hackathon.php'; // Inclure la page "Hackaton"
         break;
     case '/HACKATHON_ESGIS/public/resources':
         require_once '../frontend/resources.php'; // Inclure la page "Ressources"
         break;
-    case '/HACKATHON_ESGIS/public/leaderboard':
-        require_once '../frontend/leaderboard.php'; // Inclure la page "Leaderboard"
-        break;
+
     case '/HACKATHON_ESGIS/public/auth':
         require_once '../frontend/auth.php'; // Inclure la page "auth"
         break;
@@ -99,6 +94,9 @@ switch ($url) {
         break;
     case '/HACKATHON_ESGIS/public/user/challenge_security':
         require_once '../frontend/user/challenge_secu.php'; // Inclure la page "user/challenges"
+        break;
+    case '/HACKATHON_ESGIS/public/user/challenge_dev':
+        require_once '../frontend/user/challenge_dev.php'; // Inclure la page "user/challenges"
         break;
     case '/HACKATHON_ESGIS/public/user/hackathon':
         require_once '../frontend/user/hackathon.php'; // Inclure la page "user/hacka"

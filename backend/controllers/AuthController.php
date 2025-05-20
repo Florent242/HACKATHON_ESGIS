@@ -263,7 +263,7 @@ class AuthController
             logActivity('register_error', $e->getMessage(), [
                 'email' => $data['email'] ?? 'non fourni',
                 'error' => $e->getMessage()
-            ], 'error');
+            ], $userId, 'error');
 
             echo json_encode([
                 'success' => false,
@@ -283,16 +283,24 @@ class AuthController
                 $data = $_POST;
             }
 
-            if (!isset($data['email']) || !isset($data['password'])) {
+            if (!isset($data['identifier']) || !isset($data['password'])) {
                 throw new Exception('Email et mot de passe requis');
             }
 
-            $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
+            $attemptId = getUserAttemptId($data['identifier']);
+            // Récupérer l'identifiant brut depuis POST ou $data
+            $identifier = isset($_POST['identifier']) ? $_POST['identifier'] : $data['identifier'];
+            $identifier = trim(htmlspecialchars($identifier, ENT_QUOTES, 'UTF-8'));
+            
+            if (empty($identifier)) {
+                throw new Exception('Identifiant invalide');
+            }
+            
             $password = filter_input(INPUT_POST, 'password', FILTER_DEFAULT);
             $rememberMe = isset($data['remember_me']) && $data['remember_me'] === 'on';
 
             // Authentifier l'utilisateur en verifiant son statut et son mot de passe
-            $user = $this->user->authenticate($email, $password);
+            $user = $this->user->authenticate($identifier, $password);
 
             if (isset($user) && $user) {
                 if (session_status() === PHP_SESSION_NONE) {
@@ -312,6 +320,9 @@ class AuthController
                 $longTermToken = null;
 
                 if ($rememberMe) {
+                    /**
+                     * TODO: Gérer le refresh token
+                     */
                     $longTermTokenData = $this->tokenManager->generateLongTermToken($user['id']);
                     $longTermToken = $longTermTokenData['token'];
                 }
@@ -320,14 +331,13 @@ class AuthController
                 $this->setAuthCookies($token, $longTermToken);
 
                 // Réponse JSON
-                $redirectPath = $user['role'] === 'admin' ? self::BASE_URL . "/admin" : self::BASE_URL . "/user";
                 echo json_encode([
                     'success' => true,
                     'token' => $token,
                     'refresh_token' => $longTermToken,
                     'user' => $user,
                     'message' => 'Connexion reussie',
-                    'redirect' => $redirectPath
+                    'redirect' => self::BASE_URL . "/user"
                 ]);
                 exit();
             } else {
@@ -335,9 +345,9 @@ class AuthController
             }
         } catch (Exception $e) {
             logActivity('login_error', $e->getMessage(), [
-                'email' => $email ?? 'non fourni',
+                'identifier' => $identifier ?? 'non fourni',
                 'error' => $e->getMessage()
-            ], 'error');
+            ], $attemptId ?? null, 'error');
 
             echo json_encode([
                 'success' => false,
@@ -355,6 +365,7 @@ class AuthController
             if (isset($_COOKIE['long_term_token'])) {
                 $this->tokenManager->revokeToken($_COOKIE['long_term_token']);
             }
+            $userId = isset($_SESSION['user']) && isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 
             // Suppression des cookies
             setcookie("jwt_token", "", time() - 3600, "/");
@@ -372,7 +383,7 @@ class AuthController
             ]);
             exit();
         } catch (Exception $e) {
-            logActivity('logout_error', 'Erreur lors de la déconnexion', ['error' => $e->getMessage()], 'error');
+            logActivity('logout_error', 'Erreur lors de la déconnexion', ['error' => $e->getMessage()], $userId ?? null, 'error');
 
             echo json_encode([
                 'success' => false,
@@ -646,7 +657,7 @@ class AuthController
                 // Log activity
                 logActivity('password_reset', 'Mot de passe réinitialisé avec succès', [
                     'user_id' => $userId
-                ], 'info');
+                ], $userId, 'info');
 
                 $this->sendResponse([
                     'success' => true,
@@ -659,7 +670,7 @@ class AuthController
             // Log error
             logActivity('password_reset_error', $e->getMessage(), [
                 'error' => $e->getMessage()
-            ], 'error');
+            ], $userId, 'error');
 
             $this->sendResponse([
                 'success' => false,
@@ -736,4 +747,13 @@ class AuthController
             throw new Exception($e->getMessage());
         }
     }
+}
+
+function getUserAttemptId($email)
+{
+    global $db;
+    $stmt = $db->prepare("SELECT id FROM users WHERE email = :email");
+    $stmt->execute(['email' => $email]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $result['id'] ?? null;
 }

@@ -125,7 +125,7 @@ class AuthService {
  */
 function showNotification(message, details = null, type = 'info', duration = 5000) {
     const notification = document.createElement('div');
-    notification.className = `fixed top-4 ${type === 'success' ? 'left-1/2' : 'right-4'} transform ${type === 'success' ? '-translate-x-1/2' : 'translate-x-0'} max-w-md w-auto bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 flex items-start justify-between gap-3 animate-fade-in z-1000`;
+    notification.className = `fixed top-4 ${type === 'success' ? 'left-1/2' : 'right-4'} transform ${type === 'success' ? '-translate-x-1/2' : 'translate-x-0'} max-w-md w-auto bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 flex items-start justify-between gap-3 animate-fade-in z-1000 cursor-pointer`;
 
     // Conteneur d'icône
     const iconContainer = document.createElement('div');
@@ -185,7 +185,12 @@ function showNotification(message, details = null, type = 'info', duration = 500
     });
 
     closeContainer.appendChild(closeButton);
+    
     notification.appendChild(closeContainer);
+
+    notification.addEventListener('click', () => {
+        hideNotification(notification);
+    });
 
     // Ajouter la notification au DOM
     document.body.appendChild(notification);

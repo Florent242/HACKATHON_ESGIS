@@ -6,15 +6,13 @@
     --blue: #3B82F6;
     --text: #FFFFFF;
     --text-secondary: #94A3B8;
-    --border: rgba(255, 255, 255, 0.1);   
-    --purple: #17013a; 
+    --border: rgba(255, 255, 255, 0.1);
+    --purple: #2c0072;
     --green: #10b981;
     --blue-hover: #0a4ad3;
 }
 
 * {
-    margin: 0;
-    padding: 0;
     box-sizing: border-box;
 }
 
@@ -26,6 +24,18 @@ body {
     min-height: 100vh;
 }
 
+/* Main container */
+.main-container {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    /* Sidebar à gauche + contenu */
+    gap: 1.5rem;
+    padding: 1.5rem;
+    max-width: 1300px;
+    margin: 0 auto 50rem;
+    align-items: start;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -35,11 +45,11 @@ body {
 /* Main content */
 main {
     padding: 2rem 0;
-    background: linear-gradient(to bottom, 
-                transparent, 
-                var(--background)),
-                radial-gradient(circle at center, rgba(59, 130, 246, 0.25), 
-                transparent 70%);
+    background: linear-gradient(to bottom,
+            transparent,
+            var(--background)),
+        radial-gradient(circle at center, rgba(59, 130, 246, 0.25),
+            transparent 70%);
 }
 
 /* Header */
@@ -60,7 +70,6 @@ main {
 
 /* Search and filters */
 .search-container {
-    background: var(--card-bg);
     border-radius: 1rem;
     padding: 1rem;
     margin-bottom: 1.5rem;
@@ -71,6 +80,8 @@ main {
 }
 
 .search-input-wrapper {
+    border: 1px solid var(--border);
+    border-radius: 1rem;
     position: relative;
     width: 100%;
 }
@@ -106,7 +117,7 @@ main {
 }
 
 .tag {
-    background: rgba(59, 130, 246, 0.15);
+    background: var(--card-hover);
     color: var(--blue);
     padding: 0.25rem 0.75rem;
     border-radius: 1rem;
@@ -118,16 +129,17 @@ main {
 .tag:hover {
     background: rgba(59, 130, 246, 0.25);
 }
+
 /* Boutons de filtre (Easy, Medium, Hard, Category) */
 .filter-btn {
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.8rem;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.7rem;
     background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: 0.5rem;
+    border-radius: 1rem;
     color: var(--text);
     cursor: pointer;
     transition: background 0.3s ease, border-color 0.3s ease;
@@ -137,7 +149,7 @@ main {
     background: var(--blue);
     border-color: var(--blue);
 }
-  
+
 .filter-btn.active {
     background: var(--blue);
     border-color: var(--blue);
@@ -177,23 +189,6 @@ main {
     margin-bottom: 1rem;
 }
 
-/* Main container */
-.main-container {
-    display: grid;
-    grid-template-columns: 220px 1fr; /* Sidebar à gauche + contenu */
-    gap: 1.5rem;
-    padding: 1.5rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    align-items: start;
-}
-
-/* Sidebar */
-.filters-container {
-    width: 100%;
-    margin-bottom: 2rem; /* Espace entre les sections */
-}
-
 .filters-sidebar {
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -202,15 +197,8 @@ main {
     position: sticky;
     top: 2rem;
     height: fit-content;
-    display: block;
-    margin-bottom: 2rem; /* Ajoute un espacement entre deux asides */
-}
-
-.filters-sidebar h2 {
-    font-size: 1.25rem;
-    font-weight: bold;
-    margin-bottom: 1.5rem;
-    color: var(--text);
+    margin-bottom: 2rem;
+    /* Ajoute un espacement entre deux asides */
 }
 
 .filter-group {
@@ -271,12 +259,13 @@ main {
 
 /* Bouton Clear Filters */
 .clear-filters {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
     width: 100%;
-    padding: 0.7rem;
-    background: var(--blue);
     color: white;
     border: none;
-    border-radius: 6px;
     font-size: 0.84rem;
     cursor: pointer;
     transition: background 0.3s ease;
@@ -290,14 +279,10 @@ main {
 #view-leaderboard {
     display: block;
     width: 100%;
-    padding: 10px;
-    margin-top: 10px;
     text-align: center;
     background: linear-gradient(45deg, #ff4b2b, #ff416c);
     color: white;
-    font-weight: bold;
     border: none;
-    border-radius: 8px;
     cursor: pointer;
     transition: 0.3s;
 }
@@ -333,19 +318,17 @@ main {
     font-size: 0.875rem;
 }
 
-.sort-select {
-    position: relative;
-}
-
 .sort-btn {
     background: transparent;
+    position: relative;
+    width: 100%;
+    size: 100%;
     border: none;
     color: white;
     font-size: 0.875rem;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
     padding: 0.5rem;
     border-radius: 0.5rem;
     transition: all 0.3s ease;
@@ -356,23 +339,18 @@ main {
 }
 
 .sort-options {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    background: var(--card-bg);
-    border-radius: 0.5rem;
-    padding: 0.5rem;
-    margin-top: 0.25rem;
-    display: none;
-    z-index: 10;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 2;
 }
 
 .sort-options.active {
-    display: block;
+    display: flex;
 }
 
 .sort-option {
+    display: flex;
+    align-items: start;
+    border-radius: 0.5rem;
+    width: 100%;
     padding: 0.5rem;
     cursor: pointer;
     color: white;
@@ -384,17 +362,9 @@ main {
     background: rgba(59, 130, 246, 0.1);
 }
 
-/* Challenge grid */
-.challenge-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
-}
-
 .cyber-card {
     background: var(--card-bg);
-    border-radius: 1rem;
-    overflow: hidden;
+    z-index: 1;
     transition: transform 0.3s ease;
 }
 
@@ -414,22 +384,22 @@ main {
 .left-info {
     display: flex;
     align-items: center;
-    gap: 10px; 
+    gap: 1rem;
 }
 
 
 .difficulty {
-    background: rgba(59, 130, 246, 0.2);
+    background: rgba(246, 59, 59, 0.2);
     color: var(--text);
-    padding: 5px 10px;
-    border-radius: 15px; 
-    font-size: 14px;
+    padding: 0.3rem 0.5rem;
+    border-radius: 15px;
+    font-size: 0.875rem;
 }
 
 .right-info {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 1rem;
 }
 
 .right-info i {
@@ -451,12 +421,6 @@ main {
     gap: 1rem;
     color: var(--text-secondary);
     font-size: 0.875rem;
-}
-
-.category {
-    background: rgba(59, 130, 246, 0.2);
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.5rem;
 }
 
 /* Description */
@@ -516,22 +480,6 @@ main {
     color: var(--green);
 }
 
-.status i {
-    color: var(--green);
-}
-
-
-/* Bouton Hack Now */
-.hack-now {
-    background: var(--blue);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    border: none;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
 .hack-now:hover {
     background: var(--blue-hover);
 }
@@ -577,7 +525,7 @@ main {
     color: #94a3b8;
     margin-bottom: 1rem;
 }
-  
+
 /* Informations (difficulté, catégorie, points) */
 .challenge-top-info {
     display: flex;
@@ -585,17 +533,18 @@ main {
     gap: 1rem;
     margin-bottom: 1rem;
 }
-  
+
 .challenge-difficulty {
     padding: 0.25rem 0.75rem;
     border-radius: 1rem;
     font-size: 0.75rem;
     font-weight: 500;
     text-transform: uppercase;
-    background: rgba(16, 185, 129, 0.15); /* Exemple de vert translucide */
+    background: rgba(16, 185, 129, 0.15);
+    /* Exemple de vert translucide */
     color: #10b981;
 }
-  
+
 .challenge-category {
     padding: 0.25rem 0.75rem;
     border-radius: 1rem;
@@ -603,32 +552,32 @@ main {
     background: rgba(59, 130, 246, 0.15);
     color: #3b82f6;
 }
-  
+
 .challenge-points {
     font-size: 0.875rem;
 }
-  
+
 /* Titre du challenge */
 .challenge-title {
     font-size: 1.5rem;
     margin: 0.5rem 0;
     color: #f8fafc;
 }
-  
+
 /* Description */
 .challenge-description {
     color: #94a3b8;
     line-height: 1.6;
     margin: 1rem 0;
 }
-  
+
 /* Tags */
 .challenge-tags {
     display: flex;
     gap: 0.5rem;
     margin: 1rem 0;
 }
-  
+
 .challenge-tags span {
     background: #1e293b;
     padding: 0.25rem 0.75rem;
@@ -636,12 +585,12 @@ main {
     font-size: 0.75rem;
     color: #94a3b8;
 }
-  
+
 /* Resources Section */
 .resources {
     margin: 1.5rem 0;
 }
-  
+
 .resources button {
     background: #1e293b;
     border: 1px solid #334155;
@@ -655,11 +604,11 @@ main {
     cursor: pointer;
     transition: background 0.2s;
 }
-  
+
 .resources button:hover {
     background: #334155;
 }
-  
+
 /* Hint Section */
 .hint {
     background: #1e293b;
@@ -668,16 +617,16 @@ main {
     border-radius: 0.5rem;
     margin: 1.5rem 0;
 }
-  
+
 .hint strong {
     color: #f8fafc;
 }
-  
+
 /* Flag Input */
 .submit-flag {
     margin-top: 2rem;
 }
-  
+
 .submit-flag input {
     width: 100%;
     background: #1e293b;
@@ -687,11 +636,11 @@ main {
     margin-bottom: 0.5rem;
     color: #f8fafc;
 }
-  
+
 .submit-flag input::placeholder {
     color: #64748b;
 }
-  
+
 /* Bouton Submit du flag */
 .submit-flag-btn {
     background: var(--blue);
@@ -702,7 +651,7 @@ main {
     cursor: pointer;
     transition: background 0.2s;
 }
-  
+
 .submit-flag-btn:hover {
     background: var(--blue-hover);
 }
@@ -724,17 +673,19 @@ main {
 .resource-btn:hover {
     background: #334155;
 }
-  
+
 
 /* Responsive design */
 @media (max-width: 768px) {
     .main-container {
-        grid-template-columns: 1fr; /* Une seule colonne */
+        grid-template-columns: 1fr;
+        /* Une seule colonne */
         padding: 1rem;
     }
 
     .filters-sidebar {
-        order: -1; /* La sidebar passe en haut */
+        order: -1;
+        /* La sidebar passe en haut */
         margin-bottom: 1.5rem;
     }
 
@@ -742,8 +693,20 @@ main {
         flex-direction: column;
     }
 
-    .filter-btn {
-        width: 100%;
+    .filter-group h3 {
         justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+
+    .filter-btn {
+        width: auto;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .filter-buttons {
+        justify-content: center;
+        align-items: center;
     }
 }

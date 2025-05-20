@@ -7,8 +7,109 @@ if (!isset($_SESSION['csrf_token'])) {
 }
 
 ?>
-<script defer src="/HACKATHON_ESGIS/public/js/user/header.js"></script>
+<script defer type="module" src="/HACKATHON_ESGIS/public/js/user/header.js"></script>
+<div id="fenetre_modal" class="mymodal">
+    <div class="modal_content">
+        <p>Souhaitez-vous vraiment vous deconnecter ?</p>
+        <button id="logout-btn">Déconnexion</button>
+        <button id="fermer_modal">Annuler</button>
+    </div>
+</div>
 <header>
+    <!-- Navigation mobile -->
+    <div class="mobile-nav-overlay"></div>
+
+    <!-- Navigation mobile (modifiée pour le style modal) -->
+    <div class="mobile-nav">
+        <div class="mobile-nav-header">
+            <div class="logo">
+                <div class="logo-circle">E</div>
+                <span>EsgisHub</span>
+            </div>
+            <button class="close-mobile-nav">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <div class="mobile-nav-items">
+            <div class="mobile-nav-category">
+                <div class="mobile-nav-category-header" data-category="0">
+                    <span>Événements</span>
+                    <i data-lucide="chevron-down"></i>
+                </div>
+                <div class="mobile-nav-category-content" data-category="0">
+                    <a href="/HACKATHON_ESGIS/public/user/challenge_security" class="mobile-nav-link">
+                        Challenges de sécurité
+                    </a>
+                    <a href="/HACKATHON_ESGIS/public/user/challenge_dev" class="mobile-nav-link">
+                        Challenges de développement
+                    </a>
+                    <a href="/HACKATHON_ESGIS/public/user/hackathon" class="mobile-nav-link">
+                        Hackathons
+                    </a>
+                    <a href="/HACKATHON_ESGIS/public/user/workshop" class="mobile-nav-link">
+                        Workshop
+                    </a>
+                </div>
+            </div>
+
+            <div class="mobile-nav-category">
+                <div class="mobile-nav-category-header" data-category="1">
+                    <span>Communauté</span>
+                    <i data-lucide="chevron-down"></i>
+                </div>
+                <div class="mobile-nav-category-content" data-category="1">
+                    <a href="/HACKATHON_ESGIS/public/user/teams" class="mobile-nav-link">
+                        Teams
+                    </a>
+                    <a href="/HACKATHON_ESGIS/public/user/mentors" class="mobile-nav-link">
+                        Mentors
+                    </a>
+                    <a href="/HACKATHON_ESGIS/public/user/leaderboard" class="mobile-nav-link">
+                        Leaderboard
+                    </a>
+                </div>
+            </div>
+
+            <div class="mobile-nav-category">
+                <div class="mobile-nav-category-header" data-category="2">
+                    <span>Resources</span>
+                    <i data-lucide="chevron-down"></i>
+                </div>
+                <div class="mobile-nav-category-content" data-category="2">
+                    <a href="/HACKATHON_ESGIS/public/user/documentation" class="mobile-nav-link">
+                        Documentation
+                    </a>
+                    <a href="/HACKATHON_ESGIS/public/user/blog" class="mobile-nav-link">
+                        Blog
+                    </a>
+                    <a href="/HACKATHON_ESGIS/public/user/faq" class="mobile-nav-link">
+                        FAQ
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="mobile-nav-actions">
+            <a href="/HACKATHON_ESGIS/public/user" class="mobile-nav-action">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/HACKATHON_ESGIS/public/user/profile" class="mobile-nav-action">
+                <i data-lucide="circle-user"></i>
+                <span>Mon espace</span>
+            </a>
+            <a href="/HACKATHON_ESGIS/public/user/profile" class="mobile-nav-action">
+                <i data-lucide="settings"></i>
+                <span>Paramètres</span>
+            </a>
+            <div class="mobile-nav-action" id="mobile-logout">
+                <i data-lucide="log-out"></i>
+                <span>Déconnexion</span>
+            </div>
+        </div>
+    </div>
+
     <div class="header-container">
         <div class="logo-nav">
             <div class="logo">
@@ -30,6 +131,11 @@ if (!isset($_SESSION['csrf_token'])) {
                                 <a href="/HACKATHON_ESGIS/public/user/challenge_security">
                                     <li>
                                         Challenges de sécurité
+                                    </li>
+                                </a>
+                                <a href="/HACKATHON_ESGIS/public/user/challenge_dev">
+                                    <li>
+                                        Challenges de développement
                                     </li>
                                 </a>
                                 <a href="/HACKATHON_ESGIS/public/user/hackathon">
@@ -82,6 +188,7 @@ if (!isset($_SESSION['csrf_token'])) {
                 </nav>
             </div>
         </div>
+
         <div class="header-actions">
             <div class="notification-btn">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -89,7 +196,13 @@ if (!isset($_SESSION['csrf_token'])) {
                     <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
             </div>
-            <div class="relative group"> <!-- Ajoutez "group" ici -->
+
+            <!-- Menu hamburger (pour mobile) -->
+            <div class="mobile-menu-btn">
+                <i data-lucide="menu"></i>
+            </div>
+
+            <div class="relative group profile-dropdown-container">
                 <!-- Bouton du profil -->
                 <div class="profile-btn cursor-pointer">
                     <i data-lucide="circle-user"></i>
@@ -109,18 +222,12 @@ if (!isset($_SESSION['csrf_token'])) {
                         </a>
                         <a href="/HACKATHON_ESGIS/public/user/profile">
                             <li class="flex items-center gap-2 p-1 rounded-lg text-white hover:text-blue-500 hover:bg-slate-900">
-                                <i data-lucide="trophy" class="w-4 h-4 stroke-current"></i>
-                                Mes défis
-                            </li>
-                        </a>
-                        <a href="/HACKATHON_ESGIS/public/user/profile">
-                            <li class="flex items-center gap-2 p-1 rounded-lg text-white hover:text-blue-500 hover:bg-slate-900">
                                 <i data-lucide="settings" class="w-4 h-4 stroke-current"></i>
                                 Paramètres
                             </li>
                         </a>
                     </div>
-                    <div class="p-2 logout-btn cursor-pointer">
+                    <div id="deco" class="p-2 cursor-pointer">
                         <li class="flex items-center gap-2 p-1 rounded-lg text-red-500 hover:bg-slate-900">
                             <i data-lucide="log-out" class="w-4 h-4 stroke-current"></i>
                             Logout
@@ -130,7 +237,6 @@ if (!isset($_SESSION['csrf_token'])) {
             </div>
         </div>
     </div>
-    </div>
-    </div>
+
 </header>
 <div id="notification-data" data-notification='<?= json_encode($_SESSION['notification'] ?? null) ?>'></div>

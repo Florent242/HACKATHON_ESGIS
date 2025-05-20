@@ -5,27 +5,32 @@ const CHALLENGE_ELEMENTS = {
     filterGroups: ".filter-buttons[data-type]",
     clearFiltersBtn: ".clear-filters",
     searchInput: '.search-input-wrapper input',
-    
+
     // Conteneurs
     cardsContainer: '.challenge-grid',
     topHackersList: "#top-hackers",
-    
+
     // Tri
     sortBtn: '.sort-btn',
     sortOptions: '.sort-option',
-    
+
     // Modale
     modal: "#challenge-modal",
-    closeButton: ".close-modal",
+    closeButton: "#close-modal",
     openButtons: ".hack-now",
-    
+
     // Stats
-    solvesCount: "#solves-count"
+    solvesCount: "#solves-count",
+
+    // État vide
+    hackerListEmptyState: "#hacker-list-empty-state",
+    challengeEmptyState: "#challenges-empty-state"
 };
 
 // Fonction utilitaire pour gérer les erreurs
 function handleError(title = 'Une erreur est survenue', error = null, type = 'error') {
     console.error(title, error);
+    showNotification(title, error, type);
     // Vous pouvez ajouter ici une notification à l'utilisateur
 }
 
@@ -57,165 +62,154 @@ async function loadChallenges() {
     try {
         const data = await apiRequest('/challenges');
         renderChallenges(data.data || []);
+        console.log('challenge data', data);
     } catch (error) {
         handleError('Erreur lors du chargement des challenges', error);
     }
 }
 
 // Fonction pour afficher les challenges
-/*
 function renderChallenges(challenges) {
     const container = document.querySelector(CHALLENGE_ELEMENTS.cardsContainer);
     if (!container) return;
+
+    if (!challenges || !Array.isArray(challenges) || challenges.length === 0) {
+        document.querySelector(CHALLENGE_ELEMENTS.challengeEmptyState).classList.remove('hidden');
+        document.querySelector(CHALLENGE_ELEMENTS.challengeEmptyState).classList.add('flex');
+        return;
+    }
 
     container.innerHTML = '';
 
     challenges.forEach(challenge => {
         const card = document.createElement('div');
-        card.className = 'cyber-card';
-        card.setAttribute('data-title', challenge.title);
-        card.setAttribute('data-description', challenge.description);
-        card.setAttribute('data-difficulty', challenge.difficulty);
-        card.setAttribute('data-category', challenge.category);
-        card.setAttribute('data-time', challenge.time);
-        card.setAttribute('data-points', challenge.points);
-        card.setAttribute('data-hint', challenge.hint);
-        card.setAttribute('data-tags', Array.isArray(challenge.tags) ? challenge.tags.join(',') : '');
-        card.setAttribute('data-solved', challenge.solved || 'false');
-
-        card.innerHTML = `
-            <div class="card-header">
-                <div class="card-header-info">
-                    <div class="left-info">
-                        <i data-lucide="file-text" style="color:var(--blue);"></i> 
-                        <span class="difficulty" style="color: ${getDifficultyColor(challenge.difficulty)};">${challenge.difficulty}</span>
-                    </div>
-                    <div class="right-info">
-                        <i data-lucide="trophy" style="color: gold;"></i> 
-                        <span>${challenge.points} pts</span>
-                    </div>
-                </div>
-                <h3>${challenge.title}</h3>
-                <div class="meta">
-                    <span class="category" style="background: rgba(59, 130, 246, 0.2);">${challenge.category}</span>
-                    <div><i data-lucide="timer"></i><span class="time">${challenge.time}</span></div>
-                </div>
-            </div>
-            <p class="description">${challenge.description}</p>
-            <div class="tags">
-                ${Array.isArray(challenge.tags) ? challenge.tags.map(tag => `<span class="tag">${tag.toUpperCase()}</span>`).join('') : ''}
-            </div>
-            <div class="stats-table">
-                <div class="stat">
-                    <i data-lucide="user"></i>
-                    <span class="value">${challenge.solves || 0} solves</span>
-                </div>
-            </div>
-            <div class="card-footer">
-                <button class="badge hack-now">HACK NOW</button>
-                ${challenge.solved ? '<div class="status solved"><i data-lucide="check-circle"></i><span>Solved</span></div>' : ''}
-            </div>
-        `;
-
-        container.appendChild(card);
-    });
-
-    // Initialiser les icônes Lucide
-    lucide.createIcons();
-}*/
-function renderChallenges(challenges) {
-    const container = document.querySelector(CHALLENGE_ELEMENTS.cardsContainer);
-    if (!container) return;
-
-    container.innerHTML = '';
-
-    challenges.forEach(challenge => {
-        const card = document.createElement('div');
-        card.className = 'cyber-card';
+        card.classList.add('cyber-card', 'flex', 'flex-col', 'justify-between', 'w-full', 'mx-auto', 'bg-[#0f172a]', 'text-white', 'p-6', 'rounded-2xl', 'shadow-lg', 'border', 'border-slate-700', 'space-y-4');
         card.setAttribute('data-title', challenge.title || '');
+        card.setAttribute('data-hackers', challenge.hackers || '0');
         card.setAttribute('data-description', challenge.description || '');
         card.setAttribute('data-type', challenge.type || '');
         card.setAttribute('data-difficulty', challenge.difficulty || 'Unknown');
         card.setAttribute('data-category', challenge.category?.name || challenge.category || 'Unknown');
         card.setAttribute('data-created-at', challenge.created_at || new Date().toISOString());
+        card.setAttribute('data-author', challenge.created_by || 'Unknown');
         card.setAttribute('data-points', challenge.points || 0);
         card.setAttribute('data-hint', challenge.hint || '');
         card.setAttribute('data-tags', Array.isArray(challenge.tags) ? challenge.tags.join(',') : '');
         card.setAttribute('data-solved', challenge.solved ? 'true' : 'false');
 
-        // Formatage du temps
-        function formatTimeDifference(createdAt) {
-            if (!createdAt) return 'Récemment créé';
-            const createdDate = new Date(createdAt);
-            const now = new Date();
-            const diffInSeconds = Math.floor((now - createdDate) / 1000);
-
-            if (diffInSeconds < 60) return `${diffInSeconds} seconde${diffInSeconds !== 1 ? 's' : ''}`;
-            if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minute${Math.floor(diffInSeconds / 60) !== 1 ? 's' : ''}`;
-            if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} heure${Math.floor(diffInSeconds / 3600) !== 1 ? 's' : ''}`;
-            return `${Math.floor(diffInSeconds / 86400)} jour${Math.floor(diffInSeconds / 86400) !== 1 ? 's' : ''}`;
-        }
-
         const timeAgo = challenge.created_at ? `Il y a ${formatTimeDifference(challenge.created_at)}` : 'Nouveau challenge';
 
         card.innerHTML = `
-            <div class="card-header">
-                <div class="card-header-info">
-                    <div class="left-info">
-                        <i data-lucide="file-text" style="color:var(--blue);"></i> 
-                        <span class="difficulty" style="color: ${getDifficultyColor(challenge.difficulty)};">${challenge.difficulty || 'Unknown'}</span>
-                    </div>
-                    <div class="right-info">
-                        <i data-lucide="trophy" style="color: gold;"></i> 
-                        <span>${challenge.points || 0} pts</span>
-                    </div>
-                </div>
-                <h3>${challenge.title || 'Untitled Challenge'}</h3>
-                <div class="meta">
-                    <span class="category" style="background: rgba(59, 130, 246, 0.2);">${challenge.category?.name || challenge.category || 'Web'}</span>
-                    <div><i data-lucide="timer"></i><span class="time">${timeAgo}</span></div>
-                </div>
-            </div>
-            <p class="description">${challenge.description || 'No description provided'}</p>
-            <div class="tags">
-                ${Array.isArray(challenge.tags) ? challenge.tags.map(tag => `<span class="tag">${tag.toUpperCase()}</span>`).join('') : ''}
-            </div>
-            <div class="stats-table">
-                <div class="stat">
-                    <i data-lucide="user"></i>
-                    <span class="value">${challenge.solves || 0} solve${challenge.solves !== 1 ? 's' : ''}</span>
-                </div>
-            </div>
-            <div class="card-footer">
-                <button class="badge hack-now">HACK NOW</button>
-                ${challenge.solved ? '<div class="status solved"><i data-lucide="check-circle"></i><span>Solved</span></div>' : ''}
-            </div>
-        `;
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="file-lock" class="w-5 h-5 text-blue-400"></i>
+                                <span class="text-sm max-lg:text-xs px-2 py-0.5 transition hover:shadow-[0_0_8px] hover:shadow-current rounded-full ${getDifficultyColor(challenge.difficulty)} font-medium align-middle">${challenge.difficulty}</span>
+                            </div>
+                            <div class="flex items-center gap-1 text-yellow-400">
+                                <i data-lucide="trophy" class="w-4 h-4"></i>
+                                <span class="text-sm max-lg:text-xs font-medium align-middle">${challenge.points} pts</span>
+                            </div>
+                        </div>
+
+                        <!-- Title -->
+                        <h2 class="cyber-card-title text-xl max-lg:text-lg font-bold align-middle">${challenge.title}</h2>
+
+                        <!-- Tag and duration -->
+                        <div class="flex items-center gap-3 text-sm text-slate-400">
+                            <div class="flex items-center gap-1">
+                                <span class="bg-slate-700 px-2 py-0.5 border border-slate-400 rounded-full text-sm max-lg:text-xs font-medium align-middle category">${challenge.category?.name || challenge.category || challenge.type || 'Unknown'}</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <i data-lucide="clock" class="w-4 h-4"></i>
+                                <span class="align-middle text-sm max-lg:text-xs">${timeAgo || 'Récemment créé'}</span>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <p class="cyber-card-description text-clamp-3 line-clamp-2 text-sm max-lg:text-xs text-slate-300 align-middle">
+                            ${challenge.description || 'Description non disponible'}
+                        </p>
+
+                        <!-- Tags -->
+                        <div class="flex flex-wrap gap-2 text-sm max-lg:text-xs align-middle">
+                            ${challenge.tags ? challenge.tags.map(tag => `<span class="px-2 py-1 bg-slate-700 rounded-full text-slate-200">${tag}</span>`).join('') : ''}
+                        </div>
+
+                        <!-- Footer row -->
+                        <div class="flex items-center justify-between text-sm text-slate-400">
+                            <div class="flex gap-4 items-center">
+                                <div class="flex items-center gap-1">
+                                    <i data-lucide="users" class="w-4 h-4"></i>
+                                    <span class="align-middle text-sm max-lg:text-xs">${challenge.hackers || 0} résolus</span>
+                                </div>
+                            </div>
+
+                            <!-- Hack Now button -->
+                            ${!challenge.solved ? `
+                            <button class="hack-now flex items-center gap-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition">
+                                <i data-lucide="play-circle" class="w-4 h-4"></i>
+                                <span class="text-sm max-lg:text-xs font-semibold align-middle">Hack Now</span>
+                            </button>
+                            ` : ''}
+                            <div class="status solved" id="status" style="display: ${challenge.solved ? 'flex' : 'none'};">
+                                <i class="w-4 h-4 stroke-current" data-lucide="check-circle" style="color: var(--green);"></i>
+                                <span class="text-sm max-lg:text-xs">Solved</span>
+                            </div>
+                        </div>
+                    `;
 
         container.appendChild(card);
     });
 
     // Réinitialiser les icônes Lucide
     lucide.createIcons();
-    
+
     // Reconfigurer les boutons "Hack Now"
     setupModal();
 }
 
 function getDifficultyColor(difficulty) {
-    const colors = {
-        'Easy': 'var(--green)',
-        'Medium': 'var(--yellow)',
-        'Hard': 'var(--red)',
-        'Expert': 'var(--purple)'
+    const bg = {
+        'easy': 'bg-green-600/20',
+        'medium': 'bg-yellow-500/20',
+        'hard': 'bg-red-500/20',
+        'expert': 'bg-purple-500/20'
     };
-    return colors[difficulty] || 'var(--text)';
+    const color = {
+        'easy': 'text-green-500',
+        'medium': 'text-yellow-500',
+        'hard': 'text-red-500',
+        'expert': 'text-purple-500'
+    };
+    return `${bg[difficulty]} ${color[difficulty]} border border-white/10 px-2 text-xs`;
+}
+
+// Formatage du temps
+function formatTimeDifference(createdAt) {
+    if (!createdAt) return 'Récemment créé';
+    const createdDate = new Date(createdAt);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - createdDate) / 1000);
+
+    if (diffInSeconds < 60) return `${diffInSeconds} seconde${diffInSeconds !== 1 ? 's' : ''}`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minute${Math.floor(diffInSeconds / 60) !== 1 ? 's' : ''}`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} heure${Math.floor(diffInSeconds / 3600) !== 1 ? 's' : ''}`;
+    return `${Math.floor(diffInSeconds / 86400)} jour${Math.floor(diffInSeconds / 86400) !== 1 ? 's' : ''}`;
 }
 
 // Fonction pour charger le classement des hackers
 async function loadTopHackers() {
     try {
+        const container = document.querySelector(CHALLENGE_ELEMENTS.topHackersList);
+        const emptyState = document.querySelector(CHALLENGE_ELEMENTS.hackerListEmptyState);
         const data = await apiRequest('/hackers/top');
+        console.log('leaderbord: ', data);
+        if (!data.success) {
+            container.style.display = 'none';
+            emptyState.style.display = 'flex';
+            console.log('echec lors du chargement du tophackers');
+            return;
+        }
         renderTopHackers(data.data || []);
     } catch (error) {
         handleError('Erreur lors du chargement du classement', error);
@@ -224,10 +218,20 @@ async function loadTopHackers() {
 
 function renderTopHackers(hackers) {
     const container = document.querySelector(CHALLENGE_ELEMENTS.topHackersList);
-    if (!container) return;
+    const emptyState = document.querySelector(CHALLENGE_ELEMENTS.hackerListEmptyState);
+    if (!hackers || hackers.length === 0) {
+        container.style.display = 'none';
+        emptyState.style.display = 'flex';
+        return;
+    }
 
-    container.innerHTML = '';
-    
+    if (!container || !emptyState) {
+        container.innerHTML = '';
+        console.error('Elements de classement non trouvés');
+        return;
+    }
+
+
     hackers.forEach((hacker, index) => {
         const item = document.createElement('li');
         item.textContent = `${index + 1}. ${hacker.username} - ${hacker.points} pts`;
@@ -236,33 +240,11 @@ function renderTopHackers(hackers) {
 }
 
 // Fonction pour mettre à jour le nombre de résolutions
-/*
-async function updateSolvesCount() {
-    try {
-        const data = await apiRequest('/challenges/solves');
-        const elements = document.querySelectorAll(CHALLENGE_ELEMENTS.solvesCount);
-        
-        if (data && data.success && data.count !== undefined) {
-            elements.forEach(el => {
-                el.textContent = `${data.count} solves`;
-            });
-        } else {
-            throw new Error('Réponse API invalide');
-        }
-    } catch (error) {
-        handleError('Erreur lors de la mise à jour des résolutions', error);
-        // Valeur par défaut en cas d'erreur
-        document.querySelectorAll(CHALLENGE_ELEMENTS.solvesCount).forEach(el => {
-            el.textContent = '0 solves';
-        });
-    }
-}
-*/
 async function updateSolvesCount() {
     try {
         const data = await apiRequest('/challenges/solves');
         const elements = document.querySelectorAll('.stat .value'); // Sélectionnez tous les compteurs
-        
+
         if (data && Array.isArray(data.data)) {
             // Mettre à jour chaque carte individuellement
             document.querySelectorAll('.cyber-card').forEach((card, index) => {
@@ -283,13 +265,19 @@ async function updateSolvesCount() {
         });
     }
 }
+
 // Gestion des filtres
 function setupFilters() {
     document.querySelectorAll(CHALLENGE_ELEMENTS.filterGroups).forEach(group => {
-        group.addEventListener("click", function(e) {
+        group.addEventListener("click", function (e) {
             const btn = e.target.closest(".filter-btn");
             if (!btn) return;
-            
+
+            if (btn.classList.contains("active")) {
+                btn.classList.remove("active");
+                applyFilters();
+                return;
+            }
             group.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
             applyFilters();
@@ -298,7 +286,7 @@ function setupFilters() {
 
     const clearBtn = document.querySelector(CHALLENGE_ELEMENTS.clearFiltersBtn);
     if (clearBtn) {
-        clearBtn.addEventListener("click", function() {
+        clearBtn.addEventListener("click", function () {
             document.querySelectorAll(CHALLENGE_ELEMENTS.filterGroups).forEach(group => {
                 group.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
             });
@@ -306,7 +294,7 @@ function setupFilters() {
         });
     }
 }
-/*
+
 function applyFilters() {
     const filters = {};
     document.querySelectorAll(CHALLENGE_ELEMENTS.filterGroups).forEach(group => {
@@ -314,59 +302,29 @@ function applyFilters() {
         const activeBtn = group.querySelector(".filter-btn.active");
         if (activeBtn) {
             filters[type] = activeBtn.textContent.trim().toLowerCase();
+            console.log('Active filter:', type, filters[type]);
         }
     });
 
     document.querySelectorAll(".cyber-card").forEach(card => {
         let show = true;
-        
-        if (filters.difficulty && card.getAttribute("data-difficulty")?.toLowerCase() !== filters.difficulty) {
-            show = false;
-        }
-        
-        if (filters.category && card.getAttribute("data-category")?.toLowerCase() !== filters.category) {
-            show = false;
-        }
-        
-        if (filters.status) {
-            const cardStatus = card.getAttribute("data-solved");
-            if ((filters.status === "solved" && cardStatus !== "true") || 
-                (filters.status === "unsolved" && cardStatus !== "false")) {
-                show = false;
-            }
-        }
-        
-        card.style.display = show ? "" : "none";
-    });
-}
-*/
-function applyFilters() {
-    const filters = {};
-    document.querySelectorAll(CHALLENGE_ELEMENTS.filterGroups).forEach(group => {
-        const type = group.getAttribute("data-type");
-        const activeBtn = group.querySelector(".filter-btn.active");
-        if (activeBtn) {
-            filters[type] = activeBtn.textContent.trim().toLowerCase();
-        }
-    });
 
-    document.querySelectorAll(".cyber-card").forEach(card => {
-        let show = true;
-        
         // Filtre par difficulté
         if (filters.difficulty) {
+            console.log('Difficulty filter:', filters.difficulty);
             const cardDifficulty = card.getAttribute("data-difficulty")?.toLowerCase();
             show = show && cardDifficulty === filters.difficulty;
         }
-        
+
         // Filtre par catégorie
         if (filters.category) {
             const cardCategory = card.querySelector('.category')?.textContent.toLowerCase();
             show = show && cardCategory === filters.category.toLowerCase();
         }
-        
+
         // Filtre par statut
         if (filters.status) {
+            console.log('Status filter:', filters.status);
             const cardStatus = card.getAttribute("data-solved");
             if (filters.status === "solved") {
                 show = show && cardStatus === "true";
@@ -374,7 +332,7 @@ function applyFilters() {
                 show = show && cardStatus === "false";
             }
         }
-        
+
         card.style.display = show ? "" : "none";
     });
 }
@@ -386,8 +344,8 @@ function setupSearch() {
     searchInput.addEventListener('input', debounce(() => {
         const searchTerm = searchInput.value.toLowerCase();
         document.querySelectorAll('.cyber-card').forEach(card => {
-            const title = card.querySelector('h3')?.textContent.toLowerCase() || "";
-            const description = card.querySelector('p')?.textContent.toLowerCase() || "";
+            const title = card.querySelector('.cyber-card-title')?.textContent.toLowerCase() || "";
+            const description = card.querySelector('.cyber-card-description')?.textContent.toLowerCase() || "";
             card.style.display = title.includes(searchTerm) || description.includes(searchTerm) ? '' : 'none';
         });
     }, 300));
@@ -404,54 +362,149 @@ function debounce(func, delay) {
 // Gestion du tri
 function setupSorting() {
     const sortBtn = document.querySelector(CHALLENGE_ELEMENTS.sortBtn);
-    if (!sortBtn) return;
+    const sortOptions = document.querySelectorAll(CHALLENGE_ELEMENTS.sortOptions);
 
-    document.querySelectorAll(CHALLENGE_ELEMENTS.sortOptions).forEach(option => {
-        option.addEventListener("click", () => {
-            sortChallenges(option.textContent);
+    if (!sortBtn) {
+        console.error('Sort button not found');
+        return;
+    }
+
+    if (!sortOptions || sortOptions.length === 0) {
+        console.error('No sort options found');
+        return;
+    }
+
+    // Gérer le clic en dehors du menu
+    function handleClickOutside(e) {
+        const options = sortBtn.parentElement.querySelector('.sort-options');
+        if (options.style.display === 'flex' && !sortBtn.contains(e.target)) {
+            options.style.display = 'none';
+        }
+    }
+
+    // Ajouter l'écouteur une seule fois
+    window.addEventListener("click", handleClickOutside);
+
+    // Nettoyer l'écouteur quand le composant est démonté
+    function cleanup() {
+        window.removeEventListener("click", handleClickOutside);
+    }
+
+    // Toggle display of sort options
+    sortBtn.addEventListener('click', () => {
+        const options = sortBtn.parentElement.querySelector('.sort-options');
+        if (options) {
+            if (options.classList.contains('slide-in-blurred-left')) {
+                options.classList.remove('slide-in-blurred-left');
+                options.classList.add('slide-out-blurred-left');
+            } else {
+                options.classList.add('slide-in-blurred-left');
+                options.classList.remove('slide-out-blurred-left');
+                options.style.display = 'flex';
+            }
+        }
+    });
+
+    sortOptions.forEach(option => {
+        if (!option) {
+            console.error('Invalid sort option found');
+            return;
+        }
+
+        option.addEventListener("click", (e) => {
+            // Remove active class from all options
+            sortOptions.forEach(opt => opt.classList.remove('active'));
+            
+            // Add active class to clicked option
+            option.classList.add('active');
+            
+            // Get the sort direction from data attribute if exists
+            const sortDirection = option.getAttribute('data-direction') || 'asc';
+            
+            // Update sort button text
+            sortBtn.querySelector('span').textContent = option.textContent;
+            
+            // Sort challenges
+            sortChallenges(option.textContent, sortDirection);
+            
+            // Close sort menu
+            sortBtn.click();
         });
     });
+
+    // Add default sort option
+    const defaultSortOption = sortOptions[0];
+    if (defaultSortOption) {
+        defaultSortOption.classList.add('active');
+        sortBtn.querySelector('span').textContent = defaultSortOption.textContent;
+    }
+
+    return cleanup; // Retourne la fonction de nettoyage
 }
 
-function sortChallenges(sortBy) {
-    const challengesArray = Array.from(document.querySelectorAll(".cyber-card"));
-    const container = document.querySelector(CHALLENGE_ELEMENTS.cardsContainer);
-
-    challengesArray.sort((a, b) => {
-        if (sortBy === "Latest") {
-            return new Date(b.dataset.date) - new Date(a.dataset.date);
+// Function to sort challenges
+function sortChallenges(sortBy, direction = 'asc') {
+    const cards = document.querySelectorAll('.cyber-card');
+    const sortedCards = Array.from(cards).sort((a, b) => {
+        let aValue, bValue;
+        
+        switch(sortBy.toLowerCase()) {
+            case 'latest':
+                // Tri par date (plus récent en premier)
+                aValue = new Date(a.getAttribute('data-created-at') || '0');
+                bValue = new Date(b.getAttribute('data-created-at') || '0');
+                return direction === 'asc' ? bValue - aValue : aValue - bValue;
+                
+            case 'most solved':
+                // Tri par nombre de résolutions
+                aValue = parseInt(a.getAttribute('data-hackers') || '0');
+                bValue = parseInt(b.getAttribute('data-hackers') || '0');
+                return direction === 'asc' ? bValue - aValue : aValue - bValue;
+                
+            case 'difficulty':
+                // Tri par difficulté avec valeurs numériques
+                const difficultyValues = {
+                    'easy': 1,
+                    'medium': 2,
+                    'hard': 3,
+                    'expert': 4
+                };
+                aValue = difficultyValues[a.getAttribute('data-difficulty')?.toLowerCase() || 'easy'];
+                bValue = difficultyValues[b.getAttribute('data-difficulty')?.toLowerCase() || 'easy'];
+                return direction === 'asc' ? aValue - bValue : bValue - aValue;
+                
+            case 'title':
+                // Tri par titre
+                aValue = a.getAttribute('data-title') || '';
+                bValue = b.getAttribute('data-title') || '';
+                return direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+                
+            default:
+                // Tri par défaut (titre)
+                aValue = a.getAttribute('data-title') || '';
+                bValue = b.getAttribute('data-title') || '';
+                return direction === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
         }
-        if (sortBy === "Most Solved") {
-            return parseInt(b.querySelector(".stat .value").textContent) - 
-                   parseInt(a.querySelector(".stat .value").textContent);
-        }
-        if (sortBy === "Difficulty") {
-            return getDifficultyValue(a.dataset.difficulty) - getDifficultyValue(b.dataset.difficulty);
-        }
-        return 0;
     });
 
-    container.innerHTML = "";
-    challengesArray.forEach(challenge => container.appendChild(challenge));
-}
-
-function getDifficultyValue(difficulty) {
-    const values = {
-        'Easy': 1,
-        'Medium': 2,
-        'Hard': 3,
-        'Expert': 4
-    };
-    return values[difficulty] || 0;
+    // Reorder cards in the DOM
+    sortedCards.forEach(card => {
+        card.parentElement.appendChild(card);
+    });
 }
 
 // Gestion de la modale
 function setupModal() {
     const modal = document.querySelector(CHALLENGE_ELEMENTS.modal);
-    if (!modal) return;
+    const modalContainer = document.querySelector(CHALLENGE_ELEMENTS.modalContainer);
+    if (!modal) {
+        console.log('Modal not found');
+        return;
+    };
 
+    // Gestion des boutons de modale
     document.querySelectorAll(CHALLENGE_ELEMENTS.openButtons).forEach(button => {
-        button.addEventListener("click", function(e) {
+        button.addEventListener("click", function (e) {
             e.preventDefault();
             openModal(button.closest(".cyber-card"));
         });
@@ -470,26 +523,34 @@ function setupModal() {
 function openModal(card) {
     if (!card) return;
     const modal = document.querySelector(CHALLENGE_ELEMENTS.modal);
+    const modalContainer = document.querySelector('#modal-container');
+    const timeAgo = card.getAttribute("data-created-at") ? `Il y a ${formatTimeDifference(card.getAttribute("data-created-at"))}` : 'Nouveau challenge';
 
     const challengeDetails = {
+        author: card.getAttribute("data-author") || "Unknown",
+        time: timeAgo,
+        hackers: "Resolu par " + card.getAttribute("data-hackers") + " hackers" || "0 hackers",
         title: card.getAttribute("data-title") || (card.querySelector("h3")?.textContent || ""),
         description: card.getAttribute("data-description") || (card.querySelector(".description")?.textContent || ""),
         difficulty: card.getAttribute("data-difficulty") || "Difficulty",
-        category: card.getAttribute("data-category") || "Category",
-        time: card.getAttribute("data-time") || "Time",
+        type: card.getAttribute("data-type") || "Category",
         points: card.getAttribute("data-points") || "Points",
         hint: card.getAttribute("data-hint") || "Hint",
         tags: (card.getAttribute("data-tags") || "").split(",")
     };
+    const difficultyColor = getDifficultyColor(challengeDetails.difficulty).split(" ");
 
     // Mise à jour de la modale
+    document.getElementById("challenge-time").textContent = challengeDetails.time;
+    document.getElementById("challenge-hackers").textContent = challengeDetails.hackers;
     document.getElementById("challenge-title").textContent = challengeDetails.title;
     document.getElementById("challenge-description").textContent = challengeDetails.description;
     document.getElementById("challenge-difficulty").textContent = challengeDetails.difficulty;
-    document.getElementById("challenge-category").textContent = challengeDetails.category;
-    document.getElementById("challenge-time").textContent = challengeDetails.time;
+    document.getElementById("challenge-difficulty").classList.add(...difficultyColor);
+    document.getElementById("challenge-category").textContent = challengeDetails.type;
     document.getElementById("challenge-points").textContent = challengeDetails.points;
     document.getElementById("challenge-hint").textContent = challengeDetails.hint;
+    document.getElementById("challenge-author").textContent = 'By ' + challengeDetails.author || 'Unknown';
 
     // Mise à jour des tags
     const tagsContainer = document.getElementById("challenge-tags");
@@ -498,6 +559,7 @@ function openModal(card) {
         challengeDetails.tags.forEach(tag => {
             if (tag.trim()) {
                 const tagElement = document.createElement("span");
+                tagElement.classList.add("bg-slate-700/50", "text-xs", "flex", "items-center", "justify-center", "px-3", "py-1", "rounded-full", "border", "border-white/10", "hover:bg-slate-700");
                 tagElement.textContent = tag.trim();
                 tagsContainer.appendChild(tagElement);
             }
@@ -505,11 +567,18 @@ function openModal(card) {
     }
 
     modal.style.display = "flex";
+    modalContainer.classList.add('scale-in-center');
+    modal.classList.remove('fade-out-bck');
 }
 
 function closeModal() {
     const modal = document.querySelector(CHALLENGE_ELEMENTS.modal);
-    if (modal) modal.style.display = "none";
+    const modalContainer = document.querySelector('#modal-container');
+    modalContainer.classList.remove('scale-in-center');
+    modal.classList.add('fade-out-bck');
+    setTimeout(() => {
+        modal ? modal.style.display = "none" : null;
+    }, 350);
 }
 
 // Initialisation de l'application

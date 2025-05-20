@@ -474,11 +474,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const data = await response.json();
 
             if (data.success) {
-                // Stockage du token côté client
-                // if (data.token) {
-                //     localStorage.setItem('auth_token', data.token);
-                // }
-
                 // Redirection
                 window.location.href = data.redirect;
             } else {

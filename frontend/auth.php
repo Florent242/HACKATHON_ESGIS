@@ -40,10 +40,10 @@ if (empty($_SESSION['csrf_token'])) {
                 <form action="/HACKATHON_ESGIS/public/api/auth/login" method="POST"  id="signinForm">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="form-group">
-                        <label for="email_user">Email</label>
+                        <label for="email_user">Email ou nom d'utilisateur</label>
                         <div class="display p-2 shadow-lg shadow-indigo-300/10">
                             <i data-lucide="mail"></i>
-                            <input type="email" id="email_user" name="email" placeholder="etudiant@esgis.bj" required>
+                            <input type="text" id="email_user" name="identifier" placeholder="etudiant@esgis.bj" required>
                         </div>
                     </div>
 
