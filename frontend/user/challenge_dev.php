@@ -23,22 +23,22 @@
                 <div class="header-content">
                     <div class="header-title">
                         <i data-lucide="code" style="color: var(--blue); font-size: 1.5rem;"></i>
-                        <h1 style="font-size: 1.5rem; margin: 0;">Défis de développement</h1>
+                        <h1>Défis de développement</h1>
                     </div>
-                    <p style="color: var(--text-secondary); margin: 0;">Choisissez parmi notre liste de défis de développement et de sécurité</p>
+                    <div class="header-actions">
+                        <a href="/HACKATHON_ESGIS/public/user" class="back-link">
+                            <i data-lucide="arrow-left"></i>
+                            Retour au Dashboard
+                        </a>
+                        <a href="/HACKATHON_ESGIS/public/user/leaderboard">
+                            <button class="ranking-button">
+                                <i data-lucide="trophy"></i>
+                                Classement
+                            </button>
+                        </a>
+                    </div>
                 </div>
-                <div class="header-actions">
-                    <a href="/HACKATHON_ESGIS/public/user" class="back-link" style="color: var(--blue); text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
-                        <i data-lucide="arrow-left" style="color: var(--blue);"></i>
-                        Retour au Dashboard
-                    </a>
-                    <a href="/HACKATHON_ESGIS/public/user/leaderboard">
-                        <button class="ranking-button" style="background-color: var(--blue); color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; display: flex; align-items: center; gap: 0.5rem;">
-                            <i data-lucide="trophy" style="color: white;"></i>
-                            Classement
-                        </button>
-                    </a>
-                </div>
+                <p>Choisissez parmi notre liste de défis de développement et de sécurité</p>
             </div>
 
 
@@ -52,7 +52,7 @@
                                 <h4>Total des participants</h4>
                             </div>
                             <div class="stat-card-value">
-                                <h3>9</h3>
+                                <span>9</span>
                             </div>
                         </div>
                     </div>
@@ -63,7 +63,7 @@
                                 <h4>Défis actifs</h4>
                             </div>
                             <div class="stat-card-value">
-                                <h3>1234</h3>
+                                <span>12</span>
                             </div>
                         </div>
                     </div>
@@ -71,22 +71,27 @@
             </div>
 
             <div class="search-container">
-                <input type="text" class="search-bar" id="searchInput" placeholder="Search resources...">
-                <button class="filters" onclick="toggleFilters()" id="filterButton">
-                    <i data-lucide="sliders" style="font-size: 1.2rem;"></i>
-                    Afficher les filtres
-                    <i data-lucide="chevron-down" id="filterIcon" style="font-size: 1.2rem;"></i>
-                </button>
+                <div class="search-bar-container">
+                    <i data-lucide="search"></i>
+                    <input type="text" class="search-bar" id="searchInput" placeholder="Rechercher un défis...">
+                </div>
+                <div class="filters-btns">
+                    <button class="filters" onclick="toggleFilters()" id="filterButton">
+                        <i data-lucide="sliders"></i>
+                        <span id="filterText">Afficher les filtres</span>
+                        <i data-lucide="chevron-down" class="chevron-down" id="filterIcon"></i>
+                    </button>
 
-                <button class="reset-filters" onclick="resetFilters()">
-                    <i data-lucide="x-circle" style="font-size: 1.2rem;"></i>
-                    Supprimer filtre
-                </button>
+                    <button class="reset-filters" onclick="resetFilters()">
+                        <i data-lucide="x-circle"></i>
+                        <span>Supprimer filtre</span>
+                    </button>
+                </div>
             </div>
 
             <div class="filters-container" id="filterTags">
-                <div class="categories">
-                    <h3>Catégories</h3>
+                <div class="filter-section categories">
+                    <h3>Catégorie</h3>
                     <div class="category-list">
                         <span class="filter-tag" data-category="web">Web</span>
                         <span class="filter-tag" data-category="mobile">Mobile</span>
@@ -99,7 +104,7 @@
                     </div>
                 </div>
 
-                <div class="difficulty-levels">
+                <div class="filter-section difficulty-levels">
                     <h3>Niveau de difficulté</h3>
                     <div class="difficulty-buttons">
                         <span class="filter-tag" data-difficulty="all">All Levels</span>
@@ -108,165 +113,35 @@
                         <span class="filter-tag" data-difficulty="avancé">Avancé</span>
                     </div>
                 </div>
+
             </div>
 
             <hr>
 
             <div class="resources-grid" id="resourcesGrid">
-                <!-- Carte 1 -->
-                <div class="resource-card"
-                    data-title="API REST - Module d’authentification"
-                    data-description="Créez une API REST sécurisée avec un système d’authentification JWT complet."
-                    data-difficulty="intermédiaire"
-                    data-category="backend"
-                    data-date="29 mai 2025"
-                    data-status="En cours"
-                    data-tags="NodeJS, Express, MongoDB">
-                    <div class="card-header">
-                        <span class="resource-category">Backend</span>
-                        <span class="resource-difficulty">Intermédiaire</span>
-                    </div>
-                    <h3 class="resource-title">API REST - Module d’authentification</h3>
-                    <p class="resource-description">
-                        Créez une API REST sécurisée avec un système d’authentification JWT complet.
+                <div class="col-span-full flex flex-col items-center justify-center text-center py-16 px-4 gap-4">
+                    <i data-lucide="search-x" class="w-16 h-16 text-blue-500"></i>
+
+                    <h2 class="text-xl text-white font-semibold">
+                        Aucun défi trouvé
+                    </h2>
+
+                    <p class="text-sm text-zinc-400 max-w-md">
+                        Aucun challenge ne correspond à vos critères actuels.<br />
+                        Essayez de modifier vos filtres ou votre recherche.
                     </p>
-                    <div class="resource-tags">
-                        <span class="tag">NodeJS</span>
-                        <span class="tag">Express</span>
-                        <span class="tag">MongoDB</span>
-                    </div>
-                    <span class="resource-date">29 mai 2025</span>
-                    <div class="card-footer">
-                        <span class="resource-status">
-                            <i data-lucide="clock"></i>
-                            En cours
-                        </span>
-                        <button class="submit-button" onclick="openSubmitModal(this)">
-                            <i data-lucide="upload-cloud"></i>
-                            Soumettre
-                        </button>
-                        <span class="resource-details">
-                            <i data-lucide="info"></i>
-                            Détails
-                        </span>
-                    </div>
+
+                    <button
+                        onclick="resetFilters()"
+                        class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow transition">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                        Réinitialiser les filtres
+                    </button>
                 </div>
-                <!-- Carte 2 -->
-                <div class="resource-card"
-                    data-title="Application Mobile React Native"
-                    data-description="Développez une application mobile cross-platform avec React Native, Redux et Firebase."
-                    data-difficulty="avancé"
-                    data-category="mobile"
-                    data-date="29 mai 2025"
-                    data-status="Soumis"
-                    data-tags="React Native, Redux, Firebase">
-                    <div class="card-header">
-                        <span class="resource-category">Mobile</span>
-                        <span class="resource-difficulty">Avancé</span>
-                    </div>
-                    <h3 class="resource-title">Application Mobile React Native</h3>
-                    <p class="resource-description">
-                        Développez une application mobile cross-platform avec React Native, Redux et Firebase.
-                    </p>
-                    <div class="resource-tags">
-                        <span class="tag">React Native</span>
-                        <span class="tag">Redux</span>
-                        <span class="tag">Firebase</span>
-                    </div>
-                    <span class="resource-date">29 mai 2025</span>
-                    <div class="card-footer">
-                        <span class="resource-status">
-                            <i data-lucide="clock"></i>
-                            Soumis
-                        </span>
-                        <span class="resource-details">
-                            <i data-lucide="info"></i>
-                            Détails
-                        </span>
-                    </div>
-                </div>
-                <!-- Carte 3 -->
-                <div class="resource-card"
-                    data-title="Architecture Microservices"
-                    data-description="Développez une architecture microservices Docker et Kubernetes."
-                    data-difficulty="avancé"
-                    data-category="devops"
-                    data-date="30 juin 2025"
-                    data-status="En cours"
-                    data-tags="Docker, Kubernetes, NodeJS">
-                    <div class="card-header">
-                        <span class="resource-category">DevOps</span>
-                        <span class="resource-difficulty">Avancé</span>
-                    </div>
-                    <h3 class="resource-title">Architecture Microservices</h3>
-                    <p class="resource-description">
-                        Développez une architecture microservices Docker et Kubernetes.
-                    </p>
-                    <div class="resource-tags">
-                        <span class="tag">Docker</span>
-                        <span class="tag">Kubernetes</span>
-                        <span class="tag">NodeJS</span>
-                    </div>
-                    <span class="resource-date">30 juin 2025</span>
-                    <div class="card-footer">
-                        <span class="resource-status">
-                            <i data-lucide="clock"></i>
-                            En cours
-                        </span>
-                        <button class="submit-button" onclick="openSubmitModal(this)">
-                            <i data-lucide="upload-cloud"></i>
-                            Soumettre
-                        </button>
-                        <span class="resource-details">
-                            <i data-lucide="info"></i>
-                            Détails
-                        </span>
-                    </div>
-                </div>
-                <!-- Carte 4 -->
-                <div class="resource-card"
-                    data-title="Application Web Frontend avec React"
-                    data-description="Créez une interface utilisateur moderne pour un tableau de bord d'analytique."
-                    data-difficulty="intermédiaire"
-                    data-category="frontend"
-                    data-date="30 juin 2025"
-                    data-status="Disponible"
-                    data-tags="React, TypeScript, MongoDB, Recharts">
-                    <div class="card-header">
-                        <span class="resource-category">Frontend</span>
-                        <span class="resource-difficulty">Intermédiaire</span>
-                    </div>
-                    <h3 class="resource-title">Application Web Frontend avec React</h3>
-                    <p class="resource-description">
-                        Créez une interface utilisateur moderne pour un tableau de bord d'analytique.
-                    </p>
-                    <div class="resource-tags">
-                        <span class="tag">React</span>
-                        <span class="tag">TypeScript</span>
-                        <span class="tag">MongoDB</span>
-                        <span class="tag">Recharts</span>
-                    </div>
-                    <span class="resource-date">30 juin 2025</span>
-                    <div class="card-footer">
-                        <span class="resource-status">
-                            <i data-lucide="clock"></i>
-                            Disponible
-                        </span>
-                        <span class="resource-details">
-                            <i data-lucide="info"></i>
-                            Détails
-                        </span>
-                    </div>
-                </div>
+
             </div>
-
-
-
-
-
+        </div>
     </main>
-
-
 
 </body>
 
