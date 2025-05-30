@@ -1,0 +1,42 @@
+:root {
+    --background: #0A0F1C;
+    --card-bg: linear-gradient(135deg, #1A1F2B 0%, #141925 100%);
+    --card-hover: #1E293B;
+    --blue: #3B82F6;
+    --text: #FFFFFF;
+    --text-secondary: #94A3B8;
+    --border: #2D3441;
+    --color-text: #FFFFFF;
+    --color-text-secondary: #94A3B8;
+    --color-card: linear-gradient(135deg, #1A1F2B 0%, #141925 100%);
+    --color-primary: #3B82F6;
+    --color-background: #0A0F1C;
+    --color-border: #2D3441;
+    --color-primary-dark: #2563eb;
+    --bg-primary: #0A0F1C;
+    --border-color: #2D3441;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: var(--background);
+    color: var(--text);
+    line-height: 1.5;
+}
+
+main {
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 10%;
+    background: linear-gradient(to bottom,
+            transparent,
+            var(--background)),
+        radial-gradient(circle at center, rgba(59, 130, 246, 0.25),
+            transparent 70%);
+}
+
+hr {
+    border-color: var(--text-secondary);
+    margin: 2rem auto;
+    width: 90%;
+}

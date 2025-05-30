@@ -952,6 +952,7 @@ try {
                     }
                 }
             } elseif ($id === 'hackathon' && is_numeric($action)) {
+                // Route /api/challenges/hackathon/{id}
                 $controller->getByHackathon($action);
             } else {
                 throw new Exception('ID non valide', 400);
