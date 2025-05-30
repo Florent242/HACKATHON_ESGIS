@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EsgisHub - Resources</title>
+    <title>EsgisHub - Défis de développement</title>
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/challenge_dev.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/header.css">
     <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
@@ -52,7 +52,7 @@
                                 <h4>Total des participants</h4>
                             </div>
                             <div class="stat-card-value">
-                                <span>9</span>
+                                <span id="totalParticipants">9</span>
                             </div>
                         </div>
                     </div>
@@ -63,7 +63,7 @@
                                 <h4>Défis actifs</h4>
                             </div>
                             <div class="stat-card-value">
-                                <span>12</span>
+                                <span id="totalChallenges">12</span>
                             </div>
                         </div>
                     </div>
@@ -119,26 +119,26 @@
             <hr>
 
             <div class="resources-grid" id="resourcesGrid">
-                <div class="col-span-full flex flex-col items-center justify-center text-center py-16 px-4 gap-4">
-                    <i data-lucide="search-x" class="w-16 h-16 text-blue-500"></i>
 
-                    <h2 class="text-xl text-white font-semibold">
-                        Aucun défi trouvé
-                    </h2>
+            </div>
+            <div class="col-span-full flex-col items-center justify-center text-center py-16 px-4 gap-4 hidden" id="noResults">
+                <i data-lucide="search-x" class="w-16 h-16 text-blue-500"></i>
 
-                    <p class="text-sm text-zinc-400 max-w-md">
-                        Aucun challenge ne correspond à vos critères actuels.<br />
-                        Essayez de modifier vos filtres ou votre recherche.
-                    </p>
+                <h2 class="text-xl text-white font-semibold">
+                    Aucun défi trouvé
+                </h2>
 
-                    <button
-                        onclick="resetFilters()"
-                        class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow transition">
-                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                        Réinitialiser les filtres
-                    </button>
-                </div>
+                <p class="text-sm text-zinc-400 max-w-md">
+                    Aucun challenge ne correspond à vos critères actuels.<br />
+                    Essayez de modifier vos filtres ou votre recherche.
+                </p>
 
+                <button
+                    onclick="resetFilters()"
+                    class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow transition">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    Réinitialiser les filtres
+                </button>
             </div>
         </div>
     </main>

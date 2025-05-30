@@ -1,3 +1,125 @@
+// Variables globales de filtrage améliorées
+let selectedCategory = "all";
+let selectedDifficulty = "all";
+let selectedStatus = "all";
+let searchTerm = "";
+let sortBy = "date"; // date, title, difficulty
+let sortOrder = "desc"; // asc, desc
+let currentView = 'list'; // 'list' ou 'detail'
+let currentChallenge = null;
+let isRegistredToHackathon;
+
+// Tableau de ressources étendu avec plus de variété
+const resources = [
+    {
+        title: "API REST - Module d'authentification",
+        description: "Créez une API REST sécurisée avec un système d'authentification JWT complet, gestion des rôles et middleware de sécurité.",
+        difficulty: "intermédiaire",
+        category: "backend",
+        date: "29 mai 2025",
+        status: "En cours",
+        tags: ["NodeJS", "Express", "MongoDB", "JWT"],
+        participants: 15,
+        documentation: "https://example.com/docs",
+        repository: "https://example.com/repo"
+    },
+    {
+        title: "Application Mobile React Native",
+        description: "Développez une application mobile cross-platform avec React Native, Redux et Firebase pour la gestion de tâches.",
+        difficulty: "avancé",
+        category: "mobile",
+        date: "29 mai 2025",
+        status: "Soumis",
+        tags: ["React Native", "Redux", "Firebase"],
+        participants: 8,
+        documentation: "https://example.com/docs",
+        repository: "https://example.com/repo"
+    },
+    {
+        title: "Architecture Microservices",
+        description: "Développez une architecture microservices complète avec Docker, Kubernetes et monitoring avancé.",
+        difficulty: "avancé",
+        category: "devops",
+        date: "30 juin 2025",
+        status: "En cours",
+        tags: ["Docker", "Kubernetes", "NodeJS"],
+        participants: 5,
+        documentation: "https://example.com/docs",
+        repository: "https://example.com/repo"
+    },
+    {
+        title: "Application Web Frontend avec React",
+        description: "Créez une interface utilisateur moderne pour un tableau de bord d'analytique avec graphiques interactifs.",
+        difficulty: "intermédiaire",
+        category: "frontend",
+        date: "30 juin 2025",
+        status: "Disponible",
+        tags: ["React", "TypeScript", "Recharts"],
+        participants: 22,
+        documentation: "https://example.com/docs",
+        repository: "https://example.com/repo"
+    },
+    {
+        title: "Application d'IA pour la Reconnaissance d'Images",
+        description: "Développez un système de reconnaissance d'images utilisant le deep learning et TensorFlow.",
+        difficulty: "avancé",
+        category: "ia",
+        date: "20 juin 2025",
+        status: "Disponible",
+        tags: ["Python", "TensorFlow", "Keras"],
+        participants: 12,
+        documentation: "https://example.com/docs",
+        repository: "https://example.com/repo"
+    },
+    {
+        title: "Application Blockchain Simple",
+        description: "Développez une application décentralisée (DApp) simple sur Ethereum avec smart contracts.",
+        difficulty: "intermédiaire",
+        category: "blockchain",
+        date: "25 juin 2025",
+        status: "Disponible",
+        tags: ["Solidity", "Web3.js", "React"],
+        participants: 7,
+        documentation: "https://example.com/docs",
+        repository: "https://example.com/repo"
+    },
+    {
+        title: "Système de Base de Données NoSQL",
+        description: "Concevez et implémentez un système de base de données NoSQL pour des données à grande échelle.",
+        difficulty: "avancé",
+        category: "database",
+        date: "15 juillet 2025",
+        status: "Disponible",
+        tags: ["MongoDB", "Redis", "ElasticSearch"],
+        participants: 18,
+        documentation: "https://example.com/docs",
+        repository: "https://example.com/repo"
+    },
+    {
+        title: "Site Web Statique avec Optimisation SEO",
+        description: "Créez un site vitrine optimisé pour les moteurs de recherche et les performances.",
+        difficulty: "facile",
+        category: "web",
+        date: "10 juin 2025",
+        status: "Terminé",
+        tags: ["HTML5", "CSS3", "JavaScript"],
+        participants: 31,
+        documentation: "https://example.com/docs",
+        repository: "https://example.com/repo"
+    }
+];
+
+async function checkUserRegistration() {
+    try {
+        const response = await fetch(`/HACKATHON_ESGIS/public/api/user/registration`);
+        const data = await response.json();
+        isRegistredToHackathon = data.data;
+        return isRegistredToHackathon;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 function toggleFilters() {
     const container = document.getElementById('filterTags');
     const filterText = document.getElementById('filterText');
@@ -28,99 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (container) {
         container.classList.remove("show");
     }
+    checkUserRegistration();
 });
-
-// Variables globales de filtrage améliorées
-let selectedCategory = "all";
-let selectedDifficulty = "all";
-let selectedStatus = "all";
-let searchTerm = "";
-let sortBy = "date"; // date, title, difficulty
-let sortOrder = "desc"; // asc, desc
-
-// Tableau de ressources étendu avec plus de variété
-const resources = [
-    {
-        title: "API REST - Module d'authentification",
-        description: "Créez une API REST sécurisée avec un système d'authentification JWT complet, gestion des rôles et middleware de sécurité.",
-        difficulty: "intermédiaire",
-        category: "backend",
-        date: "29 mai 2025",
-        status: "En cours",
-        tags: ["NodeJS", "Express", "MongoDB", "JWT"],
-        participants: 15
-    },
-    {
-        title: "Application Mobile React Native",
-        description: "Développez une application mobile cross-platform avec React Native, Redux et Firebase pour la gestion de tâches.",
-        difficulty: "avancé",
-        category: "mobile",
-        date: "29 mai 2025",
-        status: "Soumis",
-        tags: ["React Native", "Redux", "Firebase"],
-        participants: 8
-    },
-    {
-        title: "Architecture Microservices",
-        description: "Développez une architecture microservices complète avec Docker, Kubernetes et monitoring avancé.",
-        difficulty: "avancé",
-        category: "devops",
-        date: "30 juin 2025",
-        status: "En cours",
-        tags: ["Docker", "Kubernetes", "NodeJS"],
-        participants: 5
-    },
-    {
-        title: "Application Web Frontend avec React",
-        description: "Créez une interface utilisateur moderne pour un tableau de bord d'analytique avec graphiques interactifs.",
-        difficulty: "intermédiaire",
-        category: "frontend",
-        date: "30 juin 2025",
-        status: "Disponible",
-        tags: ["React", "TypeScript", "Recharts"],
-        participants: 22
-    },
-    {
-        title: "Application d'IA pour la Reconnaissance d'Images",
-        description: "Développez un système de reconnaissance d'images utilisant le deep learning et TensorFlow.",
-        difficulty: "avancé",
-        category: "ia",
-        date: "20 juin 2025",
-        status: "Disponible",
-        tags: ["Python", "TensorFlow", "Keras"],
-        participants: 12
-    },
-    {
-        title: "Application Blockchain Simple",
-        description: "Développez une application décentralisée (DApp) simple sur Ethereum avec smart contracts.",
-        difficulty: "intermédiaire",
-        category: "blockchain",
-        date: "25 juin 2025",
-        status: "Disponible",
-        tags: ["Solidity", "Web3.js", "React"],
-        participants: 7
-    },
-    {
-        title: "Système de Base de Données NoSQL",
-        description: "Concevez et implémentez un système de base de données NoSQL pour des données à grande échelle.",
-        difficulty: "avancé",
-        category: "database",
-        date: "15 juillet 2025",
-        status: "Disponible",
-        tags: ["MongoDB", "Redis", "ElasticSearch"],
-        participants: 18
-    },
-    {
-        title: "Site Web Statique avec Optimisation SEO",
-        description: "Créez un site vitrine optimisé pour les moteurs de recherche et les performances.",
-        difficulty: "facile",
-        category: "web",
-        date: "10 juin 2025",
-        status: "Terminé",
-        tags: ["HTML5", "CSS3", "JavaScript"],
-        participants: 31
-    }
-];
 
 // Fonction améliorée qui construit une carte de ressource moderne
 function createResourceCard(resource) {
@@ -193,12 +224,17 @@ function createResourceCard(resource) {
                 ${resource.status}
             </span>
             <div class="card-actions">
-                ${resource.status === "En cours" || resource.status === "Disponible" ? `
-                    <button class="submit-button" onclick="openSubmitModal(this)">
+                ${resource.status === "En cours" ? `
+                    <button class="submit-button" onclick="submitSolution('${resource.id}')">
                         <i data-lucide="upload-cloud"></i>
-                        ${resource.status === "En cours" ? "Soumettre" : "Commencer"}
+                        Soumettre
                     </button>
-                ` : ""}
+                ` : resource.status === "Disponible" ? `
+                    <button class="submit-button" onclick="participateInChallenge('${resource.id}')">
+                        <i data-lucide="upload-cloud"></i>
+                        Participer
+                    </button>
+                ` : ``}
                 <span class="resource-details" onclick="openDetailsModal(this)">
                     <i data-lucide="info"></i>
                     Détails
@@ -240,18 +276,44 @@ function sortResources(resourceList) {
 
 // Fonction qui affiche dans le conteneur la liste (filtrée) de ressources
 function displayResources(resourceList = resources) {
+    if (resourceList.length === 0) {
+        const grid = document.getElementById("resourcesGrid");
+        grid.classList.add("fade-out");
+        setTimeout(() => {
+            grid.innerHTML = "";
+            const noResults = document.getElementById("noResults");
+            noResults.classList.remove("hidden");
+            noResults.classList.add("flex");
+        }, 200);
+        return;
+    }
+    // S'assurer qu'on est en vue liste
+    if (currentView !== 'list') {
+        return;
+    }
+
+    // if (!isRegistredToHackathon) {
+    //     const grid = document.getElementById("resourcesGrid");
+    //     grid.classList.add("fade-out");
+    //     setTimeout(() => {
+    //         grid.innerHTML = "";
+    //         const noResults = document.getElementById("noResults");
+    //         noResults.classList.remove("hidden");
+    //     }, 200);
+    //     return;
+    // }
     const grid = document.getElementById("resourcesGrid");
 
-    // Étape 1 : Ajouter une classe de sortie douce
+    // Ajouter une classe de sortie douce
     grid.classList.add("fade-out");
 
     setTimeout(() => {
         grid.innerHTML = "";
 
-        // Étape 2 : Trier les ressources à afficher
+        // Trier les ressources à afficher
         const sortedResources = sortResources([...resourceList]);
 
-        // Étape 3 : Ajouter les nouvelles cartes avec animation
+        // Ajouter les nouvelles cartes avec animation
         sortedResources.forEach((resource, index) => {
             const card = createResourceCard(resource);
             card.classList.add("fade-in");
@@ -264,7 +326,7 @@ function displayResources(resourceList = resources) {
             lucide.createIcons();
         }
 
-        // Étape 4 : Supprimer la classe de sortie
+        // Supprimer la classe de sortie
         grid.classList.remove("fade-out");
     }, 200); // délai égal à la durée de l'animation de sortie
 }
@@ -286,36 +348,16 @@ function applyFilters() {
 
     if (filtered.length === 0) {
         const grid = document.getElementById("resourcesGrid");
-        grid.innerHTML = `
-            <div class="col-span-full flex flex-col items-center justify-center text-center py-16 px-4 gap-4">
-            <i data-lucide="search-x" class="w-16 h-16 text-blue-500"></i>
-        
-            <h2 class="text-xl text-white font-semibold">
-                Aucun défi trouvé
-            </h2>
-        
-            <p class="text-sm text-zinc-400 max-w-md">
-                Aucun challenge ne correspond à vos critères actuels.<br />
-                Essayez de modifier vos filtres ou votre recherche.
-            </p>
-        
-            <button
-                onclick="resetFilters()"
-                class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow transition"
-            >
-                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-                Réinitialiser les filtres
-            </button>
-            </div>
-        `;
+        const emptyState = document.getElementById("noResults");
+        grid.innerHTML = ``;
+        emptyState.classList.remove("hidden");
+        emptyState.classList.add("flex");
+        grid.classList.add("fade-out");
         lucide.createIcons();
-
-
         updateResultsCounter(0, resources.length);
         updateActiveFiltersIndicator();
-        return; // Arrêter ici car pas besoin d’afficher de cartes
+        return;
     }
-
 
     displayResources(filtered);
 
@@ -500,7 +542,7 @@ function resetFilters() {
     }, 200);
 }
 
-// Fonctions pour les modals (à implémenter selon vos besoins)
+// TODO: Implementer les modals
 function openSubmitModal(button) {
     const card = button.closest('.resource-card');
     const title = card.getAttribute('data-title');
@@ -510,7 +552,273 @@ function openSubmitModal(button) {
 function openDetailsModal(element) {
     const card = element.closest('.resource-card');
     const title = card.getAttribute('data-title');
-    console.log('Ouvrir modal de détails pour:', title);
+
+    // Trouver la ressource correspondante
+    const resource = resources.find(r => r.title === title);
+    if (resource) {
+        currentChallenge = resource;
+        currentView = 'detail';
+        displayChallengeDetail(resource);
+    }
+}
+
+function displayChallengeDetail(challenge) {
+    const grid = document.getElementById("resourcesGrid");
+    const noResults = document.getElementById("noResults");
+
+    // Masquer le message "aucun défi trouvé" s'il est visible
+    if (!noResults.classList.contains("hidden")) {
+        noResults.classList.add("hidden");
+        noResults.classList.remove("flex");
+    }
+
+    if (!challenge) {
+        return;
+    }
+
+    // Animation de sortie
+    grid.classList.add("fade-out");
+
+    setTimeout(() => {
+        grid.innerHTML = createChallengeDetailCard(challenge);
+
+        // Réinitialiser Lucide (icônes)
+        if (typeof lucide !== "undefined" && lucide.createIcons) {
+            lucide.createIcons();
+        }
+
+        // Animation d'entrée
+        grid.classList.remove("fade-out");
+        const detailCard = grid.querySelector('.challenge-detail-card');
+        if (detailCard) {
+            detailCard.classList.add('fade-in-up');
+        }
+    }, 200);
+}
+
+function createChallengeDetailCard(challenge) {
+    // Fonction pour obtenir l'icône de catégorie
+    function getCategoryIcon(category) {
+        const icons = {
+            'backend': 'server',
+            'frontend': 'layout',
+            'mobile': 'smartphone',
+            'web': 'globe',
+            'ia': 'brain',
+            'blockchain': 'link',
+            'database': 'database',
+            'devops': 'settings'
+        };
+        return icons[category.toLowerCase()] || 'code';
+    }
+
+    // Fonction pour obtenir l'icône du statut
+    function getStatusIcon(status) {
+        switch (status.toLowerCase()) {
+            case 'en cours': return 'clock';
+            case 'disponible': return 'play-circle';
+            case 'soumis': return 'check-circle';
+            case 'terminé': return 'check-circle-2';
+            default: return 'circle';
+        }
+    }
+
+    // Fonction pour formater la date
+    function formatDate(dateStr) {
+        const months = {
+            'mai': 'Mai',
+            'juin': 'Juin',
+            'juillet': 'Juillet'
+        };
+        return dateStr.replace(/(mai|juin|juillet)/i, match => months[match.toLowerCase()]);
+    }
+
+    function getRemainingDays(dateStr) {
+        const months = {
+            'janvier': 0, 'février': 1, 'mars': 2, 'avril': 3,
+            'mai': 4, 'juin': 5, 'juillet': 6, 'août': 7,
+            'septembre': 8, 'octobre': 9, 'novembre': 10, 'décembre': 11
+        };
+
+        const [day, month, year] = dateStr.split(' ');
+        const date = new Date(year, months[month.toLowerCase()], parseInt(day));
+        const now = new Date();
+        const diffTime = date - now;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return Math.max(0, diffDays);
+    }
+
+    return `
+        <div class="challenge-detail-card col-span-full">
+            <div class="detail-header">
+                <button class="back-to-list-btn" onclick="backToList()">
+                    <i data-lucide="arrow-left"></i>
+                    Retour à la liste
+                </button>
+                <div class="detail-badges">
+                    <span class="detail-category" data-category="${challenge.category}">
+                        <i data-lucide="${getCategoryIcon(challenge.category)}"></i>
+                        ${challenge.category.charAt(0).toUpperCase() + challenge.category.slice(1)}
+                    </span>
+                    <span class="detail-status" data-status="${challenge.status.toLowerCase()}">
+                        <i data-lucide="${getStatusIcon(challenge.status)}"></i>
+                        ${challenge.status}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="detail-content">
+                <div class="detail-main">
+                    <h1 class="detail-title">${challenge.title}</h1>
+                    <p class="detail-description">${challenge.description}</p>
+                    
+                    <div class="detail-info-grid">
+                        <div class="info-card">
+                            <div class="info-header">
+                                <i data-lucide="calendar"></i>
+                                <h3>Date limite</h3>
+                            </div>
+                            <p>${formatDate(challenge.date)}</p>
+                        </div>
+                        
+                        <div class="info-card">
+                            <div class="info-header">
+                                <i data-lucide="users"></i>
+                                <h3>Participants</h3>
+                            </div>
+                            <p>${challenge.participants} inscrits</p>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-technologies">
+                        <h3>Technologies requises</h3>
+                        <div class="tech-tags">
+                            ${challenge.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="detail-objectives">
+                        <h3>Objectifs du défi</h3>
+                        <ul class="objectives-list">
+                            <li>Développer une solution fonctionnelle</li>
+                            <li>Respecter les bonnes pratiques de développement</li>
+                            <li>Documenter le code et les choix techniques</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="detail-sidebar">
+                    <div class="participation-card">
+                        <div class="participation-stats">
+                            <div class="stat">
+                                <span class="stat-number">${challenge.participants}</span>
+                                <span class="stat-label">Participants</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-number">
+                                    ${getRemainingDays(challenge.date)}
+                                </span>
+                                <span class="stat-label">Jours restants</span>
+                            </div>
+                        </div>
+                        
+                        ${challenge.status.toLowerCase() === 'soumis' ? `
+                            <button class="participate-btn disabled" disabled>
+                                <i data-lucide="lock"></i>
+                                Défi ${challenge.status.toLowerCase()}
+                            </button>
+                        ` : challenge.status.toLowerCase() === 'en cours' ? `
+                            <button class="submit-btn" onclick="submitSolution('${challenge.id}')">
+                                <i data-lucide="upload"></i>
+                                Soumettre votre solution
+                            </button>
+                        ` : challenge.status.toLowerCase() === 'disponible' ? `
+                            <button class="participate-btn" onclick="participateInChallenge('${challenge.id}')">
+                                <i data-lucide="user-plus"></i>
+                                Participer au défi
+                            </button>
+                        ` : ''}
+                        
+                        <div class="participation-note">
+                            <i data-lucide="info"></i>
+                            <p>En participant, vous acceptez de respecter les règles du hackathon et de soumettre votre projet avant la date limite.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="resources-card">
+                        <h3>Ressources utiles</h3>
+                        <ul class="resource-links">
+                            <li>
+                                <a href="${challenge.documentation}" class="resource-link" target="_blank">
+                                    <i data-lucide="book"></i>
+                                    Documentation
+                                </a>
+                            </li>
+                            <li>
+                                <a href="${challenge.repository}" class="resource-link" target="_blank">
+                                    <i data-lucide="github"></i>
+                                    Repository
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function backToList() {
+    currentView = 'list';
+    currentChallenge = null;
+    applyFilters(); // Cela va réafficher la liste avec les filtres actuels
+}
+
+// TODO: Implementer la participation au défi
+function participateInChallenge(challengeId) {
+    console.log('Participation au défi:', challengeId);
+    // Ici vous pouvez ajouter la logique pour inscrire l'utilisateur
+    // Par exemple, appel API, mise à jour du statut, etc.
+
+    // Exemple de notification de succès
+    showNotification('Vous vous êtes inscrit au défi: ' + challengeId, 'success');
+
+    // Optionnel: mettre à jour le nombre de participants localement
+    const challenge = resources.find(r => r.id === challengeId);
+    if (challenge) {
+        challenge.participants += 1;
+        // Mettre à jour l'affichage
+        displayChallengeDetail(challenge);
+    }
+}
+
+// TODO: Implementer la soumission de la solution
+function submitSolution(challengeId) {
+    console.log('Soumission de la solution pour le défi:', challengeId);
+    // Ici vous pouvez ajouter la logique pour soumettre la solution
+    // Par exemple, appel API, mise à jour du statut, etc.
+
+    // Exemple de notification de succès
+    showNotification('Votre solution a été soumise avec succès pour le défi: ' + challengeId, 'success');
+
+    // Optionnel: mettre à jour le statut localement
+    const challenge = resources.find(r => r.id === challengeId);
+    if (challenge) {
+        challenge.status = 'soumis';
+        // Mettre à jour l'affichage
+        displayChallengeDetail(challenge);
+    }
+}
+
+function redirectToSubmission(challengeId) {
+    console.log('Redirection vers la soumission pour le défi:', challengeId);
+    // Ici vous pouvez ajouter la logique pour rediriger l'utilisateur vers la page de soumission
+}
+
+function isUserRegistered(challengeId) {
+    // Ici vous pouvez ajouter la logique pour vérifier si l'utilisateur est inscrit au défi
+    // Par exemple, appel API, vérification du statut, etc.
+    return false; // Exemple de retour
 }
 
 // Fonction pour créer des filtres rapides
