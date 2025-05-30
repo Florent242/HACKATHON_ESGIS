@@ -171,13 +171,6 @@ header {
     z-index: 10;
 }
 
-main {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
-}
-
 .card-bg {
     background: var(--card-bg);
 }
