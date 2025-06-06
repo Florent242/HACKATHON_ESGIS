@@ -116,9 +116,16 @@ switch ($url) {
     case '/HACKATHON_ESGIS/public/user/profile':
         require_once '../frontend/user/profile.php'; // Inclure la page "Admin"
         break;
-
     default:
-        if (strpos($_SERVER['REQUEST_URI'], '/user') !== false) {
+        // TODO: ajouter la gestion des urls avec le format CHALL-[A-Za-z0-9]{8,}
+        //  if (preg_match('#^/HACKATHON_ESGIS/public/user/challenge_submission/(CHALL-[A-Za-z0-9]{8,})$#', $url, $matches)) {
+        //     $challenge_id = $matches[1]; // Format: CHALL-XXXXXXXX où X est alphanumérique
+        //     require_once '../frontend/user/challenge_submission.php';
+
+        if (preg_match('#^/HACKATHON_ESGIS/public/user/challenge_submission/(\d+)$#', $url, $matches)) {
+            $_GET['challenge_id'] = $matches[1];
+            require_once '../frontend/user/challenge_submission.php';
+        } else if (strpos($_SERVER['REQUEST_URI'], '/user') !== false) {
             require_once '../frontend/user/404.php'; // Inclure la page 404 pour les utilisateurs
         } else if (strpos($_SERVER['REQUEST_URI'], 'admin') !== false) {
             require_once '../frontend/admin/404.php'; // Inclure la page 404 pour les admins
@@ -127,6 +134,7 @@ switch ($url) {
         }
         break;
 }
+
 // a ce niveau d'autres amelioration devront etre fait n'y toucher donc pas
 ?>
 
