@@ -1,5 +1,5 @@
 // Configuration de base
-const API_BASE_URL = '/HACKATHON_ESGIS/public/api';
+const API_BASE_URL = '/api';
 const CHALLENGE_ELEMENTS = {
     // Filtres et recherche
     filterGroups: ".filter-buttons[data-type]",

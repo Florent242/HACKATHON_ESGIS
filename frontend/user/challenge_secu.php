@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Challenges</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/challenge_secu.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
+    <link rel="stylesheet" href="/css/styles/user/challenge_secu.css">
+    <link rel="stylesheet" href="/css/styles/user/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script defer src="/HACKATHON_ESGIS/public/js/user/challenge_secu.js"></script>
+    <script defer src="/js/user/challenge_secu.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
@@ -119,7 +119,7 @@
                     <p class="text-gray-500 text-center">Aucun hacker en tête de liste pour l'instant.</p>
                 </div>
 
-                <button id="view-leaderboard" class=" text-sm font-medium rounded-lg p-2" onclick="window.location.href='/HACKATHON_ESGIS/public/user/leaderboard'">
+                <button id="view-leaderboard" class=" text-sm font-medium rounded-lg p-2" onclick="window.location.href='/user/leaderboard'">
                     View Full Leaderboard
                 </button>
 

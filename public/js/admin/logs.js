@@ -1,5 +1,5 @@
 // Configuration de base
-const API_BASE_URL = "/HACKATHON_ESGIS/public/api"
+const API_BASE_URL = "/api"
 
 // Sélecteurs pour les éléments de la page
 const LOGS_ELEMENTS = {

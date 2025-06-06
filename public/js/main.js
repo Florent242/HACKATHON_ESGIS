@@ -1,16 +1,16 @@
 class AuthService {
     // Configurations des routes par rôle (à adapter selon votre structure)
     static ROUTES = {
-        guest: '/HACKATHON_ESGIS/public/auth',
-        admin: '/HACKATHON_ESGIS/public/admin',
-        participant: '/HACKATHON_ESGIS/public/user',
-        visitor: '/HACKATHON_ESGIS/public' // Nouvelle route visiteur
+        guest: '/auth',
+        admin: '/admin',
+        participant: '/user',
+        visitor: '/' // Nouvelle route visiteur
     };
 
     // Vérifie l'authentification et redirige si nécessaire
     static async verifyAuth() {
         try {
-            const response = await fetch('/HACKATHON_ESGIS/public/api/auth/check', {
+            const response = await fetch('/api/auth/check', {
                 credentials: 'include',
                 headers: {
                     'Accept': 'application/json',
@@ -67,9 +67,9 @@ class AuthService {
     static checkPathPermission(role) {
         const currentPath = window.location.pathname;
         const pathPatterns = {
-            admin: /^\/HACKATHON_ESGIS\/public\/admin/,
-            participant: /^\/HACKATHON_ESGIS\/public\/user/,
-            visitor: /^\/HACKATHON_ESGIS\/public\/(auth|challenge|contact|sponsors|hackathon|leaderboard|resources)/ // Chemins publics
+            admin: /^\/admin/,
+            participant: /^\/user/,
+            visitor: /^\/(auth|challenge|contact|sponsors|hackathon|leaderboard|resources)/ // Chemins publics
         };
 
         return pathPatterns[role]?.test(currentPath); // Les routes visiteur sont accessibles à tous
@@ -89,14 +89,14 @@ class AuthService {
     static redirectToLogin() {
         const isAdminPath = window.location.pathname.includes('/admin');
         window.location.href = isAdminPath
-            ? '/HACKATHON_ESGIS/public/auth_admin'
-            : '/HACKATHON_ESGIS/public/auth';
+            ? '/auth_admin'
+            : '/auth';
     }
 
     // Déconnexion
     static async logout() {
         try {
-            await fetch('/HACKATHON_ESGIS/public/api/auth/logout', {
+            await fetch('/api/auth/logout', {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
@@ -241,7 +241,7 @@ async function apiRequest(endpoint, options = {}) {
             'X-Requested-With': 'XMLHttpRequest'
         };
 
-        const response = await fetch(`/HACKATHON_ESGIS/public/api${endpoint}`, {
+        const response = await fetch(`/api${endpoint}`, {
             ...options,
             headers: { ...headers, ...options.headers }
         });
@@ -298,7 +298,7 @@ try {
 }
 async function getUserId() {
     try {
-        const response = await fetch('/HACKATHON_ESGIS/public/api/users/me', {
+        const response = await fetch('/api/users/me', {
             method: 'GET',
             credentials: 'include',
             headers: { 'Accept': 'application/json' }

@@ -1,5 +1,5 @@
 // Configuration de base
-const API_BASE_URL = "/HACKATHON_ESGIS/public/api"
+const API_BASE_URL = "/api"
 
 // Sélecteurs pour les éléments de la page
 const HACKATHON_ELEMENTS = {
@@ -415,7 +415,7 @@ async function viewHackathon(id) {
     showLoading()
 
     // Rediriger vers la page de détails
-    window.location.href = `/HACKATHON_ESGIS/public/admin/hackathons/view.php?id=${id}`
+    window.location.href = `/admin/hackathons/view.php?id=${id}`
   } catch (error) {
     handleError("Erreur lors de la récupération du hackathon", error)
   } finally {

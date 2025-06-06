@@ -1,5 +1,5 @@
-<script defer src="/HACKATHON_ESGIS/public/js/lucide.min.js"></script>
-<script defer src="/HACKATHON_ESGIS/public/js/main.js"></script>
+<script defer src="js/lucide.min.js"></script>
+<script defer src="js/main.js"></script>
 <?php
 require_once __DIR__ . '/../backend/includes/authMiddleware.php';
 
@@ -10,119 +10,118 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 // echo print_r($_SESSION, true); 
 // Récupérer l'URL demandée (par exemple /home ou /about)
-$url = $_SERVER['REQUEST_URI'] ?? "/HACKATHON_ESGIS/public/";
+$url = $_SERVER['REQUEST_URI'] ?? "/";
 
 // Vérifier l'URL et inclure le fichier correspondant
 switch ($url) {
-    case '/HACKATHON_ESGIS/public/':
+    case '/':
         require_once '../frontend/home.php';  // Inclure la page d'accueil
         break;
-    case '/HACKATHON_ESGIS/public/hackathon':
+    case '/hackathon':
         require_once '../frontend/hackathon.php'; // Inclure la page "Hackaton"
         break;
-    case '/HACKATHON_ESGIS/public/resources':
+    case '/resources':
         require_once '../frontend/resources.php'; // Inclure la page "Ressources"
         break;
-
-    case '/HACKATHON_ESGIS/public/auth':
+    case '/auth':
         require_once '../frontend/auth.php'; // Inclure la page "auth"
         break;
-    case '/HACKATHON_ESGIS/public/contact':
-        require_once '../frontend/contact.php'; // Inclure la page "contact"
+    case '/contact':
+        require_once '../frontend/contact.php';// Inclure la page "contact"
         break;
-    case '/HACKATHON_ESGIS/public/sponsors':
+    case '/sponsors':
         require_once '../frontend/sponsors.php'; // Inclure la page "sponsors"
         break;
 
     // Page admin
-    case '/HACKATHON_ESGIS/public/admin':
+    case '/admin':
         require_once '../frontend/admin/home.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin/challenges':
+    case '/admin/challenges':
         require_once '../frontend/admin/challenge.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin/hackathon':
+    case '/admin/hackathon':
         require_once '../frontend/admin/hackathon.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin/leaderboard':
+    case '/admin/leaderboard':
         require_once '../frontend/admin/leaderboard.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin/resources':
+    case '/admin/resources':
         require_once '../frontend/admin/resources.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin/utilisateurs': // Correct
+    case '/admin/utilisateurs': // Correct
         require_once '../frontend/admin/utilisateurs.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin/equipes': // Correct
+    case '/admin/equipes': // Correct
         require_once '../frontend/admin/equipes.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin/logs': // Correct
+    case '/admin/logs': // Correct
         require_once '../frontend/admin/logs.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin/soumissions': // Correct
+    case '/admin/soumissions': // Correct
         require_once '../frontend/admin/soumissions.php'; // Inclure la page "Admin"
         break;
 
 
 
     // Page admin_test
-    case '/HACKATHON_ESGIS/public/admin_test':
+    case '/admin_test':
         require_once '../frontend/admin_test/home.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin_test/challenges':
+    case '/admin_test/challenges':
         require_once '../frontend/admin_test/challenges.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin_test/hackathon':
+    case '/admin_test/hackathon':
         require_once '../frontend/admin_test/hackathons.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin_test/leaderboard':
+    case '/admin_test/leaderboard':
         require_once '../frontend/admin_test/leaderboard.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin_test/ressources':
+    case '/admin_test/ressources':
         require_once '../frontend/admin_test/ressources.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin_test/soumissions':
+    case '/admin_test/soumissions':
         require_once '../frontend/admin_test/soumissions.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/admin_test/utilisateurs':
+    case '/admin_test/utilisateurs':
         require_once '../frontend/admin_test/utilisateurs.php'; // Inclure la page "Admin"
         break;
 
     // Page user
-    case '/HACKATHON_ESGIS/public/user':
+    case '/user':
         require_once '../frontend/user/dashboard.php'; // Inclure la page "User"
         break;
-    case '/HACKATHON_ESGIS/public/user/challenge_security':
+    case '/user/challenge_security':
         require_once '../frontend/user/challenge_secu.php'; // Inclure la page "user/challenges"
         break;
-    case '/HACKATHON_ESGIS/public/user/challenge_dev':
+    case '/user/challenge_dev':
         require_once '../frontend/user/challenge_dev.php'; // Inclure la page "user/challenges"
         break;
-    case '/HACKATHON_ESGIS/public/user/hackathon':
+    case '/user/hackathon':
         require_once '../frontend/user/hackathon.php'; // Inclure la page "user/hacka"
         break;
-    case '/HACKATHON_ESGIS/public/user/leaderboard':
+    case '/user/leaderboard':
         require_once '../frontend/user/leaderboard.php'; // Inclure la page "Admin"
         break;
-    case '/HACKATHON_ESGIS/public/user/resources':
+    case '/user/resources':
         require_once '../frontend/user/resources.php'; // Inclure la page "Ressources"
         break;
-    case '/HACKATHON_ESGIS/public/user/faq':
+    case '/user/faq':
         require_once '../frontend/user/faq.php'; // Inclure la page "Ressources"
         break;
-    case '/HACKATHON_ESGIS/public/user/documentation':
+    case '/user/documentation':
         require_once '../frontend/user/resources.php'; // Inclure la page "Ressources"
         break;
-    case '/HACKATHON_ESGIS/public/user/profile':
+    case '/user/profile':
         require_once '../frontend/user/profile.php'; // Inclure la page "Admin"
         break;
     default:
         // TODO: ajouter la gestion des urls avec le format CHALL-[A-Za-z0-9]{8,}
-        //  if (preg_match('#^/HACKATHON_ESGIS/public/user/challenge_submission/(CHALL-[A-Za-z0-9]{8,})$#', $url, $matches)) {
+        //  if (preg_match('#^/user/challenge_submission/(CHALL-[A-Za-z0-9]{8,})$#', $url, $matches)) {
         //     $challenge_id = $matches[1]; // Format: CHALL-XXXXXXXX où X est alphanumérique
         //     require_once '../frontend/user/challenge_submission.php';
 
-        if (preg_match('#^/HACKATHON_ESGIS/public/user/challenge_submission/(\d+)$#', $url, $matches)) {
+        if (preg_match('#^/user/challenge_submission/(\d+)$#', $url, $matches)) {
             $_GET['challenge_id'] = $matches[1];
             require_once '../frontend/user/challenge_submission.php';
         } else if (strpos($_SERVER['REQUEST_URI'], '/user') !== false) {

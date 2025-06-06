@@ -1,5 +1,5 @@
 // Configuration de base
-const API_BASE_URL = '/HACKATHON_ESGIS/public/api';
+const API_BASE_URL = '/api';
 const ADMIN_DASHBOARD_ELEMENTS = {
     loadingSpinner: '#global-loading-spinner',
     stats: {
@@ -212,7 +212,7 @@ function createHackathonElement(hackathon) {
     
     // Ajouter un gestionnaire d'événements pour la navigation
     div.addEventListener('click', () => {
-        window.location.href = `/HACKATHON_ESGIS/public/admin/hackathons/view.php?id=${hackathon.id}`;
+        window.location.href = `/admin/hackathons/view.php?id=${hackathon.id}`;
     });
     
     // Actualiser les icônes Lucide
@@ -608,7 +608,7 @@ async function loadAdminNotifications() {
                     
                     // Ajouter un lien "Voir tout"
                     const viewAllLink = document.createElement('a');
-                    viewAllLink.href = '/HACKATHON_ESGIS/public/admin/notifications.php';
+                    viewAllLink.href = '/admin/notifications.php';
                     viewAllLink.className = 'view-all-notifications';
                     viewAllLink.textContent = 'Voir toutes les notifications';
                     notifList.appendChild(viewAllLink);

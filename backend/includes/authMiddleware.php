@@ -35,12 +35,12 @@ class AuthMiddleware
 
         // Vérifier si la route est publique
         if (!self::isPublicRoute() && !self::isAuthenticated()) {
-            header('Location: /HACKATHON_ESGIS/public/auth');
+            header('Location: /auth');
             return;
         }
 
         if (self::isPublicRoute() && self::isAuthenticated()) {
-            header('Location: /HACKATHON_ESGIS/public/user');
+            header('Location: /user');
             return;
         }
 
@@ -167,9 +167,9 @@ class AuthMiddleware
         $currentUri = $_SERVER['REQUEST_URI'] ?? '';
 
         if (strpos($currentUri, '/admin') !== false) {
-            header('Location: /HACKATHON_ESGIS/public/auth_admin');
+            header('Location: /auth_admin');
         } else {
-            header('Location: /HACKATHON_ESGIS/public/auth');
+            header('Location: /auth');
         }
         exit;
     }

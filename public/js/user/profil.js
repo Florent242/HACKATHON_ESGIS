@@ -1,4 +1,4 @@
-const API_BASE_URL = "/HACKATHON_ESGIS/public/api"
+const API_BASE_URL = "/api"
 const PROFILE_ELEMENTS = {
     username: '.Username',
     email: '.Email',
@@ -409,7 +409,7 @@ function handleError(title = "Une erreur est survenue", error = null, type = "er
 // Fonction pour récupérer l'ID utilisateur
 async function getUserId() {
     try {
-        const response = await fetch("/HACKATHON_ESGIS/public/api/users/me", {
+        const response = await fetch("/api/users/me", {
             method: "GET",
             credentials: "include",
             headers: { Accept: "application/json" },
@@ -656,7 +656,7 @@ function setupEventListeners() {
     const allChallengesButton = document.querySelector(".All-challenges")
     if (allChallengesButton) {
         allChallengesButton.addEventListener("click", () => {
-            window.location.href = "/HACKATHON_ESGIS/public/user/challenge_security"
+            window.location.href = "/user/challenge_security"
         })
     }
 

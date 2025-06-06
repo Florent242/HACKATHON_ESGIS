@@ -11,8 +11,8 @@ class Database {
 
     private $host = '127.0.0.1';
     private $dbname = 'hackathon_db';
-    private $username = 'root';
-    private $password = '';
+    private $username = 'hackuser';
+    private $password = 'Qwertyui1?';
 
     private function __construct() {
         try {

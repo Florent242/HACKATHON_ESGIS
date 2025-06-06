@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Challenge Yourself</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/home.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
-    <script defer src="/HACKATHON_ESGIS/public/js/home.js"></script>
-    <script src="/HACKATHON_ESGIS/public/js/user/test.js"></script> <!-- Inclure le script ici -->
+    <link rel="stylesheet" href="/css/styles/home.css">
+    <link rel="stylesheet" href="/css/styles/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
+    <script defer src="/js/home.js"></script>
+    <script src="/js/user/test.js"></script> <!-- Inclure le script ici -->
 
     <!-- Lucide Icons -->
     <!-- <script src="https://unpkg.com/lucide@latest"></script> -->

@@ -4,11 +4,11 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>EsgisHub - Challenges</title>
-        <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/admin/challenge.css">
-        <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/admin/header.css">
-        <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
+        <link rel="stylesheet" href="/css/styles/admin/challenge.css">
+        <link rel="stylesheet" href="/css/styles/admin/header.css">
+        <link rel="stylesheet" href="/css/dist/output.css">
         <!-- Lucide Icons -->
-        <script defer src="/HACKATHON_ESGIS/public/js/admin/challenge.js"></script>
+        <script defer src="/js/admin/challenge.js"></script>
         <script src="https://unpkg.com/lucide@latest"></script>
     </head>
     <body>

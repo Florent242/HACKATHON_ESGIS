@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Challenge Yourself</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/admin/home.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/admin/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
-    <script defer src="/HACKATHON_ESGIS/public/js/admin/home.js"></script>
+    <link rel="stylesheet" href="/css/styles/admin/home.css">
+    <link rel="stylesheet" href="/css/styles/admin/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
+    <script defer src="/js/admin/home.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>

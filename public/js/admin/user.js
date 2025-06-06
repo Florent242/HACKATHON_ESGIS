@@ -1,5 +1,5 @@
 // Configuration de base
-const API_BASE_URL = "/HACKATHON_ESGIS/public/api"
+const API_BASE_URL = "/api"
 
 // Sélecteurs pour les éléments de la page
 const USER_ELEMENTS = {
@@ -304,7 +304,7 @@ function setupEventListeners() {
   if (addUserButton) {
     addUserButton.addEventListener("click", () => {
       // Rediriger vers la page d'ajout d'utilisateur ou ouvrir un modal
-      // window.location.href = "/HACKATHON_ESGIS/public/admin/utilisateurs/add.php"
+      // window.location.href = "/admin/utilisateurs/add.php"
       alert("Fonctionnalité d'ajout d'utilisateur à implémenter")
     })
   }
@@ -359,7 +359,7 @@ function setupEventListeners() {
  */
 function editUser(id) {
   // Rediriger vers la page d'édition d'utilisateur
-  window.location.href = `/HACKATHON_ESGIS/public/admin/utilisateurs/edit.php?id=${id}`
+  window.location.href = `/admin/utilisateurs/edit.php?id=${id}`
 }
 
 /**
@@ -368,7 +368,7 @@ function editUser(id) {
  */
 function viewUser(id) {
   // Rediriger vers la page de détails d'utilisateur
-  window.location.href = `/HACKATHON_ESGIS/public/admin/utilisateurs/view.php?id=${id}`
+  window.location.href = `q/admin/utilisateurs/view.php?id=${id}`
 }
 
 /**

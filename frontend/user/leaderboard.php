@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Leaderboard</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/classement.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
-    <script defer src="/HACKATHON_ESGIS/public/js/user/classement.js"></script>
+    <link rel="stylesheet" href="/css/styles/user/classement.css">
+    <link rel="stylesheet" href="/css/styles/user/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
+    <script defer src="/js/user/classement.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>

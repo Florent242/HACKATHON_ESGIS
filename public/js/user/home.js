@@ -50,13 +50,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // handle start journey button
     startJourneyBtn?.addEventListener('click', () => {
-        // window.location.href = '/HACKATHON_ESGIS/public/signup';
         alert('Start a new challenge coming soon!');
     });
 
     // handle explore challenges button
     exploreChallengesBtn?.addEventListener('click', () => {
-        window.location.href = '/HACKATHON_ESGIS/public/challenges';
+        window.location.href = '/challenges';
     });
 
     // Animate stats on scroll

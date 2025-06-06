@@ -61,7 +61,6 @@ foreach ($files as $class => $path) {
 // require_once __DIR__ . '/controllers/EvaluationController.php';
 
 // chemin de base
-const BASE_URL = '/HACKATHON_ESGIS/public';
 
 // Configurer CORS pour toutes les requêtes API
 configureCors();
@@ -80,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Récupération de la méthode HTTP et de l'URL
 $method = $_SERVER['REQUEST_METHOD'];
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$uri = str_replace(BASE_URL . '/api/', '/', $uri); // Nettoyer l'URI
+$uri = str_replace('/api/', '/', $uri); // Nettoyer l'URI
 $request = explode('/', trim($uri, '/'));
 
 // Extraction des composants de l'URL
@@ -119,7 +118,7 @@ try {
                             echo json_encode(['error' => $e->getMessage()]);
                         } else {
                             setFlashMessage('error', 'Connexion echouée', $e->getMessage());
-                            header('Location: ' . BASE_URL . '/auth');
+                            header('Location: ' . '/auth');
                         }
                         exit();
                     }
@@ -151,7 +150,7 @@ try {
                             setFlashMessage('error', 'Inscription echouée', $e->getMessage());
 
                         //redirection vers la page d'inscription
-                        header('Location: ' . BASE_URL . '/auth');
+                        header('Location: ' . '/auth');
                         exit();
                     }
                     break;
@@ -357,7 +356,7 @@ try {
                                     }
                                     else{
                                         setFlashMessage('error', 'Erreur de connexion', $e->getMessage());
-                                        header('Location: ' . BASE_URL . '/admin');
+                                        header('Location: ' . '/admin');
                                         exit();
                                     }
                                 }
@@ -369,7 +368,7 @@ try {
                                     return;
                                 }
                                 setFlashMessage('error', 'Erreur de connexion', 'Accès non autorisé');
-                                header('Location: ' . BASE_URL . '/admin');
+                                header('Location: ' . '/admin');
                                 exit();
                             }
                             $controllerAdmin->getAllUsers();
@@ -396,7 +395,7 @@ try {
                                         return;
                                     }
                                     setFlashMessage('error', 'Erreur de connexion', "Accès non autorisé ");
-                                    header('Location: ' . BASE_URL . '/admin');
+                                    header('Location: ' . '/admin');
                                     exit();
                                 }
                                 $controllerAdmin->getAdmin($id);
@@ -411,7 +410,7 @@ try {
                                         return;
                                     }
                                     setFlashMessage('error', 'Erreur de mise à jour', 'Accès non autorisé');
-                                    header('Location: ' . BASE_URL . '/admin');
+                                    header('Location: ' . '/admin');
                                     exit();
                                 }
                                 $controllerAdmin->update($id, $token);
@@ -425,7 +424,7 @@ try {
                                         return;
                                     }
                                     setFlashMessage('error', 'Erreur de suppression', 'Accès non autorisé');
-                                    header('Location: ' . BASE_URL . '/admin');
+                                    header('Location: ' . '/admin');
                                     exit();
                                 }
                                 $controllerAdmin->delete($id, $token);
@@ -437,7 +436,7 @@ try {
                                     return;
                                 }
                                 setFlashMessage('error', 'Erreur de connexion', 'Méthode non autorisée');
-                                header('Location: ' . BASE_URL . '/user');
+                                header('Location: ' . '/user');
                                 exit();
                         }
                     } else {
@@ -503,7 +502,7 @@ try {
                                         return;
                                         }
                                         setFlashMessage('error', 'Erreur de connexion', 'Accès non autorisé');
-                                        header('Location: ' . BASE_URL . '/user');
+                                        header('Location: ' . '/user');
                                         exit();
                                     }
                                     $controllerAdmin->updateRole($id);
@@ -545,7 +544,7 @@ try {
                         ], $e->getCode() ?: 401);
                     } else {
                         setFlashMessage('error', 'Erreur de connexion', $e->getMessage());
-                        header('Location: ' . BASE_URL . '/user');
+                        header('Location: ' . '/user');
                         exit();
                     }
                 }
@@ -574,7 +573,7 @@ try {
                                     ], $e->getCode() ?: 404);
                                 } else {
                                     setFlashMessage('error', 'Erreur de connexion', $e->getMessage());
-                                    header('Location: ' . BASE_URL . '/user');
+                                    header('Location: ' . '/user');
                                     exit();
                                 }
                             }
@@ -602,7 +601,7 @@ try {
                                     return;
                                 }
                                 setFlashMessage('error', 'Erreur de connexion', "Accès non autorisé ");
-                                header('Location: ' . BASE_URL . '/user');
+                                header('Location: ' . '/user');
                                 exit();
                             }
                             $controller->get($id);
@@ -617,7 +616,7 @@ try {
                                     return;
                                 }
                                 setFlashMessage('error', 'Erreur de mise à jour', 'Accès non autorisé');
-                                header('Location: ' . BASE_URL . '/user');
+                                header('Location: ' . '/user');
                                 exit();
                             }
                             $controller->update($id, $token);
@@ -629,7 +628,7 @@ try {
                                 return;
                             }
                             setFlashMessage('error', 'Erreur de connexion', 'Méthode non autorisée');
-                            header('Location: ' . BASE_URL . '/user');
+                            header('Location: ' . '/user');
                             exit();
                     }
                 } else {
@@ -643,7 +642,7 @@ try {
                                     return;
                                 }
                                 setFlashMessage('error', 'Erreur de modification', 'Accès non autorisé');
-                                header('Location: ' . BASE_URL . '/user');
+                                header('Location: ' . '/user');
                                 exit();
                             }
                             $controller->updatePassword($id, $token);
@@ -657,7 +656,7 @@ try {
                                     return;
                                 }
                                 setFlashMessage('error', 'Erreur de connexion', 'Accès non autorisé');
-                                header('Location: ' . BASE_URL . '/user');
+                                header('Location: ' . '/user');
                                 exit();
                             }
                             $controller->getUserStats($id);
@@ -679,7 +678,7 @@ try {
                                     return;
                                 }
                                 setFlashMessage('error', 'Erreur de connexion', 'Accès non autorisé');
-                                header('Location: ' . BASE_URL . '/user');
+                                header('Location: ' . '/user');
                                 exit();
                             }
                             $controller->getUserTeams($id);
@@ -747,7 +746,7 @@ try {
                                 return;
                             }
                             setFlashMessage('error', 'Erreur de connexion', 'Action non reconnue');
-                            header('Location: ' . BASE_URL . '/user');
+                            header('Location: ' . '/user');
                             exit();
                     }
                 }
@@ -1040,7 +1039,7 @@ try {
     }
     setFlashMessage('error', 'Erreur API', $e->getMessage());
     header('Location: ' . BASE_URL
-        . '/HACKATHON_ESGIS/public/auth');
+        . '/auth');
     exit();
 }
 function isAjaxRequest()

@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Soumettre un défi</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/challenge_submission.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
+    <link rel="stylesheet" href="/css/styles/user/challenge_submission.css">
+    <link rel="stylesheet" href="/css/styles/user/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script defer src="/HACKATHON_ESGIS/public/js/user/challenge_submission.js"></script>
+    <script defer src="/js/user/challenge_submission.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
 </head>

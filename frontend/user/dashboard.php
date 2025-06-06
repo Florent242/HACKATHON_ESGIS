@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Challenge Yourself</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/dashboard.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
-    <script defer src="/HACKATHON_ESGIS/public/js/user/dashboard.js" type="module"></script>
+    <link rel="stylesheet" href="/css/styles/user/dashboard.css">
+    <link rel="stylesheet" href="/css/styles/user/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
+    <script defer src="/js/user/dashboard.js" type="module"></script>
     <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
 </head>
 
@@ -50,7 +50,7 @@
                         <p class="Email text-gray-400 text-sm max-md:text-center max-md:text-sm">[Email]</p>
                     </div>
                 </div>
-                <a href="/HACKATHON_ESGIS/public/user/profile">
+                <a href="/user/profile">
                     <div class="modify-profile cursor-pointer flex flex-row items-center justify-center gap-2 rounded-xl bg-gray-950 text-white p-2 w-auto max-md:w-full border border-gray-700">
                         <i data-lucide="user"></i> <span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs">Modify the profile</span>
                     </div>
@@ -146,7 +146,7 @@
                                 </div>
                                 <h3 class="text-gray-200 text-lg font-medium">Pas de défi disponible</h3>
                                 <p class="text-sm text-gray-400">Tu n'as pas encore rejoint ou commencé de défi. Explore-les pour te lancer !</p>
-                                <a href="/HACKATHON_ESGIS/public/user/challenge_security" class="text-blue-500 hover:underline text-sm cursor-pointer transition duration-300 ease-in-out">Explorer les défis</a>
+                                <a href="/user/challenge_security" class="text-blue-500 hover:underline text-sm cursor-pointer transition duration-300 ease-in-out">Explorer les défis</a>
                             </div>
 
 
@@ -251,7 +251,7 @@
 
                     <!-- Carte 1 -->
                     <div class="fade-in-left flex-1/3">
-                        <a href="/HACKATHON_ESGIS/public/user/challenge_dev" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
+                        <a href="/user/challenge_dev" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
                             <div class="bg-blue-900 text-blue-400 p-3 rounded-full">
                                 <i data-lucide="code"></i>
                             </div>
@@ -265,7 +265,7 @@
 
                     <!-- Carte 2 -->
                     <div class="fade-in-right flex-1/3">
-                        <a href="/HACKATHON_ESGIS/public/user/challenge_hacking" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
+                        <a href="/user/challenge_hacking" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
                             <div class="bg-gray-800 text-gray-400 p-3 rounded-full">
                                 <i data-lucide="shield"></i>
                             </div>
@@ -279,7 +279,7 @@
 
                     <!-- Carte 3 -->
                     <div class="fade-in flex-1/3">
-                        <a href="/HACKATHON_ESGIS/public/user/profile" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
+                        <a href="/user/profile" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
                             <div class="bg-gray-800 text-gray-400 p-3 rounded-full">
                                 <i data-lucide="user"></i>
                             </div>

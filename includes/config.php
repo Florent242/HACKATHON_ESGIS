@@ -9,7 +9,7 @@ define('VIEWS_PATH', BASE_PATH . '/frontend');
 
 // Configuration de l'application
 define('APP_NAME', 'Plateforme de Hackathon');
-define('APP_URL', 'http://localhost/HACKATHON_ESGIS/public');
+define('APP_URL', 'https://hackathon.esgis.com');
 
 // Configuration de la base de données
 define('DB_HOST', 'localhost');

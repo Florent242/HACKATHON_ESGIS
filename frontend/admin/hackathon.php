@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Hackathons</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/admin/hackaton.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/admin/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
+    <link rel="stylesheet" href="/css/styles/admin/hackaton.css">
+    <link rel="stylesheet" href="/css/styles/admin/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
 </head>
 <body>
     <?php require_once '../includes/admin/header.php'; ?>

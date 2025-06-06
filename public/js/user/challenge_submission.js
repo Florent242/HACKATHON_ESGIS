@@ -35,7 +35,7 @@ class ChallengeSubmission {
             this.showLoading();
 
             // Simulate API call - replace with actual endpoint
-            const response = await fetch(`/HACKATHON_ESGIS/public/api/challenges/${this.challengeId}`);
+            const response = await fetch(`/api/challenges/${this.challengeId}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch challenge data');
             }
@@ -690,7 +690,7 @@ class ChallengeSubmission {
                 }
                 if (countdown <= 0) {
                     clearInterval(timer);
-                    window.location.href = '/HACKATHON_ESGIS/public/user/challenge_dev';
+                    window.location.href = '/user/challenge_dev';
                 }
             }, 1000);
         } else {
@@ -845,9 +845,9 @@ class ChallengeSubmission {
 // Utility functions
 function goBack(page) {
     if (page) {
-        window.location.href = '/HACKATHON_ESGIS/public/user/' + page;
+        window.location.href = '/user/' + page;
     } else {
-        window.location.href = '/HACKATHON_ESGIS/public/user/challenge_dev';
+        window.location.href = '/user/challenge_dev';
     }
 }
 

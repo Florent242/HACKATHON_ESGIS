@@ -4,7 +4,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Page non trouvée</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
     <style>
         .animate-float {
             animation: float 3s ease-in-out infinite;
@@ -255,7 +255,7 @@
                 <div class="flex items-center text-left">
                     <div class="w-4 h-4 bg-cyan-400 rounded-full mr-4 animate-pulse" style="animation-delay: 0.5s"></div>
                     <p class="text-xl text-cyan-300/80">Solution recommandée: Retournez à la
-                        <a href="/HACKATHON_ESGIS/public/" class="text-cyan-400 hover:text-cyan-300 font-medium transition-colors duration-300 hover:underline">source</a>
+                        <a href="/" class="text-cyan-400 hover:text-cyan-300 font-medium transition-colors duration-300 hover:underline">source</a>
                     </p>
                 </div>
             </div>
@@ -269,7 +269,7 @@
                     <div class="w-3 h-3 bg-cyan-500 rounded-full animate-ping" style="animation-duration: 3s; animation-delay: 0.4s"></div>
                 </div>
                 <p class="text-md text-cyan-300/60">Détection d'anomalie? 
-                    <a href="/HACKATHON_ESGIS/public/contact" class="text-cyan-400 hover:text-cyan-300 font-medium transition-colors duration-300 hover:underline">Contactez les administrateurs système</a>
+                    <a href="/contact" class="text-cyan-400 hover:text-cyan-300 font-medium transition-colors duration-300 hover:underline">Contactez les administrateurs système</a>
                 </p>
             </div>
         </div>

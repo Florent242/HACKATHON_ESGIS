@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Leaderboard</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/admin/classement.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/admin/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
-    <script src="/HACKATHON_ESGIS/public/js/admin/classement.js"></script>
+    <link rel="stylesheet" href="/css/styles/admin/classement.css">
+    <link rel="stylesheet" href="/css/styles/admin/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
+    <script src="/js/admin/classement.js"></script>
 </head>
 <body>
     <!-- Header -->

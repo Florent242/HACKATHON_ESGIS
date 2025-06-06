@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Profil</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/profil.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
-    <script defer src="/HACKATHON_ESGIS/public/js/user/profil.js"></script>
+    <link rel="stylesheet" href="/css/styles/user/profil.css">
+    <link rel="stylesheet" href="/css/styles/user/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
+    <script defer src="/js/user/profil.js"></script>
     <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
 </head>
 
@@ -242,7 +242,7 @@
                                             <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal challenge-end-date">Started: Dec 12, 2023</p>
                                             <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal challenge-points">100 points</p>
                                         </div>
-                                        <a href="/HACKATHON_ESGIS/public/user/challenge_security">
+                                        <a href="/user/challenge_security">
                                             <button class="max-lg:text-sm bg-blue-500 text-white px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50 max-md:font-normal">Continue Challenge</button>
                                         </a>
                                     </div>

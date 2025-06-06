@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Défis de développement</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/challenge_dev.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/user/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
+    <link rel="stylesheet" href="/css/styles/user/challenge_dev.css">
+    <link rel="stylesheet" href="/css/styles/user/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script defer src="/HACKATHON_ESGIS/public/js/user/challenge_dev.js"></script>
+    <script defer src="/js/user/challenge_dev.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 
 </head>
@@ -26,11 +26,11 @@
                         <h1>Défis de développement</h1>
                     </div>
                     <div class="header-actions">
-                        <a href="/HACKATHON_ESGIS/public/user" class="back-link">
+                        <a href="/user" class="back-link">
                             <i data-lucide="arrow-left"></i>
                             Retour au Dashboard
                         </a>
-                        <a href="/HACKATHON_ESGIS/public/user/leaderboard">
+                        <a href="/user/leaderboard">
                             <button class="ranking-button">
                                 <i data-lucide="trophy"></i>
                                 Classement

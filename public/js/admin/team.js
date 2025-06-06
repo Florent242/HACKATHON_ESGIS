@@ -1,5 +1,5 @@
 // Configuration de base
-const API_BASE_URL = "/HACKATHON_ESGIS/public/api"
+const API_BASE_URL = "/api"
 
 // Sélecteurs pour les éléments de la page
 const TEAM_ELEMENTS = {
@@ -267,7 +267,7 @@ function setupEventListeners() {
   if (createTeamButton) {
     createTeamButton.addEventListener("click", () => {
       // Rediriger vers la page de création d'équipe ou ouvrir un modal
-      // window.location.href = "/HACKATHON_ESGIS/public/admin/equipes/create.php"
+      // window.location.href = "/admin/equipes/create.php"
       alert("Fonctionnalité de création d'équipe à implémenter")
     })
   }
@@ -313,7 +313,7 @@ function setupEventListeners() {
  */
 function editTeam(id) {
   // Rediriger vers la page d'édition d'équipe
-  window.location.href = `/HACKATHON_ESGIS/public/admin/equipes/edit.php?id=${id}`
+  window.location.href = `/admin/equipes/edit.php?id=${id}`
 }
 
 /**
@@ -322,7 +322,7 @@ function editTeam(id) {
  */
 function viewTeam(id) {
   // Rediriger vers la page de détails d'équipe
-  window.location.href = `/HACKATHON_ESGIS/public/admin/equipes/view.php?id=${id}`
+  window.location.href = `/admin/equipes/view.php?id=${id}`
 }
 
 /**

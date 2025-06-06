@@ -538,7 +538,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // function pour rechercher un nom d'utilisateur
     async function checkUsername(Username) {
-        fetch('/HACKATHON_ESGIS/public/api/auth/check-username', {
+        fetch('/api/auth/check-username', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -562,7 +562,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // function pour rechercher un email
     async function checkEmail(Email) {
-        fetch('/HACKATHON_ESGIS/public/api/auth/check-email', {
+        fetch('/api/auth/check-email', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

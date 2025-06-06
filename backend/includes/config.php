@@ -4,44 +4,43 @@ if (!defined('CONFIG_INCLUDED')) {
 }
 // Configuration des routes par rôle
 define('ROLE_REDIRECTIONS', [
-    'admin' => '/HACKATHON_ESGIS/public/admin',
-    'participant' => '/HACKATHON_ESGIS/public/user',
-    'guest' => '/HACKATHON_ESGIS/public/auth'
+    'admin' => '/admin',
+    'participant' => '/user',
+    'guest' => '/auth'
 ]);
 
 // Routes publiques qui ne nécessitent pas d'authentification
 define('PUBLIC_ROUTES', [
-    '/^\/HACKATHON_ESGIS\/public\/?$/', // Page visiteur
-    '/^\/HACKATHON_ESGIS\/public\/auth\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/challenges\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/contact\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/hackathon\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/resources\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/leaderboard\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/sponsors\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/auth\/register\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/auth\/forgot-password\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/auth\/reset-password\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/auth\/verify-email\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/auth\/confirm-email\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/auth\/verify-otp\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/auth\/send-otp\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/auth\/logout\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/register\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/login\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/forgot-password\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/reset-password\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/verify-email\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/confirm-email\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/logout\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/refresh-token\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/api\/auth\/validate-token\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/about\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/privacy\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/terms\/?$/',
-    '/^\/HACKATHON_ESGIS\/public\/faq\/?$/',
-]);
+    '/^\/?$/', // Page visiteur
+    '/^\/auth\/?$/', 
+    '/^\/challenges\/?$/', 
+    '/^\/contact\/?$/', 
+    '/^\/hackathon\/?$/', 
+    '/^\/resources\/?$/', 
+    '/^\/leaderboard\/?$/', 
+    '/^\/sponsors\/?$/', 
+    '/^\/auth\/register\/?$/', 
+    '/^\/auth\/forgot-password\/?$/', 
+    '/^\/auth\/reset-password\/?$/', 
+    '/^\/auth\/verify-email\/?$/', 
+    '/^\/auth\/confirm-email\/?$/', 
+    '/^\/auth\/verify-otp\/?$/', 
+    '/^\/auth\/send-otp\/?$/', 
+    '/^\/auth\/logout\/?$/', 
+    '/^\/api\/auth\/?$/', 
+    '/^\/api\/auth\/register\/?$/', 
+    '/^\/api\/auth\/login\/?$/', 
+    '/^\/api\/auth\/forgot-password\/?$/', 
+    '/^\/api\/auth\/reset-password\/?$/', 
+    '/^\/api\/auth\/verify-email\/?$/', 
+    '/^\/api\/auth\/confirm-email\/?$/', 
+    '/^\/api\/auth\/logout\/?$/', 
+    '/^\/api\/auth\/refresh-token\/?$/', 
+    '/^\/api\/auth\/validate-token\/?$/', 
+    '/^\/about\/?$/', 
+    '/^\/privacy\/?$/', 
+    '/^\/terms\/?$/', 
+    '/^\/faq\/?$/', ]);
 
 // Durée de vie des sessions (en secondes)
 define('SESSION_LIFETIME', 3600); // 1 heure

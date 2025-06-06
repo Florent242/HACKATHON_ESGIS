@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact</title>
-    <link rel="stylesheet" href="../public/css/styles/contact.css">
-    <link rel="stylesheet" href="../public/css/styles/header.css">
-    <link rel="stylesheet" href="../public/css/dist/output.css">
+    <link rel="stylesheet" href="/css/styles/contact.css">
+    <link rel="stylesheet" href="/css/styles/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.280.0/dist/umd/lucide.min.js"></script>
 
 </head>

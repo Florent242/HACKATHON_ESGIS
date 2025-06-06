@@ -1,7 +1,7 @@
-import { createEle } from '/HACKATHON_ESGIS/public/js/dom.js';
+import { createEle } from '/js/dom.js';
 // Configuration de base
 const userId = getUserId();
-const API_BASE_URL = '/HACKATHON_ESGIS/public/api';
+const API_BASE_URL = '/api';
 const DASHBOARD_ELEMENTS = {
     username: '.Username',
     email: '.Email',
@@ -371,7 +371,7 @@ function hideLoading() {
 // Fonction pour récupérer l'ID utilisateur
 async function getUserId() {
     try {
-        const response = await fetch('/HACKATHON_ESGIS/public/api/users/me', {
+        const response = await fetch('/api/users/me', {
             method: 'GET',
             credentials: 'include',
             headers: {

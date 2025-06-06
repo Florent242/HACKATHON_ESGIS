@@ -3,7 +3,7 @@
  */
 
 // Base URL for API requests
-const API_BASE_URL = '/HACKATHON_ESGIS/public/api';
+const API_BASE_URL = '/api';
 
 /**
  * Récupère un cookie par son nom

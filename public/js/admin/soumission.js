@@ -1,5 +1,5 @@
 // Configuration de base
-const API_BASE_URL = "/HACKATHON_ESGIS/public/api"
+const API_BASE_URL = "//api"
 
 // Sélecteurs pour les éléments de la page
 const SUBMISSION_ELEMENTS = {
@@ -407,7 +407,7 @@ async function viewSubmission(id) {
 
     if (response.success && response.data) {
       // Rediriger vers la page de détails ou afficher un modal
-      // window.location.href = `/HACKATHON_ESGIS/public/admin/soumissions/view.php?id=${id}`
+      // window.location.href = `/admin/soumissions/view.php?id=${id}`
 
       // Afficher un modal avec les détails
       showSubmissionModal(response.data)

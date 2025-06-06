@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 })
 
                 if (data.success) {
-                    window.location.href = '/HACKATHON_ESGIS/public';
+                    window.location.href = '/';
                 } else {
                     setFlashMessage('error', 'Echec de déconnexion', data.message);
                     return;

@@ -1,9 +1,9 @@
 # 🔹 Active la réécriture d'URL
 RewriteEngine On
-RewriteBase /HACKATHON_ESGIS/public/
+RewriteBase /
 
 # 🔹 Rediriger toutes les requêtes API vers backend/api.php
-RewriteCond %{REQUEST_URI} ^/HACKATHON_ESGIS/public/api/ [NC]
+RewriteCond %{REQUEST_URI} ^/api/ [NC]
 RewriteRule ^api/(.*)$ ../backend/api.php [QSA,L]
 
 # 🔹 Ne pas réécrire les fichiers et dossiers existants
@@ -23,7 +23,7 @@ Options -Indexes
 
 # 🔒 Empêcher l’exécution des fichiers PHP dans certains dossiers
 <IfModule mod_rewrite.c>
-  RewriteCond %{REQUEST_URI} ^/HACKATHON_ESGIS/public/(uploads|assets|static)/.*\.php$ [NC]
+  RewriteCond %{REQUEST_URI} ^/(uploads|assets|static)/.*\.php$ [NC]
   RewriteRule .* - [F]
 </IfModule>
 

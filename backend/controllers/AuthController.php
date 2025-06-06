@@ -24,7 +24,6 @@ if (!defined('FUNCTIONS_INCLUDED')) {
 
 class AuthController
 {
-    private const BASE_URL = '/HACKATHON_ESGIS/public';
     private $user;
     private $db;
     private $tokenManager;
@@ -253,7 +252,7 @@ class AuthController
 
                 echo json_encode([
                     'success' => true,
-                    'redirect' => self::BASE_URL . "/user"
+                    'redirect' => "/user"
                 ]);
                 exit();
             } else {
@@ -337,7 +336,7 @@ class AuthController
                     'refresh_token' => $longTermToken,
                     'user' => $user,
                     'message' => 'Connexion reussie',
-                    'redirect' => self::BASE_URL . "/user"
+                    'redirect' => "/user"
                 ]);
                 exit();
             } else {
@@ -379,7 +378,7 @@ class AuthController
             // Réponse JSON
             echo json_encode([
                 'success' => true,
-                'redirect' => self::BASE_URL
+                'redirect' => "/"
             ]);
             exit();
         } catch (Exception $e) {
@@ -415,7 +414,7 @@ class AuthController
                 'details' => $e->getMessage(),
                 'type' => 'error'
             ];
-            header("Location: " . self::BASE_URL . "/profile");
+            header("Location: " . "/profile");
             throw new Exception($e->getMessage());
         }
     }
@@ -461,7 +460,7 @@ class AuthController
                 'details' => 'Profil mis à jour avec succès !',
                 'type' => 'success'
             ];
-            header("Location: " . self::BASE_URL . "/profile");
+            header("Location: " . "/profile");
             exit();
         } catch (Exception $e) {
             $_SESSION['notification'] = [
@@ -469,7 +468,7 @@ class AuthController
                 'details' => $e->getMessage(),
                 'type' => 'error'
             ];
-            header("Location: " . self::BASE_URL . "/profile");
+            header("Location: " . "/profile");
             throw new Exception($e->getMessage());
         }
     }
@@ -517,7 +516,7 @@ class AuthController
                         // sendResetPasswordEmail($email, $token);
 
                         // Pour des fins de test, on affiche le token
-                        $resetLink = self::BASE_URL . '/reset-password?token=' . $token;
+                        $resetLink = '/reset-password?token=' . $token;
 
                         $this->sendResponse([
                             'success' => true,
@@ -571,7 +570,7 @@ class AuthController
                         // sendResetPasswordEmail($email, $token);
 
                         // Pour des fins de test/développement, stocker le lien dans la session
-                        $_SESSION['reset_link'] = self::BASE_URL . '/reset-password?token=' . $token;
+                        $_SESSION['reset_link'] = '/reset-password?token=' . $token;
                     }
 
                     // Ne pas indiquer si l'email existe ou non pour des raisons de sécurité
@@ -579,7 +578,7 @@ class AuthController
                         'message' => 'Si votre email existe dans notre base de données, vous recevrez les instructions de réinitialisation.',
                         'type' => 'info'
                     ];
-                    header("Location: " . self::BASE_URL . "/login");
+                    header("Location: " . "/login");
                     exit();
                 } catch (Exception $e) {
                     $_SESSION['notification'] = [
@@ -587,7 +586,7 @@ class AuthController
                         'details' => $e->getMessage(),
                         'type' => 'error'
                     ];
-                    header("Location: " . self::BASE_URL . "/forgot-password");
+                    header("Location: " . "/forgot-password");
                     exit();
                 }
             }

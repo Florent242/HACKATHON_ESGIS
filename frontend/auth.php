@@ -13,10 +13,10 @@ if (empty($_SESSION['csrf_token'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Authentification</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/auth.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
-    <script defer src="/HACKATHON_ESGIS/public/js/auth.js"></script>
+    <link rel="stylesheet" href="/css/styles/auth.css">
+    <link rel="stylesheet" href="/css/styles/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
+    <script defer src="/js/auth.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -37,7 +37,7 @@ if (empty($_SESSION['csrf_token'])) {
             <div class="auth-form" id="loginForm">
                 <h1>Espace Utilisateur</h1>
                 <p>Connectez-vous à votre compte étudiant</p> <br>
-                <form action="/HACKATHON_ESGIS/public/api/auth/login" method="POST"  id="signinForm">
+                <form action="/api/auth/login" method="POST"  id="signinForm">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="form-group">
                         <label for="email_user">Email ou nom d'utilisateur</label>
@@ -82,7 +82,7 @@ if (empty($_SESSION['csrf_token'])) {
                         </div>
                     </div>
                 </div>
-                <form action="/HACKATHON_ESGIS/public/api/auth/register" method="POST" id="registrationForm">
+                <form action="/api/auth/register" method="POST" id="registrationForm">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
 
                     <!-- Section Informations personnelles -->

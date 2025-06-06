@@ -111,7 +111,7 @@ const resources = [
 
 async function checkUserRegistration() {
     try {
-        const response = await fetch(`/HACKATHON_ESGIS/public/api/user/registration`);
+        const response = await fetch(`/api/user/registration`);
         const data = await response.json();
         isRegistredToHackathon = data.data;
         return isRegistredToHackathon;
