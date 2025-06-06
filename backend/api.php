@@ -1,4 +1,12 @@
 <?php
+// Protection : uniquement requêtes AJAX
+if (
+    !isset($_SERVER['HTTP_X_REQUESTED_WITH']) ||
+    !isAjaxRequest()
+) {
+    header('Location: /error403'); // Redirection vers une page propre
+    exit;
+}
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
@@ -1038,8 +1046,7 @@ try {
         return;
     }
     setFlashMessage('error', 'Erreur API', $e->getMessage());
-    header('Location: ' . BASE_URL
-        . '/auth');
+    header('Location: /auth');
     exit();
 }
 function isAjaxRequest()

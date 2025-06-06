@@ -412,7 +412,7 @@ async function getUserId() {
         const response = await fetch("/api/users/me", {
             method: "GET",
             credentials: "include",
-            headers: { Accept: "application/json" },
+            headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" , "Content-Type": "application/json"},
         })
 
         if (!response.ok) {

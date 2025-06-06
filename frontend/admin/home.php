@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="/css/styles/admin/header.css">
     <link rel="stylesheet" href="/css/dist/output.css">
     <script defer src="/js/admin/home.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="/js/lucide.min.js"></script>
 </head>
 <body>
     <!-- Navigation -->

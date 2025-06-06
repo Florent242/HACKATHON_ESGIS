@@ -42,6 +42,7 @@ async function apiRequest(endpoint, options = {}) {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
                 ...options.headers
             }
         });

@@ -2,15 +2,14 @@
 RewriteEngine On
 RewriteBase /
 
-# 🔹 Rediriger toutes les requêtes API vers backend/api.php
-RewriteCond %{REQUEST_URI} ^/api/ [NC]
-RewriteRule ^api/(.*)$ ../backend/api.php [QSA,L]
-
-# 🔹 Ne pas réécrire les fichiers et dossiers existants
+# 🔹 Gestion SPA Frontend UNIQUEMENT
+# L'API est maintenant gérée par l'alias Apache dans le VirtualHost
+# Ne pas réécrire les fichiers et dossiers existants
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-
-# 🔹 Rediriger toutes les autres requêtes vers index.php (pour le frontend SPA)
+# Exclure les requêtes API (gérées par l'alias Apache)
+RewriteCond %{REQUEST_URI} !^/api/ [NC]
+# Rediriger toutes les autres requêtes vers index.php (pour le frontend SPA)
 RewriteRule ^(.*)$ index.php [QSA,L]
 
 # 🚫 Désactiver l'affichage de l'index des dossiers
@@ -18,15 +17,34 @@ Options -Indexes
 
 # 🚫 Bloquer l'accès aux fichiers sensibles
 <FilesMatch "\.(env|git|htaccess|htpasswd|ini|bak|log|sql|sh|zip)$">
-  Require all denied
+    Require all denied
 </FilesMatch>
 
-# 🔒 Empêcher l’exécution des fichiers PHP dans certains dossiers
+# 🔒 Empêcher l'exécution des fichiers PHP dans certains dossiers
 <IfModule mod_rewrite.c>
-  RewriteCond %{REQUEST_URI} ^/(uploads|assets|static)/.*\.php$ [NC]
-  RewriteRule .* - [F]
+    RewriteCond %{REQUEST_URI} ^/(uploads|assets|static)/.*\.php$ [NC]
+    RewriteRule .* - [F]
 </IfModule>
 
-# 🔒 Interdire l'accès direct aux dossiers sensibles via l'URL
-RewriteCond %{REQUEST_URI} ^/HACKATHON_ESGIS/(frontend|backend|includes)/ [NC]
+# 🔒 Sécurité supplémentaire - Bloquer tentatives d'accès direct au backend
+# (Redondant avec la config VirtualHost, mais double sécurité)
+RewriteCond %{REQUEST_URI} ^/(backend|includes|frontend)/ [NC]
 RewriteRule .* - [F]
+
+# 🔒 Protection contre les attaques communes
+<IfModule mod_rewrite.c>
+    # Bloquer les tentatives d'injection
+    RewriteCond %{QUERY_STRING} (<|%3C)([^s]*s)+cript.*(>|%3E) [NC,OR]
+    RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+    RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2}) [OR]
+    RewriteCond %{QUERY_STRING} base64_encode[^(]*\([^)]*\) [OR]
+    RewriteCond %{QUERY_STRING} (<|%3C).*script.*(>|%3E) [NC,OR]
+    RewriteCond %{QUERY_STRING} (\.|%2E)(\.|%2E)(\.|%2E) [OR]
+    RewriteCond %{QUERY_STRING} ftp\: [NC,OR]
+    RewriteCond %{QUERY_STRING} http\: [NC,OR]
+    RewriteCond %{QUERY_STRING} https\: [NC,OR]
+    RewriteCond %{QUERY_STRING} \=PHP[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} [NC,OR]
+    RewriteCond %{QUERY_STRING} mosConfig_[a-zA-Z_]{1,21}(=|\%3D) [OR]
+    RewriteCond %{QUERY_STRING} ^.*(\[|\]|\(|\)|<|>|ê|"|;|\?|\*|=$).* [NC]
+    RewriteRule .* - [F]
+</IfModule>

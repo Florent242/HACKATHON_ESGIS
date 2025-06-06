@@ -111,7 +111,12 @@ const resources = [
 
 async function checkUserRegistration() {
     try {
-        const response = await fetch(`/api/user/registration`);
+        const response = await fetch(`/api/user/registration`, {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
         const data = await response.json();
         isRegistredToHackathon = data.data;
         return isRegistredToHackathon;

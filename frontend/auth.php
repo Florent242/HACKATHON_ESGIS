@@ -24,6 +24,7 @@ if (empty($_SESSION['csrf_token'])) {
 </head>
 
 <body>
+    <?php require_once "../includes/header.php"; ?>
     <div id="notification-data" data-notification='<?= htmlspecialchars(json_encode($_SESSION['notification'] ?? null)) ?>'></div>
     <div class="auth-container">
         <!-- Onglets pour basculer entre connexion et inscription -->

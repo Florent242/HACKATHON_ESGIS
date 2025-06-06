@@ -42,7 +42,12 @@ function updateStats(data) {
 // Fonction pour charger et afficher le leaderboard
 async function loadLeaderboard() {
     try {
-        const response = await fetch('/api/users');
+        const response = await fetch('/api/users', {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
         if (!response.ok) {
             throw new Error('Erreur réseau');
         }

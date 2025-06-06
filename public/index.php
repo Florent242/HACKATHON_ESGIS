@@ -1,5 +1,5 @@
-<script defer src="js/lucide.min.js"></script>
-<script defer src="js/main.js"></script>
+<script defer src="/js/lucide.min.js"></script>
+<script defer src="/js/main.js"></script>
 <?php
 require_once __DIR__ . '/../backend/includes/authMiddleware.php';
 
@@ -32,59 +32,14 @@ switch ($url) {
     case '/sponsors':
         require_once '../frontend/sponsors.php'; // Inclure la page "sponsors"
         break;
-
-    // Page admin
-    case '/admin':
-        require_once '../frontend/admin/home.php'; // Inclure la page "Admin"
+    case '/error403':
+        require_once '../frontend/error403.php'; // Inclure la page "error403"
         break;
-    case '/admin/challenges':
-        require_once '../frontend/admin/challenge.php'; // Inclure la page "Admin"
+    case '/error404':
+        require_once '../frontend/error404.php'; // Inclure la page "error404"
         break;
-    case '/admin/hackathon':
-        require_once '../frontend/admin/hackathon.php'; // Inclure la page "Admin"
-        break;
-    case '/admin/leaderboard':
-        require_once '../frontend/admin/leaderboard.php'; // Inclure la page "Admin"
-        break;
-    case '/admin/resources':
-        require_once '../frontend/admin/resources.php'; // Inclure la page "Admin"
-        break;
-    case '/admin/utilisateurs': // Correct
-        require_once '../frontend/admin/utilisateurs.php'; // Inclure la page "Admin"
-        break;
-    case '/admin/equipes': // Correct
-        require_once '../frontend/admin/equipes.php'; // Inclure la page "Admin"
-        break;
-    case '/admin/logs': // Correct
-        require_once '../frontend/admin/logs.php'; // Inclure la page "Admin"
-        break;
-    case '/admin/soumissions': // Correct
-        require_once '../frontend/admin/soumissions.php'; // Inclure la page "Admin"
-        break;
-
-
-
-    // Page admin_test
-    case '/admin_test':
-        require_once '../frontend/admin_test/home.php'; // Inclure la page "Admin"
-        break;
-    case '/admin_test/challenges':
-        require_once '../frontend/admin_test/challenges.php'; // Inclure la page "Admin"
-        break;
-    case '/admin_test/hackathon':
-        require_once '../frontend/admin_test/hackathons.php'; // Inclure la page "Admin"
-        break;
-    case '/admin_test/leaderboard':
-        require_once '../frontend/admin_test/leaderboard.php'; // Inclure la page "Admin"
-        break;
-    case '/admin_test/ressources':
-        require_once '../frontend/admin_test/ressources.php'; // Inclure la page "Admin"
-        break;
-    case '/admin_test/soumissions':
-        require_once '../frontend/admin_test/soumissions.php'; // Inclure la page "Admin"
-        break;
-    case '/admin_test/utilisateurs':
-        require_once '../frontend/admin_test/utilisateurs.php'; // Inclure la page "Admin"
+    case '/error500':
+        require_once '../frontend/error500.php'; // Inclure la page "error500"
         break;
 
     // Page user
@@ -126,8 +81,6 @@ switch ($url) {
             require_once '../frontend/user/challenge_submission.php';
         } else if (strpos($_SERVER['REQUEST_URI'], '/user') !== false) {
             require_once '../frontend/user/404.php'; // Inclure la page 404 pour les utilisateurs
-        } else if (strpos($_SERVER['REQUEST_URI'], 'admin') !== false) {
-            require_once '../frontend/admin/404.php'; // Inclure la page 404 pour les admins
         } else {
             require_once '../frontend/404.php'; // Inclure la page 404 générale si rien ne correspond
         }

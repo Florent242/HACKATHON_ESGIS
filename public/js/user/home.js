@@ -4,7 +4,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Appel pour récupérer les ressources d'un hackathon
     const hackathonId = 1; // Remplace par l'ID approprié
-    fetch(`/ressources?hackathonId=${hackathonId}`)
+    fetch(`/ressources?hackathonId=${hackathonId}`, {
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
         .then(response => {
             if (!response.ok) {
                 throw new Error('Erreur lors de la récupération des ressources');

@@ -467,7 +467,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             });
 
@@ -505,7 +506,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             });
 
@@ -541,7 +543,8 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch('/api/auth/check-username', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({ username: Username })
         })
@@ -565,7 +568,8 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch('/api/auth/check-email', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
             },
             body: JSON.stringify({ email: Email })
         })

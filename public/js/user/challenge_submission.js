@@ -35,7 +35,13 @@ class ChallengeSubmission {
             this.showLoading();
 
             // Simulate API call - replace with actual endpoint
-            const response = await fetch(`/api/challenges/${this.challengeId}`);
+            const response = await fetch(`/api/challenges/${this.challengeId}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
             if (!response.ok) {
                 throw new Error('Failed to fetch challenge data');
             }
@@ -523,6 +529,7 @@ class ChallengeSubmission {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: formData
             });

@@ -301,7 +301,7 @@ async function getUserId() {
         const response = await fetch('/api/users/me', {
             method: 'GET',
             credentials: 'include',
-            headers: { 'Accept': 'application/json' }
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         });
 
         if (!response.ok) {
@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (notificationElement) {
         try {
             // TODO: nettoyer la notification de la session après affichage 
-            // fetch('clearNotification.php', { method: 'POST' })
+            fetch('clearNotification.php', { method: 'POST' })
             const notificationData = JSON.parse(notificationElement.getAttribute('data-notification'));
             if (notificationData) {
                 showNotification(
