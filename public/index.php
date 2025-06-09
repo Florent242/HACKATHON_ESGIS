@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <script defer src="/js/lucide.min.js"></script>
 <script defer src="/js/main.js"></script>
 <?php
@@ -40,6 +41,9 @@ switch ($url) {
         break;
     case '/error500':
         require_once '../frontend/error500.php'; // Inclure la page "error500"
+        break;
+    case '/buttonUX':
+        require_once '../frontend/buttonUX.php'; // Inclure la page "faq"
         break;
 
     // Page user

@@ -154,31 +154,60 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     //deco's modal window
     const decoInitModal = document.querySelector('#deco');
-
     const modal = document.querySelector('#fenetre_modal');
     const annuler = document.querySelector('#fermer_modal');
+    const closeHeaderBtn = document.getElementById('close_header_btn');
+
+    function showModal() {
+        modal.classList.add('show');
+        modalContent.classList.add('animate-in');
+
+        // Focus management pour l'accessibilité
+        setTimeout(() => {
+            document.getElementById('fermer_modal').focus();
+        }, 100);
+    }
+
+    function hideModal() {
+        modal.classList.remove('show');
+        modalContent.classList.remove('animate-in');
+    }
 
     //modal window for logout
     decoInitModal.addEventListener('click', (e) => {
         e.preventDefault();
-        modal.classList.toggle('show');
+        showModal();
     });
 
     annuler.addEventListener('click', () => {
-        modal.classList.toggle('show');
+        hideModal();
     });
 
+    if (closeHeaderBtn) {
+        closeHeaderBtn.addEventListener('click', () => {
+            hideModal();
+        });
+    }
+
     window.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            modal.classList.toggle('show');
+        if (event.target === modal && modal.classList.contains('show')) {
+            hideModal();
         }
     });
 
     // Logout button click handler
     const logoutBtn = document.querySelector('#logout-btn');
+    const logoutText = document.getElementById('logout-text');
+
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             try {
+                // État de chargement
+                logoutBtn.classList.add('loading');
+                logoutBtn.disabled = true;
+
+                // Remplacer le texte par un spinner
+                logoutText.innerHTML = '<div class="spinner"></div> Déconnexion...';
 
                 const data = await apiRequest('/auth/logout', {
                     method: 'POST'
@@ -193,15 +222,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             } catch (error) {
                 setFlashMessage('error', 'Echec de déconnexion', error.message);
                 console.error('Logout failed:', error);
+            } finally {
+                // Réinitialiser l'état
+                logoutBtn.classList.remove('loading');
+                logoutBtn.disabled = false;
+                logoutText.innerHTML = 'Se déconnecter';
             }
         });
     }
+    // Fermer avec Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && modal.classList.contains('show')) {
+            hideModal();
+        }
+    });
 })
-// Ajoutez ce code à votre fichier header.js existant ou remplacez le code JS précédent
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Code existant maintenu...
-    
+
     // Gestion du menu mobile avec style modal
     const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
     const mobileNav = document.querySelector('.mobile-nav');
@@ -209,46 +247,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     const closeMobileNav = document.querySelector('.close-mobile-nav');
     const mobileNavCategoryHeaders = document.querySelectorAll('.mobile-nav-category-header');
     const mobileLogout = document.querySelector('#mobile-logout');
-    
+
     // Fonction pour ouvrir le menu mobile
     const openMobileMenu = () => {
         mobileNav.classList.add('active');
         mobileNavOverlay.classList.add('active');
         document.body.style.overflow = 'hidden'; // Empêche le défilement du body
     };
-    
+
     // Fonction pour fermer le menu mobile
     const closeMobileMenu = () => {
         mobileNav.classList.remove('active');
         mobileNavOverlay.classList.remove('active');
         document.body.style.overflow = ''; // Rétablit le défilement du body
     };
-    
+
     // Ouvrir le menu mobile
     if (mobileMenuBtn) {
         mobileMenuBtn.addEventListener('click', openMobileMenu);
     }
-    
+
     // Fermer le menu mobile
     if (closeMobileNav) {
         closeMobileNav.addEventListener('click', closeMobileMenu);
     }
-    
+
     // Fermer le menu en cliquant sur l'overlay
     if (mobileNavOverlay) {
         mobileNavOverlay.addEventListener('click', closeMobileMenu);
     }
-    
+
     // Gérer les catégories déroulantes dans le menu mobile
     if (mobileNavCategoryHeaders) {
         mobileNavCategoryHeaders.forEach(header => {
             header.addEventListener('click', () => {
                 const categoryIndex = header.getAttribute('data-category');
                 const content = document.querySelector(`.mobile-nav-category-content[data-category="${categoryIndex}"]`);
-                
+
                 // Toggle la classe active pour afficher/masquer le contenu
                 content.classList.toggle('active');
-                
+
                 // Rotation de l'icône
                 const icon = header.querySelector('[data-lucide="chevron-down"]');
                 if (content.classList.contains('active')) {
@@ -259,13 +297,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
     }
-    
+
     // Gestion de la déconnexion mobile
     if (mobileLogout) {
         mobileLogout.addEventListener('click', () => {
             // Ferme d'abord le menu mobile
             closeMobileMenu();
-            
+
             // Ouvre la fenêtre modale de déconnexion après un court délai
             setTimeout(() => {
                 const modal = document.querySelector('#fenetre_modal');
@@ -275,12 +313,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }, 300); // Délai pour permettre la transition de fermeture du menu
         });
     }
-    
+
     // Adaptation pour les grands et petits écrans
     const adjustForScreenSize = () => {
         // Éléments à ajuster
         const profileDropdownContainer = document.querySelector('.profile-dropdown-container');
-        
+
         if (window.innerWidth <= 768) {
             // Mobile: cacher le dropdown du profil
             if (profileDropdownContainer) {
@@ -291,13 +329,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (profileDropdownContainer) {
                 profileDropdownContainer.style.display = 'block';
             }
-            
+
             // Fermer le menu mobile si on revient en vue desktop
             if (mobileNav && mobileNav.classList.contains('active')) {
                 closeMobileMenu();
             }
         }
-        
+
         // Adapter la taille des icônes pour mobile
         const icons = document.querySelectorAll('[data-lucide]');
         if (window.innerWidth <= 480) {
@@ -316,18 +354,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
     };
-    
+
     // Appeler la fonction d'ajustement au chargement et au redimensionnement
     adjustForScreenSize();
     window.addEventListener('resize', adjustForScreenSize);
-    
+
     // Gestion des touches clavier (fermer le menu avec Echap)
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && mobileNav.classList.contains('active')) {
             closeMobileMenu();
         }
     });
-    
+
     // Initialisation des icônes Lucide pour les nouveaux éléments
     if (window.lucide) {
         window.lucide.createIcons();

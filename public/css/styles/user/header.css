@@ -86,89 +86,261 @@ body {
     /* Remet à sa position d'origine */
 }
 
+/* Modal styles */
 .mymodal {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100vw;
     height: 100vh;
-    opacity: 0;
-    visibility: hidden;
+    background: rgba(3, 11, 32, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-direction: column;
-    text-align: center;
-    position: fixed;
-    left: 0;
-    top: 0;
-    margin: 0 auto;
-    width: 100vw;
-    height: 100vh;
-    background-position: center;
-    background-size: cover;
     z-index: 1000;
-    /* ... other styles ... */
-    -webkit-backdrop-filter: blur(1rem);
-    /* Added for compatibility with webkit browsers */
-    backdrop-filter: blur(1rem);
-    transition: opacity 0.5s ease, visibility 0.5s linear, backdrop-filter 0.5s ease;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mymodal.show {
     opacity: 1;
     visibility: visible;
-    transition: opacity 0.5s ease, visibility 0.5s linear, backdrop-filter 0.5s ease-out;
 }
 
 .modal_content {
-    margin: auto;
-    width: 50%;
-    height: auto;
-    padding: 1%;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 1rem;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.2);
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    padding: 0;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 
+        0 25px 50px -12px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+    transform: scale(0.95) translateY(20px);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
 }
 
-.modal_content button {
-    width: auto;
-    padding: 0.2rem 0.5rem;
-    flex-direction: row;
-    font-size: 16px;
-    font-weight: 400;
+.mymodal.show .modal_content {
+    transform: scale(1) translateY(0);
+}
+
+/* Header avec icône */
+.modal_header {
+    background: linear-gradient(135deg, var(--red), #dc2626);
+    padding: 1.5rem;
     text-align: center;
-    background-color: gray;
-    color: #FFFFFF;
-    border-radius: 10rem;
-    border: 0;
-    cursor: pointer;
-    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 3px 10px 0 rgba(0, 0, 0, 0.2);
-    transition: background-color 0.5s ease-in, box-shadow 0.5s ease-in;
+    position: relative;
 }
 
-#deconnexion:hover {
-    background-color: tomato;
-    color: #FFFFFF;
-    transition: background-color 1s ease-out;
-    box-shadow: 0 4px 8px 0 rgba(255, 0, 0, 0.2), 0 6px 20px 0 rgba(255, 0, 0, 0.2);
+.modal_icon {
+    width: 3rem;
+    height: 3rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    backdrop-filter: blur(10px);
+}
+
+.modal_title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+}
+
+.modal_subtitle {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Close button */
+.close_btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.close_btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+/* Body */
+.modal_body {
+    padding: 2rem;
+    text-align: center;
+}
+
+.modal_message {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+}
+
+/* Buttons container */
+.modal_actions {
+    display: flex;
+    gap: 1rem;
+    flex-direction: column;
+}
+
+@media (min-width: 640px) {
+    .modal_actions {
+        flex-direction: row;
+    }
+}
+
+/* Button styles */
+.modal_actions button {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+#fermer_modal {
+    background: var(--card-hover);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
 }
 
 #fermer_modal:hover {
-    color: #FFFFFF;
-    transition: box-shadow 0.5s ease-out;
-    box-shadow: 0 4px 8px 0 rgba(128, 128, 128, 0.5), 0 6px 20px 0 rgba(128, 128, 128, 0.5);
+    background: var(--card-hv);
+    color: var(--text);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(30, 41, 59, 0.4);
 }
 
+#logout-btn {
+    background: var(--red);
+    color: var(--text);
+    position: relative;
+}
+
+#logout-btn:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+#logout-btn:active {
+    transform: translateY(0);
+}
+
+/* Loading state */
+.loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.spinner {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Subtle animations */
+.modal_content button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+.modal_content button:active::before {
+    width: 100%;
+    height: 100%;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+    .modal_content {
+        margin: 1rem;
+        width: calc(100% - 2rem);
+    }
+    
+    .modal_header {
+        padding: 1.25rem;
+    }
+    
+    .modal_body {
+        padding: 1.5rem;
+    }
+}
+
+/* Focus styles pour l'accessibilité */
+button:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* Animation d'entrée */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal_content.animate-in {
+    animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
 /* HEADER */
 header {
-    width: 100%;
-    border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
+    z-index: 100;
+    width: 100%;
+    border-bottom: 1px solid var(--border);
     -webkit-backdrop-filter: blur(2rem);
     backdrop-filter: blur(2rem);
-    z-index: 10;
 }
 
 .card-bg {

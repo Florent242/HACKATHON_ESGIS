@@ -18,7 +18,7 @@
     <?php require_once '../includes/user/header.php'; ?>
 
     <!-- Main structure -->
-    <section class="main-container mb-10">
+    <section class="main-container mb-2">
 
         <div>
 
@@ -134,8 +134,8 @@
             <div class="search-container" style="background: var(--card-bg); border-radius: 1rem; padding: 1rem; margin-bottom: 1.5rem;">
                 <div class="search-bar" style="width: 100%;">
                     <div class="search-input-wrapper">
-                        <i class="w-4 h-4 stroke-current" data-lucide="search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
-                        <input type="text" placeholder="Search challenges by name, category, or tag..." style="width: 100%; padding: 1rem 1rem 1rem 2.5rem; background: transparent; border: none; color: white; font-size: 0.875rem;">
+                        <i class="w-4 h-4 stroke-current" data-lucide="search"></i>
+                        <input type="text" placeholder="Search challenges by name, category, or tag..." id="search-input">
                     </div>
                 </div>
                 <div class="popular-tags">
@@ -152,14 +152,14 @@
             <!-- Challenges section -->
             <section class="challenges-section">
                 <!-- Section header with filters -->
-                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <div class="filters-section" style="display: flex; align-items: center; gap: 1rem;">
-                        <div class="filter-btn-group" style="display: flex; gap: 0.5rem;">
+                <div class="section-header">
+                    <div class="filters-section">
+                        <div class="filter-btn-group">
                             <button class="filter-btn active">All Challenges</button>
                         </div>
                     </div>
-                    <div class="sort-filter" style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="color: var(--text-secondary); font-size: 0.875rem;">Sort By</span>
+                    <div class="sort-filter">
+                        <span>Sort By</span>
                         <div class="sort-select relative">
                             <button class="sort-btn">
                                 <span>Latest</span>
@@ -183,7 +183,7 @@
 
                 <!-- Empty state -->
                 <div id="challenges-empty-state" class="w-full py-4 hidden items-center justify-center flex-col">
-                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-800/30 mb-4">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-800/30 backdrop-blur-sm mb-4">
                         <i data-lucide="file-text" class="w-6 h-6 stroke-current"></i>
                     </div>
                     <h3 class="text-lg font-medium text-white mb-1">Aucun challenge trouvé</h3>

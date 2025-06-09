@@ -20,18 +20,22 @@ body {
     color: var(--text);
     display: flex;
     justify-content: center;
-    height: 100vh;
-    padding: 10px;
-    margin: 1% auto;
+    align-items: center;
+    flex-direction: column;
+    width: 100vw;
+    margin: 0 auto;
 }
 
 .auth-container {
+    display: flex;
+    flex-direction: column;
     position: relative;
-    height: 100%;
-    width: 100%;
-    max-width: 700px;
+    align-items: center;
+    justify-content: center;
+    min-width: 60%;
+    max-width: 100%;
     text-align: center;
-    margin: 1% auto;
+    margin: 3% 10%;
 }
 
 .auth-container p {
@@ -47,6 +51,7 @@ body {
     background: var(--card-hover);
     padding: 0.5rem;
     margin-bottom: 1rem;
+    width: 100%;
 }
 
 
@@ -74,11 +79,9 @@ body {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(150, 140, 255, 0.08);
     border: 1px solid rgba(110, 125, 220, 0.2);
     border-radius: 12px;
-    padding: 1rem 2rem;
+    padding: 2rem;
     width: 100%;
     margin-bottom: 1%;
-    /* box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); */
-    /* border: 1px solid var(--text-secondary); */
     transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
     will-change: height;
@@ -92,7 +95,7 @@ body {
         visibility 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
     position: absolute;
-    top: 2rem; /* Correspond au padding de auth-card */
+    top: 2rem;
     left: 2rem;
     right: 2rem;
     transform: translateY(10px);
@@ -147,7 +150,6 @@ body {
     border-radius: 10px;
     background: linear-gradient(165deg, #070F2A 0%, #0D1A44 60%, #121D4C 100%);
     border: 1px solid rgba(110, 120, 220, 0.2);
-    /* box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(150, 140, 255, 0.06); */ 
     width: 100%;
     transition: border 0.3s ease-in-out;
     color: var(--text-secondary);
@@ -156,10 +158,8 @@ body {
 .form-group .display:focus-within {
     border: 1px solid var(--blue);
     box-shadow: 0 0 0 1px var(--blue);
-    /* Bordure bleue au focus */
 }
 
-/* Affiche l'icône uniquement quand l'input est focus */
 .form-group:focus-within i[data-icon="key"] {
     opacity: 1;
 }

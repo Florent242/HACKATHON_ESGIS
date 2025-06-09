@@ -57,19 +57,6 @@ foreach ($files as $class => $path) {
     }
 }
 
-
-// require_once __DIR__ . '/models/Database.php';
-// require_once __DIR__ . '/controllers/Controller.php';
-// require_once __DIR__ . '/controllers/AuthController.php';
-// require_once __DIR__ . '/controllers/UserController.php';
-// require_once __DIR__ . '/controllers/HackathonController.php';
-// require_once __DIR__ . '/controllers/TeamController.php';
-// require_once __DIR__ . '/controllers/ProjectController.php';
-// require_once __DIR__ . '/controllers/ChallengeController.php';
-// require_once __DIR__ . '/controllers/EvaluationController.php';
-
-// chemin de base
-
 // Configurer CORS pour toutes les requêtes API
 configureCors();
 

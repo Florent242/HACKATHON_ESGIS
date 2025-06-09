@@ -8,13 +8,43 @@ if (!isset($_SESSION['csrf_token'])) {
 
 ?>
 <script defer type="module" src="/js/user/header.js"></script>
+<!-- Modal -->
 <div id="fenetre_modal" class="mymodal">
     <div class="modal_content">
-        <p>Souhaitez-vous vraiment vous deconnecter ?</p>
-        <button id="logout-btn">Déconnexion</button>
-        <button id="fermer_modal">Annuler</button>
+        <!-- Header avec icône d'alerte -->
+        <div class="modal_header">
+            <button class="close_btn" id="close_header_btn">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="modal_icon">
+                <i data-lucide="alert-triangle"></i>
+            </div>
+            <h3 class="modal_title">Confirmer la déconnexion</h3>
+            <p class="modal_subtitle">Cette action va terminer votre session</p>
+        </div>
+
+        <!-- Body -->
+        <div class="modal_body">
+            <p class="modal_message">
+                Êtes-vous sûr de vouloir vous déconnecter ?
+                Vous devrez vous reconnecter pour accéder à votre compte.
+            </p>
+
+            <!-- Actions -->
+            <div class="modal_actions">
+                <button id="fermer_modal" onclick="hideModal()">
+                    <i data-lucide="x"></i>
+                    <span>Annuler</span>
+                </button>
+                <button id="logout-btn" onclick="handleLogout()">
+                    <i data-lucide="log-out"></i>
+                    <span id="logout-text">Se déconnecter</span>
+                </button>
+            </div>
+        </div>
     </div>
 </div>
+
 <header>
     <!-- Navigation mobile -->
     <div class="mobile-nav-overlay"></div>

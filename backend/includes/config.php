@@ -40,7 +40,8 @@ define('PUBLIC_ROUTES', [
     '/^\/about\/?$/', 
     '/^\/privacy\/?$/', 
     '/^\/terms\/?$/', 
-    '/^\/faq\/?$/', ]);
+    '/^\/faq\/?$/', 
+    '/^\/buttonUX\/?$/', ]);
 
 // Durée de vie des sessions (en secondes)
 define('SESSION_LIFETIME', 3600); // 1 heure
