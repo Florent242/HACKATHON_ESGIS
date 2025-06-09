@@ -29,11 +29,11 @@
                 maîtriser de nouvelles technologies et découvrir des défis de cybersécurité.
             </p>
             <div class="hero-buttons">
-                <button class="btn btn-primary fade-in">
+                <button class="btn-primary btn-startchallenge fade-in">
                     Commencer votre voyage
                     <i data-lucide="arrow-right"></i>
                 </button>
-                <button class="btn btn-secondary fade-in">
+                <button class="btn-primary btn-standard fade-in">
                     Découvrir les défis
                 </button>
             </div>
@@ -45,13 +45,13 @@
         <div class="stats-container">
             <div class="stat-item">
                 <i data-lucide="users"></i>
-                <h2><span>1200+</span></h2>
+                <h2><span>200+</span></h2>
                 <p>Membres actifs</p>
             </div>
             <div class="stat-item">
                 <i data-lucide="calendar"></i>
                 <h2><span>50+</span></h2>
-                <p>Défis hebdomadaires</p>
+                <p>Défis à venir</p>
             </div>
             <div class="stat-item">
                 <i data-lucide="trophy"></i>
@@ -61,7 +61,7 @@
             <div class="stat-item">
                 <i data-lucide="swords"></i>
                 <h2><span>2</span></h2>
-                <p>Types de défis</p>
+                <p>Types de challenge</p>
             </div>
         </div>
     </section>
@@ -109,16 +109,13 @@
                     <div>
                         <span>
                             <i data-lucide="calendar"></i>
-                        15-17 Mars 2024
+                        Arrive bientôt
                         </span>
                         <span>
-                            <i data-lucide="users"></i>200 participants
-                        </span>
-                        <span>
-                            <i data-lucide="trophy"></i>Prix: 2,000,000 FCFA
+                            <i data-lucide="users"></i>200 participants attendus
                         </span>
                     </div>
-                    <button class="event-info">En savoir plus <i data-lucide="arrow-right"></i>
+                    <button class="btn-primary btn-ghost">En savoir plus <i data-lucide="arrow-right"></i>
                     </button>
                 </div>
                 <div class="events-item  fade-in-right">
@@ -126,16 +123,13 @@
                     <div>
                         <span>
                             <i data-lucide="calendar"></i>
-                            15-17 Mars 2024
+                            Arrive bientôt
                         </span>
                         <span>
-                            <i data-lucide="users"></i>200 participants
-                        </span>
-                        <span>
-                            <i data-lucide="trophy"></i>Prix: 2,000,000 FCFA
+                            <i data-lucide="users"></i>200 participants attendus
                         </span>
                     </div>
-                    <button class="event-info">En savoir plus <i data-lucide="arrow-right"></i>
+                    <button class="btn-primary btn-ghost">En savoir plus <i data-lucide="arrow-right"></i>
                     </button>
                 </div>
 

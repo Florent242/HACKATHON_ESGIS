@@ -99,6 +99,7 @@
     --radius-xl: 0.75rem;
     --radius-2xl: 1rem;
     --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
     --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
     --animate-spin: spin 1s linear infinite;
     --animate-ping: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
@@ -573,8 +574,14 @@
   .max-w-6xl {
     max-width: var(--container-6xl);
   }
+  .max-w-\[200px\] {
+    max-width: 200px;
+  }
   .max-w-\[1200px\] {
     max-width: 1200px;
+  }
+  .max-w-\[1400px\] {
+    max-width: 1400px;
   }
   .max-w-lg {
     max-width: var(--container-lg);
@@ -596,6 +603,9 @@
   }
   .shrink-0 {
     flex-shrink: 0;
+  }
+  .flex-grow {
+    flex-grow: 1;
   }
   .border-collapse {
     border-collapse: collapse;
@@ -1547,6 +1557,10 @@
   .ease-in-out {
     --tw-ease: var(--ease-in-out);
     transition-timing-function: var(--ease-in-out);
+  }
+  .ease-out {
+    --tw-ease: var(--ease-out);
+    transition-timing-function: var(--ease-out);
   }
   .group-hover\:visible {
     &:is(:where(.group):hover *) {

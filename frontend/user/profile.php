@@ -417,7 +417,7 @@
 
                 <!-- Contenu de tab4 -->
                 <div class="tab-content hidden" id="tab4">
-                    <div class="flex flex-col items-center justify-center gap-6 max-md:gap-4 max-w-[1200px] max-md:mx-[5%] my-1 mx-auto p-5">
+                    <div class="flex flex-col items-center justify-center gap-6 max-md:gap-4 max-w-[1400px] max-md:mx-[5%] my-1 mx-auto p-5">
                         <form class="form-card-background p-6 rounded-lg shadow-md w-full mx-auto border border-gray-700">
 
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">

@@ -45,6 +45,9 @@ switch ($url) {
     case '/buttonUX':
         require_once '../frontend/buttonUX.php'; // Inclure la page "faq"
         break;
+    case '/typo':
+        require_once '../frontend/typo.php'; // Inclure la page "typo"
+        break;
 
     // Page user
     case '/user':

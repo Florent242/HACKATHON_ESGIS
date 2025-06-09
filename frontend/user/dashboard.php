@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="/css/styles/user/dashboard.css">
     <link rel="stylesheet" href="/css/styles/user/header.css">
     <link rel="stylesheet" href="/css/dist/output.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script defer src="/js/user/dashboard.js" type="module"></script>
     <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
 </head>
@@ -20,25 +21,25 @@
     <!-- Navigation -->
     <?php require_once '../includes/user/header.php'; ?>
     <main>
-        <section class="header-dashboard flex flex-col items-center justify-center gap-12 max-md:gap-10 max-w-[1200px] max-md:mx-[5%] my-1 mx-auto p-5">
+        <section class="header-dashboard flex flex-col items-center justify-center gap-12 max-md:gap-10 max-w-[1400px] max-md:mx-[5%] my-1 mx-auto p-5">
             <div class="container flex flex-row w-full max-md:flex-col items-center justify-between gap-5 mx-auto">
 
-                <h1 class="text-3xl font-bold w-auto max-md:text-center max-md:text-3xl max-sm:text-2xl">Welcome to your Dashboard,
+                <h1 class="text-4xl font-bold w-auto max-md:text-center max-md:text-3xl max-sm:text-2xl">Welcome to your Dashboard,
                     <span class="text-blue-500 Username">
                         [Username]
                     </span>
                 </h1>
 
                 <div class="challenges-link flex flex-row gap-5 items-center">
-                    <button class="cursor-pointer flex flex-row items-center justify-center gap-1 rounded-xl bg-blue-500 text-white p-2 text-sm max-md:text-center max-md:text-xs">
+                    <button class="cursor-pointer flex flex-row items-center justify-center gap-1 rounded-xl bg-blue-500 text-white p-2 text-sm max-md:text-center max-md:text-xs whitespace-nowrap btn-primary btn-participate">
                         <i data-lucide="code" class="w-4 h-4 stroke-current"></i>Developpement challenge
                     </button>
-                    <button class="cursor-pointer flex flex-row items-center justify-center gap-1 rounded-xl bg-blue-500 text-white p-2 text-sm max-md:text-center max-md:text-xs">
+                    <button class="cursor-pointer flex flex-row items-center justify-center gap-1 rounded-xl bg-blue-500 text-white p-2 text-sm max-md:text-center max-md:text-xs whitespace-nowrap btn-primary btn-participate">
                         <i data-lucide="shield" class="w-4 h-4 stroke-current"></i>Security challenge
                     </button>
                 </div>
             </div>
-            <div class="user-info flex flex-row gap-5 items-center justify-between p-3 w-full max-w-[1200px] rounded-xl max-md:flex-col card-bg border border-gray-700">
+            <div class="user-info flex flex-row gap-5 items-center justify-between p-3 w-full max-w-[1400px] rounded-xl max-md:flex-col card-bg border border-gray-700">
 
                 <div class="flex flex-row items-center gap-5 w-full max-md:flex-col">
 
@@ -51,13 +52,13 @@
                     </div>
                 </div>
                 <a href="/user/profile">
-                    <div class="modify-profile cursor-pointer flex flex-row items-center justify-center gap-2 rounded-xl bg-gray-950 text-white p-2 w-auto max-md:w-full border border-gray-700">
-                        <i data-lucide="user"></i> <span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs">Modify the profile</span>
+                    <div class="modify-profile btn-primary btn-standard">
+                        <i data-lucide="user"></i> <span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs whitespace-nowrap">Modify the profile</span>
                     </div>
                 </a>
             </div>
 
-            <div class="text-white w-full max-w-[1200px]">
+            <div class="text-white w-full max-w-[1400px]">
                 <!-- Grid des cartes -->
                 <div class="grid grid-cols-4 max-lg:grid-cols-2 max-md:grid-cols-1 items-stretch  justify-between max-md:flex-col max-md:w-full max-md:justify-center gap-4 w-full">
 

@@ -37,7 +37,7 @@ body {
     justify-content: center;
     gap: 20px;
     flex-wrap: wrap;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: auto;
 }
 
@@ -232,9 +232,6 @@ h3 {
 
 /* Mobile (écran inférieur à 600px) */
 @media (max-width: 600px) {
-    body {
-        padding: 20px;
-    }
 
     header h1 {
         font-size: 24px;
