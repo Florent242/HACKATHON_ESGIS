@@ -21,7 +21,6 @@ body {
     justify-content: center;
     align-items: center;
     flex-direction: column;
-    width: 100vw;
     margin: 0 auto;
 }
 
@@ -29,12 +28,12 @@ body {
     display: flex;
     flex-direction: column;
     position: relative;
+    width: 100%;
     align-items: center;
     justify-content: center;
-    min-width: 60%;
-    max-width: 100%;
+    max-width: 700px;
     text-align: center;
-    margin: 3% 10%;
+    margin: 3% auto;
 }
 
 .auth-container p {

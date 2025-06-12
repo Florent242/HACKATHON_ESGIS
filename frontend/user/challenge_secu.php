@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="/css/dist/output.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script defer src="/js/user/challenge_secu.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    
 </head>
 
 <body>

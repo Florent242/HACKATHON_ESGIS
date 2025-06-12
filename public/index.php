@@ -77,6 +77,9 @@ switch ($url) {
     case '/user/profile':
         require_once '../frontend/user/profile.php'; // Inclure la page "Admin"
         break;
+    case '/user/interfacechallenge':
+        require_once '../frontend/user/interfacechallenge.php'; // Inclure la page "user/challenge_submission"
+        break;
     default:
         // TODO: ajouter la gestion des urls avec le format CHALL-[A-Za-z0-9]{8,}
         //  if (preg_match('#^/user/challenge_submission/(CHALL-[A-Za-z0-9]{8,})$#', $url, $matches)) {

@@ -182,14 +182,7 @@ class AuthController
 
     private function setAuthCookies($token, $longTermToken = null)
     {
-        // Cookie court terme (1 heure)
-        setcookie("jwt_token", $token, [
-            "expires" => time() + (60 * 60 ),
-            "path" => "/",
-            "httponly" => true,
-            "secure" => true,
-            "samesite" => "Strict"
-        ]);
+        // TODO: Remettre la securite du secure et Vérifier si le token est valide
 
         // Cookie long terme (30 jours) si demandé
         if ($longTermToken) {
@@ -197,10 +190,20 @@ class AuthController
                 "expires" => time() + (60 * 60 * 24 * 30),
                 "path" => "/",
                 "httponly" => true,
-                "secure" => true,
+                "secure" => false,
                 "samesite" => "Strict"
             ]);
+            return;
         }
+        // Cookie court terme (1 heure)
+        setcookie("jwt_token", $token, [
+            "expires" => time() + 60 * 60,
+            "path" => "/",
+            "httponly" => true,
+            "secure" => false,
+            "samesite" => "Strict",
+        ]);
+        return;
     }
 
     // Traiter l'inscription
@@ -290,11 +293,11 @@ class AuthController
             // Récupérer l'identifiant brut depuis POST ou $data
             $identifier = isset($_POST['identifier']) ? $_POST['identifier'] : $data['identifier'];
             $identifier = trim(htmlspecialchars($identifier, ENT_QUOTES, 'UTF-8'));
-            
+
             if (empty($identifier)) {
                 throw new Exception('Identifiant invalide');
             }
-            
+
             $password = filter_input(INPUT_POST, 'password', FILTER_DEFAULT);
             $rememberMe = isset($data['remember_me']) && $data['remember_me'] === 'on';
 
