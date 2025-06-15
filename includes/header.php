@@ -87,12 +87,12 @@ $is_mobile = isMobile();
             <!-- Logo -->
             <a href="/" class="logo" aria-label="Retour à l'accueil - <?= $header_config['site_name'] ?>">
                 <div class="logo-circle" aria-hidden="true">
-                    <?= htmlspecialchars($header_config['logo_letter']) ?>
+                    <img src="/assets/Esgislogo.png" alt="Logo EsgisHub" class="logo-img">
                 </div>
                 <span><?= htmlspecialchars($header_config['site_name']) ?></span>
             </a>
 
-            <!-- Navigation principale (desktop) -->
+            <!-- Navigation principale (desktop)-->
             <nav class="header-nav" role="navigation" aria-label="Menu de navigation principal">
                 <?php foreach ($nav_items as $item): ?>
                     <a href="<?= htmlspecialchars($item['url']) ?>"
@@ -107,16 +107,6 @@ $is_mobile = isMobile();
 
         <!-- Actions du header -->
         <div class="header-actions">
-            <?php if ($header_config['show_notifications']): ?>
-                <!-- Bouton notifications -->
-                <button class="notification-btn"
-                    aria-label="Voir les notifications"
-                    title="Notifications">
-                    <i data-lucide="bell" class="w-4 h-4 stroke-current"></i>
-                    <!-- Badge de notification (si nécessaire) -->
-                    <span class="notification-badge" style="display: none;" aria-hidden="true">0</span>
-                </button>
-            <?php endif; ?>
 
             <!-- Bouton Start Challenge -->
             <button class="start-challenge"

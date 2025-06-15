@@ -49,7 +49,7 @@
             </div>
         </div>
         <div class="footer-bottom">
-            © 2025 Challenge Platform. Tous droits réservés.
+            © 2025 EsgisHub. Tous droits réservés.
         </div>
     </footer>
 

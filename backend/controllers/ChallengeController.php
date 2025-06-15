@@ -153,6 +153,21 @@ class ChallengeController extends Controller {
             ], 400);
         }
     }
+    public function getChallengesDev($hackathon_id){
+        try{
+            $this->validateMethod('GET');
+            $challenges = $this->challenge->getchallengeDev($hackathon_id);
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $challenges
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
 
     public function delete($id) {
         try {

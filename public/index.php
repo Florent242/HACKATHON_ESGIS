@@ -101,7 +101,7 @@ switch ($url) {
 ?>
 
 <script defer>
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
         lucide.createIcons();
     });
 </script>

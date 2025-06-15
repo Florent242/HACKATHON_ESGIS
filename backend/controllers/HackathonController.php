@@ -91,6 +91,25 @@ class HackathonController extends Controller {
         }
     }
 
+    public function checkParticipation($userId, $hackathonId) {
+        try {
+            $query = "SELECT COUNT(*) FROM hackathon_participants 
+                      WHERE user_id = :user_id 
+                      AND hackathon_id = :hackathon_id 
+                      AND participation_status = 'accepted'";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([
+                ':user_id' => (int)$userId,
+                ':hackathon_id' => (int)$hackathonId
+            ]);
+            
+            return $stmt->fetchColumn() > 0;
+        } catch (Exception $e) {
+            throw new Exception('Erreur lors de la vérification de participation: ' . $e->getMessage(), 500);
+        }
+    }
+
     /**
      * Récupère les hackathons actifs
      */

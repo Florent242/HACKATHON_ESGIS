@@ -210,7 +210,7 @@ function showNotification(message, details = null, type = 'info', duration = 500
 
 function hideNotification(notification) {
     notification.classList.add('animate-fade-out');
-    // notification.addEventListener('animationend', () => notification.remove(), { once: true });
+    notification.addEventListener('animationend', () => notification.remove(), { once: true });
 }
 
 // Dans un fichier utils.js ou directement dans auth.js
@@ -269,7 +269,7 @@ async function initVerification() {
             return; // On arrête l'exécution pour éviter tout traitement inutile
         }
     } else {
-        // Si authentifié mais sur une page non autorisée -> redirection
+        // Si authentifié mais sur une page non autorisée une redirection est faite
         if (!AuthService.checkPathPermission(authCheck.userRole)) {
             AuthService.redirectToRoleHome(authCheck.userRole);
             return;
@@ -278,13 +278,10 @@ async function initVerification() {
         // Ici l'utilisateur est bien authentifié et autorisé
         console.log('Utilisateur connecté:', authCheck.authenticated);
 
-        // Vous pouvez ajouter ici des initialisations spécifiques aux utilisateurs connectés
-        // Par exemple :
-        // - Charger des données utilisateur
-        // - Mettre à jour l'UI
-        // - Initialiser des écouteurs d'événements spécifiques
     }
 }
+
+// Pour une gestion des connexions cote client mais non implemente
 try {
     // initVerification();
 } catch (error) {

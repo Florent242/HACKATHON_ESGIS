@@ -936,13 +936,37 @@ button:focus-visible {
 
 .header-container {
     width: 100%;
-    max-width: 1300px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 0.5rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
+
+/* États de hover améliorés pour desktop */
+@media screen and (min-width: 1025px) {
+    header:hover {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .header-container::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--blue-light), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    header:hover .header-container::after {
+        opacity: 0.8;
+    }
+}
+
 
 /* ==================================================
    LOGO & NAVIGATION
@@ -1021,20 +1045,28 @@ button:focus-visible {
 }
 
 .logo-circle {
-    width: 40px;
-    height: 40px;
-    background: var(--gradient);
-    border-radius: 12px;
+    width: 80px;
+    height: 50px;
+    background: transparent;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 800;
-    font-size: 1.1rem;
-    color: white;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    padding: 6px;
+    box-shadow: 0 4px 12px rgba(25, 49, 109, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
+    cursor: pointer;
+}
+
+.logo-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition: transform 0.3s ease;
 }
 
 .logo-circle::before {

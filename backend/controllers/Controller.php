@@ -123,7 +123,7 @@ class Controller
         }
 
         // Pour les requêtes PUT, récupérer le token du corps de la requête
-        if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+        if ($_SERVER['REQUEST_METHOD'] === 'PUT' || $_SERVER['REQUEST_METHOD'] === 'POST') {
             $rawData = file_get_contents('php://input');
             $data = json_decode($rawData, true);
             $token = $data['csrf_token'] ?? '';

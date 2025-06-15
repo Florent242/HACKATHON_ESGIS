@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token']; ?>">
     <title>EsgisHub - Challenges</title>
     <link rel="stylesheet" href="/css/styles/user/challenge_secu.css">
     <link rel="stylesheet" href="/css/styles/user/header.css">
@@ -18,7 +19,7 @@
     <?php require_once '../includes/user/header.php'; ?>
 
     <!-- Main structure -->
-    <section class="main-container mb-2">
+    <section class="main-container mb-2 w-full h-screen">
 
         <div>
 

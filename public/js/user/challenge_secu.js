@@ -58,6 +58,15 @@ async function apiRequest(endpoint, options = {}) {
     }
 }
 
+// Fonction utilitaire pour vérifier la participation au hackathon
+async function checkHackathonAccess(hackathonId) {
+    const response = await apiRequest(`/check-participation`, {
+        method: 'POST',
+        body: JSON.stringify({ hackathon_id: hackathonId, csrf_token: document.querySelector('meta[name="csrf-token"]').content })
+    });
+    return response.success;
+}
+
 // Fonction pour charger les challenges
 async function loadChallenges() {
     try {
@@ -608,6 +617,16 @@ async function initializeChallenges() {
 
 // Démarrer l'application
 document.addEventListener('DOMContentLoaded', () => {
+    if (checkHackathonAccess(1)) {
+        console.log('Vous n\'êtes pas inscrit au hackathon');
+        const div = document.createElement("div");
+        div.innerHTML = "<div class='flex justify-center items-center h-screen w-screen bg-background-lighter backdrop-blur-sm z-50 fixed inset-0'><h1 class='text-2xl font-bold text-text'>Vous n'êtes pas inscrit au hackathon</h1></div>";
+        const mainContainer = document.querySelector(".main-container");
+        mainContainer.innerHTML = div.innerHTML;
+        // empecher le scroll
+        window.style.overflow = "hidden";
+        return;
+    }
     initializeChallenges();
     lucide.createIcons();
 });

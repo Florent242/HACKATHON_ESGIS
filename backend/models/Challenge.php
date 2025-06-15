@@ -251,4 +251,34 @@ class Challenge {
             throw new Exception("Erreur lors de la récupération du nombre de résolutions pour le challenge {$challengeId} : " . $e->getMessage());
         }
     }
+    public function getchallengeDev($hackathon_id) {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT 
+                    c.type,
+                    c.title,
+                    c.difficulty,
+                    c.description,
+                    c.created_at,
+                    h.name as hackathon_name,
+                    t.name as technology,
+                    COUNT(DISTINCT cs.id) as submissions_count,
+                    COUNT(DISTINCT cs.user_id) as participants_count,
+                    h.status
+                FROM challenges c
+                INNER JOIN hackathons h ON c.hackathon_id = h.id
+                INNER JOIN technologies t ON c.technology_id = t.id
+                LEFT JOIN challenge_submissions cs ON c.id = cs.challenge_id
+                WHERE h.id = :hackathon_id
+                GROUP BY c.id
+            ");
+    
+            $stmt->execute([':hackathon_id' => $hackathon_id]);
+            $challenges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+            return $challenges;
+        } catch (Exception $e) {
+            throw new Exception("Erreur lors de la récupération des challenges : " . $e->getMessage());
+        }
+    }
 }

@@ -143,7 +143,9 @@ if (!isset($_SESSION['csrf_token'])) {
     <div class="header-container">
         <div class="logo-nav">
             <div class="logo">
-                <div class="logo-circle">E</div>
+                <div class="logo-circle">
+                    <img src="/assets/Esgislogo.png" alt="Logo EsgisHub" class="logo-img">
+                </div>
                 <span>EsgisHub</span>
             </div>
             <a href="/user">Dashboard</a>
