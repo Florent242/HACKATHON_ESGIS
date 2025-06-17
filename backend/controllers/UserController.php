@@ -739,11 +739,10 @@ class UserController extends Controller
         $status = $isCorrect ? 'active' : 'rejected';
         $points = $isCorrect ? $challenge['points'] : 0;
 
-        $stmt = $db->prepare("INSERT INTO challenge_submissions (user_id, challenge_id, submission_value, status, points, created_at) VALUES (:user_id, :challenge_id, :submission, :status, :points, NOW())");
+        $stmt = $db->prepare("INSERT INTO challenge_submissions (user_id, challenge_id, status, points, created_at) VALUES (:user_id, :challenge_id, :status, :points, NOW())");
         $stmt->execute([
             ':user_id' => $userId,
             ':challenge_id' => $challengeId,
-            ':submission' => $flag,
             ':status' => $status,
             ':points' => $points
         ]);

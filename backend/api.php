@@ -493,7 +493,7 @@ try {
                             break;
 
                         case 'teams':
-                            // Un utilisateur peut voir ses propres équipes ou un admin peut voir n'importe quelles équipes
+                            // Un utilisateur peut voir sa propre équipe ou un admin peut voir n'importe quelles équipes
                             if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                 if (isAjaxRequest()) {
                                     jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
@@ -505,6 +505,7 @@ try {
                             }
                             $controller->getUserTeams($id);
                             break;
+
                         case 'ongoing-challenges':
 
                             // Un utilisateur peut voir ses propres défis en cours ou un admin peut voir ceux des autres
@@ -677,6 +678,18 @@ try {
                                 $controller->changeLeader($id);
                             } else {
                                 throw new Exception('Action non reconnue', 404);
+                            }
+                            //verifier que c'est le leader
+                            if ($controller->isLeader($id, $userId)) {
+                                throw new Exception('Accès non autorisé', 403);
+                            } else {
+                                if (isset($request[3]) && $request[3] === 'accept') {
+                                    $controller->acceptRequest($id, $userId);
+                                } elseif (isset($request[3]) && $request[3] === 'reject') {
+                                    $controller->rejectRequest($id, $userId);
+                                } else {
+                                    throw new Exception('Action non reconnue', 404);
+                                }
                             }
                             break;
                         default:

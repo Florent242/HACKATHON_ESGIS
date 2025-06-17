@@ -78,7 +78,6 @@ CREATE TABLE `challenge_submissions` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `challenge_id` int(11) NOT NULL,
-  `submission_value` varchar(255) NOT NULL,
   `status` enum('active','rejected','pending') NOT NULL DEFAULT 'pending',
   `points` int(11) NOT NULL DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),

@@ -88,9 +88,6 @@ if (!isset($_SESSION['csrf_token'])) {
                     <a href="/user/teams" class="mobile-nav-link">
                         Teams
                     </a>
-                    <a href="/user/mentors" class="mobile-nav-link">
-                        Mentors
-                    </a>
                     <a href="/user/leaderboard" class="mobile-nav-link">
                         Leaderboard
                     </a>
@@ -199,11 +196,6 @@ if (!isset($_SESSION['csrf_token'])) {
                                 <a href="/user/teams">
                                     <li>
                                         Teams
-                                    </li>
-                                </a>
-                                <a href="/user/mentors">
-                                    <li>
-                                        Mentors
                                     </li>
                                 </a>
                                 <a href="/user/leaderboard">

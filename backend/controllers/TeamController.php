@@ -309,4 +309,94 @@ class TeamController extends Controller {
             ], 400);
         }
     }
+
+    public function acceptRequest($teamId, $userId) {
+        try {
+            $this->validateMethod('POST');
+
+            $this->team->acceptRequest($teamId, $userId);
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Demande d\'adhésion acceptée avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function rejectRequest($teamId, $userId) {
+        try {
+            $this->validateMethod('POST');
+
+            $this->team->rejectRequest($teamId, $userId);
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Demande d\'adhésion rejetée avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function teamRequest($teamId, $userId) {
+        try {
+            $this->validateMethod('POST');
+
+            $this->team->teamRequest($teamId, $userId);
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Demande d\'adhésion envoyée avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+    //verifier que seul le leader accepte les demandes d'adhésion
+    public function verificateTeamRequest($teamId, $userId) {
+        try {
+            $this->validateMethod('POST');
+
+            $this->team->verificateTeamRequest($teamId, $userId);
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Demande d\'adhésion vérifiée avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function isLeader($teamId, $userId) {
+        try {
+            $this->validateMethod('POST');
+
+            $this->team->isLeader($teamId, $userId);
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Demande d\'adhésion vérifiée avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
 }
