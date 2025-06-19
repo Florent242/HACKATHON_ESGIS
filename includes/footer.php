@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Footer</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/footer.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
+    <link rel="stylesheet" href="/css/styles/footer.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
     <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
 </head>
 
@@ -49,7 +49,7 @@
             </div>
         </div>
         <div class="footer-bottom">
-            © 2025 Challenge Platform. Tous droits réservés.
+            © 2025 EsgisHub. Tous droits réservés.
         </div>
     </footer>
 

@@ -1,0 +1,178 @@
+:root {
+    --background: #030B20;
+    --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
+    --card-hover: #1E293B;
+    --blue: #3B82F6;
+    --text: #FFFFFF;
+    --text-secondary: #94A3B8;
+    --border: #1E293B;
+}
+
+
+
+body {
+    background-color: var(--background);
+    color: var(--text);
+    font-family: Arial, sans-serif;
+    justify-content: center;
+    align-items: center;
+}
+
+.contact {
+    max-width: 900px;
+    width: 100%;
+    padding: 20px;
+}
+
+.head {
+    text-align: center;
+    margin-bottom: 40px;
+    margin-top: 10px;
+}
+
+.Les_form {
+    display: flex;
+    gap: 20px;
+}
+
+.form-container {
+    display: flex;
+    gap: 2px; /* Espacement entre les champs */
+    align-items: flex-start; /* Aligner les labels en haut */
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column; /* Garde le label au-dessus */
+    flex: 1; /* Permet aux champs d'avoir la même largeur */
+}
+
+.input-group label {
+    margin-bottom: 5px; /* Espacement entre label et input */
+}
+
+.input-group input {
+    width: 80%; /* Ajuster la largeur au conteneur */
+    padding: 9px;
+    border-radius: 5px;
+}
+
+.message {
+    flex: 1;
+    border: 1px solid var(--border);
+    padding: 30px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.message1 {
+    flex: 1;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    overflow-y: auto; /* Pour éviter que le contenu dépasse si nécessaire */
+}
+
+.titre {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--background);
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 15px;
+    word-wrap: break-word; /* Pour éviter que le texte ne dépasse */
+}
+
+p{
+    margin-top: -1px;
+    color: var(--text-secondary);
+    width: 100%;
+}
+
+
+.titre .icon {
+    flex-shrink: 0; /* Empêche l'icône de rétrécir */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.titre div {
+    display: flex;
+    flex-direction: column; /* Empile le h4 et le p verticalement */
+}
+
+.button-onclick {
+  background-color: var(--background);
+   border: 1px solid var(--border);
+   color: var(--text);
+   margin-top: 75%;
+   cursor: pointer;
+   border-radius: 5px;
+   font-size: 12px;
+   width: 200%;
+   padding: 3px;
+   text-align: center;
+   height: 100%;
+   margin-left: -200%;
+}
+
+.button-onclick:hover{
+    background-color: var(--card-hover) ;
+    color: var(--text);
+}
+
+.icon {
+    background: rgb(56, 56, 106);
+    color: var(--blue);
+    font-size: 20px;
+    padding: 2px;
+    border-radius: 25%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+input, textarea {
+    width: 90%;
+    padding: 10px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+
+.button  {
+    width: 97%;
+    padding: 13px;
+    background: var(--blue);
+    border: none;
+    color: var(--background);
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.text{
+    display: inline-flex;
+}
+
+.button:hover {
+    background: var(--card-bg);
+    color: var(--text);
+    border: var(--blue);
+}
+
+@media (max-width: 768px) {
+    .Les_form {
+        flex-direction: column;
+    }
+}

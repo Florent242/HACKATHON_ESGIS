@@ -6,13 +6,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // handle start journey button
     startJourneyBtn?.addEventListener('click', () => {
-        // window.location.href = '/HACKATHON_ESGIS/public/signup';
-        window.location.href = '/HACKATHON_ESGIS/public/auth';
+        window.location.href = '/auth';
     });
 
     // handle explore challenges button
     exploreChallengesBtn?.addEventListener('click', () => {
-        window.location.href = '/HACKATHON_ESGIS/public/challenges';
+        window.location.href = '/challenges';
     });
 
     // Animate stats on scroll
@@ -67,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // handle start journey button
     eventInfo?.forEach(button => {
         button.addEventListener('click', () => {
-            window.location.href = '/HACKATHON_ESGIS/public/hackathon';
+            window.location.href = '/hackathon';
         });
     });
 });

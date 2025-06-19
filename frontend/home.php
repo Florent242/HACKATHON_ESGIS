@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Challenge Yourself</title>
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/home.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
-    <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
-    <script defer src="/HACKATHON_ESGIS/public/js/home.js"></script>
-    <script src="/HACKATHON_ESGIS/public/js/user/test.js"></script> <!-- Inclure le script ici -->
+    <link rel="stylesheet" href="/css/styles/home.css">
+    <link rel="stylesheet" href="/css/styles/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
+    <script defer src="/js/home.js"></script>
+    <script src="/js/user/test.js"></script> <!-- Inclure le script ici -->
 
     <!-- Lucide Icons -->
     <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
@@ -21,20 +21,20 @@
     <section class="hero">
         <div class="container">
             <h1 class="hero-title fade-in">
-                Challenge Yourself with
+                Challengez-vous avec
                 <span class="highlight">EsgisHub</span>
             </h1>
             <p class="hero-subtitle fade-in">
-                Join our community of developers and security enthusiasts in building amazing projects,
-                mastering new technologies, and discovering cybersecurity challenges.
+                Rejoignez notre communauté de développeurs et de passionnés de sécurité pour construire des projets exceptionnels,
+                maîtriser de nouvelles technologies et découvrir des défis de cybersécurité.
             </p>
             <div class="hero-buttons">
-                <button class="btn btn-primary fade-in">
-                    Start Your Journey
+                <button class="btn-primary btn-startchallenge fade-in">
+                    Commencer votre voyage
                     <i data-lucide="arrow-right"></i>
                 </button>
-                <button class="btn btn-secondary fade-in">
-                    Explore Challenges
+                <button class="btn-primary btn-standard fade-in">
+                    Découvrir les défis
                 </button>
             </div>
         </div>
@@ -45,23 +45,23 @@
         <div class="stats-container">
             <div class="stat-item">
                 <i data-lucide="users"></i>
-                <h2><span>1200+</span></h2>
-                <p>Active Members</p>
+                <h2><span>200+</span></h2>
+                <p>Membres actifs</p>
             </div>
             <div class="stat-item">
                 <i data-lucide="calendar"></i>
                 <h2><span>50+</span></h2>
-                <p>Weekly Challenges</p>
+                <p>Défis à venir</p>
             </div>
             <div class="stat-item">
                 <i data-lucide="trophy"></i>
                 <h2>$<span>50</span>K</h2>
-                <p>In Prizes</p>
+                <p>En jeu</p>
             </div>
             <div class="stat-item">
                 <i data-lucide="swords"></i>
                 <h2><span>2</span></h2>
-                <p>Challenge Types</p>
+                <p>Types de challenge</p>
             </div>
         </div>
     </section>
@@ -109,33 +109,27 @@
                     <div>
                         <span>
                             <i data-lucide="calendar"></i>
-                        15-17 Mars 2024
+                        Arrive bientôt
                         </span>
                         <span>
-                            <i data-lucide="users"></i>200 participants
-                        </span>
-                        <span>
-                            <i data-lucide="trophy"></i>Prix: 2,000,000 FCFA
+                            <i data-lucide="users"></i>200 participants attendus
                         </span>
                     </div>
-                    <button class="event-info">En savoir plus <i data-lucide="arrow-right"></i>
+                    <button class="btn-primary btn-ghost">En savoir plus <i data-lucide="arrow-right"></i>
                     </button>
                 </div>
                 <div class="events-item  fade-in-right">
-                    <h3>Security Challenge Week</h3>
+                    <h3>Défis de Sécurité</h3>
                     <div>
                         <span>
                             <i data-lucide="calendar"></i>
-                            15-17 Mars 2024
+                            Arrive bientôt
                         </span>
                         <span>
-                            <i data-lucide="users"></i>200 participants
-                        </span>
-                        <span>
-                            <i data-lucide="trophy"></i>Prix: 2,000,000 FCFA
+                            <i data-lucide="users"></i>200 participants attendus
                         </span>
                     </div>
-                    <button class="event-info">En savoir plus <i data-lucide="arrow-right"></i>
+                    <button class="btn-primary btn-ghost">En savoir plus <i data-lucide="arrow-right"></i>
                     </button>
                 </div>
 

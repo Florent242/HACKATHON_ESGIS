@@ -5,17 +5,29 @@ use Exception;
 use Auth\Model\Participant;
 use Auth\Model\Notification;
 
-require_once __DIR__ . '/../../includes/config.php';
-require_once __DIR__ . '/../../includes/functions.php';
-require_once __DIR__ . '/Controller.php';
+if(!defined('CONFIG_INCLUDED')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
+if(!defined('FUNCTIONS_INCLUDED')) {
+    require_once __DIR__ . '/../includes/functions.php';
+}
+if(!class_exists('Participant')) {
+    require_once __DIR__ . '/../models/Participant.php';
+}
+if(!class_exists('Controller')) {
+    require_once __DIR__ . '/Controller.php';
+}
+if(!class_exists('Notification')) {
+    require_once __DIR__ . '/../models/Notification.php';
+}
 
 class ParticipantController extends Controller {
     private $participant;
     private $notification;
     private $db;
 
-    public function __construct($db) {
-        parent::__construct();
+    public function __construct($db, $tokenManager) {
+        parent::__construct($tokenManager);
         $this->db = $db;
         $this->participant = new Participant($this->db);
         $this->notification = new Notification($this->db);
@@ -246,7 +258,7 @@ class ParticipantController extends Controller {
     }
 
     // Afficher mes participations
-    public function myParticipations() {
+    public function myParticipations($jwt) {
         try {
             // Vérifier si l'utilisateur est connecté
             if (!isAuthenticated()) {
@@ -254,7 +266,7 @@ class ParticipantController extends Controller {
             }
 
             // Récupérer les participations
-            $participations = $this->participant->getByUser($_SESSION['user_id']);
+            $participations = $this->participant->getByUser($_SESSION['user_id'], $jwt);
 
             $this->jsonResponse([
                 'success' => true,

@@ -1,108 +1,3 @@
-/* ==================================================
-   HEADER
-   ================================================== */
-/* :root {
-    --background: #0B1121;
-    --blue: #3B82F6;
-    --primary: #3B82F6;
-    --primary-hover: #2563EB;
-    --border: #1E293B;
-    --text: #FFFFFF;
-    --text-secondary: #94A3B8;
-} *//*
-header {
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    -webkit-backdrop-filter: blur(2rem); /* For Safari 
-    backdrop-filter: blur(2rem);
-    z-index: 100;
-}
-
-.header-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.logo-nav {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
-    color: var(--text);
-    font-weight: 600;
-}
-
-.logo-circle {
-    width: 32px;
-    height: 32px;
-    background-color: var(--blue);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-}
-
-nav {
-    display: flex;
-    gap: 2rem;
-}
-
-nav a {
-    color: var(--text-secondary);
-    text-decoration: none;
-    transition: color 0.2s;
-}
-
-nav a:hover, nav a.active {
-    color: var(--text);
-}
-
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.notification-btn {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 0.5rem;
-}
-
-.start-challenge {
-    background-color: var(--blue);
-    color: var(--text);
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.start-challenge:hover {
-    opacity: 0.9;
-    background-color: var(--primary-hover);
-    color: var(--text);
-    border: none;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-*/
 :root {
     --primary: #6d28d9;
     --primary-dark: #5b21b6;
@@ -136,7 +31,7 @@ nav a:hover, nav a.active {
   
   .container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 0 1rem;
   }
@@ -1074,3 +969,37 @@ body {
   ::-webkit-scrollbar-thumb:hover {
     background: var(--primary);
   }
+
+  
+/* ANIMATION */
+@keyframes fade-in {
+  from {
+      opacity: 0;
+      transform: translateX(100%) scale(0.95);
+  }
+  to {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes fade-out {
+  from {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+  }
+  to {
+      opacity: 0;
+      transform: translateX(100%) scale(0.95);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  transform-origin: right center;
+}
+
+.animate-fade-out {
+  animation: fade-out 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) both;
+  transform-origin: right center;
+}

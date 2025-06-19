@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>EsgisHub - Challenges</title>
-        <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/challenge.css">
-        <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/styles/header.css">
-        <link rel="stylesheet" href="/HACKATHON_ESGIS/public/css/dist/output.css">
-        <script defer src="/HACKATHON_ESGIS/public/js/challenge.js"></script>
+        <link rel="stylesheet" href="/css/styles/challenge.css">
+        <link rel="stylesheet" href="/css/styles/header.css">
+        <link rel="stylesheet" href="/css/dist/output.css">
+        <script defer src="/js/challenge.js"></script>
         <!-- Lucide Icons -->       
         <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
     </head>

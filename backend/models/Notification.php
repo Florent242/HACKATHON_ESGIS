@@ -3,6 +3,7 @@ namespace Auth\Model;
 
 use Exception;
 use PDOException;
+use PDO;
 class Notification {
     private $db;
     private $table = 'notifications';

@@ -15,8 +15,8 @@ class ResetPasswordController extends Controller {
     private $db;
     private $mailer;
 
-    public function __construct($db) {
-        parent::__construct();
+    public function __construct($db, $tokenManager) {
+        parent::__construct($tokenManager);
         $this->db = $db;
         $this->user = new User($this->db);
         $this->mailer = new PHPMailer(true);
@@ -68,7 +68,7 @@ class ResetPasswordController extends Controller {
                 'reset_token_expiry' => $expiry
             ]);
 
-            $resetLink = "http://localhost:8080/reset-password?token=" . $token;
+            $resetLink = "http://localhost/reset-password?token=" . $token;
             
             $this->mailer->addAddress($email);
             $this->mailer->Subject = 'Réinitialisation de votre mot de passe - ESGIS Hackathon';

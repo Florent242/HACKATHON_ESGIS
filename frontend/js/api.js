@@ -1,5 +1,5 @@
 // Configuration de l'API
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = '/api';
 
 // Classe pour gérer les appels API
 class Api {
@@ -8,15 +8,16 @@ class Api {
         const url = `${API_BASE_URL}${endpoint}`;
         const defaultHeaders = {
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         };
 
         const config = {
-            ...options,
             headers: {
                 ...defaultHeaders,
                 ...options.headers
-            }
+            },
+            ...options
         };
 
         try {

@@ -11,10 +11,7 @@
 }
 
 * {
-    margin: 0;
-    padding: 0;
     box-sizing: border-box;
-    font-family: 'Inter', sans-serif;
 }
 
 body {
@@ -22,30 +19,37 @@ body {
     color: var(--text);
     display: flex;
     justify-content: center;
-    height: 100vh;
-    padding: 10px;
+    align-items: center;
+    flex-direction: column;
+    margin: 0 auto;
 }
 
-p {
+.auth-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    max-width: 700px;
+    text-align: center;
+    margin: 3% auto;
+}
+
+.auth-container p {
     color: var(--text-secondary);
     text-align: left;
     margin-top: 1%;
 }
 
-.auth-container {
-    width: 100%;
-    max-width: 500px;
-    text-align: center;
-    margin: auto;
-}
-
 .auth-tabs {
-    border-radius: 8px;
+    border-radius: 1rem;
     display: flex;
     justify-content: space-between;
     background: var(--card-hover);
-    padding: 5px;
-    margin-bottom: 10px;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    width: 100%;
 }
 
 
@@ -68,33 +72,59 @@ p {
 }
 
 .auth-card {
+    position: relative;
     background: linear-gradient(140deg, #090E28 0%, #0C1538 50%, #0F1B4A 100%);
-    border: 1px solid rgba(100, 120, 220, 0.25);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(150, 140, 255, 0.08);
-    border-radius: 12px;    padding: 2rem;
+    border: 1px solid rgba(110, 125, 220, 0.2);
+    border-radius: 12px;
+    padding: 2rem;
     width: 100%;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    border: 1px solid var(--text-secondary);
-    transition: height 2s ease-in-out;
+    margin-bottom: 1%;
+    transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    will-change: height;
 }
 
 .auth-form {
-    display: none;
-    /* visibility: hidden; */
-    text-align: left;
-    margin-bottom: -2.5px;
-    /* transition: visibility 0.3s ease-in-out; */
+    opacity: 0;
+    visibility: hidden;
+    transition: 
+        opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    right: 2rem;
+    transform: translateY(10px);
+    transition-property: opacity, visibility, transform;
+    transition-duration: 0.5s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.auth-form.active {
+    opacity: 1;
+    visibility: visible;
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    transform: translateY(0);
+    pointer-events: auto;
+    transition: 
+        opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        visibility 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .auth-form h1 {
     font-size: 1.5rem;
-    margin-bottom: 10px;
-
+    margin-bottom: 0.5rem;
+    text-align: start;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -105,23 +135,19 @@ p {
 .form-group label {
     display: block;
     font-size: 0.9rem;
-    margin-bottom: 10px;
+    margin: 1% 0%;
     color: var(--text);
-    width: 180px;
-    text-align: left;
+    width: 100%;
+    text-align: start;
     overflow: hidden;
 }
 
 .display {
     display: flex;
     align-items: center;
-    /* Aligne l'icône et l'input */
-    border: 1px solid var(--text-secondary);
     border-radius: 10px;
-    padding: 5px;
     background: linear-gradient(165deg, #070F2A 0%, #0D1A44 60%, #121D4C 100%);
     border: 1px solid rgba(110, 120, 220, 0.2);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(150, 140, 255, 0.06);
     width: 100%;
     transition: border 0.3s ease-in-out;
     color: var(--text-secondary);
@@ -129,16 +155,189 @@ p {
 
 .form-group .display:focus-within {
     border: 1px solid var(--blue);
-    /* Bordure bleue au focus */
+    box-shadow: 0 0 0 1px var(--blue);
 }
 
-/* Affiche l'icône uniquement quand l'input est focus */
 .form-group:focus-within i[data-icon="key"] {
     opacity: 1;
 }
 
+/* Styles pour le système d'étapes */
+.steps-compact {
+    margin: 0.5rem auto;
+    position: relative;
+    width: 50%;
+}
 
-.form-group input {
+.progress-track {
+    height: 3px;
+    background: #334155;
+    position: absolute;
+    top: 14px;
+    left: 0;
+    right: 0;
+    z-index: 1;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #3B82F6;
+    transition: width 0.4s ease;
+    border-radius: 3px;
+}
+
+.step-bubbles {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+}
+
+.bubble {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #1E293B;
+    border: 2px solid #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94A3B8;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: default;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.bubble.active {
+    background: #3B82F6;
+    border-color: #3B82F6;
+    color: white;
+    transform: scale(1.1);
+}
+
+.bubble.completed {
+    background: #1E40AF;
+    border-color: #1E40AF;
+    color: white;
+}
+
+/* Tooltip pour les labels */
+.bubble:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1E293B;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    margin-bottom: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.bubble:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: #1E293B transparent transparent transparent;
+    margin-bottom: 3px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.bubble:hover::after,
+.bubble:hover::before {
+    opacity: 1;
+}
+.steps-navigation {
+    display: flex;
+    justify-content: space-between;
+}
+
+.prev-step-btn, .next-step-btn {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.prev-step-btn {
+    background-color: transparent;
+    border: 1px solid #4F46E5; /* indigo-600 */
+    color: #4F46E5;
+}
+
+.prev-step-btn:hover {
+    background-color: rgba(79, 70, 229, 0.1);
+}
+
+.next-step-btn {
+    background-color: #4F46E5; /* indigo-600 */
+    color: white;
+    margin-left: auto;
+}
+
+.next-step-btn:hover {
+    background-color: #4338CA; /* indigo-700 */
+}
+
+/* Animations pour les transitions d'étapes */
+.form-section, .form-group.mt-6 {
+    transition: all 0.3s ease-in-out;
+}
+
+/* Animation d'entrée et de sortie pour les étapes */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-10px); }
+}
+
+.form-section, .form-group.mt-6 {
+    animation: fadeIn 0.3s ease forwards;
+}
+
+/* Styles pour les erreurs de validation */
+.input-error .display {
+    border-color: #EF4444 !important; /* red-500 */
+    box-shadow: 0 0 0 1px #EF4444 !important;
+}
+
+.error-message {
+    color: #EF4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    transition: opacity 0.3s ease;
+}
+
+.fade-out {
+    animation: fadeOut 0.5s ease forwards;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.form-group input:not([type="checkbox"]),
+.form-group textarea,
+.form-group select {
     flex: 1;
     width: 100%;
     padding: 5px 5px 5px 15px;
@@ -151,13 +350,101 @@ p {
     transition: border 0.3s ease-in-out;
 }
 
-.form-group input::placeholder,
-svg {
+.form-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+    transform: scale(0.8);
+}
+
+.form-group input::placeholder {
     color: var(--text-secondary);
 }
 
 [data-icon="eye"] {
     color: var(--text-secondary);
+}
+
+.form-section {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #4f46e5;
+    margin-bottom: 1rem;
+}
+
+select[multiple] {
+    height: auto;
+    min-height: 100px;
+}
+
+textarea {
+    min-height: 80px;
+    width: 100%;
+    resize: vertical;
+}
+
+.custom-select-container {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select-container .display {
+    display: flex;
+    align-items: center;
+    background: rgba(15, 23, 74, 0.7);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.custom-select-container select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 100%;
+    padding: 0.5rem 2rem 0.5rem 2.5rem;
+    background: transparent;
+    border: none;
+    color: #E0E7FF;
+    font-size: 0.95rem;
+    cursor: pointer;
+    outline: none;
+}
+
+.custom-select-container select option {
+    background: #0F1B4A;
+    color: #E0E7FF;
+    padding: 10px;
+}
+
+.custom-select-container select:focus {
+    color: #FFFFFF;
+}
+
+.custom-select-container .select-arrow {
+    position: absolute;
+    right: 12px;
+    pointer-events: none;
+    color: #818CF8;
+    width: 18px;
+    height: 18px;
+}
+
+.custom-select-container select:focus + .display {
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Icône à gauche */
+.custom-select-container .display i:first-child {
+    position: absolute;
+    left: 12px;
+    color: #818CF8;
 }
 
 .submit-btn {

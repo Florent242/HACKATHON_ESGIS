@@ -1,9 +1,13 @@
 <?php
 namespace Auth\Model;
+
+use Auth\Controller\Controller;
 use Exception;
 use PDOException;
 use PDO;
-class Participant {
+use Auth\Controller\UserController;
+
+class Participant{
     private $db;
     private $table = 'participants';
 
@@ -12,16 +16,16 @@ class Participant {
     }
 
     // Inscrire un participant à un hackathon
-    public function register($data) {
+    public function register($data, $jwt) {
         try {
             $this->validate($data);
 
             // Vérifier si le participant n'est pas déjà inscrit
-            if ($this->isRegistered($data['hackathon_id'], $data['user_id'])) {
+            if ($this->isRegistered($data['hackathon_id'], $data['user_id'], $jwt)) {
                 throw new Exception("Vous êtes déjà inscrit à ce hackathon");
             }
 
-            $sql = "INSERT INTO {$this->table} (hackathon_id, user_id, status) 
+            $sql = "INSERT INTO {$this->table} (hackathon_id, user_id, status)
                     VALUES (:hackathon_id, :user_id, :status)";
 
             $stmt = $this->db->prepare($sql);
@@ -38,15 +42,15 @@ class Participant {
     }
 
     // Alias de register pour la cohérence avec les autres modèles
-    public function create($data) {
-        return $this->register($data);
+    public function create($data, $jwt) {
+        return $this->register($data, $jwt);
     }
 
     // Vérifier si un utilisateur est déjà inscrit à un hackathon
-    public function isRegistered($hackathonId, $userId) {
+    public function isRegistered($hackathonId, $userId, $jwt) {
         try {
             $sql = "SELECT COUNT(*) FROM {$this->table}
-                    WHERE hackathon_id = :hackathon_id 
+                    WHERE hackathon_id = :hackathon_id
                     AND user_id = :user_id";
 
             $stmt = $this->db->prepare($sql);
@@ -64,7 +68,7 @@ class Participant {
     public function find($id) {
         try {
             $sql = "SELECT p.*, u.username, u.email,
-                    h.title as hackathon_title, h.start_date, h.end_date
+                    h.name as hackathon_title, h.start_date, h.end_date
                     FROM {$this->table} p
                     INNER JOIN users u ON p.user_id = u.id
                     INNER JOIN hackathons h ON p.hackathon_id = h.id
@@ -85,7 +89,7 @@ class Participant {
                 throw new Exception("Statut invalide");
             }
 
-            $sql = "UPDATE {$this->table} 
+            $sql = "UPDATE {$this->table}
                     SET status = :status, updated_at = NOW()
                     WHERE id = :id";
 
@@ -114,11 +118,11 @@ class Participant {
     public function getByHackathon($hackathonId, $status = null) {
         try {
             $sql = "SELECT p.*, u.username, u.email,
-                    e.id as equipe_id, e.name as equipe_name
+                    e.id as team_id, e.name as team_name
                     FROM {$this->table} p
                     INNER JOIN users u ON p.user_id = u.id
-                    LEFT JOIN equipe_membres em ON u.id = em.user_id
-                    LEFT JOIN equipes e ON em.equipe_id = e.id AND e.hackathon_id = p.hackathon_id
+                    LEFT JOIN team_members em ON u.id = em.user_id
+                    LEFT JOIN team e ON em.team_id = e.id AND e.hackathon_id = p.hackathon_id
                     WHERE p.hackathon_id = :hackathon_id";
 
             if ($status) {
@@ -129,7 +133,7 @@ class Participant {
 
             $stmt = $this->db->prepare($sql);
             $params = [':hackathon_id' => $hackathonId];
-            
+
             if ($status) {
                 $params[':status'] = $status;
             }
@@ -140,20 +144,18 @@ class Participant {
             throw new Exception("Erreur lors de la récupération des participants : " . $e->getMessage());
         }
     }
+    
 
     // Récupérer les hackathons d'un participant
-    public function getByUser($userId) {
+    public function getByUser($userId, $jwt) {
         try {
-            $sql = "SELECT p.*, h.title as hackathon_title,
-                    h.start_date, h.end_date, h.status as hackathon_status,
-                    e.id as equipe_id, e.name as equipe_name
-                    FROM {$this->table} p
-                    INNER JOIN hackathons h ON p.hackathon_id = h.id
-                    LEFT JOIN equipe_membres em ON p.user_id = em.user_id
-                    LEFT JOIN equipes e ON em.equipe_id = e.id AND e.hackathon_id = p.hackathon_id
-                    WHERE p.user_id = :user_id
-                    ORDER BY h.start_date DESC";
-
+            $sql = "SELECT p.*, h.name as hackathon_title, h.start_date, h.end_date, e.id as team_id,
+             e.name as team_name 
+             FROM {$this->table} p 
+             INNER JOIN hackathons h ON p.hackathon_id = h.id 
+             LEFT JOIN team_members em ON p.user_id = em.user_id 
+             LEFT JOIN team e ON em.team_id = e.id AND e.hackathon_id = p.hackathon_id 
+             WHERE p.user_id = :user_id ORDER BY h.start_date DESC";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':user_id' => $userId]);
             return $stmt->fetchAll();
@@ -163,16 +165,35 @@ class Participant {
     }
 
     // Compter le nombre de participants par statut
-    public function countByStatus($hackathonId) {
+    public function countByStatus($hackathonId, $specificStatus = null) {
         try {
-            $sql = "SELECT status, COUNT(*) as count
-                    FROM {$this->table}
-                    WHERE hackathon_id = :hackathon_id
-                    GROUP BY status";
+            if ($specificStatus === null) {
+                // Version originale qui retourne tous les statuts
+                $sql = "SELECT status, COUNT(*) as count
+                        FROM {$this->table}
+                        WHERE hackathon_id = :hackathon_id
+                        GROUP BY status";
 
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':hackathon_id' => $hackathonId]);
-            return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([':hackathon_id' => $hackathonId]);
+                return $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+            } else {
+                // Version pour compter un statut spécifique
+                $sql = "SELECT COUNT(*) as count
+                        FROM {$this->table}
+                        WHERE hackathon_id = :hackathon_id";
+
+                $params = [':hackathon_id' => $hackathonId];
+
+                if ($specificStatus !== 'all') {
+                    $sql .= " AND status = :status";
+                    $params[':status'] = $specificStatus;
+                }
+
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute($params);
+                return $stmt->fetchColumn();
+            }
         } catch (PDOException $e) {
             throw new Exception("Erreur lors du comptage des participants : " . $e->getMessage());
         }
@@ -231,7 +252,7 @@ class Participant {
         }
 
         // Vérifier si le hackathon est ouvert aux inscriptions
-        $sql = "SELECT status, max_participants FROM hackathons 
+        $sql = "SELECT status, max_participants FROM hackathons
                 WHERE id = :hackathon_id";
 
         $stmt = $this->db->prepare($sql);
@@ -248,13 +269,13 @@ class Participant {
 
         // Vérifier si le hackathon n'est pas complet
         if ($hackathon['max_participants']) {
-            $sql = "SELECT COUNT(*) FROM {$this->table} 
-                    WHERE hackathon_id = :hackathon_id 
+            $sql = "SELECT COUNT(*) FROM {$this->table}
+                    WHERE hackathon_id = :hackathon_id
                     AND status != 'rejected'";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':hackathon_id' => $data['hackathon_id']]);
-            
+
             if ($stmt->fetchColumn() >= $hackathon['max_participants']) {
                 throw new Exception("Le hackathon est complet");
             }

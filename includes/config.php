@@ -9,7 +9,7 @@ define('VIEWS_PATH', BASE_PATH . '/frontend');
 
 // Configuration de l'application
 define('APP_NAME', 'Plateforme de Hackathon');
-define('APP_URL', 'http://localhost/HACKATHON_ESGIS/public');
+define('APP_URL', 'https://hackathon.esgis.com');
 
 // Configuration de la base de données
 define('DB_HOST', 'localhost');
@@ -25,7 +25,9 @@ ini_set('display_errors', 1);
 if (session_status() === PHP_SESSION_NONE) {
     ini_set('session.cookie_httponly', 1);
     ini_set('session.use_only_cookies', 1);
-    session_start();
+    if(session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
 }
 
 // Fonction d'autoload des classes

@@ -5,7 +5,7 @@ info:
   description: API pour la gestion du hackathon ESGIS
 
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost
     description: Serveur de développement
 
 components:
