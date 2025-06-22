@@ -48,8 +48,8 @@ switch ($url) {
     case '/typo':
         require_once '../frontend/typo.php'; // Inclure la page "typo"
         break;
-
-    // Page user
+        
+        // Page user
     case '/user':
         require_once '../frontend/user/dashboard.php'; // Inclure la page "User"
         break;
@@ -80,6 +80,9 @@ switch ($url) {
     case '/user/interfacechallenge':
         require_once '../frontend/user/interfacechallenge.php'; // Inclure la page "user/challenge_submission"
         break;
+    case '/user/teams':
+        require_once '../frontend/user/team.php';// Inclure la page "team"
+        break;
     default:
         // TODO: ajouter la gestion des urls avec le format CHALL-[A-Za-z0-9]{8,}
         //  if (preg_match('#^/user/challenge_submission/(CHALL-[A-Za-z0-9]{8,})$#', $url, $matches)) {
@@ -89,7 +92,13 @@ switch ($url) {
         if (preg_match('#^/user/challenge_submission/(\d+)$#', $url, $matches)) {
             $_GET['challenge_id'] = $matches[1];
             require_once '../frontend/user/challenge_submission.php';
-        } else if (strpos($_SERVER['REQUEST_URI'], '/user') !== false) {
+        } else if (preg_match('#^/user/teams/overview/(\d+)$#', $url, $matches)) {
+            $_GET['team_id'] = $matches[1];
+            require_once '../frontend/user/overview.php';
+        }  else if (preg_match('#^/user/hackathon/overviewHackathon/(\d+)$#', $url,$matches)) {
+            $_GET['hackathon_id'] = $matches[1];
+            require_once '../frontend/user/overviewHackathon.php';
+        }else if (strpos($_SERVER['REQUEST_URI'], '/user') !== false) {
             require_once '../frontend/user/404.php'; // Inclure la page 404 pour les utilisateurs
         } else {
             require_once '../frontend/404.php'; // Inclure la page 404 générale si rien ne correspond

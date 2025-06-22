@@ -6,7 +6,7 @@ use Exception;
 
 class Controller
 {
-    private $tokenManager;
+    protected $tokenManager;
     protected $publicRoutes = [
         'auth/login',
         'auth/register',
@@ -36,6 +36,8 @@ class Controller
             ], 401);
         }
     }
+
+
 
     /**
      * Vérifie si la route actuelle est publique
@@ -118,22 +120,29 @@ class Controller
      */
     protected function validateCsrfToken(): bool
     {
+        // Méthodes GET n'ont pas besoin de CSRF
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             return true;
         }
-
-        // Pour les requêtes PUT, récupérer le token du corps de la requête
-        if ($_SERVER['REQUEST_METHOD'] === 'PUT' || $_SERVER['REQUEST_METHOD'] === 'POST') {
+    
+        // 1. Essayer de récupérer depuis $_POST ou header
+        $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+    
+        // 2. Si toujours pas trouvé, tenter via php://input si contenu JSON
+        if (!$token) {
             $rawData = file_get_contents('php://input');
             $data = json_decode($rawData, true);
-            $token = $data['csrf_token'] ?? '';
-        } else {
-            // Pour les autres méthodes (POST), utiliser $_POST ou l'en-tête
-            $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+            $token = $data['csrf_token'] ?? null;
         }
 
+        // 3. Si toujours pas trouvé, renvoyer false
+        if (!$token) {
+            return false;
+        }
+    
         return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
     }
+    
 
     /**
      * Retourne le chemin de la requête
@@ -146,20 +155,25 @@ class Controller
 
     /**
      * Envoie une réponse JSON
-     */
-    protected function jsonResponse(array $data, int $statusCode = 200): void
-    {
-        if (!headers_sent()) {
-            header('Content-Type: application/json');
-            http_response_code($statusCode);
-        }
-
-        echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
-        if (php_sapi_name() !== 'cli') {
-            exit;
-        }
+     */protected function jsonResponse($data, $statusCode = 200) {
+    try {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code((int)$statusCode);
+        $json = json_encode($data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
+        error_log("jsonResponse: " . $json);
+        echo $json;
+        exit;
+    } catch (Exception $e) {
+        error_log("Erreur dans jsonResponse: " . $e->getMessage());
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Erreur de sérialisation JSON: ' . $e->getMessage()
+        ]);
+        exit;
     }
+}
 
     /**
      * Valide les champs requis
@@ -205,4 +219,6 @@ protected function validateMethod(string $method, string $method2 = ''): void
     {
         return array_intersect_key($data, array_flip($allowedFields));
     }
+
+
 }

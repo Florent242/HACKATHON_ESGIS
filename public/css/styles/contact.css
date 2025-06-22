@@ -6,8 +6,9 @@
     --text: #FFFFFF;
     --text-secondary: #94A3B8;
     --border: #1E293B;
-}
+    --primary: #3B82F6;
 
+}
 
 
 body {
@@ -16,45 +17,57 @@ body {
     font-family: Arial, sans-serif;
     justify-content: center;
     align-items: center;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
+
+
 .contact {
-    max-width: 900px;
-    width: 100%;
-    padding: 20px;
+    max-width: 1200px; 
+    margin: 0 auto;
+    padding: 40px 20px;
 }
 
 .head {
     text-align: center;
-    margin-bottom: 40px;
-    margin-top: 10px;
+    margin-top: 5px;
+    font-size: 1.5rem;
+
 }
 
 .Les_form {
     display: flex;
-    gap: 20px;
+    justify-content: center;
+    align-items: stretch; /* Permet aux éléments de s'étendre sur toute la hauteur */
+    gap: 2rem;
+    padding: 2rem;
+    border-radius: 20px;
+    height: 500px;/*Force la hauteur du conteneur*/
+    flex-wrap: wrap;
 }
 
 .form-container {
     display: flex;
-    gap: 2px; /* Espacement entre les champs */
-    align-items: flex-start; /* Aligner les labels en haut */
+    gap: 30px; /* Espacement entre les champs */
+    padding: 10px;
 }
 
 .input-group {
-    display: flex;
+    flex: 1;
     flex-direction: column; /* Garde le label au-dessus */
-    flex: 1; /* Permet aux champs d'avoir la même largeur */
+    min-width: 0; /* Permet aux champs d'avoir la même largeur */
+    display: flex;
+    margin-bottom: 1rem;
+    align-items: flex-start;
 }
 
-.input-group label {
-    margin-bottom: 5px; /* Espacement entre label et input */
-}
-
-.input-group input {
-    width: 80%; /* Ajuster la largeur au conteneur */
-    padding: 9px;
-    border-radius: 5px;
+.input-group label { 
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #94a3b8;
 }
 
 .message {
@@ -67,112 +80,164 @@ body {
 
 .message1 {
     flex: 1;
-    padding: 20px;
+    padding: 5px;
     border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    overflow-y: auto; /* Pour éviter que le contenu dépasse si nécessaire */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    background: var(--card-bg);
+    margin-left: 40px;
+    margin-right: 40px;
+}
+
+.message-box{
+    flex: 1;
+    aspect-ratio: 1/1;/*Forme carrée*/
+    background:rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);     
+    border-radius: 16px;
+    box-sizing: border-box;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    animation: fadeInUp 0.6s ease forwards;
+    color: var(--text);
+}
+
+@keyframes fadeInUp {
+    0%{
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100%{
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulseGlow {
+    0% {
+      box-shadow: 0 0 10px var(--blue);
+    }
+    50% {
+      box-shadow: 0 0 20px var(--blue);
+    }
+    100% {
+      box-shadow: 0 0 10px var(--blue);
+    }
+  }
+  
+  .icon {
+    animation: pulseGlow 2s infinite ease-in-out;
+  }
+  
+
+.input-group input,
+.input-group textarea {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background-color: #0f172a;
+  color: white;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group textarea:focus {
+  border-color: #3b82f6;
+  outline: none;
 }
 
 .titre {
     display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    background: var(--background);
+    align-items: center;
+    gap: 16px;
+    margin-top: 8px;
     padding: 8px;
     border-radius: 8px;
-    border: 1px solid var(--border);
     margin-bottom: 15px;
     word-wrap: break-word; /* Pour éviter que le texte ne dépasse */
 }
 
+.titre .icon{
+    flex: none;
+    margin-right: 0;
+}
+
 p{
-    margin-top: -1px;
     color: var(--text-secondary);
     width: 100%;
 }
 
 
-.titre .icon {
-    flex-shrink: 0; /* Empêche l'icône de rétrécir */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
 .titre div {
-    display: flex;
     flex-direction: column; /* Empile le h4 et le p verticalement */
 }
 
-.button-onclick {
-  background-color: var(--background);
-   border: 1px solid var(--border);
-   color: var(--text);
-   margin-top: 75%;
-   cursor: pointer;
-   border-radius: 5px;
-   font-size: 12px;
-   width: 200%;
-   padding: 3px;
-   text-align: center;
-   height: 100%;
-   margin-left: -200%;
-}
-
-.button-onclick:hover{
-    background-color: var(--card-hover) ;
-    color: var(--text);
-}
-
 .icon {
-    background: rgb(56, 56, 106);
+    background: none;
     color: var(--blue);
-    font-size: 20px;
-    padding: 2px;
-    border-radius: 25%;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 1.5rem;
+    padding: 0;
+    width: auto;
+    height: auto;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     margin-top: 10px;
 }
 
-input, textarea {
-    width: 90%;
-    padding: 10px;
-    background: var(--background);
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 5px;
-    margin-top: 5px;
+.icon .lucide {
+   width: 40px;
+   height: 40px;
+   stroke: var(--blue); /* ou une couleur directe : #3b82f6 */
+   stroke-width: 2.5;
+   filter: drop-shadow(0 0 6px var(--blue)) drop-shadow(0 0 12px var(--blue));
 }
 
-
+  
 .button  {
-    width: 97%;
-    padding: 13px;
-    background: var(--blue);
+    background-color: #3b82f6;
+    color: white;
     border: none;
-    color: var(--background);
-    margin-top: 10px;
-    cursor: pointer;
-    border-radius: 5px;
-    font-size: 14px;
+    padding: 1rem;
+    width: 100%;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1rem;
+    box-shadow: 0 6px 12px rgba(59, 130, 246, 0.4);
+    transition: all 0.3s ease-in-out;
+}
+
+/*.div{
+    justify-content: center;
+    
 }
 
 .text{
     display: inline-flex;
-}
+}*/
 
 .button:hover {
-    background: var(--card-bg);
+    box-shadow: 0 0 10px #3b82f6, 0 0 20px #3b82f6;
+    transform: scale(1.02);
+    background-color: var(--card-hover) ;
     color: var(--text);
-    border: var(--blue);
 }
 
 @media (max-width: 768px) {
     .Les_form {
         flex-direction: column;
+        align-items: center;
+        height: auto;/*important poue ne pas forcer la hauteur*/
+    }
+
+    .message,
+    .message1 {
+       width: 100%;
+       max-width: 90%;
+       margin-bottom: 20px; 
+       aspect-ratio: auto;/*important pour que la hauteur s'adapte*/
     }
 }

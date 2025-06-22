@@ -24,6 +24,8 @@ use Auth\Controller\ChallengeController;
 use Auth\Controller\EvaluationController;
 use Auth\Controller\AdminController;
 use Auth\Model\TokenManager;
+use Piston\PistonRequest;
+use Piston\PistonExecutor;
 
 // ✅ Inclure une seule fois le fichier de configuration
 if (!defined('CONFIG_INCLUDED')) {
@@ -593,8 +595,10 @@ try {
             if ($id === null) {
                 // Route /api/hackathons
                 if ($method === 'GET') {
+                    // GET /api/hackathons
                     $controller->getAll();
                 } elseif ($method === 'POST') {
+                    // POST /api/hackathons
                     $controller->create();
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
@@ -603,10 +607,13 @@ try {
                 // Route /api/hackathons/{id}
                 if ($action === null) {
                     if ($method === 'GET') {
+                        // GET /api/hackathons/{id}
                         $controller->get($id);
                     } elseif ($method === 'POST' || $method === 'PUT') {
+                        // POST || PUT /api/hackathons/{id}
                         $controller->update($id);
                     } elseif ($method === 'DELETE') {
+                        // DELETE /api/hackathons/{id}
                         $controller->delete($id);
                     } else {
                         throw new Exception('Méthode non autorisée', 405);
@@ -639,6 +646,7 @@ try {
 
         case 'teams':
             $controller = new TeamController($db, $tokenManager);
+            error_log("Route teams appelée: uri=$uri, id=" . var_export($id, true) . ", action=" . var_export($action, true));
             if ($id === null) {
                 // Route /api/teams
                 if ($method === 'GET') {
@@ -648,6 +656,42 @@ try {
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
                 }
+            } elseif ($id === 'join' && $method === 'POST') {
+                // Route /api/teams/join
+                error_log("Route join appelée avec input: " . print_r($input, true));
+                $controller->joinTeamViaCode($input['invitation_code'] ?? $_POST['invitation_code'] ?? '');
+            } elseif ($id === 'request' && $method === 'POST') {
+                // Route /api/teams/request
+                error_log("Route request appelée avec input: " . print_r($input, true) . ", POST: " . print_r($_POST, true));
+                $teamName = $input['team_name'] ?? $_POST['team_name'] ?? null;
+                error_log("teamName extrait: " . var_export($teamName, true));
+
+                if (!$teamName) {
+                    jsonResponse(['success' => false, 'error' => 'team_name manquant'], 400);
+                    return;
+                }
+
+                // Nettoyer teamName
+                $teamName = trim($teamName);
+
+                // Convertir team_name en team_id
+                $query = "SELECT id FROM teams WHERE name = :name LIMIT 1";
+                $stmt = $db->prepare($query);
+                $stmt->bindParam(':name', $teamName, PDO::PARAM_STR);
+                $stmt->execute();
+                $team = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                error_log("Résultat de la recherche pour teamName $teamName: " . var_export($team, true));
+
+                if (!$team) {
+                    jsonResponse(['success' => false, 'error' => 'Équipe non trouvée'], 404);
+                    return;
+                }
+
+                $teamId = $team['id'];
+                error_log("teamId final: " . var_export($teamId, true));
+
+                $controller->teamRequest((int)$teamId);
             } elseif (is_numeric($id)) {
                 // Route /api/teams/{id}
                 if ($action === null) {
@@ -663,33 +707,107 @@ try {
                 } else {
                     switch ($action) {
                         case 'members':
-                            if ($method === 'GET') {
+                            //Route /api/teams/{id}/members
+                            if ($method === 'GET' && !isset($request[3])) {
                                 $controller->getMembers($id);
                             } elseif (isset($request[3]) && $request[3] === 'add') {
+                                //Route /api/teams/{id}/members/add
                                 $controller->addMember($id);
                             } elseif (isset($request[3]) && $request[3] === 'remove') {
+                                //Route /api/teams/{id}/members/remove
                                 $controller->removeMember($id);
+                            } elseif (isset($request[3]) && $request[3] === 'requests') {
+                                //Route /api/teams/{id}/members/requests
+                                $controller->getAllTeamRequests($id);
                             } else {
                                 throw new Exception('Action non reconnue', 404);
                             }
                             break;
                         case 'leader':
-                            if (isset($request[3]) && $request[3] === 'change') {
-                                $controller->changeLeader($id);
-                            } else {
-                                throw new Exception('Action non reconnue', 404);
-                            }
-                            //verifier que c'est le leader
-                            if ($controller->isLeader($id, $userId)) {
-                                throw new Exception('Accès non autorisé', 403);
-                            } else {
-                                if (isset($request[3]) && $request[3] === 'accept') {
-                                    $controller->acceptRequest($id, $userId);
-                                } elseif (isset($request[3]) && $request[3] === 'reject') {
-                                    $controller->rejectRequest($id, $userId);
+                            //Route /api/teams/{id}/leader
+                            error_log("Route leader appelée pour teamId: $id, request[3]: " . ($request[3] ?? 'null'));
+                            if (isset($request[3])) {
+                                if ($request[3] === 'change') {
+                                    //Route /api/teams/{id}/leader/change
+                                    if ($method === 'POST') {
+                                        $controller->changeLeader($id);
+                                    } else {
+                                        throw new Exception('Méthode non autorisée', 405);
+                                    }
+                                } elseif ($request[3] === 'accept') {
+                                    //Route /api/teams/{id}/leader/accept
+                                    if ($method === 'POST') {
+                                        $token = getBearerToken();
+                                        if (!$token) {
+                                            throw new Exception('Token manquant', 401);
+                                        }
+                                        $tokenValidation = $tokenManager->validateToken($token);
+                                        if (!$tokenValidation['valid']) {
+                                            throw new Exception('Token invalide: ' . ($tokenValidation['error'] ?? ''), 401);
+                                        }
+                                        $userId = $tokenValidation['user_id'];
+                                        error_log("Utilisateur authentifié: userId $userId");
+                                        $controller->acceptRequest($id, $input['user_id'] ?? null);
+                                    } else {
+                                        throw new Exception('Méthode non autorisée', 405);
+                                    }
+                                } elseif ($request[3] === 'reject') {
+                                    //Route /api/teams/{id}/leader/reject
+                                    if ($method === 'POST') {
+                                        $token = getBearerToken();
+                                        if (!$token) {
+                                            throw new Exception('Token manquant', 401);
+                                        }
+                                        $tokenValidation = $tokenManager->validateToken($token);
+                                        if (!$tokenValidation['valid']) {
+                                            throw new Exception('Token invalide: ' . ($tokenValidation['error'] ?? ''), 401);
+                                        }
+                                        $userId = $tokenValidation['user_id'];
+                                        error_log("Utilisateur authentifié: userId $userId");
+                                        $controller->rejectRequest($id, $input['user_id'] ?? null);
+                                    } else {
+                                        throw new Exception('Méthode non autorisée', 405);
+                                    }
                                 } else {
                                     throw new Exception('Action non reconnue', 404);
                                 }
+                            } else {
+                                throw new Exception('Action non reconnue', 404);
+                            }
+                            break;
+                        case 'invit':
+                            //Route /api/teams/{id}/invit
+                            // Requete pour mettre a jour le code d'invitation
+                            error_log("Route invit appelée pour teamId: $id, request[3]: " . ($request[3] ?? 'null'));
+                            if (isset($request[3]) && $request[3] === 'update') {
+                                // Route /api/teams/{id}/invit/update
+                                if ($method === 'POST') {
+                                    error_log("Appel de updateTeamCode pour teamId: $id");
+                                    $token = getBearerToken();
+                                    if (!$token) {
+                                        throw new Exception('Token manquant', 401);
+                                    }
+                                    $tokenValidation = $tokenManager->validateToken($token);
+                                    if (!$tokenValidation['valid']) {
+                                        throw new Exception('Token invalide: ' . ($tokenValidation['error'] ?? ''), 401);
+                                    }
+                                    $userId = $tokenValidation['user_id'];
+                                    error_log("Utilisateur authentifié: userId $userId");
+                                    $controller->updateTeamCode($id);
+                                } else {
+                                    throw new Exception('Méthode non autorisée', 405);
+                                }
+                            } else {
+                                throw new Exception('Action non reconnue', 404);
+                            }
+                            break;
+                        case 'join':
+                            //Route /api/teams/{id}/join
+                            if ($method === 'POST') {
+                                error_log("Route join appelée avec input: " . print_r($input, true));
+                                $controller->joinTeamViaCode($input['invitation_code'] ?? $_POST['invitation_code'] ?? '');
+                            } else {
+                                throw new Exception('Méthode non autorisée', 405);
                             }
                             break;
                         default:
@@ -698,70 +816,21 @@ try {
                 }
             } elseif ($id === 'hackathon' && is_numeric($action)) {
                 $controller->getByHackathon($action);
-            } elseif ($id === 'user' && is_numeric($action)) {
-                $controller->getByUser($action);
+            } elseif ($id === 'user') {
+                $controller->getByUser();
             } else {
                 throw new Exception('ID non valide pour /teams', 400);
             }
             break;
-
-        case 'projects':
-            $controller = new ProjectController($db, $tokenManager);
-            if ($id === null) {
-                // Route /api/projects
-                if ($method === 'GET') {
-                    $controller->getAll();
-                } elseif ($method === 'POST') {
-                    $controller->create();
-                } else {
-                    throw new Exception('Méthode non autorisée', 405);
-                }
-            } elseif (is_numeric($id)) {
-                // Route /api/projects/{id}
-                if ($action === null) {
-                    if ($method === 'GET') {
-                        $controller->get($id);
-                    } elseif ($method === 'POST' || $method === 'PUT') {
-                        $controller->update($id);
-                    } elseif ($method === 'DELETE') {
-                        $controller->delete($id);
-                    } else {
-                        throw new Exception('Méthode non autorisée', 405);
-                    }
-                } else {
-                    switch ($action) {
-                        case 'status':
-                            $controller->updateStatus($id);
-                            break;
-                        case 'score':
-                            $controller->updateScore($id);
-                            break;
-                        case 'version':
-                            $controller->updateVersion($id);
-                            break;
-                        case 'evaluations':
-                            $controller->getEvaluations($id);
-                            break;
-                        default:
-                            throw new Exception('Action non reconnue', 404);
-                    }
-                }
-            } elseif ($id === 'team' && is_numeric($action)) {
-                $controller->getByTeam($action);
-            } elseif ($id === 'hackathon' && is_numeric($action)) {
-                $controller->getByHackathon($action);
-            } else {
-                throw new Exception('ID non valide pour /projects', 400);
-            }
-            break;
-
         case 'challenges':
             $controller = new ChallengeController($db, $tokenManager);
             if ($id === null) {
-                // Route /api/challenges
+                // GET /api/challenges
                 if ($method === 'GET') {
+                    // GET /api/challenges
                     $controller->getAll();
                 } elseif ($method === 'POST') {
+                    // POST || PUT /api/challenges
                     $controller->create();
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
@@ -776,25 +845,29 @@ try {
             } elseif ($id === 'solves') {
                 // Nouvelle route /api/challenges/solves
                 if ($method === 'GET') {
+                    // GET /api/challenges/solves
                     $controller->getSolvesCount();
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
                 }
             } elseif (is_numeric($id)) {
-                // Route /api/challenges/{id}
+                // GET /api/challenges/{id}
                 if ($action === null) {
                     if ($method === 'GET') {
+                        // GET /api/challenges/{id}
                         $controller->get($id);
                     } elseif ($method === 'POST' || $method === 'PUT') {
+                        // POST || PUT /api/challenges/{id}
                         $controller->update($id);
                     } elseif ($method === 'DELETE') {
+                        // DELETE /api/challenges/{id}
                         $controller->delete($id);
                     } else {
                         throw new Exception('Méthode non autorisée', 405);
                     }
                 }
             } elseif ($id === 'hackathon' && is_numeric($action)) {
-                // Route /api/challenges/hackathon/{id}
+                // GET /api/challenges/hackathon/{id}
                 $controller->getByHackathon($action);
             } else {
                 throw new Exception('ID non valide pour /challenges', 400);
@@ -804,30 +877,37 @@ try {
         case 'evaluations':
             $controller = new EvaluationController($db, $tokenManager);
             if ($id === null) {
-                // Route /api/evaluations
+                // GET /api/evaluations
                 if ($method === 'GET') {
+                    // GET /api/evaluations
                     $controller->getAll();
-                } elseif ($method === 'POST') {
+                } elseif ($method === 'POST' || $method === 'PUT') {
+                    // POST || PUT /api/evaluations
                     $controller->create();
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
                 }
             } elseif (is_numeric($id)) {
-                // Route /api/evaluations/{id}
+                // GET /api/evaluations/{id}
                 if ($action === null) {
                     if ($method === 'GET') {
+                        // GET /api/evaluations/{id}
                         $controller->get($id);
                     } elseif ($method === 'POST' || $method === 'PUT') {
+                        // POST || PUT /api/evaluations/{id}
                         $controller->update($id);
                     } elseif ($method === 'DELETE') {
+                        // DELETE /api/evaluations/{id}
                         $controller->delete($id);
                     } else {
                         throw new Exception('Méthode non autorisée', 405);
                     }
                 }
             } elseif ($id === 'project' && is_numeric($action)) {
+                // GET /api/evaluations/project/{id}
                 $controller->getByProject($action);
             } elseif ($id === 'judge' && is_numeric($action)) {
+                // GET /api/evaluations/judge/{id}
                 $controller->getByJudge($action);
             } else {
                 throw new Exception('ID non valide pour /evaluations', 400);
@@ -837,33 +917,63 @@ try {
         case 'notifications':
             $controller = new NotificationController($db, $tokenManager);
             if ($id === null) {
-                // Route /api/notifications
+                // GET /api/notifications
                 if ($method === 'GET') {
+                    // GET /api/notifications
                     $controller->getNotifications($userId);
-                } elseif ($method === 'POST') {
+                } elseif ($method === 'POST' || $method === 'PUT') {
+                    // POST || PUT /api/notifications
                     $controller->create();
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
                 }
             } elseif (is_numeric($id)) {
-                // Route /api/notifications/{id}
+                // GET /api/notifications/{id}
                 if ($action === null) {
                     if ($method === 'GET') {
+                        // GET /api/notifications/{id}
                         $controller->getNotifications($userId);
                     } elseif ($method === 'POST' || $method === 'PUT') {
+                        // POST || PUT /api/notifications/{id}
                         $controller->update($id);
                     } elseif ($method === 'DELETE') {
+                        // DELETE /api/notifications/{id}
                         $controller->delete($id);
                     } else {
                         throw new Exception('Méthode non autorisée', 405);
                     }
                 } elseif ($action === 'markAsRead') {
+                    // POST /api/notifications/{id}/markAsRead
                     $controller->markAsRead($id);
                 }
             } elseif ($id === 'user' && is_numeric($action)) {
+                // GET /api/notifications/user/{id}
                 $controller->getNotifications($action);
             } else {
                 throw new Exception('ID non valide pour /notifications', 400);
+            }
+            break;
+        case 'piston':
+            require_once __DIR__ . '/Piston/PistonRequest.php';
+            require_once __DIR__ . '/Piston/PistonExecutor.php';
+            require_once __DIR__ . '/Piston/PistonResponse.php';
+
+            $language = $input['language'] ?? '';
+            $code = $input['code'] ?? '';
+
+            try {
+                $request = new PistonRequest($language, $code);
+                $executor = new PistonExecutor();
+                $response = $executor->execute($request);
+
+                echo json_encode($response->toArray());
+            } catch (Throwable $e) {
+                http_response_code(500);
+                echo json_encode([
+                    'output' => null,
+                    'error' => $e->getMessage(),
+                    'exitCode' => 1
+                ]);
             }
             break;
 
@@ -881,7 +991,7 @@ try {
         return;
     }
     setFlashMessage('error', 'Erreur API', $e->getMessage());
-    header('Location: /auth');
+    header('Location: /');
     exit();
 }
 function isAjaxRequest()

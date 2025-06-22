@@ -470,7 +470,7 @@ class User
                     c.description,
                     c.difficulty,
                     c.type,
-                    c.points,
+                    cs.points,
                     c.hackathon_id,
                     c.created_at,
                     c.created_by

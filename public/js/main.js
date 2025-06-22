@@ -123,9 +123,43 @@ class AuthService {
  * @param {string} type - Le type de notification ('success', 'error', 'info', 'warning').
  * @param {number} duration - Durée en millisecondes avant disparition (optionnel).
  */
+let activeNotifications = [];
+const NOTIFICATION_OFFSET = 10; // Espacement entre les notifications en pixels
+
+function updateNotificationsPosition() {
+    let topPosition = 20; // Position de départ en haut
+    
+    // Parcourir toutes les notifications visibles
+    activeNotifications.forEach(notification => {
+        if (document.body.contains(notification)) {
+            notification.style.top = `${topPosition}px`;
+            // Ajouter la hauteur de la notification + l'espacement pour la prochaine
+            topPosition += notification.offsetHeight + NOTIFICATION_OFFSET;
+        }
+    });
+}
+
 function showNotification(message, details = null, type = 'info', duration = 5000) {
     const notification = document.createElement('div');
-    notification.className = `fixed top-4 ${type === 'success' ? 'left-1/2' : 'right-4'} transform ${type === 'success' ? '-translate-x-1/2' : 'translate-x-0'} max-w-md w-auto bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 flex items-start justify-between gap-3 animate-fade-in z-1000 cursor-pointer`;
+    notification.className = `fixed ${type === 'success' ? 'left-1/2 transform -translate-x-1/2' : 'right-4'} bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 flex items-start justify-between gap-3 animate-fade-in z-[1000] cursor-pointer min-h-[60px] w-[45vw] sm:w-[28vw] md:w-[25vw] lg:w-[25vw]`;
+
+    let timeoutId;
+    const startTimer = () => {
+        timeoutId = setTimeout(() => {
+            hideNotification(notification);
+        }, duration);
+    };
+
+    const pauseTimer = () => {
+        clearTimeout(timeoutId);
+    };
+
+    // Démarrer le timer initial
+    startTimer();
+
+    // Gestion du survol
+    notification.addEventListener('mouseenter', pauseTimer);
+    notification.addEventListener('mouseleave', startTimer);
 
     // Conteneur d'icône
     const iconContainer = document.createElement('div');
@@ -139,7 +173,7 @@ function showNotification(message, details = null, type = 'info', duration = 500
                 type === 'warning' ? 'alert-triangle' :
                     'info'
     );
-    icon.className = `w-5 h-5 ${type === 'success' ? 'text-green-400' :
+    icon.className = `w-4 h-4 sm:w-5 sm:h-5 ${type === 'success' ? 'text-green-400' :
         type === 'error' ? 'text-red-400' :
             type === 'warning' ? 'text-yellow-400' :
                 'text-blue-400'
@@ -152,17 +186,19 @@ function showNotification(message, details = null, type = 'info', duration = 500
     const textContainer = document.createElement('div');
     textContainer.className = 'flex-1';
 
-    // Message principal
+    // Message principal avec clamp
     const messageElement = document.createElement('p');
-    messageElement.className = 'text-white font-medium text-sm';
+    messageElement.className = 'text-white font-medium text-xs sm:text-sm md:text-base line-clamp-1';
     messageElement.innerText = message;
+    messageElement.title = message;
     textContainer.appendChild(messageElement);
 
     // Message de détails (en option)
     if (details) {
         const detailsElement = document.createElement('p');
-        detailsElement.className = 'text-gray-300/90 font-normal text-xs mt-1';
+        detailsElement.className = 'text-gray-300/90 font-normal text-xs sm:text-sm md:text-xs mt-1 line-clamp-1';
         detailsElement.innerText = details;
+        detailsElement.title = details;
         textContainer.appendChild(detailsElement);
     }
 
@@ -177,15 +213,15 @@ function showNotification(message, details = null, type = 'info', duration = 500
 
     const closeIcon = document.createElement('i');
     closeIcon.setAttribute('data-lucide', 'x');
-    closeIcon.className = 'w-4 h-4';
+    closeIcon.className = 'w-3 h-3 sm:w-4 sm:h-4';
 
     closeButton.appendChild(closeIcon);
-    closeButton.addEventListener('click', () => {
+    closeButton.addEventListener('click', (e) => {
+        e.stopPropagation();
         hideNotification(notification);
     });
 
     closeContainer.appendChild(closeButton);
-    
     notification.appendChild(closeContainer);
 
     notification.addEventListener('click', () => {
@@ -194,23 +230,38 @@ function showNotification(message, details = null, type = 'info', duration = 500
 
     // Ajouter la notification au DOM
     document.body.appendChild(notification);
+    
+    // Ajouter à la liste des notifications actives
+    activeNotifications.push(notification);
+    updateNotificationsPosition();
 
     // Initialiser Lucide pour les nouvelles icônes
     if (window.lucide) {
         window.lucide.createIcons();
     }
 
-    // Masquer la notification après la durée spécifiée
-    if (duration) {
-        setTimeout(() => hideNotification(notification), duration);
-    }
+    // Nettoyer le timeout si la notification est supprimée
+    notification.addEventListener('animationend', (e) => {
+        if (e.animationName === 'fadeOut') {
+            clearTimeout(timeoutId);
+        }
+    });
 
     return notification;
 }
 
 function hideNotification(notification) {
     notification.classList.add('animate-fade-out');
-    notification.addEventListener('animationend', () => notification.remove(), { once: true });
+    notification.addEventListener('animationend', () => {
+        // Retirer la notification du DOM
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+        // Retirer de la liste des notifications actives
+        activeNotifications = activeNotifications.filter(n => n !== notification);
+        // Mettre à jour la position des notifications restantes
+        updateNotificationsPosition();
+    }, { once: true });
 }
 
 // Dans un fichier utils.js ou directement dans auth.js
@@ -236,7 +287,6 @@ function getFlashMessage() {
 async function apiRequest(endpoint, options = {}) {
     try {
         const headers = {
-            'Content-Type': 'application/json',
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         };
@@ -256,6 +306,11 @@ async function apiRequest(endpoint, options = {}) {
         handleError('Erreur lors de la requête API', error, 'error');
         throw error;
     }
+}
+
+function handleError(message, error) {
+    console.error(message, error)
+    showNotification(`${message}: ${error.message || "Erreur inconnue"}`, "error")
 }
 
 async function initVerification() {
@@ -381,4 +436,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
 });
-

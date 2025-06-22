@@ -22,7 +22,7 @@ if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/includes/functions.php';
 }
 
-class AuthController
+class AuthController 
 {
     private $user;
     private $db;
@@ -51,27 +51,36 @@ class AuthController
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         }
     }
+    
 
-    /**
-     * Récupère le token JWT depuis les headers
-     */
-    public function getBearerToken(): ?string
-    {
-        // D'abord essayer le header Authorization
+    public function getCurrentUserId(): ?int {
+        try {
+            $token = $this->getBearerToken();
+            if (!$token) {
+                throw new Exception('Token manquant', 401);
+            }
+            $tokenValidation = $this->tokenManager->validateToken($token);
+            if (!$tokenValidation['valid']) {
+                throw new Exception('Token invalide: ' . ($tokenValidation['error'] ?? 'Aucun détail'), 401);
+            }
+            return (int) $tokenValidation['user_id'];
+        } catch (Exception $e) {
+            error_log("Erreur dans getCurrentUserId: " . $e->getMessage() . " (Code: " . $e->getCode() . ")");
+            throw $e;
+        }
+    }
+
+    protected function getBearerToken(): ?string {
         $headers = $this->getAuthorizationHeader();
         if (!empty($headers) && preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
             return $matches[1];
         }
-
-        // Si pas dans les headers, chercher dans les cookies
         if (isset($_COOKIE['long_term_token'])) {
             return $_COOKIE['long_term_token'];
         }
-
         if (isset($_COOKIE['jwt_token'])) {
             return $_COOKIE['jwt_token'];
         }
-
         return null;
     }
 
@@ -200,7 +209,7 @@ class AuthController
             "expires" => time() + 60 * 60,
             "path" => "/",
             "httponly" => true,
-            "secure" => false,
+            "secure" => false, 
             "samesite" => "Strict",
         ]);
         return;

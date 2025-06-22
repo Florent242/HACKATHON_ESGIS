@@ -1,105 +1,87 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const languageSelector = document.getElementById('languageSelector');
-    const languageDropdown = document.getElementById('languageDropdown');
-    const consoleMinimizeBtn = document.getElementById('consoleMinimizeBtn');
-    const consoleOutput = document.getElementById('consoleOutput');
-    let isConsoleMinimized = false;
-    if (consoleMinimizeBtn) {
-        consoleMinimizeBtn.addEventListener('click', function() {
-            const icon = this.querySelector('i');
-            if (!isConsoleMinimized) {
-                consoleOutput.style.height = '0px';
-                icon.classList.replace('ri-subtract-line', 'ri-add-line');
-            } else {
-                consoleOutput.style.height = '';
-                icon.classList.replace('ri-add-line', 'ri-subtract-line');
+    // Mapping Monaco Editor
+    const monacoLangMap = {
+        bash: 'shell',
+        java: 'java',
+        javascript: 'javascript',
+        python: 'python',
+        c: 'c',
+        cpp: 'cpp',
+        csharp: 'csharp',
+        php: 'php',
+        ruby: 'ruby',
+        typescript: 'typescript',
+        pascal: 'pascal',
+        golang: 'go'
+    };
+
+    let editor;
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
+
+    window.initMonaco = function(language = 'shell', value = '') {
+        require(['vs/editor/editor.main'], function () {
+            if (editor) {
+                editor.dispose();
             }
-            isConsoleMinimized = !isConsoleMinimized;
-        });
-    }
-    const runCodeBtn = document.getElementById('runCode');
-    const editorFullscreenBtn = document.getElementById('editorFullscreenBtn');
-    const editorContainer = document.getElementById('monaco-editor')?.parentElement;
-    if (languageSelector) {
-        languageSelector.addEventListener('click', function(e) {
-            e.stopPropagation();
-            languageDropdown.classList.toggle('hidden');
-        });
-        document.addEventListener('click', function() {
-            languageDropdown.classList.add('hidden');
-        });
-        languageDropdown.addEventListener('click', function(e) {
-            if (e.target.closest('button[data-language]')) {
-                const selectedLang = e.target.closest('button[data-language]').dataset.language;
-                const langText = e.target.closest('button[data-language]').textContent.trim();
-                languageSelector.querySelector('span').textContent = langText;
-                if (window.editor) {
-                    monaco.editor.setModelLanguage(window.editor.getModel(), selectedLang);
-                }
-            }
-        });
-    }
-    if (runCodeBtn) {
-        runCodeBtn.addEventListener('click', function() {
-            const code = window.editor ? window.editor.getValue() : '';
-            console.log('Running code:', code);
-            const newOutput = document.createElement('div');
-            newOutput.innerHTML = `
-<div class="border-b border-[#1E293B] pb-4">
-<div class="text-[#94A3B8]">Output:</div>
-<div class="text-[#E5E7EB]">Running code...</div>
-</div>
-`;
-            consoleOutput.insertBefore(newOutput, consoleOutput.firstChild);
-        });
-    }
-    const consoleSection = document.getElementById('consoleSection');
-    const consoleFullscreenBtn = document.getElementById('consoleFullscreenBtn');
-    if (consoleFullscreenBtn) {
-        consoleFullscreenBtn.addEventListener('click', function() {
-            consoleSection.classList.toggle('fullscreen');
-            if (consoleSection.classList.contains('fullscreen')) {
-                this.querySelector('i').classList.replace('ri-fullscreen-line', 'ri-fullscreen-exit-line');
-            } else {
-                this.querySelector('i').classList.replace('ri-fullscreen-exit-line', 'ri-fullscreen-line');
-            }
-        });
-    }
-    if (typeof require !== "undefined") {
-        require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
-        require(['vs/editor/editor.main'], function() {
-            window.editor = monaco.editor.create(document.getElementById('monaco-editor'), {
-                value: `# game loop
-while true; do
-# enemy1: name of enemy 1
-read enemy1
-# dist1: distance to enemy 1
-read dist1
-# enemy2: name of enemy 2
-read enemy2
-# dist2: distance to enemy 2
-read dist2
-# Write an action using echo
-# Enter the code here
-done`,
-                language: 'shell',
+            editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+                value: value || '',
+                language: language,
                 theme: 'vs-dark',
-                automaticLayout: true
+                automaticLayout: true,
+                fontSize: 16,
+                minimap: { enabled: false }
             });
-            if (editorFullscreenBtn && editorContainer) {
-                editorFullscreenBtn.addEventListener('click', function() {
-                    editorContainer.classList.toggle('fullscreen');
-                    const icon = this.querySelector('i');
-                    if (editorContainer.classList.contains('fullscreen')) {
-                        icon.classList.replace('ri-fullscreen-line', 'ri-fullscreen-exit-line');
-                    } else {
-                        icon.classList.replace('ri-fullscreen-exit-line', 'ri-fullscreen-line');
-                    }
-                    if (window.editor) {
-                        window.editor.layout();
-                    }
-                });
-            }
         });
-    }
+    };
+
+    const templates = window.challengeTemplates || {};
+    // Initialisation par défaut (bash)
+    window.initMonaco('shell', templates['bash'] || '');
+
+    const selector = document.getElementById('languageSelector');
+    const dropdown = document.getElementById('languageDropdown');
+    const options = dropdown.querySelectorAll('button[data-language]');
+    const label = selector.querySelector('span');
+
+    options.forEach(option => {
+        option.addEventListener('click', function () {
+            const langKey = this.getAttribute('data-language');
+            const monacoLang = monacoLangMap[langKey] || 'plaintext';
+            const template = templates[langKey] || '// Pas de template pour ce langage';
+            label.textContent = this.textContent.trim();
+            window.initMonaco(monacoLang, template);
+            dropdown.classList.add('hidden');
+        });
+    });
+
+    // Toggle dropdown
+    selector.addEventListener('click', function (e) {
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+    });
+
+    // Fermer si clic en dehors
+    document.addEventListener('click', function () {
+        dropdown.classList.add('hidden');
+    });
+
+
+
+document.getElementById('runCode').addEventListener('click', async () => {
+    const code = editor.getValue();
+    const langKey = document.getElementById('languageSelector').querySelector('span').textContent.trim().toLowerCase();
+
+    const result = await apiRequest('/piston', {
+        method: 'POST',
+        body: JSON.stringify({
+            language: langKey,
+            code: code
+        })
+    });
+
+    console.log(result);
+    document.getElementById('consoleOutput').innerHTML = `
+        <pre>${result.output || result.error || 'Aucune sortie'}</pre>
+    `;
+});
 });

@@ -64,6 +64,35 @@ header::before {
 }
 
 
+/* Styles pour le tooltip des notifications */
+.notification-tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    z-index: 10001; /* Augmenté pour passer devant la notification */
+    max-width: 300px;
+    transform: translateX(-50%);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    display: none; /* Ajouté pour cacher par défaut */
+}
+
+.notification-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+}
+
 /* Styles des boutons */
 .btn-primary {
     position: relative;
@@ -71,7 +100,7 @@ header::before {
     font-size: 1rem;
     font-weight: 600;
     border: none;
-    border-radius: 12px;
+    border-radius: 1rem;
     cursor: pointer;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -79,7 +108,7 @@ header::before {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 0.3rem;
 }
 
 @media screen and (max-width: 768px) {

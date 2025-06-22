@@ -24,7 +24,7 @@
         <section class="header-dashboard flex flex-col items-center justify-center gap-12 max-md:gap-10 max-w-[1400px] max-md:mx-[5%] my-1 mx-auto p-5">
             <div class="container flex flex-row w-full max-md:flex-col items-center justify-between gap-5 mx-auto">
 
-                <h1 class="text-4xl font-bold w-auto max-md:text-center max-md:text-3xl max-sm:text-2xl">Welcome to your Dashboard,
+                <h1 class="text-4xl font-bold w-auto max-md:text-center max-md:text-3xl max-sm:text-2xl">Bienvenue sur votre Dashboard,
                     <span class="text-blue-500 Username">
                         [Username]
                     </span>
@@ -32,10 +32,10 @@
 
                 <div class="challenges-link flex flex-row gap-5 items-center">
                     <button class="cursor-pointer flex flex-row items-center justify-center gap-1 rounded-xl bg-blue-500 text-white p-2 text-sm max-md:text-center max-md:text-xs whitespace-nowrap btn-primary btn-participate">
-                        <i data-lucide="code" class="w-4 h-4 stroke-current"></i>Developpement challenge
+                        <i data-lucide="code" class="max-md:w-3 max-md:h-3 w-4 h-4 stroke-current"></i>Challenge dev
                     </button>
                     <button class="cursor-pointer flex flex-row items-center justify-center gap-1 rounded-xl bg-blue-500 text-white p-2 text-sm max-md:text-center max-md:text-xs whitespace-nowrap btn-primary btn-participate">
-                        <i data-lucide="shield" class="w-4 h-4 stroke-current"></i>Security challenge
+                        <i data-lucide="shield" class="max-md:w-3 max-md:h-3 w-4 h-4 stroke-current"></i>Challenge hack
                     </button>
                 </div>
             </div>
@@ -53,7 +53,7 @@
                 </div>
                 <a href="/user/profile">
                     <div class="modify-profile btn-primary btn-standard">
-                        <i data-lucide="user"></i> <span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs whitespace-nowrap">Modify the profile</span>
+                        <i data-lucide="user"></i> <span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs whitespace-nowrap">Modifier le profil</span>
                     </div>
                 </a>
             </div>
@@ -67,7 +67,7 @@
                         <div class="w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
                             <div class="flex flex-row gap-2 items-center justify-between mb-2">
                                 <h3 class="text-md font-normal">Défis de développement</h3>
-                                <i data-lucide="code" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
+                                <i data-lucide="code" class="max-md:w-6 max-md:h-6 w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
                             <div class="text-3xl font-bold mt-2" id="number-dev-challenges"><i data-lucide="loader-circle" class="animate-spin"></i></div>
                             <p class="text-gray-400 flex items-center flex-row"><span id="number-dev-challenges-on"><i data-lucide="loader-circle" class="animate-spin"></i></span> défis en cours</p>
@@ -80,7 +80,7 @@
                         <div class="w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
                             <div class="flex flex-row gap-2 items-center justify-between mb-2">
                                 <h3 class="text-md font-normal">Défis de hacking</h3>
-                                <i data-lucide="shield" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
+                                <i data-lucide="shield" class="max-md:w-6 max-md:h-6 w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
                             <div class="text-3xl font-bold mt-2" id="number-hacking-challenges"><i data-lucide="loader-circle" class="animate-spin"></i></div>
                             <p class="text-gray-400 flex items-center flex-row"><span id="number-hacking-challenges-validate"><i data-lucide="loader-circle" class="animate-spin"></i></span> flags validés</p>
@@ -94,7 +94,7 @@
                         <div class="w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
                             <div class="flex flex-row gap-2 items-center justify-between mb-2">
                                 <h3 class="text-md font-normal">Projets soumis</h3>
-                                <i data-lucide="file-text" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
+                                <i data-lucide="file-text" class="max-md:w-6 max-md:h-6 w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
                             <div class="text-3xl font-bold mt-2" id="number-submitted-projects"><i data-lucide="loader-circle" class="animate-spin"></i></div>
                             <p class="text-gray-400 flex items-center flex-row"><span id="number-submitted-projects-wait">0</span> projet en attente d'évaluation</p>
@@ -106,7 +106,7 @@
                         <div class="w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
                             <div class="flex flex-row gap-2 items-center justify-between mb-2">
                                 <h3 class="text-md font-normal">Points totaux</h3>
-                                <i data-lucide="award" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
+                                <i data-lucide="award" class="max-md:w-6 max-md:h-6 w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             </div>
                             <div class="text-3xl font-bold mt-2" id="total-points"><i data-lucide="loader-circle" class="animate-spin"></i></div>
                             <p class="text-gray-400"><span class="user-rank">#</span> sur <span class="rank-max">#</span></p>
@@ -126,7 +126,7 @@
                     <!-- Défis en cours -->
                     <section class="fade-in-left space-y-4 w-full flex flex-col border border-gray-700 p-5 rounded-2xl shadow-lg card-bg">
                         <div class="flex flex-row justify-start items-center gap-2">
-                            <i data-lucide="activity" class="w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
+                            <i data-lucide="activity" class="max-md:w-6 max-md:h-6 w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             <h3 class="text-lg font-medium">Défis en cours</h3>
                         </div>
                         <div id="current-challenges-container" class="flex flex-col gap-4">

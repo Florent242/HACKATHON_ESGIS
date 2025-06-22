@@ -744,7 +744,8 @@ nav a:focus,
 
 .btn-startchallenge:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 48px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+    background: linear-gradient(135deg, var(--blue-light) 0%, var(--blue) 100%);
 }
 
 .btn-startchallenge:active {

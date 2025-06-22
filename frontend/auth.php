@@ -166,34 +166,51 @@ if (empty($_SESSION['csrf_token'])) {
                     <div class="form-section mt-6">
                         <h3 class="section-title">Participation au Hackathon</h3>
 
-                        <div class="form-group">
-                            <label for="main_skill" class="label after:ml-1 after:text-red-500 after:content-['*']">Compétence principale</label>
-                            <div class="custom-select-container">
-                                <div class="display p-2 shadow-lg shadow-indigo-300/10">
-                                    <i data-lucide="code"></i>
-                                    <select id="main_skill" name="main_skill" required>
-                                        <option value="">Sélectionnez votre compétence principale</option>
-                                        <option value="frontend">Développement Frontend</option>
-                                        <option value="backend">Développement Backend</option>
-                                        <option value="design">Design UI/UX</option>
-                                        <option value="ai">Intelligence Artificielle</option>
-                                        <option value="data">Science des Données</option>
-                                        <option value="marketing">Marketing Digital</option>
-                                        <option value="iot">IoT & Hardware</option>
-                                        <option value="blockchain">Blockchain</option>
+                        <div class="form-group mb-4">
+                            <label for="main_skill" class="label after:ml-1 after:text-red-500 after:content-['*'] mb-1.5 block text-xs font-medium text-gray-300">Compétence principale</label>
+                            <div class="relative w-full">
+                                <div class="flex items-center bg-gray-800/80 border border-gray-600/50 rounded-md px-2.5 py-1.5 text-sm focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all w-full duration-150">
+                                    <i data-lucide="code" class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0"></i>
+                                    <select 
+                                        id="main_skill" 
+                                        name="main_skill" 
+                                        required 
+                                        class="w-full bg-transparent text-xs text-gray-100 placeholder-gray-400 border-none focus:ring-0 focus:outline-none appearance-none cursor-pointer pr-5 py-0.5"
+                                    >
+                                        <option value="" class="bg-gray-800 text-gray-300">Sélectionnez votre compétence</option>
+                                        <optgroup label="Développement" class="bg-gray-800 text-gray-200">
+                                            <option value="fullstack" class="hover:bg-indigo-600">Développement Full-Stack</option>
+                                            <option value="frontend" class="hover:bg-indigo-600">Développement Frontend</option>
+                                            <option value="backend" class="hover:bg-indigo-600">Développement Backend</option>
+                                            <option value="mobile" class="hover:bg-indigo-600">Développement Mobile</option>
+                                            <option value="game" class="hover:bg-indigo-600">Développement de Jeux</option>
+                                        </optgroup>
+                                        <optgroup label="Sécurité & Réseau" class="bg-gray-800 text-gray-200">
+                                            <option value="cybersec" class="hover:bg-indigo-600">Cybersécurité / Hacking Éthique</option>
+                                            <option value="network" class="hover:bg-indigo-600">Réseaux & Infrastructure</option>
+                                            <option value="blockchain" class="hover:bg-indigo-600">Blockchain & Web3</option>
+                                        </optgroup>
+                                        <optgroup label="Data & IA" class="bg-gray-800 text-gray-200">
+                                            <option value="ai" class="hover:bg-indigo-600">Intelligence Artificielle</option>
+                                            <option value="data" class="hover:bg-indigo-600">Science des Données</option>
+                                            <option value="ml" class="hover:bg-indigo-600">Machine Learning</option>
+                                        </optgroup>
+                                        <optgroup label="Design & Création" class="bg-gray-800 text-gray-200">
+                                            <option value="design" class="hover:bg-indigo-600">Design UI/UX</option>
+                                            <option value="graphism" class="hover:bg-indigo-600">Graphisme & Motion Design</option>
+                                            <option value="3d" class="hover:bg-indigo-600">Modélisation 3D</option>
+                                        </optgroup>
+                                        <optgroup label="Autres" class="bg-gray-800 text-gray-200">
+                                            <option value="iot" class="hover:bg-indigo-600">IoT & Hardware</option>
+                                            <option value="marketing" class="hover:bg-indigo-600">Marketing Digital</option>
+                                            <option value="product" class="hover:bg-indigo-600">Product Management</option>
+                                            <option value="devops" class="hover:bg-indigo-600">DevOps & Cloud</option>
+                                        </optgroup>
                                     </select>
-                                    <i data-lucide="chevron-down" class="select-arrow"></i>
+                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400 absolute right-2 pointer-events-none"></i>
                                 </div>
                             </div>
-                            <span class="error-message hidden" id="mainSkillError"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="project_idea" class="label">Idée de projet (optionnel)</label>
-                            <div class="display p-2 shadow-lg shadow-indigo-300/10">
-                                <i data-lucide="lightbulb"></i>
-                                <textarea id="project_idea" name="project_idea" rows="3" placeholder="Décrivez brièvement votre idée..."></textarea>
-                            </div>
+                            <span class="error-message hidden text-[11px] text-red-400 mt-1" id="mainSkillError"></span>
                         </div>
 
                         <div class="form-group">

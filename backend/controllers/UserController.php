@@ -567,7 +567,6 @@ class UserController extends Controller
                     c.description,
                     c.difficulty,
                     c.type,
-                    c.points,
                     cs.created_at as start_date
                 FROM challenges c
                 JOIN challenge_submissions cs ON c.id = cs.challenge_id
@@ -612,7 +611,7 @@ class UserController extends Controller
                     c.description,
                     c.difficulty,
                     c.type,
-                    c.points,
+                    cs.points,
                     cs.created_at as completed_date
                 FROM challenges c
                 JOIN challenge_submissions cs ON c.id = cs.challenge_id
