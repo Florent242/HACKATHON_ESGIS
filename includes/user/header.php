@@ -215,21 +215,18 @@ if (!isset($_SESSION['csrf_token'])) {
 
         <div class="header-actions">
             <div class="notification-btn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
+                <i data-lucide="bell" class="stroke-current"></i>
             </div>
 
             <!-- Menu hamburger (pour mobile) -->
             <div class="mobile-menu-btn">
-                <i data-lucide="menu"></i>
+                <i data-lucide="menu" class="stroke-current"></i>
             </div>
 
             <div class="relative group profile-dropdown-container">
                 <!-- Bouton du profil -->
                 <div class="profile-btn cursor-pointer">
-                    <i data-lucide="circle-user"></i>
+                    <i data-lucide="circle-user" class="stroke-current"></i>
                 </div>
 
                 <!-- Dropdown menu -->

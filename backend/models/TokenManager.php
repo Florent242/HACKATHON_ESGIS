@@ -17,7 +17,7 @@ class TokenManager
     private $key;
     private $db;
     private $algorithm = 'HS256';
-    private $domain = 'your-domain.com';
+    private $domain = 'localhost';
     private $shortTermExpiry = 3600; // 1 heure
 
 

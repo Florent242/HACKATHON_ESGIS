@@ -160,6 +160,8 @@ main {
 .filter-btn {
     display: flex;
     align-items: center;
+    text-align: center;
+    justify-content: center;
     gap: 0.25rem;
     padding: 0.2rem 0.5rem;
     font-size: 0.7rem;
@@ -172,13 +174,13 @@ main {
 }
 
 .filter-btn:hover {
-    background: var(--blue);
-    border-color: var(--blue);
+    background: var(--blue-hover);
+    border-color: var(--blue-hover);
 }
 
 .filter-btn.active {
-    background: var(--blue);
-    border-color: var(--blue);
+    background: var(--blue-opac);
+    border-color: var(--blue-opac);
     color: var(--text);
 }
 
@@ -225,6 +227,10 @@ main {
     height: fit-content;
     margin-bottom: 2rem;
     /* Ajoute un espacement entre deux asides */
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(59, 130, 246, 0.5) transparent;
 }
 
 .filter-group {
@@ -280,8 +286,29 @@ main {
     color: var(--blue);
 }
 
+/* Style pour le conteneur des catégories avec défilement */
+.filter-buttons[data-type="category"] {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 4px;
+    margin-right: -4px;
+}
 
+.filter-btn::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 0px;
+    background: var(--blue-hover);
+    transform: scaleY(0);
+    transition: transform 0.2s ease;
+}
 
+.filter-btn:hover::after {
+    transform: scaleY(1);
+}
 
 /* Bouton Clear Filters */
 .clear-filters {
@@ -895,4 +922,22 @@ main {
         justify-content: center;
         align-items: center;
     }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseSlow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.8; }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-pulse-slow {
+    animation: pulseSlow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

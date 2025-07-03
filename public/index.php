@@ -12,6 +12,7 @@ if (session_status() === PHP_SESSION_NONE) {
 // echo print_r($_SESSION, true); 
 // Récupérer l'URL demandée (par exemple /home ou /about)
 $url = $_SERVER['REQUEST_URI'] ?? "/";
+$url = parse_url($url, PHP_URL_PATH); // <-- Ajoute cette ligne pour ne garder que le chemin
 
 // Vérifier l'URL et inclure le fichier correspondant
 switch ($url) {
@@ -28,7 +29,7 @@ switch ($url) {
         require_once '../frontend/auth.php'; // Inclure la page "auth"
         break;
     case '/contact':
-        require_once '../frontend/contact.php';// Inclure la page "contact"
+        require_once '../frontend/contact.php'; // Inclure la page "contact"
         break;
     case '/sponsors':
         require_once '../frontend/sponsors.php'; // Inclure la page "sponsors"
@@ -48,8 +49,8 @@ switch ($url) {
     case '/typo':
         require_once '../frontend/typo.php'; // Inclure la page "typo"
         break;
-        
-        // Page user
+
+    // Page user
     case '/user':
         require_once '../frontend/user/dashboard.php'; // Inclure la page "User"
         break;
@@ -77,11 +78,8 @@ switch ($url) {
     case '/user/profile':
         require_once '../frontend/user/profile.php'; // Inclure la page "Admin"
         break;
-    case '/user/interfacechallenge':
-        require_once '../frontend/user/interfacechallenge.php'; // Inclure la page "user/challenge_submission"
-        break;
     case '/user/teams':
-        require_once '../frontend/user/team.php';// Inclure la page "team"
+        require_once '../frontend/user/team.php'; // Inclure la page "team"
         break;
     default:
         // TODO: ajouter la gestion des urls avec le format CHALL-[A-Za-z0-9]{8,}
@@ -92,13 +90,16 @@ switch ($url) {
         if (preg_match('#^/user/challenge_submission/(\d+)$#', $url, $matches)) {
             $_GET['challenge_id'] = $matches[1];
             require_once '../frontend/user/challenge_submission.php';
+        } else if (preg_match('#^/user/interfacechallenges/(\d+)$#', $url, $matches)) {
+            $_GET['challenge_id'] = $matches[1];
+            require_once '../frontend/user/interfacechallenge.php';
         } else if (preg_match('#^/user/teams/overview/(\d+)$#', $url, $matches)) {
             $_GET['team_id'] = $matches[1];
             require_once '../frontend/user/overview.php';
-        }  else if (preg_match('#^/user/hackathon/overviewHackathon/(\d+)$#', $url,$matches)) {
+        } else if (preg_match('#^/user/hackathon/overview/(\d+)$#', $url, $matches)) {
             $_GET['hackathon_id'] = $matches[1];
             require_once '../frontend/user/overviewHackathon.php';
-        }else if (strpos($_SERVER['REQUEST_URI'], '/user') !== false) {
+        } else if (strpos($_SERVER['REQUEST_URI'], '/user') !== false) {
             require_once '../frontend/user/404.php'; // Inclure la page 404 pour les utilisateurs
         } else {
             require_once '../frontend/404.php'; // Inclure la page 404 générale si rien ne correspond

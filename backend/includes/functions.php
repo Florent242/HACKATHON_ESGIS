@@ -152,7 +152,7 @@ function sendEmail($to, $subject, $message, $headers = []) {
     $defaultHeaders = [
         'MIME-Version: 1.0',
         'Content-type: text/html; charset=UTF-8',
-        'From: ' . APP_NAME . ' <noreply@example.com>'
+        'From: ' . APP_NAME . ' <' . $_ENV['EMAIL_FROM'] ?? 'morelvlto93@gmail.com' . '>'
     ];
 
     $headers = array_merge($defaultHeaders, $headers);
@@ -294,4 +294,8 @@ function logActivity($action, $description, $data = [], $userId = null, $level =
         error_log("Erreur lors de l'enregistrement de l'activité: " . $e->getMessage());
         return false;
     }
+}
+
+function logSecurity($action, $description, $data = [], $userId = null, $level = 'info') {
+    // TODO: Implementer le log de sécurité
 }

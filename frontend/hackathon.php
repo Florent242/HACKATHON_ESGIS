@@ -15,85 +15,58 @@
         <div class="hackathons-container">
             <div class="hackathons-header">
                 <div>
-                    <h1>Upcoming Hackathons</h1>
-                    <p>Compete in exciting hackathons and win amazing prizes</p>
+                    <h1>Prochains Hackathons</h1>
+                    <p>Participez à des hackathons passionnants et remportez des prix impressionnants</p>
                 </div>
-                <button class="host-hackathon">Host a Hackathon</button>
             </div>
 
             <div class="hackathons-grid">
                 <!-- First Hackathon Card -->
                 <div class="hackathon-card">
-                    <div class="card-badge upcoming">Upcoming</div>
-                    <h2>EsgisHub Global Hackathon 2024</h2>
-                    <p>Join the biggest hackathon of the year! Build innovative solutions for real-world problems.</p>
+                    <div class="card-badge upcoming">À venir</div>
+                    <h2>Esgis Global Hackathon 2025</h2>
+                    <p>Rejoignez le plus grand hackathon de l'année ! Construisez des solutions innovantes pour des problèmes réels.</p>
                     
                     <div class="hackathon-details">
                         <div class="detail-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                            500 participants
+                            <i class="w-4 h-4 stroke-current" data-lucide="users"></i>
+                            200 participants attendus
                         </div>
                         <div class="detail-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            2024-03-15
+                            <i class="w-4 h-4 stroke-current" data-lucide="calendar"></i>
+                            2025-07-10
                         </div>
                         <div class="detail-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="1" x2="12" y2="23"></line>
-                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                            </svg>
-                            $10,000
+                            <i class="w-4 h-4 stroke-current" data-lucide="badge-dollar-sign"></i>
+                            $1,000
                         </div>
                     </div>
                     
-                    <button class="view-details">View Details</button>
+                    <button class="view-details" onclick="window.location.href='/auth'">Voir les détails</button>
                 </div>
 
                 <!-- Second Hackathon Card -->
                 <div class="hackathon-card">
-                    <div class="card-badge registration">Registration Open</div>
-                    <h2>Security Challenge Week</h2>
-                    <p>A week-long event focused on cybersecurity challenges and penetration testing.</p>
+                    <div class="card-badge upcoming">À venir</div>
+                    <h2>HackSec(CTF)</h2>
+                    <p>Un hackathon axés sur les défis de sécurité et les tests de pénétration.</p>
                     
                     <div class="hackathon-details">
                         <div class="detail-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                            </svg>
-                            250 participants
+                            <i class="w-4 h-4 stroke-current" data-lucide="users"></i>
+                            200 participants attendus
                         </div>
                         <div class="detail-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            2024-04-01
+                            <i class="w-4 h-4 stroke-current" data-lucide="calendar"></i>
+                            2025-07-25
                         </div>
                         <div class="detail-item">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="1" x2="12" y2="23"></line>
-                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                            </svg>
+                            <i class="w-4 h-4 stroke-current" data-lucide="badge-dollar-sign"></i>
                             $5,000
                         </div>
                     </div>
                     
-                    <button class="view-details">View Details</button>
+                    <button class="view-details" onclick="window.location.href='/auth'">Voir les détails</button>
                 </div>
             </div>
         </div>

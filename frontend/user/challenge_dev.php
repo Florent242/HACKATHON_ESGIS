@@ -5,14 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Défis de développement</title>
-    <link rel="stylesheet" href="/css/styles/user/challenge_dev.css">
+<!--    <link rel="stylesheet" href="/css/styles/user/challenge_dev.css">-->
     <link rel="stylesheet" href="/css/styles/user/header.css">
     <link rel="stylesheet" href="/css/dist/output.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script defer src="/js/user/challenge_dev.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Ajout Tailwind et styles custom du prompt -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
     <style>
       :root {
         --background: #0a0f1c;
@@ -108,19 +105,12 @@
       class="w-full bg-card px-4 md:px-8 py-3 flex flex-col md:flex-row items-start md:items-center justify-between border-b border-main gap-2"
     >
       <div class="flex flex-wrap items-center gap-2 md:gap-4">
-        <span class="text-base md:text-lg cursor-pointer hover:underline"
-          >&larr; Retour aux hackathons</span
-        >
-        <span class="ml-0 md:ml-6 text-orange-400 font-semibold"
-          >&#128293; Phase 1 : <span class="font-bold">8 challenges</span></span
-        >
-        <span class="ml-0 md:ml-2" style="color: var(--green)">• 3 résolus</span>
-        <span class="ml-0 md:ml-2" style="color: var(--primary)">• 320 pts</span>
+        <span class="text-base md:text-lg flex items-center gap-2 cursor-pointer hover:underline"
+          ><i class="w-4 h-4 stroke-current" data-lucide="arrow-left"></i> Retour aux hackathons</span>
+        <span class="ml-0 md:ml-6 text-orange-400 font-semibold flex items-center gap-2"
+          
       </div>
-      <span
-        class="bg-green-900/30 text-green-400 px-3 py-1 rounded-full text-xs md:text-sm flex items-center gap-1 mt-2 md:mt-0"
-        >&#128293; Phase active</span
-      >
+      
     </nav>
 
     <div class="flex flex-col lg:flex-row max-w-7xl mx-auto mt-6 md:mt-8 gap-6 md:gap-8 px-2 md:px-0">
@@ -129,18 +119,14 @@
         <!-- Performances -->
         <div class="bg-card rounded-xl p-4 md:p-6 card mb-2">
           <div class="flex items-center gap-2 mb-2">
-            <span class="text-yellow-400 text-2xl">&#x1F3C6;</span>
+            <span class="text-yellow-400 text-2xl"><i class="w-4 h-4 stroke-current" data-lucide="trophy"></i></span>
             <span class="font-bold text-lg">Vos performances</span>
           </div>
           <div class="text-3xl md:text-4xl font-bold mb-1">320</div>
           <div class="text-sec text-sm mb-2">points obtenus</div>
           <div class="mb-3">
-            <div class="flex justify-between text-xs text-sec mb-1">
-              <span>Progression</span><span>38%</span>
-            </div>
-            <div class="w-full h-2 progress-bar-bg rounded">
-              <div class="h-2 bg-primary rounded" style="width: 38%"></div>
-            </div>
+            
+            
           </div>
           <div class="flex gap-2 mt-2">
             <div class="progress-bar-bg rounded px-3 py-1 text-center flex-1">
@@ -156,27 +142,31 @@
           </div>
         </div>
         <!-- Règles importantes -->
-        <div class="bg-card rounded-xl p-4 md:p-6 card">
-          <div class="flex items-center gap-2 mb-3">
-            <span style="color: var(--primary)">&#128712;</span>
-            <span class="font-bold">Règles importantes</span>
+        <div class="bg-card rounded-xl p-3 md:p-4 card">
+          <div class="flex items-center gap-2 mb-2">
+            <span style="color: var(--primary); font-size:1rem;"><i class="fa fa-bullseye"></i></span>
+            <span class="font-bold text-base">Règles importantes</span>
           </div>
-          <ul class="space-y-3 text-sm text-sec">
-            <li class="flex items-center gap-2 flex-wrap">
-              <span style="color: var(--green)">&lt;/&gt;</span> Langages
-              autorisés :<br />
-              <span class="ml-6 text-main">Python, Java, C++, JavaScript</span>
-            </li>
-            <li class="flex items-center gap-2">
-              <span style="color: var(--yellow)">&#9200;</span> Temps
-              d'exécution max :
-              <span class="ml-1 text-main">2 secondes par test</span>
-            </li>
-            <li class="flex items-center gap-2">
-              <span style="color: var(--primary)">&#9889;</span> Chaque
-              soumission est évaluée automatiquement
-            </li>
-          </ul>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <div style="display: flex; align-items: flex-start; gap: 0.7rem; background: var(--border); border-radius: 0.5rem; padding: 0.7rem 0.8rem;">
+              <div style="background: #193c2e; color: #4ade80; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; border-radius: 0.4rem; font-size: 0.95rem; margin-right: 0.3rem;">
+                <i class="fa fa-code"></i>
+              </div>
+              <div>
+                <div style="font-size: 0.95rem; font-weight: 500; color: #bcbcbc;">Langages autorisés :</div>
+                <div style="font-size: 0.98rem; font-weight: 600; color: #fff; margin-top: 0.1rem;">Python, Java, C++,<br>JavaScript</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: flex-start; gap: 0.7rem; background: var(--border); border-radius: 0.5rem; padding: 0.7rem 0.8rem;">
+              <div style="background: #3a2e19; color: #FFD600; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; border-radius: 0.4rem; font-size: 0.95rem; margin-right: 0.3rem;">
+                <i class="fa fa-clock"></i>
+              </div>
+              <div>
+                <div style="font-size: 0.95rem; font-weight: 500; color: #bcbcbc;">Temps d'exécution max :</div>
+                <div style="font-size: 0.98rem; font-weight: 600; color: #fff; margin-top: 0.1rem;">2 secondes par test</div>
+              </div>
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -189,19 +179,20 @@
           Résolvez les défis pour gagner des points et grimper le classement
         </p>
         <!-- Search & Filters -->
-        <div class="flex flex-col sm:flex-row gap-2 md:gap-3 mb-6 md:mb-8">
-          <div class="flex-1 relative">
+        <div class="flex flex-row sm:flex-row gap-2 md:gap-3 mb-6 md:mb-8">
+          <div class="flex-1 relative flex items-center gap-2 bg-card border border-main text-main rounded-lg px-4 py-2">
+            <i class="w-4 h-4 stroke-current" data-lucide="search"></i>
             <input
               type="text"
-              placeholder="🔍 Rechercher un challenge par mot-clé..."
-              class="w-full bg-card border border-main text-main rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+              placeholder="Rechercher un challenge par mot-clé..."
+              class="w-full placeholder-gray-400 focus:outline-none"
             />
           </div>
           <div class="flex gap-2">
             <button
               class="custom-btn bg-primary text-white px-4 py-2 rounded-lg font-semibold hover-bg-primary-dark"
             >
-              &#128269; Tous
+              Tous
             </button>
             <button
               class="custom-btn bg-card text-main px-4 py-2 rounded-lg font-semibold border border-main hover-bg-primary-dark"

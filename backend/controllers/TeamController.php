@@ -39,7 +39,7 @@ class TeamController extends Controller {
     public function getAll() {
         try {
             $this->validateMethod('GET');
-            $teams = $this->team->getAll();
+            $teams = $this->team->getAll($this->tokenManager->getCurrentUserId());
 
             $this->jsonResponse([
                 'success' => true,
@@ -108,7 +108,7 @@ class TeamController extends Controller {
         try {
             $this->validateMethod('GET');
 
-            $team = $this->team->find($id);
+            $team = $this->team->find($id, $this->tokenManager->getCurrentUserId());
             if (!$team) {
                 throw new Exception('Équipe non trouvée');
             }

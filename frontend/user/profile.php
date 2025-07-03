@@ -18,7 +18,7 @@
     </div>
     <?php require_once '../includes/user/header.php'; ?>
     <!-- Container -->
-    <div class="container mx-auto flex gap-6 flex-row justify-between max-md:flex-col mb-30">
+    <div class="container mx-auto flex gap-6 flex-row justify-between max-md:flex-col mb-30 px-4">
 
         <!-- Sidebar (Profil) -->
         <aside class="w-1/3 max-md:w-full rounded-lg shadow-lg flex flex-col gap-6">

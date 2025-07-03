@@ -20,14 +20,21 @@ class Team
      * Récupère toutes les équipes
      * @return array Liste des équipes
      */
-    public function getAll()
+    public function getAll($userId)
     {
         try {
             $query = "SELECT * FROM {$this->table} ORDER BY name";
             $stmt = $this->db->prepare($query);
             $stmt->execute();
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($result as &$team) {
+                unset($team['invitation_code']);
+            }
+
+
+            return $result;
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des équipes: ' . $e->getMessage());
             return [];
@@ -39,15 +46,23 @@ class Team
      * @param int $id ID de l'équipe
      * @return array|bool Les données de l'équipe ou false si non trouvée
      */
-    public function find($id)
+    public function find($id, $userId = null)
     {
         try {
             $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$result) {
+                return false;
+            }
+            if ($userId && !$this->isMember($id, $userId)) {
+                
+                unset($result['invitation_code']);
+            }
 
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result;
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération de l\'équipe: ' . $e->getMessage());
             return false;
@@ -135,6 +150,7 @@ class Team
                 $memberStmt->execute();
 
                 $this->db->commit();
+                logActivity('create', 'Creation d\'une equipe', $teamId, $leaderId);
 
                 return $teamId;
             } catch (Exception $e) {
@@ -419,7 +435,7 @@ class Team
             $stmtCheck->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
             $stmtCheck->bindParam(':user_id', $userId, PDO::PARAM_INT);
             $stmtCheck->execute();
-            
+
             if ((int)$stmtCheck->fetchColumn() > 0) {
                 throw new Exception('Une demande d\'adhésion est déjà en attente pour cette équipe', 400);
             }
@@ -451,6 +467,7 @@ class Team
             $stmt->execute();
 
             error_log("Demande d'adhésion insérée pour teamId: $teamId, userId: $userId");
+            logActivity('join', 'User ' . $userId . 'Demande d\'adhésion a une equipe', $teamId, $userId);
 
             return true;
         } catch (Exception $e) {
@@ -587,6 +604,7 @@ class Team
             $updateTeamStmt->execute();
 
             $this->db->commit();
+            logActivity('join', 'Changement du leader de votre equipe', $teamId, $newLeaderId);
 
             return true;
         } catch (Exception $e) {
@@ -618,7 +636,7 @@ class Team
             }
 
             // Récupérer les membres acceptés
-            $query = "SELECT u.id, u.username, u.fullname
+            $query = "SELECT u.id, u.username, u.fullname, u.email, u.special_comp, u.study_level
                       FROM team_members tm 
                       JOIN users u ON tm.user_id = u.id 
                       WHERE tm.team_id = :team_id";
@@ -728,6 +746,7 @@ class Team
             $deleteRequestStmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
             $deleteRequestStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
             $deleteRequestStmt->execute();
+            logActivity('join', 'User ' . $userId . 'Adhesion a une equipe via code invitation ', $teamId, $userId);
 
             return $teamId;
         } catch (Exception $e) {

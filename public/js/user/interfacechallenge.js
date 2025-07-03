@@ -1,4 +1,22 @@
-document.addEventListener('DOMContentLoaded', function() {
+console.log('interfacechallenge.js loaded');
+document.addEventListener('DOMContentLoaded', async function() {
+    const challenge_id = window.location.pathname.split('/').pop();
+    const challenge = await apiRequest(`/challenges/${challenge_id}`, {
+        method: "GET",
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    });
+
+    console.log('Challenge:', challenge);
+    // Pour accéder à la liste des snippets :
+    if (challenge.snippets) {
+        challenge.snippets.forEach(snippet => {
+            console.log('Snippet:', snippet);
+            // Affiche ou utilise le snippet dans l'interface
+        });
+    }
     // Mapping Monaco Editor
     const monacoLangMap = {
         bash: 'shell',
@@ -65,23 +83,115 @@ document.addEventListener('DOMContentLoaded', function() {
         dropdown.classList.add('hidden');
     });
 
+    if (challenge && challenge.data && challenge.data.snippets && challenge.data.snippets.length > 0) {
+        const snippet = challenge.data.snippets[0];
+        const availableLangs = Object.keys(snippet).filter(lang =>
+            ['bash','java','js','python','c','cpp','csharp','php','ruby','typescript','pascal'].includes(lang)
+            && snippet[lang] && snippet[lang].trim() !== ''
+        );
 
+        // Génère les boutons dans le menu déroulant
+        const dropdownOptions = document.getElementById('languageDropdownOptions');
+        if (dropdownOptions) {
+            dropdownOptions.innerHTML = availableLangs.map(lang =>
+                `<button class="w-full px-4 py-2 text-sm text-white hover:bg-[#2D3B4E] flex items-center" data-language="${lang}">
+                    <i class="ri-code-line mr-2"></i>${lang.toUpperCase()}
+                </button>`
+            ).join('');
+        }
 
-document.getElementById('runCode').addEventListener('click', async () => {
-    const code = editor.getValue();
-    const langKey = document.getElementById('languageSelector').querySelector('span').textContent.trim().toLowerCase();
+        // Met à jour le mapping des templates pour Monaco
+        const templates = {};
+        availableLangs.forEach(lang => {
+            // Remap 'js' en 'javascript' pour Monaco si besoin
+            if (lang === 'js') {
+                templates['javascript'] = snippet[lang];
+            } else {
+                templates[lang] = snippet[lang];
+            }
+        });
+        window.challengeTemplates = templates;
 
-    const result = await apiRequest('/piston', {
-        method: 'POST',
-        body: JSON.stringify({
-            language: langKey,
-            code: code
-        })
+        // Met à jour le label du sélecteur avec le premier langage dispo
+        const label = document.getElementById('languageSelector').querySelector('span');
+        if (label && availableLangs.length > 0) {
+            label.textContent = availableLangs[0].toUpperCase();
+            // Initialise Monaco avec ce template
+            const monacoLangMap = {
+                bash: 'shell',
+                java: 'java',
+                js: 'javascript',
+                javascript: 'javascript',
+                python: 'python',
+                c: 'c',
+                cpp: 'cpp',
+                csharp: 'csharp',
+                php: 'php',
+                ruby: 'ruby',
+                typescript: 'typescript',
+                pascal: 'pascal',
+                golang: 'go'
+            };
+            window.initMonaco(monacoLangMap[availableLangs[0]] || 'plaintext', templates[availableLangs[0]] || '');
+        }
+
+        // Ajoute les listeners sur les nouveaux boutons
+        const options = document.querySelectorAll('#languageDropdownOptions button[data-language]');
+        options.forEach(option => {
+            option.addEventListener('click', function () {
+                const langKey = this.getAttribute('data-language');
+                const monacoLangMap = {
+                    bash: 'shell',
+                    java: 'java',
+                    js: 'javascript',
+                    javascript: 'javascript',
+                    python: 'python',
+                    c: 'c',
+                    cpp: 'cpp',
+                    csharp: 'csharp',
+                    php: 'php',
+                    ruby: 'ruby',
+                    typescript: 'typescript',
+                    pascal: 'pascal',
+                    golang: 'go'
+                };
+                const monacoLang = monacoLangMap[langKey] || 'plaintext';
+                const template = templates[langKey] || templates['javascript'] || '// Pas de template pour ce langage';
+                label.textContent = langKey.toUpperCase();
+                window.initMonaco(monacoLang, template);
+                document.getElementById('languageDropdown').classList.add('hidden');
+            });
+        });
+    }
+
+    document.getElementById('runCode').addEventListener('click', async () => {
+        const code = editor.getValue();
+        const langKey = document.getElementById('languageSelector').querySelector('span').textContent.trim().toLowerCase();
+
+        const result = await apiRequest('/piston', {
+            method: 'POST',
+            body: JSON.stringify({
+                language: langKey,
+                code: code
+            })
+        });
+
+        console.log(result);
+        document.getElementById('consoleOutput').innerHTML = `
+            <pre>${result.output || result.error || 'Aucune sortie'}</pre>
+        `;
     });
 
-    console.log(result);
-    document.getElementById('consoleOutput').innerHTML = `
-        <pre>${result.output || result.error || 'Aucune sortie'}</pre>
-    `;
-});
+    if (challenge && challenge.data) {
+        // Titre
+        document.getElementById('challenge-title').textContent = challenge.data.title || '';
+
+        // Description (objectif)
+        document.getElementById('challenge-description').textContent = challenge.data.description || '';
+
+        // Instructions (règles)
+        // Si tu veux garder la mise en forme (sauts de ligne), utilise innerHTML et remplace les \n par <br>
+        const instructions = challenge.data.instructions ? challenge.data.instructions.replace(/\n/g, '<br>') : '';
+        document.getElementById('challenge-instructions').innerHTML = instructions;
+    }
 });

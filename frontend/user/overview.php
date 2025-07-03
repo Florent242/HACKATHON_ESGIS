@@ -34,10 +34,7 @@
             </div>                
                     
         </div>
-        <button id="invit" class="flexDivIcon" onclick="invitUser()">
-            <i data-lucide="user-plus"></i>
-            <p>Inviter un utilisateur</p>
-        </button>
+        
     </section>
 
     <!-- Les bouttons de navigations en rapport avec les infos de la team -->

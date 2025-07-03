@@ -115,20 +115,22 @@
     <?php require_once '../includes/user/header.php'; ?>
     
     <?php
+    $challengeTemplates = [];
+
     // Templates de code par défaut
-    $challengeTemplates = [
-        "bash" => "#!/bin/bash\n# Votre code Bash ici\necho \"Hello World\"",
-        "python" => "# Votre code Python ici\nprint(\"Hello World\")",
-        "java" => "// Votre code Java ici\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello World\");\n    }\n}",
-        "javascript" => "// Votre code JavaScript ici\nconsole.log(\"Hello World\");",
-        "c" => "// Votre code C ici\n#include <stdio.h>\n\nint main() {\n    printf(\"Hello World\");\n    return 0;\n}",
-        "cpp" => "// Votre code C++ ici\n#include <iostream>\n\nint main() {\n    std::cout << \"Hello World\";\n    return 0;\n}",
-        "php" => "<?php\n// Votre code PHP ici\necho \"Hello World\";",
-        "ruby" => "# Votre code Ruby ici\nputs \"Hello World\"",
-        "typescript" => "// Votre code TypeScript ici\nconsole.log(\"Hello World\");",
-        "pascal" => "// Votre code Pascal ici\nprogram HelloWorld;\nbegin\n  writeln('Hello World');\nend.",
-        "golang" => "// Votre code Go ici\npackage main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Hello World\")\n}"
-    ];
+    // $challengeTemplates = [
+    //     "bash" => "#!/bin/bash\n# Votre code Bash ici\necho \"Hello World\"",
+    //     "python" => "# Votre code Python ici\nprint(\"Hello World\")",
+    //     "java" => "// Votre code Java ici\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello World\");\n    }\n}",
+    //     "javascript" => "// Votre code JavaScript ici\nconsole.log(\"Hello World\");",
+    //     "c" => "// Votre code C ici\n#include <stdio.h>\n\nint main() {\n    printf(\"Hello World\");\n    return 0;\n}",
+    //     "cpp" => "// Votre code C++ ici\n#include <iostream>\n\nint main() {\n    std::cout << \"Hello World\";\n    return 0;\n}",
+    //     "php" => "<?php\n// Votre code PHP ici\necho \"Hello World\";",
+    //     "ruby" => "# Votre code Ruby ici\nputs \"Hello World\"",
+    //     "typescript" => "// Votre code TypeScript ici\nconsole.log(\"Hello World\");",
+    //     "pascal" => "// Votre code Pascal ici\nprogram HelloWorld;\nbegin\n  writeln('Hello World');\nend.",
+    //     "golang" => "// Votre code Go ici\npackage main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Hello World\")\n}"
+    // ];
     ?>
     <script>
         window.challengeTemplates = <?php echo json_encode($challengeTemplates, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
@@ -138,7 +140,7 @@
         <!-- Section Objectif et Règles -->
         <div class="bg-gradient-to-br from-[#030B20] to-[#030F2A] rounded p-4 border border-[#1E293B]">
             <!-- Nom du challenge -->
-            <h1 class="text-2xl font-bold text-[#3B82F6] mb-4">Défense Galactique</h1>
+            <h1 id="challenge-title" class="text-2xl font-bold text-[#3B82F6] mb-4"></h1>
             <div class="space-y-4">
                 <div class="flex items-center">
                     <div class="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center mr-2">
@@ -146,25 +148,14 @@
                     </div>
                     <h2 class="text-lg font-semibold text-white">Objectif</h2>
                 </div>
-                <div class="mt-2 text-white text-sm">
-                    Dans ce challenge, votre mission est de défendre votre base contre des vagues de vaisseaux ennemis. 
-                    Analysez les informations fournies à chaque tour pour prendre la meilleure décision.
-                </div>
+                <div id="challenge-description" class="mt-2 text-white text-sm"></div>
                 <div class="flex items-center">
                     <div class="w-6 h-6 rounded-full bg-[#22C55E] flex items-center justify-center mr-2">
                         <i class="ri-check-line text-black"></i>
                     </div>
                     <h2 class="text-lg font-semibold text-white">Règles</h2>
                 </div>
-                <div class="text-white space-y-4">
-                    <p>Utilisez les variables fournies pour identifier et cibler l'ennemi le plus proche.</p>
-                    <ul class="list-disc pl-6 space-y-2">
-                        <li><span class="highlighted">enemy1</span> : nom de l'ennemi 1</li>
-                        <li><span class="highlighted">dist1</span> : distance de l'ennemi 1</li>
-                        <li><span class="highlighted">enemy2</span> : nom de l'ennemi 2</li>
-                        <li><span class="highlighted">dist2</span> : distance de l'ennemi 2</li>
-                    </ul>
-                </div>
+                <div id="challenge-instructions" class="text-white space-y-4"></div>
             </div>
         </div>
 
@@ -177,12 +168,8 @@
                         <i class="ri-arrow-down-s-line ml-2"></i>
                     </button>
                     <div id="languageDropdown" class="hidden absolute top-full left-0 mt-1 w-48 bg-[#1E293B] rounded shadow-lg border border-[#2D3B4E] z-10">
-                        <div class="py-1">
-                            <?php foreach ($challengeTemplates as $lang => $template): ?>
-                                <button class="w-full px-4 py-2 text-sm text-white hover:bg-[#2D3B4E] flex items-center" data-language="<?= $lang ?>">
-                                    <i class="ri-code-line mr-2"></i><?= ucfirst($lang) ?>
-                                </button>
-                            <?php endforeach; ?>
+                        <div class="py-1" id="languageDropdownOptions">
+                            <!-- Les boutons seront injectés en JS -->
                         </div>
                     </div>
                 </div>

@@ -13,7 +13,7 @@
         </div>
         <h1 class="text-4xl font-bold text-gray-800 mb-2">403 - Accès refusé</h1>
         <p class="text-gray-600 mb-4">Vous n'avez pas les droits nécessaires pour accéder à cette ressource.</p>
-        <p class="text-gray-500 mb-4">Si vous pensez qu'il s'agit d'une erreur, veuillez contacter les administrateurs sur notre <a href="#" class="text-blue-600 underline">serveur Discord</a>.</p>
+        <p class="text-gray-500 mb-4">Si vous pensez qu'il s'agit d'une erreur, veuillez contacter les administrateurs sur notre <a href="https://discord.gg/FbztK5Uagd" class="text-blue-600 underline">serveur Discord</a>.</p>
         <a href="/" class="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Retour à l'accueil</a>
     </div>
     <script>lucide.createIcons();</script>

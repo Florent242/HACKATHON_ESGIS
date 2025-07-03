@@ -229,7 +229,6 @@ async function joinTeamViaCode(invitationCode) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            showNotification('Erreur lors de la tentative de rejoindre l\'équipe', errorText.error, 'error');
             throw new Error(`Erreur HTTP ${response.status}`);
         }
 
@@ -244,7 +243,6 @@ async function joinTeamViaCode(invitationCode) {
         }
     } catch (error) {
         console.error('Erreur dans joinTeamViaCode:', error.error);
-        showNotification('Erreur lors de la tentative de rejoindre l\'équipe', error.error, 'error');
         return { success: false, error: error.error || 'Erreur de réseau' };
     }
 }
@@ -269,7 +267,6 @@ async function sendJoinRequest(teamName) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            showNotification('Erreur lors de l\'envoi de la demande', errorText.error, 'error');
             throw new Error(`Erreur HTTP ${response.status}`);
         }
 
@@ -282,7 +279,6 @@ async function sendJoinRequest(teamName) {
         }
     } catch (error) {
         console.error('Erreur dans sendJoinRequest:', error.error);
-        showNotification('Erreur lors de l\'envoi de la demande', error.error, 'error');
         return { success: false, error: error.error || 'Erreur de réseau' };
     }
 }

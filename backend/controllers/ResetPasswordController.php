@@ -1,4 +1,5 @@
 <?php
+
 namespace Auth\Controller;
 
 use Exception;
@@ -10,12 +11,14 @@ require_once __DIR__ . '/Controller.php';
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 
-class ResetPasswordController extends Controller {
+class ResetPasswordController extends Controller
+{
     private $user;
     private $db;
     private $mailer;
 
-    public function __construct($db, $tokenManager) {
+    public function __construct($db, $tokenManager)
+    {
         parent::__construct($tokenManager);
         $this->db = $db;
         $this->user = new User($this->db);
@@ -23,7 +26,8 @@ class ResetPasswordController extends Controller {
         $this->setupMailer();
     }
 
-    private function setupMailer(): void {
+    private function setupMailer(): void
+    {
         $this->mailer->isSMTP();
         $this->mailer->Host = $_ENV['SMTP_HOST'] ?? 'smtp.gmail.com';
         $this->mailer->SMTPAuth = true;
@@ -35,10 +39,11 @@ class ResetPasswordController extends Controller {
         $this->mailer->CharSet = 'UTF-8';
     }
 
-    public function requestReset(): void {
+    public function requestReset(): void
+    {
         try {
             $this->validateMethod('POST');
-            
+
             $input = json_decode(file_get_contents('php://input'), true);
             if ($input === null) {
                 throw new Exception('Format JSON invalide');
@@ -69,7 +74,7 @@ class ResetPasswordController extends Controller {
             ]);
 
             $resetLink = "http://localhost/reset-password?token=" . $token;
-            
+
             $this->mailer->addAddress($email);
             $this->mailer->Subject = 'Réinitialisation de votre mot de passe - ESGIS Hackathon';
             $this->mailer->Body = "Bonjour {$user['prenom']},\n\n"
@@ -87,7 +92,6 @@ class ResetPasswordController extends Controller {
                 'success' => true,
                 'message' => 'Si votre email est enregistré, vous recevrez les instructions de réinitialisation.'
             ]);
-
         } catch (MailerException $e) {
             throw new Exception('Erreur lors de l\'envoi de l\'email: ' . $e->getMessage());
         } catch (Exception $e) {
@@ -95,10 +99,11 @@ class ResetPasswordController extends Controller {
         }
     }
 
-    public function resetPassword(): void {
+    public function resetPassword(): void
+    {
         try {
             $this->validateMethod('POST');
-            
+
             $input = json_decode(file_get_contents('php://input'), true);
             if ($input === null) {
                 throw new Exception('Format JSON invalide');
@@ -130,7 +135,6 @@ class ResetPasswordController extends Controller {
                 'success' => true,
                 'message' => 'Votre mot de passe a été réinitialisé avec succès'
             ]);
-
         } catch (Exception $e) {
             throw new Exception($e->getMessage());
         }

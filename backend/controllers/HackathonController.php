@@ -1,27 +1,30 @@
 <?php
+
 namespace Auth\Controller;
 
 use Exception;
 use Auth\Model\Hackathon;
 
-if(!defined('CONFIG_INCLUDED')) {
+if (!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
 }
-if(!defined('FUNCTIONS_INCLUDED')) {
+if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/../includes/functions.php';
 }
-if(!class_exists('Hackathon')) {
+if (!class_exists('Hackathon')) {
     require_once __DIR__ . '/../models/Hackathon.php';
 }
-if(!class_exists('Controller')) {
+if (!class_exists('Controller')) {
     require_once __DIR__ . '/Controller.php';
 }
 
-class HackathonController extends Controller {
+class HackathonController extends Controller
+{
     private $hackathon;
     private $db;
 
-    public function __construct($db, $tokenManager) {
+    public function __construct($db, $tokenManager)
+    {
         parent::__construct($tokenManager);
         $this->db = $db;
         $this->hackathon = new Hackathon($this->db);
@@ -30,7 +33,8 @@ class HackathonController extends Controller {
     /**
      * Crée un nouveau hackathon
      */
-    public function create() {
+    public function create()
+    {
         try {
             $this->validateMethod('POST');
 
@@ -62,7 +66,6 @@ class HackathonController extends Controller {
                 'message' => 'Hackathon créé avec succès',
                 'data' => ['id' => $hackathonId, 'name' => $data['name']]
             ]);
-
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
@@ -74,7 +77,8 @@ class HackathonController extends Controller {
     /**
      * Récupère tous les hackathons
      */
-    public function getAll() {
+    public function getAll()
+    {
         try {
             $this->validateMethod('GET');
             $hackathons = $this->hackathon->getAll();
@@ -91,29 +95,65 @@ class HackathonController extends Controller {
         }
     }
 
-    public function checkParticipation($userId, $hackathonId) {
+    public function checkParticipation($userId, $hackathonId)
+    {
         try {
+            // Vérifier si l'utilisateur est participant au hackathon
             $query = "SELECT COUNT(*) FROM hackathon_participants 
-                      WHERE user_id = :user_id 
-                      AND hackathon_id = :hackathon_id 
-                      AND participation_status = 'accepted'";
-            
+                     WHERE user_id = :user_id 
+                     AND hackathon_id = :hackathon_id 
+                     AND participation_status = 'accepted'";
+
             $stmt = $this->db->prepare($query);
             $stmt->execute([
                 ':user_id' => (int)$userId,
                 ':hackathon_id' => (int)$hackathonId
             ]);
-            
-            return $stmt->fetchColumn() > 0;
+            if (!$stmt->fetchColumn() > 0) {
+                return [
+                    'success' => false,
+                    'message' => 'Accès non autorisé ! Vous devez être participant au hackathon pour accéder à cette ressource.'
+                ];
+            }
+
+            // Vérifier si l'utilisateur est membre d'une equipe participant au hackathon
+            $query = "SELECT COUNT(*) FROM hackathon_teams ht
+                     INNER JOIN hackathon_participants hp ON ht.team_id = hp.team_id
+                     WHERE ht.hackathon_id = :hackathon_id 
+                     AND hp.user_id = :user_id";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([
+                ':hackathon_id' => (int)$hackathonId,
+                ':user_id' => (int)$userId
+            ]);
+
+            if (!$stmt->fetchColumn() > 0) {
+                return [
+                    'success' => false,
+                    'message' => 'Accès non autorisé ! Vous devez être membre d\'une equipe participant au hackathon pour accéder à cette ressource.'
+                ];
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Accès autorisé !'
+            ];
         } catch (Exception $e) {
-            throw new Exception('Erreur lors de la vérification de participation: ' . $e->getMessage(), 500);
+            throw new Exception(
+                'Erreur lors de la vérification de participation: '
+                    // pour debuger
+                    . $e->getMessage(),
+                500
+            );
         }
     }
 
     /**
      * Récupère les hackathons actifs
      */
-    public function getActive() {
+    public function getActive()
+    {
         try {
             $this->validateMethod('GET');
             $hackathons = $this->hackathon->getActive();
@@ -133,7 +173,8 @@ class HackathonController extends Controller {
     /**
      * Récupère les hackathons passés
      */
-    public function getPast() {
+    public function getPast()
+    {
         try {
             $this->validateMethod('GET');
             $hackathons = $this->hackathon->getPast();
@@ -153,7 +194,8 @@ class HackathonController extends Controller {
     /**
      * Récupère les hackathons futurs
      */
-    public function getFuture() {
+    public function getFuture()
+    {
         try {
             $this->validateMethod('GET');
             $hackathons = $this->hackathon->getFuture();
@@ -174,7 +216,8 @@ class HackathonController extends Controller {
      * Récupère un hackathon par son ID
      * @param int $id ID du hackathon
      */
-    public function get($id) {
+    public function get($id)
+    {
         try {
             $this->validateMethod('GET');
 
@@ -199,7 +242,8 @@ class HackathonController extends Controller {
      * Met à jour un hackathon
      * @param int $id ID du hackathon
      */
-    public function update($id) {
+    public function update($id)
+    {
         try {
             $this->validateMethod('POST');
 
@@ -234,7 +278,8 @@ class HackathonController extends Controller {
      * Supprime un hackathon
      * @param int $id ID du hackathon
      */
-    public function delete($id) {
+    public function delete($id)
+    {
         try {
             $this->validateMethod('POST');
 
@@ -261,7 +306,8 @@ class HackathonController extends Controller {
      * Récupère les équipes d'un hackathon
      * @param int $id ID du hackathon
      */
-    public function getTeams($id) {
+    public function getTeams($id)
+    {
         try {
             $this->validateMethod('GET');
 
@@ -283,7 +329,8 @@ class HackathonController extends Controller {
      * Récupère les projets d'un hackathon
      * @param int $id ID du hackathon
      */
-    public function getProjects($id) {
+    public function getProjects($id)
+    {
         try {
             $this->validateMethod('GET');
 
@@ -305,7 +352,8 @@ class HackathonController extends Controller {
      * Récupère les statistiques d'un hackathon
      * @param int $id ID du hackathon
      */
-    public function getStats($id) {
+    public function getStats($id)
+    {
         try {
             $this->validateMethod('GET');
 

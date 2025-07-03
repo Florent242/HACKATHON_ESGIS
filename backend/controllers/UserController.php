@@ -5,7 +5,6 @@ namespace Auth\Controller;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
-use Auth\Model\Participant; // Ajoutez cette ligne
 use Auth\Model\User; // Assurez-vous d'importer le modèle User
 use Auth\Model\Database; // Assurez-vous d'importer le modèle Database
 use Exception;
@@ -1289,7 +1288,7 @@ class UserController extends Controller
 
             // Exécution de la requête sans bindParam
             $stmt->execute();
-            $nextHackathon = $stmt->fetch(PDO::FETCH_ASSOC);
+            $nextHackathon = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             if ($nextHackathon) {
                 $this->jsonResponse([
@@ -1298,7 +1297,7 @@ class UserController extends Controller
                 ]);
             } else {
                 $this->jsonResponse([
-                    'success' => true,
+                    'success' => false,
                     'message' => 'Aucun événement futur trouvé.'
                 ]);
             }

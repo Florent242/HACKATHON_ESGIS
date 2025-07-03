@@ -1,15 +1,18 @@
 <?php
+
 namespace Auth\Model;
 
 use Exception;
 use PDO;
 use PDOException;
 
-class Hackathon {
+class Hackathon
+{
     private $db;
     private $table = 'hackathons';
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->db = $db;
     }
 
@@ -17,7 +20,8 @@ class Hackathon {
      * Récupère tous les hackathons
      * @return array Liste des hackathons
      */
-    public function getAll() {
+    public function getAll()
+    {
         try {
             $query = "SELECT * FROM {$this->table} ORDER BY start_date DESC";
             $stmt = $this->db->prepare($query);
@@ -35,7 +39,8 @@ class Hackathon {
      * @param int $id ID du hackathon
      * @return array|bool Les données du hackathon ou false si non trouvé
      */
-    public function find($id) {
+    public function find($id)
+    {
         try {
             $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
             $stmt = $this->db->prepare($query);
@@ -54,7 +59,8 @@ class Hackathon {
      * @param array $data Les données du hackathon
      * @return int|bool L'ID du nouveau hackathon ou false si erreur
      */
-    public function create($data) {
+    public function create($data)
+    {
         try {
             // Validation des données
             if (!isset($data['name']) || empty($data['name'])) {
@@ -118,7 +124,8 @@ class Hackathon {
      * @param array $data Les données à mettre à jour
      * @return bool true si succès, sinon false
      */
-    public function update($id, $data) {
+    public function update($id, $data)
+    {
         try {
             // Vérification si le hackathon existe
             $hackathon = $this->find($id);
@@ -178,7 +185,8 @@ class Hackathon {
      * @param int $id ID du hackathon
      * @return bool true si succès, sinon false
      */
-    public function delete($id) {
+    public function delete($id)
+    {
         try {
             // Vérification si le hackathon existe
             $hackathon = $this->find($id);
@@ -201,7 +209,8 @@ class Hackathon {
      * Récupère les hackathons actifs (en cours)
      * @return array Liste des hackathons actifs
      */
-    public function getActive() {
+    public function getActive()
+    {
         try {
             $now = date('Y-m-d H:i:s');
             $query = "SELECT * FROM {$this->table} WHERE start_date <= :now AND end_date >= :now ORDER BY start_date ASC";
@@ -220,7 +229,8 @@ class Hackathon {
      * Récupère les hackathons passés
      * @return array Liste des hackathons passés
      */
-    public function getPast() {
+    public function getPast()
+    {
         try {
             $now = date('Y-m-d H:i:s');
             $query = "SELECT * FROM {$this->table} WHERE end_date < :now ORDER BY end_date DESC";
@@ -239,7 +249,8 @@ class Hackathon {
      * Récupère les hackathons futurs
      * @return array Liste des hackathons futurs
      */
-    public function getFuture() {
+    public function getFuture()
+    {
         try {
             $now = date('Y-m-d H:i:s');
             $query = "SELECT * FROM {$this->table} WHERE start_date > :now ORDER BY start_date ASC";
@@ -259,7 +270,8 @@ class Hackathon {
      * @param int $id ID du hackathon
      * @return array Liste des équipes
      */
-    public function getTeams($id) {
+    public function getTeams($id)
+    {
         try {
             $query = "SELECT t.* FROM teams t WHERE t.hackathon_id = :hackathon_id ORDER BY t.created_at";
             $stmt = $this->db->prepare($query);
@@ -274,11 +286,29 @@ class Hackathon {
     }
 
     /**
+     * Recuperer les equipe participantes d'un hackathon
+     */
+    public function getHackathonParticipants($id) {
+        try {
+            $query = "SELECT hp.* FROM hackathon_participants hp WHERE hp.hackathon_id = :hackathon_id AND hp.participation_status = 'accepted' ORDER BY hp.created_at";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':hackathon_id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }catch (Exception $e) {
+            error_log('Erreur lors de la récupération des participants: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Récupère les projets d'un hackathon
      * @param int $id ID du hackathon
      * @return array Liste des projets
      */
-    public function getProjects($id) {
+    public function getProjects($id)
+    {
         try {
             $query = "SELECT p.* FROM projects p WHERE p.hackathon_id = :hackathon_id ORDER BY p.created_at";
             $stmt = $this->db->prepare($query);
@@ -297,7 +327,8 @@ class Hackathon {
      * @param int $id ID du hackathon
      * @return array Statistiques du hackathon
      */
-    public function getStats($id) {
+    public function getStats($id)
+    {
         try {
             // Vérification si le hackathon existe
             $hackathon = $this->find($id);

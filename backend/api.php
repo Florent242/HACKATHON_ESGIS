@@ -26,6 +26,7 @@ use Auth\Controller\AdminController;
 use Auth\Model\TokenManager;
 use Piston\PistonRequest;
 use Piston\PistonExecutor;
+use Auth\Controller\ParticipantController;
 
 // ✅ Inclure une seule fois le fichier de configuration
 if (!defined('CONFIG_INCLUDED')) {
@@ -50,7 +51,8 @@ $files = [
     'ChallengeController' => '/controllers/ChallengeController.php',
     'EvaluationController' => '/controllers/EvaluationController.php',
     'AdminController'     => '/controllers/AdminController.php',
-    'TokenManager'        => '/models/TokenManager.php'
+    'TokenManager'        => '/models/TokenManager.php',
+    'ParticipantController' => '/controllers/ParticipantController.php',
 ];
 
 foreach ($files as $class => $path) {
@@ -65,7 +67,7 @@ configureCors();
 // Initialisation de la base de données
 $db = Database::getInstance()->getConnection();
 
-$key = 'your-secret-key';
+$key = $_ENV['JWT_SECRET'] ?? 'your-secret-key';
 
 // Pour les requêtes OPTIONS, renvoyer directement une réponse
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -80,6 +82,7 @@ $uri = str_replace('/api/', '/', $uri); // Nettoyer l'URI
 $request = explode('/', trim($uri, '/'));
 
 // Extraction des composants de l'URL
+// /endpoint/id/action
 $endpoint = $request[0] ?? '';
 $id = $request[1] ?? null;
 $action = $request[2] ?? null;
@@ -161,7 +164,7 @@ try {
                     $controller->resetPassword();
                     break;
                 default:
-                    throw new Exception('Endpoint non trouvé. - api ' . var_dump($uri), 404);
+                    throw new Exception('Endpoint non trouvé.', 404);
             }
             break;
 
@@ -291,6 +294,18 @@ try {
                     break;
             }
             break;
+
+        case 'participants':
+            $controller = new ParticipantController($db, $tokenManager);
+            // Route /api/participant
+            if ($method !== 'POST') {
+                throw new Exception('Méthode non autorisée', 405);
+            }
+            if ($id && $action === 'register-team' && $method === 'POST') {
+                // /api/participants/{hackathon_id}/register-team
+                $controller->registerTeam((int)$id, $input);
+            }
+            break;
         case 'check-participation':
             // Route /api/check-participation
             $controller = new HackathonController($db, $tokenManager);
@@ -330,8 +345,8 @@ try {
 
                 $isParticipant = $controller->checkParticipation($userId, $hackathon_id);
                 jsonResponse([
-                    'success' => $isParticipant,
-                    'message' => $isParticipant ? 'Accès autorisé' : 'Accès non autorisé'
+                    'success' => $isParticipant['success'],
+                    'message' => $isParticipant['message']
                 ], 200);
             } catch (Exception $e) {
                 jsonResponse([
@@ -824,26 +839,22 @@ try {
             break;
         case 'challenges':
             $controller = new ChallengeController($db, $tokenManager);
-            if ($id === null) {
-                // GET /api/challenges
-                if ($method === 'GET') {
-                    // GET /api/challenges
-                    $controller->getAll();
-                } elseif ($method === 'POST') {
-                    // POST || PUT /api/challenges
-                    $controller->create();
+            if ($id === 'dev') {
+                // GET /api/challenges/dev/{hackathon_id}/{user_id}
+                if ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3])) {
+                    $controller->getChallengesDev($request[2], $request[3]);
                 } else {
-                    throw new Exception('Méthode non autorisée', 405);
+                    throw new Exception('Méthode non autorisée ou paramètres invalides', 400); 
                 }
-            } elseif ($id === 'dev') {
-                // Nouvelle route /api/challenges/dev/{hackathon_id}
-                if ($method === 'GET' && isset($input['hackathon_id']) && is_numeric($input['hackathon_id'])) {
-                    $controller->getChallengesDev($input['hackathon_id']);
+            } elseif ($id === 'ctf') {
+                // GET /api/challenges/ctf/{hackathon_id}/{user_id}
+                if ($method === 'GET' && isset($action) && is_numeric($action) && isset($request[3]) && is_numeric($request[3])) {
+                    $controller->getChallengesCTF($action,$request[3]);
                 } else {
-                    throw new Exception('Méthode non autorisée ou ID invalide', 400);
+                    throw new Exception('Méthode non autorisée ou paramètres invalides', 400);
                 }
             } elseif ($id === 'solves') {
-                // Nouvelle route /api/challenges/solves
+                // GET /api/challenges/solves
                 if ($method === 'GET') {
                     // GET /api/challenges/solves
                     $controller->getSolvesCount();
@@ -856,12 +867,6 @@ try {
                     if ($method === 'GET') {
                         // GET /api/challenges/{id}
                         $controller->get($id);
-                    } elseif ($method === 'POST' || $method === 'PUT') {
-                        // POST || PUT /api/challenges/{id}
-                        $controller->update($id);
-                    } elseif ($method === 'DELETE') {
-                        // DELETE /api/challenges/{id}
-                        $controller->delete($id);
                     } else {
                         throw new Exception('Méthode non autorisée', 405);
                     }

@@ -10,8 +10,7 @@
     <link rel="stylesheet" href="/css/styles/user/header.css">
     <link rel="stylesheet" href="/css/dist/output.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script defer src="/js/user/challenge_secu.js"></script>
-    
+    <script defer type="module" src="/js/user/challenge_secu.js"></script>
 </head>
 
 <body>
@@ -25,80 +24,108 @@
 
             <!-- Sidebar Filters -->
             <div class="filters-container">
-                <aside class="filters-sidebar">
-
+                <aside class="filters-sidebar bg-gray-900/80 backdrop-blur-sm border border-gray-800 rounded-xl p-5 shadow-lg">
                     <!-- Filtre global -->
-                    <div class="filter-group">
-                        <h2 style="display: flex; align-items: center; gap: 0.5rem;"> <i class="w-4 h-4 stroke-current" data-lucide="filter"></i> <span>Filters</span></h2>
+                    <div class="filter-group space-y-6">
+                        <div class="border-b border-gray-800 pb-4">
+                            <h2 class="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+                                <i class="w-5 h-5 text-blue-400" data-lucide="filter"></i>
+                                <span>Filtres</span>
+                            </h2>
 
-                        <!-- Difficulté sous forme de boutons -->
-                        <h3 style="display: flex; align-items: center; gap: 0.5rem;"> <i class="w-4 h-4 stroke-current" data-lucide="gauge"></i> <span>Difficulty</span></h3>
-                        <div class="filter-buttons" data-type="difficulty">
-                            <button class="filter-btn" id="easy" style="background-color: var(--green); color: var(--text); border-color: var(--green);">
-                                Easy
-                            </button>
-                            <button class="filter-btn" id="medium" style="background-color: var(--yellow); color: var(--text); border-color: var(--yellow);">
-                                Medium
-                            </button>
-                            <button class="filter-btn" id="hard" style="background-color: var(--red); color: var(--text); border-color: var(--red);">
-                                Hard
-                            </button>
-                            <button class="filter-btn" id="expert" style="background-color: var(--purple); color: var(--text); border-color: var(--purple);">
-                                Expert
-                            </button>
-                        </div>
+                            <!-- Difficulté -->
+                            <div class="mb-5">
+                                <h3 class="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                                    <i class="w-4 h-4 text-blue-400" data-lucide="gauge"></i>
+                                    <span>Niveau de difficulté</span>
+                                </h3>
+                                <div class="filter-buttons grid grid-cols-2 gap-2" data-type="difficulty">
+                                    <button class="filter-btn difficulty-filter text-sm py-1.5 px-3 rounded-lg" id="easy" data-difficulty="easy">
+                                        <span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                                        <span>Facile</span>
+                                    </button>
+                                    <button class="filter-btn difficulty-filter text-sm py-1.5 px-3 rounded-lg" id="medium" data-difficulty="medium">
+                                        <span class="w-2 h-2 rounded-full bg-yellow-500 mr-2"></span>
+                                        <span>Moyen</span>
+                                    </button>
+                                    <button class="filter-btn difficulty-filter text-sm py-1.5 px-3 rounded-lg" id="hard" data-difficulty="hard">
+                                        <span class="w-2 h-2 rounded-full bg-red-500 mr-2"></span>
+                                        <span>Difficile</span>
+                                    </button>
+                                    <button class="filter-btn difficulty-filter text-sm py-1.5 px-3 rounded-lg" id="expert" data-difficulty="expert">
+                                        <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
+                                        <span>Expert</span>
+                                    </button>
+                                </div>
+                            </div>
 
-                        <!-- Catégorie en liste -->
-                        <h3 style="display: flex; align-items: center; gap: 0.5rem;"> <i class="w-4 h-4 stroke-current" data-lucide="layers"></i> <span>Category</span></h3>
-                        <div class="filter-buttons" data-type="category">
-                            <button class="filter-btn">
-                                <i class="w-4 h-4 stroke-current" data-lucide="globe"></i>
-                                <span>Web</span>
-                            </button>
-                            <button class="filter-btn">
-                                <i class="w-4 h-4 stroke-current" data-lucide="code"></i>
-                                <span>Binary</span>
-                            </button>
-                            <button class="filter-btn">
-                                <i class="w-4 h-4 stroke-current" data-lucide="lock-keyhole"></i>
-                                <span>Crypto</span>
-                            </button>
-                            <button class="filter-btn">
-                                <i class="w-4 h-4 stroke-current" data-lucide="server"></i>
-                                <span>Network</span>
-                            </button>
-                            <button class="filter-btn">
-                                <i class="w-4 h-4 stroke-current" data-lucide="rotate-ccw"></i>
-                                <span>Reversing</span>
-                            </button>
-                            <button class="filter-btn">
-                                <i class="w-4 h-4 stroke-current" data-lucide="eye-off"></i>
-                                <span>Steganography</span>
-                            </button>
-                        </div>
-                        <br>
+                            <!-- Catégories -->
+                            <div class="mb-5">
+                                <h3 class="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                                    <i class="w-4 h-4 text-blue-400" data-lucide="layers"></i>
+                                    <span>Catégories</span>
+                                </h3>
+                                <div class="filter-buttons" data-type="category">
+                                    <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2" data-category="web">
+                                        <i class="w-4 h-4 text-blue-400" data-lucide="globe"></i>
+                                        <span>Web</span>
+                                    </button>
+                                    <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2" data-category="binary">
+                                        <i class="w-4 h-4 text-blue-400" data-lucide="code"></i>
+                                        <span>Binary</span>
+                                    </button>
+                                    <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2" data-category="crypto">
+                                        <i class="w-4 h-4 text-blue-400" data-lucide="lock-keyhole"></i>
+                                        <span>Crypto</span>
+                                    </button>
+                                    <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2" data-category="network">
+                                        <i class="w-4 h-4 text-blue-400" data-lucide="server"></i>
+                                        <span>Network</span>
+                                    </button>
+                                    <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2" data-category="reversing">
+                                        <i class="w-4 h-4 text-blue-400" data-lucide="rotate-ccw"></i>
+                                        <span>Reversing</span>
+                                    </button>
+                                    <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2" data-category="steganography">
+                                        <i class="w-4 h-4 text-blue-400" data-lucide="eye-off"></i>
+                                        <span>Steganography</span>
+                                    </button>
+                                    <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2" data-category="forensics">
+                                        <i class="w-4 h-4 text-blue-400" data-lucide="terminal"></i>
+                                        <span>Forensics</span>
+                                    </button>
+                                    <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2" data-category="pwn">
+                                        <i class="w-4 h-4 text-blue-400" data-lucide="shield"></i>
+                                        <span>PWN</span>
+                                    </button>
+                                </div>
+                            </div>
 
-                        <!-- Statut en liste -->
-                        <h3 style="display: flex; align-items: center; gap: 0.5rem;"> <i class="w-4 h-4 stroke-current" data-lucide="activity"></i> <span>Status</span></h3>
-                        <div class="filter-buttons" data-type="status">
-                            <button class="filter-btn">
-                                <i class="w-4 h-4 stroke-current" data-lucide="check-circle"></i>
-                                <span>Solved</span>
-                            </button>
-                            <button class="filter-btn">
-                                <i class="w-4 h-4 stroke-current" data-lucide="x-circle"></i>
-                                <span>Unsolved</span>
-                            </button>
+                            <!-- Statut -->
+                            <div class="mb-5">
+                                <h3 class="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                                    <i class="w-4 h-4 text-blue-400" data-lucide="activity"></i>
+                                    <span>Statut</span>
+                                </h3>
+                                <div class="filter-buttons" data-type="status">
+                                    <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2">
+                                        <i class="w-4 h-4 text-green-400" data-lucide="check-circle"></i>
+                                        <span>Résolu</span>
+                                    </button>
+                                    <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2">
+                                        <i class="w-4 h-4 text-red-400" data-lucide="x-circle"></i>
+                                        <span>Non résolu</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <br>
 
                         <!-- Bouton Clear Filters -->
-                        <button class="clear-filters bg-blue-600 text-white rounded-lg p-2">
-                            <i class="w-4 h-4 stroke-current" data-lucide="refresh-ccw"></i>
-                            Clear Filters
+                        <button class="clear-filters w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
+                            <i class="w-4 h-4" data-lucide="refresh-ccw"></i>
+                            <span>Réinitialiser les filtres</span>
                         </button>
                     </div>
-
                 </aside>
             </div>
 
@@ -155,8 +182,11 @@
                 <!-- Section header with filters -->
                 <div class="section-header">
                     <div class="filters-section">
-                        <div class="filter-btn-group">
-                            <button class="filter-btn active">All Challenges</button>
+                        <div class="inline-flex rounded-lg border border-gray-700 bg-gray-800 overflow-hidden">
+                            <button class="filter-btn px-4 py-2 text-sm font-medium text-gray-300 hover:bg-blue-700 transition-colors duration-200">
+                                Tous les défis
+                            </button>
+
                         </div>
                     </div>
                     <div class="sort-filter">
@@ -167,7 +197,7 @@
                                 <i class="w-4 h-4 stroke-current" data-lucide="chevron-down" style="color: var(--text-secondary);"></i>
                             </button>
                             <div class="sort-options text-center align-middle whitespace-nowrap flex-col items-start justify-start absolute top-[100%] right-0 bg-[#0f172a] border border-white/10 rounded-lg p-2 z-5" style="display: none;">
-                                <button class="sort-option active" data-direction="desc">Latest</button>    
+                                <button class="sort-option active" data-direction="desc">Latest</button>
                                 <button class="sort-option" data-direction="desc">Most Solved</button>
                                 <button class="sort-option" data-direction="asc">Difficulty</button>
                                 <button class="sort-option" data-direction="asc">Title</button>
@@ -183,14 +213,34 @@
                 </div>
 
                 <!-- Empty state -->
-                <div id="challenges-empty-state" class="w-full py-4 hidden items-center justify-center flex-col">
-                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-800/30 backdrop-blur-sm mb-4">
-                        <i data-lucide="file-text" class="w-6 h-6 stroke-current"></i>
+                <div id="challenges-empty-state" class="w-full py-12 hidden items-center justify-center flex-col animate-fade-in">
+                    <div class="relative mx-auto flex items-center justify-center">
+                        <!-- Effet de halo animé -->
+                        <div class="absolute inset-0 rounded-full bg-blue-500/10 blur-xl animate-pulse-slow"></div>
+                        <!-- Icône principale -->
+                        <div class="relative z-10 flex items-center justify-center h-20 w-20 rounded-2xl bg-gradient-to-br from-blue-600/20 to-blue-800/30 backdrop-blur-sm border border-blue-500/20 shadow-lg shadow-blue-500/10 mb-6 animate-pulse-slow">
+                            <i data-lucide="shield-question" class="w-10 h-10 text-blue-400"></i>
+                        </div>
                     </div>
-                    <h3 class="text-lg font-medium text-white mb-1">Aucun challenge trouvé</h3>
-                    <p class="text-gray-500 text-center">Aucun challenge disponible pour l'instant.</p>
-                </div>
 
+                    <h3 class="text-2xl font-bold text-white mb-2 text-center">Aucun challenge disponible</h3>
+                    <p class="text-gray-400 text-center max-w-md mb-6 leading-relaxed">
+                        Il n'y a pas encore de challenge de sécurité disponible pour le moment. Revenez bientôt pour découvrir de nouveaux défis passionnants !
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <a href="/user/hackathon"
+                            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2 group">
+                            <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-0.5"></i>
+                            Voir les hackathons
+                        </a>
+                        <button onclick="window.location.reload()"
+                            class="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2 group">
+                            <i data-lucide="refresh-ccw" class="w-4 h-4 transition-transform group-hover:rotate-180"></i>
+                            Actualiser
+                        </button>
+                    </div>
+                </div>
             </section>
         </div>
     </section>
@@ -261,7 +311,8 @@
                 <!-- Hint -->
                 <div class="bg-slate-800/50 p-4 rounded-lg text-sm text-gray-300 flex flex-col items-start gap-2 border border-yellow-500/30">
                     <div class="flex items-center gap-2"><i data-lucide="sparkles" class="w-5 h-5 text-yellow-300 mt-0.5"></i>Indice :</div>
-                    <p><strong class="text-gray-300" id="challenge-hint"></strong></p>
+                    <ul id="challenge-hint" class="text-gray-300" >
+                    </ul>
                 </div>
 
                 <!-- Submit flag -->
@@ -269,12 +320,14 @@
                     <h4 class="font-semibold mb-1 flex items-center gap-2 text-blue-400">
                         <i data-lucide="flag" class="w-5 h-5"></i> Soumettre Flag
                     </h4>
-                    <div class="flex gap-2">
-                        <input type="text" placeholder="EsgisHub{. . .}" class="flex-1 px-4 py-2 rounded-md bg-slate-900 text-sm text-white placeholder-gray-400 focus:outline-none border border-slate-700" />
-                        <button class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm">
-                            <i data-lucide="send" class="inline w-4 h-4 mr-1"></i> Soumettre Flag
-                        </button>
-                    </div>
+                    <form id="submit-flag-form">
+                        <div class="flex gap-2">
+                            <input type="text" placeholder="ESGISFLAG{. . .}" class="flex-1 px-4 py-2 rounded-md bg-slate-900 text-sm text-white placeholder-gray-400 focus:outline-none border border-slate-700" />
+                            <button class="px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm">
+                                <i data-lucide="send" class="inline w-4 h-4 mr-1"></i> Soumettre Flag
+                            </button>
+                        </div>
+                    </form>
                 </div>
 
             </div>

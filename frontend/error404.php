@@ -13,7 +13,7 @@
         </div>
         <h1 class="text-4xl font-bold text-gray-800 mb-2">404 - Page introuvable</h1>
         <p class="text-gray-600 mb-4">La page que vous recherchez n'existe pas ou a été déplacée.</p>
-        <p class="text-gray-500 mb-4">Si le problème persiste, contactez notre <a href="#" class="text-blue-600 underline">support Discord</a>.</p>
+        <p class="text-gray-500 mb-4">Si le problème persiste, contactez notre <a href="https://discord.gg/FbztK5Uagd" class="text-blue-600 underline">support Discord</a>.</p>
         <a href="/" class="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Retour à l'accueil</a>
     </div>
     <script>lucide.createIcons();</script>

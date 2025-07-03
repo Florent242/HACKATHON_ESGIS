@@ -654,6 +654,8 @@ const closeModal = async () => {
 };
 
 const invitUser = () => {
+
+    if(userConnected.id === team.leader_id){
     content = `
     <div id="invitModale">
                 <div style="margin-bottom:20px;" id="invitHeader">
@@ -685,44 +687,27 @@ const invitUser = () => {
     // Initialiser les icônes Lucide dans la modale
     lucide.createIcons();
     document.querySelector('#invitClose').onclick = () => closeModal();
+    }else{
+        showNotification('Vous n\'avez pas les permissions pour inviter un utilisateur.', 'error');
+    }
 };
 
 const copyInvitCode = async () => {
-    console.log(navigator)
     navigator.clipboard.writeText(team.invitation_code)
-       .then(()=>{
-        showNotification('Code d\'invitation copié avec succès.', 'info');
-       })
-       .catch((err)=>{
-        showNotification('Une erreur est survenue lors de la copie du code d\'invitation.', 'error');
-       })
-    if(navigator.clipboard){
-        showNotification('Code d\'invitation copié avec succès.', 'info');
-    } else {
-    
-        try{
-            const input = document.createElement('input');
-            input.style = 'position:fixed; top:0; left:0; opacity:0;';
-            input.value = team.invitation_code;
-            await document.body.appendChild(input);
-            input.select();
-            if(document.execCommand('copy')){
-                showNotification('Code d\'invitation copié avec succès.', 'info');
-            }
-            document.body.removeChild(textArea);
-        } catch (error) {
-            showNotification('Une erreur est survenue lors de la copie du code d\'invitation.', 'error');
+    .then(() => {
+        showNotification('Code copié avec succès.', 'info');
+    })
+    .catch(() => {
+        showNotification('Erreur lors de la copie du code.', 'error');
+    });
+}
+window.onkeydown=(e)=>{
+    if(e.key.toUpperCase()==='V' && e.ctrlKey){
+        if(localStorage.getItem('invitation_code')){
+           document.activeElement.value+=localStorage.getItem('invitation_code');
         }
-    
+    }
 }
-}
-// window.onkeydown=(e)=>{
-//     if(e.key.toUpperCase()==='V' && e.ctrlKey){
-//         if(localStorage.getItem('invitation_code')){
-//            document.activeElement.value+=localStorage.getItem('invitation_code');
-//         }
-//     }
-// }
 
 // const handleSettingsAction = () => {
 //     const deleteTeam = document.querySelector('.dangerBtn');
@@ -919,7 +904,7 @@ const getJoinRequests = async () => {
 
 const getTeam = async () => {
     if(team.length === 0){
-        const waitTeam = await manageOverviewData.getTeamRequest() || null;
+        const waitTeam = await manageOverviewData.getTeamMembers() || null;
         if (waitTeam) {
             team = waitTeam;
             if (teamName) teamName.textContent = waitTeam.name;
@@ -976,7 +961,7 @@ const apiReq = async (apiRoute, method = 'GET', data = null) => {
 };
 
 const manageOverviewData = {
-    getTeamRequest: async () => {
+    getTeamMembers: async () => {
         const team = await apiReq(`teams/${teamId}`);
         if (team.success) {
             return team.data;
@@ -1019,25 +1004,8 @@ const manageOverviewData = {
     //     }
     // },
     
-    updateInvitCode: async () => {
-        const updateI = await apiReq(`teams/${teamId}/invit/update`, 'POST');
-        console.log('Réponse de l\'API updateInvitCode:', updateI);
-        if (updateI && updateI.success) {
-            if (updateI.data && updateI.data.invitation_code) {
-                showNotification('Le code d\'invitation a été mis à jour avec succès.', 'info');
-                return updateI;
-            } else {
-                console.warn('Réponse API valide mais données manquantes:', updateI);
-                showNotification('Le code d\'invitation a été mis à jour, mais le nouveau code n\'est pas disponible.', 'warning');
-                return updateI;
-            }
-        } else {
-            const errorMessage = updateI?.error || 'Erreur inconnue lors de la mise à jour du code';
-            console.error('Erreur dans updateInvitCode:', errorMessage);
-            showNotification(errorMessage, 'error');
-            throw new Error(errorMessage);
-        }
-    },
+    updateInvitCode: async () =>  await apiReq(`teams/${teamId}/invit/update`, 'POST'),
+
     promoteLeader: async (id) => {
         const promoteLeader = await apiReq(`teams/${teamId}/leader/change`, 'POST', { new_leader_id: id });
         if(promoteLeader.success)
@@ -1081,6 +1049,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     await defineTeamNameOverviewData();
     await handleNavBar();
     handleTabClick();
+
+    if(userConnected.id === team.leader_id){
+        const sectionTeamInfo = document.querySelector('#teamInfo');
+        sectionTeamInfo.innerHTML += `
+        <button id="invit" class="flexDivIcon" onclick="invitUser()">
+            <i data-lucide="user-plus"></i>
+            <p>Inviter un utilisateur</p>
+        </button>
+        `
+    }
     // S'assurer que la section about a le contenu par défaut avec animation
     if (aboutSection) {
         animateContentChange(tabContents.details, () => {

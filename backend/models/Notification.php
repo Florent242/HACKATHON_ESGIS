@@ -12,6 +12,12 @@ class Notification {
         $this->db = $db;
     }
 
+    /**
+     * Validation des données
+     * @param mixed $data
+     * @throws \Exception
+     * @return void
+     */
     private function validate($data) {
         if (empty($data['user_id'])) {
             throw new Exception("L'ID de l'utilisateur est requis");
@@ -26,6 +32,12 @@ class Notification {
         }
     }
 
+    /**
+     * Création d'une notification
+     * @param mixed $data
+     * @throws \Exception
+     * @return void
+     */
     public function create($data) {
         try {
             $this->validate($data);
@@ -47,6 +59,12 @@ class Notification {
         }
     }
 
+    /**
+     * Recherche d'une notification par son ID
+     * @param mixed $id
+     * @throws \Exception
+     * @return void
+     */
     public function find($id) {
         try {
             $sql = "SELECT * FROM {$this->table} WHERE id = :id";
@@ -58,6 +76,14 @@ class Notification {
         }
     }
 
+    /**
+     * Récupération des notifications d'un utilisateur
+     * @param mixed $userId
+     * @param mixed $limit
+     * @param mixed $offset
+     * @throws \Exception
+     * @return void
+     */
     public function getByUser($userId, $limit = 10, $offset = 0) {
         try {
             $sql = "SELECT * FROM {$this->table} WHERE user_id = :user_id ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
@@ -72,6 +98,12 @@ class Notification {
         }
     }
 
+    /**
+     * Marquage d'une notification comme lue
+     * @param mixed $id
+     * @throws \Exception
+     * @return void
+     */
     public function markAsRead($id) {
         try {
             $sql = "UPDATE {$this->table} SET is_read = TRUE WHERE id = :id";
@@ -82,6 +114,12 @@ class Notification {
         }
     }
 
+    /**
+     * Marquage de toutes les notifications d'un utilisateur comme lues
+     * @param mixed $userId
+     * @throws \Exception
+     * @return void
+     */
     public function markAllAsRead($userId) {
         try {
             $sql = "UPDATE {$this->table} SET is_read = TRUE WHERE user_id = :user_id";
@@ -92,6 +130,12 @@ class Notification {
         }
     }
 
+    /**
+     * Suppression d'une notification
+     * @param mixed $id
+     * @throws \Exception
+     * @return void
+     */
     public function delete($id) {
         try {
             $sql = "DELETE FROM {$this->table} WHERE id = :id";
@@ -102,6 +146,13 @@ class Notification {
         }
     }
 
+    /**
+     * Mise à jour d'une notification
+     * @param mixed $id
+     * @param mixed $data
+     * @throws \Exception
+     * @return void
+     */
     public function update($id, $data) {
         try {
             $fields = [];
@@ -129,6 +180,12 @@ class Notification {
         }
     }
 
+    /**
+     * Suppression de toutes les notifications d'un utilisateur
+     * @param mixed $userId
+     * @throws \Exception
+     * @return void
+     */
     public function deleteAllRead($userId) {
         try {
             $sql = "DELETE FROM {$this->table} WHERE user_id = :user_id AND is_read = TRUE";
@@ -139,6 +196,12 @@ class Notification {
         }
     }
 
+    /**
+     * Comptage des notifications non lues d'un utilisateur
+     * @param mixed $userId
+     * @throws \Exception
+     * @return void
+     */
     public function getUnreadCount($userId) {
         try {
             $sql = "SELECT COUNT(*) FROM {$this->table} WHERE user_id = :user_id AND is_read = FALSE";
@@ -150,6 +213,12 @@ class Notification {
         }
     }
 
+    /**
+     * Suppression de toutes les notifications d'un utilisateur
+     * @param mixed $userId
+     * @throws \Exception
+     * @return void
+     */
     public function deleteByUser($userId) {
         try {
             $sql = "DELETE FROM {$this->table} WHERE user_id = :user_id";

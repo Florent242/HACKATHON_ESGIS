@@ -20,8 +20,7 @@ if(!class_exists('Controller')) {
 class NotificationController extends Controller {
     private $notification;
     private $db;
-    private $tokenManager;
-
+    
     public function __construct($db, $tokenManager) {
         parent::__construct($tokenManager);
         $this->db = $db;

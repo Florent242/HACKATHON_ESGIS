@@ -1,27 +1,29 @@
 <?php
+
 namespace Auth\Model;
 
-use Auth\Controller\Controller;
 use Exception;
 use PDOException;
 use PDO;
-use Auth\Controller\UserController;
 
-class Participant{
+class Participant
+{
     private $db;
-    private $table = 'participants';
+    private $table = 'hackathon_participants';
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->db = $db;
     }
 
     // Inscrire un participant à un hackathon
-    public function register($data, $jwt) {
+    public function register($data)
+    {
         try {
             $this->validate($data);
 
             // Vérifier si le participant n'est pas déjà inscrit
-            if ($this->isRegistered($data['hackathon_id'], $data['user_id'], $jwt)) {
+            if ($this->isRegistered($data['hackathon_id'], $data['user_id'])) {
                 throw new Exception("Vous êtes déjà inscrit à ce hackathon");
             }
 
@@ -41,13 +43,95 @@ class Participant{
         }
     }
 
-    // Alias de register pour la cohérence avec les autres modèles
-    public function create($data, $jwt) {
-        return $this->register($data, $jwt);
+    /**
+     * Inscrire une équipe à un hackathon
+     */
+    public function registerTeam($hackathonId, $teamId, $captainId)
+    {
+        try {
+            // Vérifier que c'est bien le capitaine
+            $stmt = $this->db->prepare("SELECT leader_id FROM teams WHERE id = :team_id");
+            $stmt->execute([':team_id' => $teamId]);
+            $team = $stmt->fetch();
+
+            if (!$team || $team['leader_id'] != $captainId) {
+                throw new Exception("Seul le capitaine peut inscrire cette équipe");
+            }
+
+            // Vérifier que l’équipe n’est pas déjà inscrite
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM hackathon_teams WHERE hackathon_id = :hackathon_id AND team_id = :team_id");
+            $stmt->execute([':hackathon_id' => $hackathonId, ':team_id' => $teamId]);
+            if ($stmt->fetchColumn() > 0) {
+                throw new Exception("L’équipe est déjà inscrite à ce hackathon !");
+            }
+
+            // Inscription dans hackathon_teams
+            $stmt = $this->db->prepare("INSERT INTO hackathon_teams (hackathon_id, team_id, leader_id) VALUES (:hackathon_id, :team_id, :leader_id)");
+            $stmt->execute([':hackathon_id' => $hackathonId, ':team_id' => $teamId, ':leader_id' => $captainId]);
+            logActivity('Team registration' , 'Inscription d\'une équipe ', [$captainId, $teamId, $hackathonId],$captainId, 'info');
+
+            // Récupérer tous les membres
+            $stmt = $this->db->prepare("SELECT user_id FROM teams_members WHERE team_id = :team_id");
+            $stmt->execute([':team_id' => $teamId]);
+            $members = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            // Inscription dans hackathon_participants
+            $stmt = $this->db->prepare("INSERT INTO hackathon_participants (user_id, team_id, hackathon_id, participation_status) VALUES (:user_id, :team_id, :hackathon_id, 'pending')");
+            foreach ($members as $memberId) {
+                $stmt->execute([':user_id' => $memberId, ':team_id' => $teamId, ':hackathon_id' => $hackathonId]);
+                logActivity('Team registration' , 'Vous avez été automatiquement inscrit au hackathon suite a l\'inscription de votre équipe', ['memberId' => $memberId , 'teamId' => $teamId, 'hackathonId' => $hackathonId], $memberId, 'info');
+            }
+
+            return true;
+        } catch (PDOException $e) {
+            throw new Exception(
+                "Erreur lors de l'inscription de l'équipe ! En cas de probleme permanant contactez le support technique sur discord ! "
+                // pour le debugage
+                //  . $e->getMessage()
+            );
+        }
     }
 
+    public function unregisterTeam($hackathonId, $teamId)
+    {
+        try {
+            // Supprimer les membres de l'équipe de la table participants
+            $sql = "DELETE FROM hackathon_participants
+                WHERE hackathon_id = :hackathon_id AND team_id = :team_id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':hackathon_id' => $hackathonId,
+                ':team_id' => $teamId
+            ]);
+            logActivity('Team registration' , 'Désinscription d\'une équipe ', [$teamId, $hackathonId], $teamId, 'info');
+$stmt = $this->db->prepare('');
+            // Supprimer l'équipe du hackathon
+            $sql2 = "DELETE FROM hackathon_teams
+                 WHERE hackathon_id = :hackathon_id AND team_id = :team_id";
+            $stmt2 = $this->db->prepare($sql2);
+            return $stmt2->execute([
+                ':hackathon_id' => $hackathonId,
+                ':team_id' => $teamId
+            ]);
+        } catch (PDOException $e) {
+            throw new Exception(
+                "Erreur lors de la désinscription de l’équipe !"
+                // pour le debugage
+                //  . $e->getMessage()
+            );
+        }
+    }
+
+
+    // Alias de register pour la cohérence avec les autres modèles
+    // public function create($data)
+    // {
+    //     return $this->register($data);
+    // }
+
     // Vérifier si un utilisateur est déjà inscrit à un hackathon
-    public function isRegistered($hackathonId, $userId, $jwt) {
+    public function isRegistered($hackathonId, $userId)
+    {
         try {
             $sql = "SELECT COUNT(*) FROM {$this->table}
                     WHERE hackathon_id = :hackathon_id
@@ -60,12 +144,17 @@ class Participant{
             ]);
             return $stmt->fetchColumn() > 0;
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la vérification : " . $e->getMessage());
+            throw new Exception(
+                "Erreur lors de la vérification : "
+                // pour le debugage
+                //  . $e->getMessage()
+            );
         }
     }
 
     // Trouver une inscription par son ID
-    public function find($id) {
+    public function find($id)
+    {
         try {
             $sql = "SELECT p.*, u.username, u.email,
                     h.name as hackathon_title, h.start_date, h.end_date
@@ -78,12 +167,17 @@ class Participant{
             $stmt->execute([':id' => $id]);
             return $stmt->fetch();
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la recherche de l'inscription : " . $e->getMessage());
+            throw new Exception(
+                "Erreur lors de la recherche de l'inscription ! En cas de probleme permanant contactez le support technique sur discord ! : "
+                // pour le debugage
+                //  . $e->getMessage()
+            );
         }
     }
 
     // Mettre à jour le statut d'une inscription
-    public function updateStatus($id, $status) {
+    public function updateStatus($id, $status)
+    {
         try {
             if (!in_array($status, ['pending', 'approved', 'rejected'])) {
                 throw new Exception("Statut invalide");
@@ -99,23 +193,33 @@ class Participant{
                 ':status' => $status
             ]);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la mise à jour du statut : " . $e->getMessage());
+            throw new Exception(
+                "Erreur lors de la mise à jour du statut ! En cas de probleme permanant contactez le support technique sur discord ! : "
+                // pour le debugage
+                //  . $e->getMessage()
+            );
         }
     }
 
     // Annuler une inscription
-    public function cancel($id) {
+    public function cancel($id)
+    {
         try {
             $sql = "DELETE FROM {$this->table} WHERE id = :id";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([':id' => $id]);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de l'annulation de l'inscription : " . $e->getMessage());
+            throw new Exception(
+                "Erreur lors de l'annulation de l'inscription ! "
+                // pour le debugage
+                //  . $e->getMessage()
+            );
         }
     }
 
     // Récupérer les participants d'un hackathon
-    public function getByHackathon($hackathonId, $status = null) {
+    public function getByHackathon($hackathonId, $status = null)
+    {
         try {
             $sql = "SELECT p.*, u.username, u.email,
                     e.id as team_id, e.name as team_name
@@ -141,13 +245,18 @@ class Participant{
             $stmt->execute($params);
             return $stmt->fetchAll();
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des participants : " . $e->getMessage());
+            throw new Exception(
+                "Erreur lors de la récupération des participants ! "
+                // pour le debugage
+                //  . $e->getMessage()
+            );
         }
     }
-    
+
 
     // Récupérer les hackathons d'un participant
-    public function getByUser($userId, $jwt) {
+    public function getByUser($userId, $jwt)
+    {
         try {
             $sql = "SELECT p.*, h.name as hackathon_title, h.start_date, h.end_date, e.id as team_id,
              e.name as team_name 
@@ -160,12 +269,17 @@ class Participant{
             $stmt->execute([':user_id' => $userId]);
             return $stmt->fetchAll();
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des hackathons : " . $e->getMessage());
+            throw new Exception(
+                "Erreur lors de la récupération des hackathons ! "
+                // pour le debugage
+                //  . $e->getMessage()
+            );
         }
     }
 
     // Compter le nombre de participants par statut
-    public function countByStatus($hackathonId, $specificStatus = null) {
+    public function countByStatus($hackathonId, $specificStatus = null)
+    {
         try {
             if ($specificStatus === null) {
                 // Version originale qui retourne tous les statuts
@@ -195,12 +309,17 @@ class Participant{
                 return $stmt->fetchColumn();
             }
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors du comptage des participants : " . $e->getMessage());
+            throw new Exception(
+                "Erreur lors du comptage des participants ! : "
+                // pour le debugage
+                //  . $e->getMessage()
+            );
         }
     }
 
     // Mettre à jour un participant
-    public function update($id, $data) {
+    public function update($id, $data)
+    {
         try {
             $fields = [];
             $params = [':id' => $id];
@@ -220,12 +339,17 @@ class Participant{
             $stmt = $this->db->prepare($sql);
             return $stmt->execute($params);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la mise à jour du participant : " . $e->getMessage());
+            throw new Exception(
+                "Erreur lors de la mise à jour du participant ! "
+                // pour le debugage
+                //  . $e->getMessage()
+            );
         }
     }
 
     // Supprimer une inscription
-    public function delete($id) {
+    public function delete($id)
+    {
         try {
             // Vérifier si le participant existe
             $participant = $this->find($id);
@@ -237,12 +361,17 @@ class Participant{
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([':id' => $id]);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la suppression du participant : " . $e->getMessage());
+            throw new Exception(
+                "Erreur lors de la suppression du participant ! "
+                // pour le debugage
+                //  . $e->getMessage()
+            );
         }
     }
 
     // Validation des données
-    private function validate($data) {
+    private function validate($data)
+    {
         if (empty($data['hackathon_id'])) {
             throw new Exception("Le hackathon est obligatoire");
         }
