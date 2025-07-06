@@ -106,38 +106,44 @@ async function displayMyTeams() {
     }
 }
 
-// Fonction utilitaire pour créer une carte d'équipe
 function createTeamCard(team) {
     const card = document.createElement('div');
-    card.className = 'team-card';
+    card.className = 'team-card relative'; // relative pour positionner badge type en absolu
     card.setAttribute('data-team-id', team.id);
     card.setAttribute('data-team-type', team.type);
-    if (team.isMember !== undefined) card.setAttribute('data-is-member', team.isMember);
+    card.setAttribute('data-is-member', !!team.is_member);
     if (team.role) card.setAttribute('data-role', team.role);
 
-    // Améliorer l'affichage du rôle
-    let teamRoleTag = '';
+    // Avatar fallback : 2 premières lettres du nom
+    const avatar = team.avatar || (team.name ? team.name.substring(0, 2).toUpperCase() : '??');
+
+    // Badge rôle : Capitaine / Membre
+    let roleTag = '';
     if (team.role) {
         const roleText = team.role === 'captain' ? 'Capitaine' : 'Membre';
-        const roleClass = team.role === 'captain' ? 'captain' : 'member';
-        teamRoleTag = `<span class="team-role ${roleClass}">${roleText}</span>`;
+        const roleClass = team.role === 'captain' ? 'captain' : '';
+        roleTag = `<span class="team-role ${roleClass}">${roleText}</span>`;
     }
 
-    // Afficher le nombre de membres si disponible
-    let membersCount = '';
-    if (team.members && Array.isArray(team.members)) {
-        const totalMembers = team.members.length + (team.leader_id ? 1 : 0);
-        membersCount = `<span class="team-members-count">${totalMembers} membre${totalMembers > 1 ? 's' : ''}</span>`;
+    // Badge nombre membres
+    const membersCount = team.members_count || 0;
+    const membersCountTag = `<span class="team-members">${membersCount} membre${membersCount > 1 ? 's' : ''}</span>`;
+
+    // Badge type équipe (en haut à droite, position absolute)
+    let typeTag = '';
+    if (team.type) {
+        typeTag = `<span class="team-type ${team.type} absolute top-4 right-4">${team.type}</span>`;
     }
 
     card.innerHTML = `
+        ${typeTag}
         <div class="team-header">
-            <div class="team-avatar">${team.avatar || team.name.substring(0, 2).toUpperCase()}</div>
+            <div class="team-avatar">${avatar}</div>
             <div class="team-info">
-                <h3 style="font-size: 18px;">${team.name}</h3>
+                <h3>${team.name || 'Équipe sans nom'}</h3>
                 <div class="team-meta">
-                    ${teamRoleTag}
-                    ${membersCount}
+                    ${roleTag}
+                    ${membersCountTag}
                 </div>
             </div>
         </div>
@@ -163,47 +169,31 @@ async function createTeamViaAPI(teamData) {
 
         const formElement = document.querySelector('#createTeamForm');
         const formData = new FormData(formElement);
-        formData.append('leader_id', userId);
-        formData.append('nom', teamData.name);
-        formData.append('type', teamData.type);
-        if (teamData.description) formData.append('description', teamData.description);
-        if (teamData.hackathon_id) formData.append('hackathon_id', teamData.hackathon_id);
 
         const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
         if (!csrfToken) {
             throw new Error('Token CSRF manquant');
         }
-        formData.append('csrf_token', csrfToken);
+        if (formData.get('csrf_token') === null) {
+            formData.append('csrf_token', csrfToken);
+        }
 
-        // Débogage : Vérifier les cookies disponibles
-        console.log('Cookies envoyés:', document.cookie);
-
-        const response = await fetch('http://51.77.218.188:8081/api/teams', {
+        const response = await apiRequest('/teams', {
             method: 'POST',
-            credentials: 'include', // Inclut les cookies dans la requête
+            credentials: 'include',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             },
             body: formData
         });
 
-        console.log('Réponse API status:', response.status);
-        const data = await response.json().catch(() => ({}));
-        console.log('Données reçues de l\'API:', data);
-
         if (!response.ok) {
-            if (response.status === 401) {
-                showNotification('Session expirée', 'Veuillez vous reconnecter', 'error');
-                window.location.href = '/login';
-            }
-            throw new Error(`Erreur HTTP ${response.status}: ${data.error || 'Erreur inconnue'}`);
+            throw new Error(`${response.error}`);
         }
 
-        showNotification('Équipe créée avec succès', 'success');
-        return data;
+        return response;
     } catch (error) {
         console.error('Erreur dans createTeamViaAPI:', error.message);
-        showNotification('Erreur lors de la création de l\'équipe', error.message, 'error');
         return { success: false, error: error.message };
     }
 }
@@ -218,7 +208,7 @@ async function joinTeamViaCode(invitationCode) {
             formData.append('invitation_code', invitationCode);
         }
 
-        const response = await fetch('/api/teams/join', {
+        const response = await apiRequest('/teams/join', {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -228,8 +218,7 @@ async function joinTeamViaCode(invitationCode) {
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Erreur HTTP ${response.status}`);
+            throw new Error(`${response.error}`);
         }
 
         const data = await response.json();
@@ -242,8 +231,8 @@ async function joinTeamViaCode(invitationCode) {
             return { success: false, error: data.error || 'Code d\'invitation invalide' };
         }
     } catch (error) {
-        console.error('Erreur dans joinTeamViaCode:', error.error);
-        return { success: false, error: error.error || 'Erreur de réseau' };
+        console.error('Erreur dans joinTeamViaCode:', error.message);
+        return { success: false, error: error.message || 'Erreur de réseau' };
     }
 }
 
@@ -256,7 +245,7 @@ async function sendJoinRequest(teamName) {
             formData.append('team_name', teamName);
         }
 
-        const response = await fetch('/api/teams/request', {
+        const response = await apiRequest('/teams/request', {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -266,8 +255,7 @@ async function sendJoinRequest(teamName) {
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Erreur HTTP ${response.status}`);
+            throw new Error(`${response.error}`);
         }
 
         const data = await response.json();
@@ -278,8 +266,8 @@ async function sendJoinRequest(teamName) {
             return { success: false, error: data.error || 'Erreur lors de l\'envoi de la demande' };
         }
     } catch (error) {
-        console.error('Erreur dans sendJoinRequest:', error.error);
-        return { success: false, error: error.error || 'Erreur de réseau' };
+        console.error('Erreur dans sendJoinRequest:', error.message);
+        return { success: false, error: error.message || 'Erreur de réseau' };
     }
 }
 
@@ -331,11 +319,11 @@ function initActionButtons() {
 
             // Validation côté client
             if (!teamName.trim()) {
-                showNotification('Le nom de l\'équipe est requis', 'warning');
+                showNotification('Attention !', 'Le nom de l\'équipe est requis', 'warning');
                 return;
             }
             if (!teamType) {
-                showNotification('Le type d\'équipe est requis', 'warning');
+                showNotification('Attention !', 'Le type d\'équipe est requis', 'warning');
                 return;
             }
 
@@ -357,15 +345,14 @@ function initActionButtons() {
                 const result = await createTeamViaAPI(newTeamData);
 
                 if (result.success) {
-                    showNotification(`L'équipe "${teamName}" a été créée avec succès !`, 'success');
+                    showNotification("Félicitations !",`L'équipe "${teamName}" a été créée avec succès !`, 'success');
                     createTeamModal.classList.add('hidden');
                     createTeamForm.reset();
                 } else {
-                    showNotification(`Erreur lors de la création de l'équipe : ${result.error}`, 'error');
-                    console.log("7 erreur de creation de la team");
+                    showNotification("Oups !",`${result.error}`, 'error');
                 }
             } catch (error) {
-                showNotification('Une erreur est survenue lors de la création de l\'équipe', 'error');
+                showNotification("Oups !",'Une erreur est survenue lors de la création de l\'équipe', 'error');
             } finally {
                 if (submitButton) {
                     submitButton.disabled = false;
@@ -428,7 +415,7 @@ function initActionButtons() {
             const invitationCode = document.getElementById('invitationCode').value.trim();
 
             if (!invitationCode) {
-                showNotification('Veuillez entrer un code d\'invitation', 'warning');
+                showNotification("Attention !",'Veuillez entrer un code d\'invitation', 'warning');
                 return;
             }
 
@@ -442,14 +429,14 @@ function initActionButtons() {
                 const result = await joinTeamViaCode(invitationCode);
 
                 if (result.success) {
-                    showNotification('Vous avez rejoint l\'équipe avec succès !', 'success');
+                    showNotification("Félicitations !","Vous avez rejoint l\'équipe avec succès !", 'success');
                     joinTeamModal.classList.add('hidden');
                     inviteCodeForm.reset();
                 } else {
-                    showNotification(`Erreur : ${result.error}`, 'error');
+                    showNotification("Oups !",`${result.error}`, 'error');
                 }
             } catch (error) {
-                showNotification('Une erreur est survenue lors de la tentative de rejoindre l\'équipe', 'error');
+                showNotification("Oups !","Une erreur est survenue lors de la tentative de rejoindre l\'équipe", 'error');
             } finally {
                 if (submitButton) {
                     submitButton.disabled = false;
@@ -465,7 +452,7 @@ function initActionButtons() {
             const requestTeamName = document.getElementById('requestTeamName').value.trim();
 
             if (!requestTeamName) {
-                showNotification('Veuillez entrer le nom de l\'équipe', 'warning');
+                showNotification("Attention !","Veuillez entrer le nom de l\'équipe", 'warning');
                 return;
             }
 
@@ -479,14 +466,14 @@ function initActionButtons() {
                 const result = await sendJoinRequest(requestTeamName);
 
                 if (result.success) {
-                    showNotification('Votre demande a été envoyée avec succès !', 'success');
+                    showNotification("Félicitations !","Votre demande a été envoyée avec succès !", 'success');
                     joinTeamModal.classList.add('hidden');
                     sendRequestForm.reset();
                 } else {
-                    showNotification(`Erreur : ${result.error}`, 'error');
+                    showNotification("Oups !",`${result.error || 'Erreur lors de l\'envoi de la demande'}`, 'error');
                 }
             } catch (error) {
-                showNotification('Une erreur est survenue lors de l\'envoi de la demande', 'error');
+                showNotification("Oups !","Une erreur est survenue lors de l\'envoi de la demande", 'error');
             } finally {
                 if (submitButton) {
                     submitButton.disabled = false;
@@ -520,6 +507,33 @@ function initTeamActions() {
     });
 }
 
+// Fonction pour afficher un état de chargement
+function showLoadingState(container, message = 'Chargement...') {
+    container.classList.add('relative', 'min-h-[200px]');
+    
+    container.innerHTML = `
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div class="bg-gray-800 p-6 rounded-lg shadow-xl flex flex-col items-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500 mb-4"></div>
+                <p class="text-gray-200">${message}</p>
+            </div>
+        </div>
+    `;
+}
+
+// Fonction pour afficher un état vide
+function showEmptyState(container, message = 'Aucune donnée disponible') {
+    container.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-12 text-center">
+            <svg class="h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="text-lg font-medium text-gray-300 mb-1">${message}</h3>
+            <p class="text-gray-500 text-sm">Essayez de modifier vos critères de recherche</p>
+        </div>
+    `;
+}
+
 // Fonction pour appliquer la recherche
 function applySearch() {
     const searchTerm = document.getElementById('teamSearch')?.value.toLowerCase() || '';
@@ -528,7 +542,7 @@ function applySearch() {
     if (!allTeamsGrid) return;
 
     if (fetchedAllTeamsData.length === 0) {
-        allTeamsGrid.innerHTML = '<p class="text-center text-gray-400">Chargement des équipes...</p>';
+        showLoadingState(allTeamsGrid,'Chargement des équipes...');
         return;
     }
 
@@ -546,7 +560,7 @@ function applySearch() {
         const message = searchTerm
             ? `Aucune équipe trouvée pour "${searchTerm}".`
             : 'Aucune équipe disponible.';
-        allTeamsGrid.innerHTML = `<p class="text-center text-gray-400">${message}</p>`;
+        showEmptyState(allTeamsGrid,message);
     } else {
         allTeamsGrid.innerHTML = '';
         filteredTeams.forEach(team => {
@@ -576,7 +590,7 @@ async function fetchAndDisplayAllTeams() {
 
     const allTeamsGrid = document.getElementById('allTeamsGrid');
     if (allTeamsGrid) {
-        allTeamsGrid.innerHTML = '<p class="text-center text-gray-400">Chargement des équipes...</p>';
+        showLoadingState(allTeamsGrid,'Chargement des équipes...');
     }
 
     try {
@@ -608,13 +622,13 @@ async function fetchAndDisplayAllTeams() {
             applySearch();
         } else {
             if (allTeamsGrid) {
-                allTeamsGrid.innerHTML = '<p class="text-center text-red-400">Erreur lors du chargement des équipes.</p>';
+                showEmptyState(allTeamsGrid,'Erreur lors du chargement des équipes.');
             }
         }
     } catch (error) {
         console.error('Erreur lors du chargement des équipes:', error);
         if (allTeamsGrid) {
-            allTeamsGrid.innerHTML = '<p class="text-center text-red-400">Impossible de joindre l\'API.</p>';
+            showEmptyState(allTeamsGrid,'Impossible de joindre l\'API.');
         }
     } finally {
         isFetchingTeams = false;

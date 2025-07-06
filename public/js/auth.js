@@ -37,6 +37,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const schoolError = document.getElementById('schoolError');
 
     // Fonction pour valider le nom complet
+    /**
+     * @description Fonction pour valider le nom complet
+     * @param {string} value 
+     * @param {HTMLElement} errorElement 
+     * @returns {boolean}
+     */
     function validateFullName(value, errorElement) {
         if (value.length < 3 || value.trim() === '') {
             showError(fullName, errorElement, "Le nom complet doit contenir au moins 3 caractères");
@@ -50,6 +56,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Fonction pour valider le nom d'utilisateur
+    /**
+     * @description Fonction pour valider le nom d'utilisateur
+     * @param {string} value 
+     * @param {HTMLElement} errorElement 
+     * @returns {boolean}
+     */
     function validateUsername(value, errorElement) {
         if (value.length < 3 || value.trim() === '') {
             showError(username, errorElement, "Le nom d'utilisateur doit contenir au moins 3 caractères");
@@ -63,6 +75,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Fonction pour valider l'email
+    /**
+     * @description Fonction pour valider l'email
+     * @param {string} value 
+     * @param {HTMLElement} errorElement 
+     * @returns {boolean}
+     */
     function validateEmail(value, errorElement) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(value) || value.trim() === '') {
@@ -74,6 +92,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Fonction pour valider le champ d'école
+    /**
+     * @description Fonction pour valider le champ d'école
+     * @param {string} value 
+     * @param {HTMLElement} errorElement 
+     * @returns {boolean}
+     */
     function validateSchool(value, errorElement) {
         if (!value.trim()) {
             showError(school, errorElement, 'Veuillez entrer le nom de votre école');
@@ -84,6 +108,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Fonction pour valider le mot de passe
+    /**
+     * @description Fonction pour valider le mot de passe
+     * @param {string} value 
+     * @param {HTMLElement} password 
+     * @param {HTMLElement} passwordError 
+     * @returns {boolean}
+     */
     function validatePassword(value, password, passwordError) {
         if (value.length < 8) {
             showError(password, passwordError, "Le mot de passe doit contenir au moins 8 caractères");
@@ -107,6 +138,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Fonction pour valider la confirmation du mot de passe
+    /**
+     * @description Fonction pour valider la confirmation du mot de passe
+     * @param {string} value 
+     * @param {HTMLElement} confirmPassword 
+     * @param {HTMLElement} confirmPasswordError 
+     * @param {HTMLElement} password 
+     * @returns {boolean}
+     */
     function validateConfirmPassword(value, confirmPassword, confirmPasswordError, password) {
         if (value !== password.value || value.trim() === '') {
             showError(confirmPassword, confirmPasswordError, "Les mots de passe ne correspondent pas");
@@ -588,33 +627,4 @@ document.addEventListener("DOMContentLoaded", function () {
             });
     }
 
-    // Fonctions d'affichage/masquage des erreurs
-    function showError(inputElement, errorElement, message) {
-        // Ajouter la classe d'erreur à l'input
-        inputElement.parentElement.classList.add('input-error');
-
-        // Afficher et animer le message d'erreur
-        errorElement.textContent = message;
-        errorElement.classList.remove('hidden', 'fade-out');
-    }
-
-    function hideError(inputElement, errorElement) {
-        // Retirer la classe d'erreur de l'input
-        inputElement.parentElement.classList.remove('input-error');
-
-        // Vérifier si l'erreur est déjà masquée
-        if (errorElement.classList.contains('hidden')) return;
-
-        // Supprimer l'ancienne animation si elle est encore en cours
-        errorElement.classList.remove('fade-in');
-
-        // Ajouter la classe de disparition
-        errorElement.classList.add('fade-out');
-
-        // Attendre la fin de l'animation avant de cacher complètement
-        errorElement.addEventListener('animationend', function () {
-            errorElement.classList.add('hidden');
-            errorElement.classList.remove('fade-out'); // Nettoyage après animation
-        }, { once: true });
-    }
 });

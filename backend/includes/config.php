@@ -90,7 +90,7 @@ function verifyCsrfToken($token)
 // Fonction pour vérifier si l'utilisateur est connecté
 function isAuthenticated()
 {
-    return isset($_SESSION['user_id']);
+    return isset($_SESSION['user']['id']) && $_SESSION['user']['logged_in'];
 }
 
 // Fonction pour vérifier le rôle de l'utilisateur

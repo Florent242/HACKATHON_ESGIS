@@ -43,11 +43,6 @@ $nav_items = [
         'url' => '/contact',
         'label' => 'Contact',
         'icon' => 'phone'
-    ],
-    [
-        'url' => '/sponsors',
-        'label' => 'Sponsors',
-        'icon' => 'handshake'
     ]
 ];
 

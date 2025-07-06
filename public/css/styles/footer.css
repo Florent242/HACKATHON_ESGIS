@@ -6,7 +6,6 @@
 footer {
     background-color: var(--background-hover);
     color: var(--text);
-    padding: 20px 0;
     font-family: Arial, sans-serif;
     border-top: 1px solid var(--border);
     }
@@ -93,4 +92,18 @@ footer {
     text-align: center;
     padding: 1rem;
     background-color: var(--background-hover);
+}
+
+/* Style pour l'icône Discord personnalisée */
+.discord-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: inline-block;
+    vertical-align: middle;
+    fill: currentColor;
+    transition: fill 0.2s ease;
+}
+
+.discord-icon:hover {
+    fill: #7289DA; /* Couleur officielle de Discord */
 }

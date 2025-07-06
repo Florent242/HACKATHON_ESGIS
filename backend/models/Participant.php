@@ -65,6 +65,14 @@ class Participant
                 throw new Exception("L’équipe est déjà inscrite à ce hackathon !");
             }
 
+            // Verifier si la date limite d'inscription est passée
+            $stmt = $this->db->prepare("SELECT registration_deadline FROM hackathons WHERE id = :hackathon_id");
+            $stmt->execute([':hackathon_id' => $hackathonId]);
+            $endDate = $stmt->fetchColumn();
+            if (time() > strtotime($endDate)) {
+                throw new Exception("La date limite d'inscription est passée !");
+            }
+
             // Inscription dans hackathon_teams
             $stmt = $this->db->prepare("INSERT INTO hackathon_teams (hackathon_id, team_id, leader_id) VALUES (:hackathon_id, :team_id, :leader_id)");
             $stmt->execute([':hackathon_id' => $hackathonId, ':team_id' => $teamId, ':leader_id' => $captainId]);

@@ -24,7 +24,7 @@ class Controller
         if ($_SERVER['REQUEST_METHOD'] !== 'GET' && !$this->validateCsrfToken()) {
             $this->jsonResponse([
                 'success' => false,
-                'error' => 'Token CSRF invalide - controller'
+                'error' => 'Token CSRF invalide - controller - Si ce message d\'erreur persiste, veuillez contacter le support'
             ], 403);
         }
 

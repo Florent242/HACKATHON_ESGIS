@@ -96,7 +96,7 @@ async function fetchChallenges(hackathonId) {
     try {
         if (grid) grid.innerHTML = `<p class="text-gray-400 text-center col-span-full">Chargement des challenges...</p>`;
         const user_id= await getUserId()
-        const response = await apiRequest(`/challenges/dev/2/${user_id}`, {
+        const response = await apiRequest(`/challenges/algo/2/${user_id}`, {
             method: "GET",
             headers: {
                 'Content-Type': 'application/json',
@@ -161,7 +161,9 @@ function displayChallenges(challenges) {
     }
 
     if (filteredChallenges.length === 0) {
-        grid.innerHTML = `<p class="text-gray-400 text-center col-span-full">Aucun challenge trouvé.</p>`;
+        grid.innerHTML = `
+        <p class="text-gray-400 text-center col-span-full">Aucun challenge trouvé.</p>
+        `;
         return;
     }
 
@@ -191,7 +193,7 @@ function createChallengeCard(challenge) {
     // Badge statut et bouton
     let statusBadge = '';
     let actionButton = '';
-    if (challenge.submission_status === null) {
+    if (challenge.team_has_solved === 0 || challenge.team_has_solved === null) {
         statusBadge = '<span class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-700 text-gray-400">Non tenté</span>';
         actionButton = `<button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold transition ml-auto flex items-center gap-2 challenge-link-btn" data-challenge-id="${challenge.id}"><i class="fa fa-brain"></i> Voir le défi</button>`;
     } else {

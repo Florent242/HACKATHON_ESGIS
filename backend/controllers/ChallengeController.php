@@ -1,40 +1,44 @@
 <?php
+
 namespace Auth\Controller;
 
 use Exception;
 use Auth\Model\Challenge;
 use Auth\Model\Hackathon;
-use Auth\Model\TokenManager; 
+use Auth\Model\TokenManager;
 
-if(!defined('CONFIG_INCLUDED')) {
+if (!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
 }
-if(!defined('FUNCTIONS_INCLUDED')) {
+if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/../includes/functions.php';
 }
-if(!class_exists('Challenge')) {
+if (!class_exists('Challenge')) {
     require_once __DIR__ . '/../models/Challenge.php';
 }
-if(!class_exists('Hackathon')) {
+if (!class_exists('Hackathon')) {
     require_once __DIR__ . '/../models/Hackathon.php';
 }
-if(!class_exists('Controller')) {
+if (!class_exists('Controller')) {
     require_once __DIR__ . '/Controller.php';
 }
 
-class ChallengeController extends Controller {
+class ChallengeController extends Controller
+{
     private $challenge;
     private $hackathon;
     private $db;
 
-    public function __construct($db, $tokenManager) {
+    public function __construct($db, $tokenManager)
+    {
         parent::__construct($tokenManager);
         $this->db = $db;
         $this->challenge = new Challenge($db);
         $this->hackathon = new Hackathon($db);
     }
 
-    public function index($hackathonId) {
+    public function index($hackathonId)
+    {
         try {
             $this->validateMethod('GET');
 
@@ -63,7 +67,8 @@ class ChallengeController extends Controller {
     /**
      * Récupère tous les challenges
      */
-    public function getAll() {
+    public function getAll()
+    {
         try {
             $this->validateMethod('GET');
 
@@ -81,129 +86,47 @@ class ChallengeController extends Controller {
         }
     }
 
-    public function create() {
+    public function submitChallengeCTF($user_id, $input)
+    {
         try {
             $this->validateMethod('POST');
 
-            if (!hasRole('organisateur')) {
-                throw new Exception('Non autorisé');
+            if (empty($user_id) || empty($input['flag_value'])) {
+                throw new Exception('user_id et flag_value sont requis');
             }
 
-            $requiredFields = ['title', 'description', 'hackathon_id', 'points'];
-            $this->validateRequiredFields($_POST, $requiredFields);
+            // Appel à la méthode qui gère toute la logique (valide ou non, dynamique, etc)
+            $result = $this->challenge->submitChallengeCTF($user_id, $input);
 
-            if (!is_numeric($_POST['points']) || $_POST['points'] < 0) {
-                throw new Exception('Le nombre de points doit être un nombre positif');
+            if ($result['success']) {
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => $result['message'],
+                    'validated_flag_id' => $result['validated_flag_id']
+                ]);
+            } else {
+                // Flag incorrect ou déjà validé
+                $this->jsonResponse([
+                    'success' => false,
+                    'message' => $result['message']
+                ]);
             }
-
-            $data = [
-                'title' => $_POST['titre'],
-                'description' => $_POST['description'],
-                'hackathon_id' => (int)$_POST['hackathon_id'],
-                'points' => (int)$_POST['points'],
-                'created_by' => $_SESSION['user_id'],
-                'created_at' => date('Y-m-d H:i:s')
-            ];
-
-            $challengeId = $this->challenge->create($data);
-
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Challenge créé avec succès',
-                'data' => ['id' => $challengeId]
-            ]);
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 400);
-        }
-    }
-
-    public function update($id) {
-        try {
-            $this->validateMethod('POST');
-
-            if (!hasRole('organisateur')) {
-                throw new Exception('Non autorisé');
-            }
-
-            $updatableFields = ['titre', 'description', 'points'];
-            $data = $this->filterData($_POST, $updatableFields);
-
-            if (empty($data)) {
-                throw new Exception('Aucune donnée à mettre à jour');
-            }
-
-            if (isset($data['points']) && (!is_numeric($data['points']) || $data['points'] < 0)) {
-                throw new Exception('Le nombre de points doit être un nombre positif');
-            }
-
-            $data['updated_at'] = date('Y-m-d H:i:s');
-            $this->challenge->update($id, $data);
-
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Challenge mis à jour avec succès'
             ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
         }
     }
-    public function getChallengesDev($hackathon_id,$user_id){
-        try{
+
+    public function getChallengeAlgo ($hackathon_id, $user_id){
+
+        try {
             $this->validateMethod('GET');
-            if (!isset($hackathon_id) || !isset($user_id)) {
-                throw new Exception('hackathon_id et user_id sont requis');
-            }
-            $challenges = $this->challenge->getchallengeDev($hackathon_id,$user_id);
+            $challenges = $this->challenge->getchallengeAlgo($hackathon_id, $user_id);
             $this->jsonResponse([
                 'success' => true,
                 'data' => $challenges
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
-        }
-    }
-
-    public function getChallengesCTF($hackathon_id,$user_id){
-        try{
-            $this->validateMethod('GET');
-            if (!isset($hackathon_id) || !isset($user_id)) {
-                throw new Exception('hackathon_id et user_id sont requis');
-            }
-            $challenges = $this->challenge->getchallengeCTF($hackathon_id,$user_id);
-            $this->jsonResponse([
-                'success' => true,
-                'data' => $challenges
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
-        }
-    }
-
-    public function delete($id) {
-        try {
-            $this->validateMethod('POST');
-
-            if (!hasRole('organisateur')) {
-                throw new Exception('Non autorisé');
-            }
-
-            $this->challenge->delete($id);
-
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Challenge supprimé avec succès'
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([
@@ -213,8 +136,49 @@ class ChallengeController extends Controller {
         }
     }
     
+    public function getChallengesDev($hackathon_id, $user_id)
+    {
+        try {
+            $this->validateMethod('GET');
+            if (!isset($hackathon_id) || !isset($user_id)) {
+                throw new Exception('hackathon_id et user_id sont requis');
+            }
+            $challenges = $this->challenge->getchallengeDev($hackathon_id, $user_id);
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $challenges
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
 
-    public function get($id) {
+    public function getChallengesCTF($hackathon_id, $user_id)
+    {
+        try {
+            $this->validateMethod('GET');
+            if (!isset($hackathon_id) || !isset($user_id)) {
+                throw new Exception('hackathon_id et user_id sont requis');
+            }
+            $challenges = $this->challenge->getchallengeCTF($hackathon_id, $user_id);
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $challenges
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+
+    public function get($id)
+    {
         try {
             $this->validateMethod('GET');
 
@@ -234,11 +198,12 @@ class ChallengeController extends Controller {
             ], 404);
         }
     }
-    public function getSolvesCount() {
+    public function getSolvesCount()
+    {
         try {
             $this->validateMethod('GET');
             $count = $this->challenge->getTotalSolvesCount();
-    
+
             $this->jsonResponse([
                 'success' => true,
                 'count' => $count
@@ -254,7 +219,8 @@ class ChallengeController extends Controller {
      * Récupère les challenges d'un hackathon
      * @param int $id ID du hackathon
      */
-    public function getByHackathon($id) {
+    public function getByHackathon($id)
+    {
         try {
             $this->validateMethod('GET');
 

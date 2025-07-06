@@ -4,15 +4,43 @@
 <?php
 require_once __DIR__ . '/../backend/includes/authMiddleware.php';
 
+// empecher l'affichage des erreurs serveur
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+
 // Vérifier l'authentification
 AuthMiddleware::checkAuth();
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-// echo print_r($_SESSION, true); 
+
+echo htmlspecialchars($_ENV['JWT_SECRET']);  // Sécurisé pour l'affichage HTML
+// echo print_r($_SESSION, true);
 // Récupérer l'URL demandée (par exemple /home ou /about)
 $url = $_SERVER['REQUEST_URI'] ?? "/";
-$url = parse_url($url, PHP_URL_PATH); // <-- Ajoute cette ligne pour ne garder que le chemin
+$url = parse_url($url, PHP_URL_PATH);
+
+// Gestion du téléchargement sécurisé
+if (preg_match('#^/download/([\w\-\.]+)$#', $url, $matches)) {
+    $filename = basename($matches[1]); // empêche toute traversée de répertoires
+
+    // Exemple : les fichiers sont dans /storage/challenges_resources/
+    $path = __DIR__ . '/../storage/challenges_resources/' . $filename;
+
+    if (file_exists($path)) {
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . filesize($path));
+        flush();
+        readfile($path);
+        exit;
+    } else {
+        http_response_code(404);
+        echo "Fichier introuvable.";
+        exit;
+    }
+}
 
 // Vérifier l'URL et inclure le fichier correspondant
 switch ($url) {
@@ -31,9 +59,6 @@ switch ($url) {
     case '/contact':
         require_once '../frontend/contact.php'; // Inclure la page "contact"
         break;
-    case '/sponsors':
-        require_once '../frontend/sponsors.php'; // Inclure la page "sponsors"
-        break;
     case '/error403':
         require_once '../frontend/error403.php'; // Inclure la page "error403"
         break;
@@ -49,6 +74,10 @@ switch ($url) {
     case '/typo':
         require_once '../frontend/typo.php'; // Inclure la page "typo"
         break;
+    // decommenter pour faire des tests
+    // case '/mes_tests':
+    //     require_once '../frontend/test.php'; // Inclure la page "redis"
+    //     break;
 
     // Page user
     case '/user':

@@ -20,8 +20,6 @@
 
 *{
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
     transition: all 0.3s ease;
 }
 body{
@@ -48,7 +46,8 @@ header{
     margin: 30px auto;
     padding: 20px 30px;
     box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
-    background: var(--card);
+    background: linear-gradient(45deg, var(--background), var(--card-bg), var(--card-hover));
+    transition:all ease 0.5s;
 }
 h1{
     font-size: 3rem;
@@ -145,6 +144,7 @@ main{
     background: var(--blue-opac);
     border: 1px solid var(--border);
     color: var(--blue);
+    margin: 0;
 }
 .technoDiv{
     display: flex;
@@ -154,12 +154,11 @@ main{
 }
 .prize{
     width: 100%;
-    padding: 10px;
+    padding: 20px 10px;
     border-radius: 10px;
     background: var(--background);
     border: 1px solid var(--border);
     box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
-    min-height: 130px;
 }
 .rule{
     cursor: pointer;

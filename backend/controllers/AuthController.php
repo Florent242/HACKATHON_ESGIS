@@ -271,11 +271,6 @@ class AuthController
                 throw new Exception("Erreur lors de la création de l'utilisateur");
             }
         } catch (Exception $e) {
-            logActivity('register_error', $e->getMessage(), [
-                'email' => $data['email'] ?? 'non fourni',
-                'error' => $e->getMessage()
-            ], $userId, 'error');
-
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
@@ -355,11 +350,6 @@ class AuthController
                 throw new Exception("Email ou mot de passe incorrect.");
             }
         } catch (Exception $e) {
-            logActivity('login_error', $e->getMessage(), [
-                'identifier' => $identifier ?? 'non fourni',
-                'error' => $e->getMessage()
-            ], $attemptId ?? null, 'error');
-
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
@@ -394,8 +384,6 @@ class AuthController
             ]);
             exit();
         } catch (Exception $e) {
-            logActivity('logout_error', 'Erreur lors de la déconnexion', ['error' => $e->getMessage()], $userId ?? null, 'error');
-
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()

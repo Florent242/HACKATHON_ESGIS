@@ -16,30 +16,6 @@ class Challenge
         $this->db = $db;
     }
 
-    public function create($data)
-    {
-        try {
-            $this->validate($data);
-
-            $sql = "INSERT INTO {$this->table} (title, description, hackathon_id, points, created_by, created_at)
-                    VALUES (:titre, :description, :hackathon_id, :points, :created_by, :created_at)";
-
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                ':title' => $data['title'],
-                ':description' => $data['description'],
-                ':hackathon_id' => $data['hackathon_id'],
-                ':points' => $data['points'],
-                ':created_by' => $data['created_by'],
-                ':created_at' => $data['created_at']
-            ]);
-
-            return $this->db->lastInsertId();
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la création du challenge : " . $e->getMessage());
-        }
-    }
-
     public function find($id)
     {
         try {
@@ -129,49 +105,177 @@ class Challenge
         }
     }
 
-    public function update($id, $data)
+    /**
+     * @param mixed $user_id
+     * @param mixed $input
+     * @throws \Exception
+     * @return array{message: string, success: bool, validated_flag_id: mixed|array{message: string, success: bool, validated_flag_id: null}}
+     */
+    public function submitChallengeCTF($user_id, $input)
     {
         try {
-            $fields = [];
-            $params = [':id' => $id];
+            $this->db->beginTransaction();
 
-            foreach ($data as $key => $value) {
-                if ($key !== 'id' && $key !== 'hackathon_id' && $key !== 'created_by') {
-                    $fields[] = "$key = :$key";
-                    $params[":$key"] = $value;
-                }
+            // Récupérer le flag et challenge
+            $stmt = $this->db->prepare("SELECT * FROM flags WHERE challenge_id = :challenge_id FOR UPDATE");
+            $stmt->execute([':challenge_id' => $input['challenge_id']]);
+            $flag = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$flag) {
+                $this->db->rollBack();
+                throw new Exception("Flag ou challenge invalide.");
             }
 
-            if (empty($fields)) {
-                throw new Exception("Aucune donnée à mettre à jour");
+            // Récupérer l’équipe du joueur
+            $teamStmt = $this->db->prepare("SELECT team_id FROM team_members WHERE user_id = :user_id LIMIT 1");
+            $teamStmt->execute([':user_id' => $user_id]);
+            $team_id = $teamStmt->fetchColumn();
+
+            if (!$team_id) {
+                $this->db->rollBack();
+                return [
+                    'success' => false,
+                    'message' => "Vous n'appartenez à aucune équipe.",
+                    'validated_flag_id' => null
+                ];
             }
 
-            $sql = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute($params);
+            // Vérifier si un membre de l’équipe a déjà validé ce challenge
+            $checkQuery = "
+                SELECT vf.id 
+                FROM validated_flags vf
+                JOIN team_members tm ON tm.user_id = vf.user_id
+                WHERE vf.challenge_id = :challenge_id
+                AND tm.team_id = :team_id
+                AND vf.is_valid = 1
+            ";
+            $stmt = $this->db->prepare($checkQuery);
+            $stmt->execute([
+                ':challenge_id' => $input['challenge_id'],
+                ':team_id' => $team_id
+            ]);
+            if ($stmt->fetch()) {
+                $this->db->rollBack();
+                return [
+                    'success' => false,
+                    'message' => 'Ce flag a déjà été validé par un membre de votre équipe.',
+                    'validated_flag_id' => null
+                ];
+            }
+
+            // Vérification du flag
+            $submittedHash = hash('sha256', $input['flag_value']);
+            if ($submittedHash !== $flag['value']) {
+                $this->db->rollBack();
+                return [
+                    'success' => false,
+                    'message' => 'Flag incorrect.',
+                    'validated_flag_id' => null
+                ];
+            }
+
+            // Récupère solve_count pour ce flag
+            $stmt = $this->db->prepare("
+                        SELECT COUNT(DISTINCT user_id)
+                        FROM validated_flags
+                        WHERE flag_id = :flag_id
+                        AND is_valid = 1
+                    ");
+            $stmt->execute([':flag_id' => $flag['id']]);
+            $solveCount = $stmt->fetchColumn();
+
+            // Calcule les nouveaux points dynamiques
+            $points = $this->calculateDynamicFlagPoints(
+                (int)$flag['initial_points'],
+                (int)$flag['min_points'],
+                (int)$flag['decay'],
+                (int)$solveCount
+            );
+
+            // Mise à jour des points du flag
+            $stmt = $this->db->prepare("UPDATE flags SET points = :points WHERE id = :flag_id");
+            $stmt->execute([
+                ':points' => $points,
+                ':flag_id' => $flag['id']
+            ]);
+
+            // Insertion de la validation
+            $stmt = $this->db->prepare("
+                INSERT INTO validated_flags (flag_id, user_id, challenge_id, validated_at, is_valid) 
+                VALUES (:flag_id, :user_id, :challenge_id, NOW(), 1)
+            ");
+            $stmt->execute([
+                ':flag_id' => $flag['id'],
+                ':user_id' => $user_id,
+                ':challenge_id' => $flag['challenge_id']
+            ]);
+
+            $validatedFlagId = $this->db->lastInsertId();
+            $this->db->commit();
+
+            // Vérifier si une ligne existe déjà
+            $stmt = $this->db->prepare("
+                SELECT id FROM scores 
+                WHERE team_id = :team_id AND hackathon_id = :hackathon_id AND phase_id = :phase_id
+            ");
+            $stmt->execute([
+                ':team_id' => $team_id,
+                ':hackathon_id' => $input['hackathon_id'],
+                ':phase_id' => 1
+            ]);
+
+            $scoreId = $stmt->fetchColumn();
+
+            if ($scoreId) {
+                // Update
+                $stmt = $this->db->prepare("
+                    UPDATE scores 
+                    SET total_points = total_points + :points 
+                    WHERE id = :id
+                ");
+                $stmt->execute([
+                    ':points' => $points,
+                    ':id' => $scoreId
+                ]);
+            } else {
+                // Insert
+                $stmt = $this->db->prepare("
+                    INSERT INTO scores (team_id, hackathon_id, phase_id, total_points)
+                    VALUES (:team_id, :hackathon_id, :phase_id, :points)
+                ");
+                $stmt->execute([
+                    ':team_id' => $team_id,
+                    ':hackathon_id' => $input['hackathon_id'],
+                    ':phase_id' => 1,
+                    ':points' => $points
+                ]);
+            }
+
+
+            return [
+                'success' => true,
+                'message' => "Flag validé avec succès ! Vous gagnez $points points.",
+                'validated_flag_id' => $validatedFlagId,
+                'points' => $points
+            ];
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la mise à jour du challenge : " . $e->getMessage());
+            $this->db->rollBack();
+            throw new Exception(
+                "Erreur lors de la soumission du challenge CTF !"
+                // Pour debuger
+                // . $e->getMessage()
+            );
         }
     }
 
-    public function delete($id)
+    public function calculateDynamicFlagPoints(int $initial, int $min, int $decay, int $solveCount): int
     {
-        try {
-            // Vérifier si des projets sont associés
-            $sql = "SELECT COUNT(*) FROM projects WHERE challenge_id = :id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([':id' => $id]);
+        if ($decay <= 0) return $min;
 
-            if ($stmt->fetchColumn() > 0) {
-                throw new Exception("Impossible de supprimer le challenge : des projets y sont associés");
-            }
+        $value = (($min - $initial) / ($decay ** 2)) * ($solveCount ** 2) + $initial;
+        $value = ceil($value);
 
-            $sql = "DELETE FROM {$this->table} WHERE id = :id";
-            $stmt = $this->db->prepare($sql);
-            return $stmt->execute([':id' => $id]);
-        } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la suppression du challenge : " . $e->getMessage());
-        }
+        return max($value, $min);
     }
 
     public function getByHackathon($hackathonId)
@@ -193,63 +297,6 @@ class Challenge
             throw new Exception("Erreur lors de la récupération des challenges : " . $e->getMessage());
         }
     }
-
-    private function validate($data)
-    {
-        if (empty($data['titre'])) {
-            throw new Exception("Le titre est obligatoire");
-        }
-
-        if (empty($data['description'])) {
-            throw new Exception("La description est obligatoire");
-        }
-
-        if (empty($data['hackathon_id'])) {
-            throw new Exception("L'ID du hackathon est obligatoire");
-        }
-
-        if (!is_numeric($data['hackathon_id'])) {
-            throw new Exception("L'ID du hackathon doit être un nombre");
-        }
-
-        if (empty($data['points']) || !is_numeric($data['points']) || $data['points'] < 0) {
-            throw new Exception("Le nombre de points doit être un nombre positif");
-        }
-
-        // Vérifier si le titre est unique pour ce hackathon
-        $sql = "SELECT COUNT(*) FROM {$this->table}
-                WHERE titre = :titre AND hackathon_id = :hackathon_id";
-
-        if (isset($data['id'])) {
-            $sql .= " AND id != :id";
-        }
-
-        $stmt = $this->db->prepare($sql);
-        $params = [
-            ':titre' => $data['titre'],
-            ':hackathon_id' => $data['hackathon_id']
-        ];
-
-        if (isset($data['id'])) {
-            $params[':id'] = $data['id'];
-        }
-
-        $stmt->execute($params);
-
-        if ($stmt->fetchColumn() > 0) {
-            throw new Exception("Un challenge avec ce titre existe déjà dans ce hackathon");
-        }
-
-        // Vérifier si le hackathon existe
-        $sql = "SELECT id FROM hackathons WHERE id = :id";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([':id' => $data['hackathon_id']]);
-
-        if (!$stmt->fetch()) {
-            throw new Exception("Hackathon non trouvé");
-        }
-    }
-
 
     public function getUserOngoingChallenges($userId, $type)
     {
@@ -279,11 +326,15 @@ class Challenge
     public function getTotalSolvesCount(): int
     {
         try {
-            $stmt = $this->db->query("SELECT COUNT(*) FROM challenge_solves");
-            $count = $stmt->fetchColumn();
-            return (int) $count;
+            $stmt = $this->db->query("
+                SELECT COUNT(DISTINCT tm.team_id, vf.challenge_id) AS total_solves
+                FROM validated_flag vf
+                JOIN team_members tm ON vf.user_id = tm.user_id
+                WHERE vf.is_valid = 1
+            ");
+            return (int) $stmt->fetchColumn();
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération du nombre total de résolutions : " . $e->getMessage());
+            throw new Exception("Erreur lors du comptage total des résolutions : " . $e->getMessage());
         }
     }
 
@@ -297,17 +348,21 @@ class Challenge
     public function getSolvesCountByChallengeId(int $challengeId): int
     {
         try {
-            $stmt = $this->db->prepare("SELECT COUNT(*) FROM challenge_solves WHERE challenge_id = :challenge_id");
+            $stmt = $this->db->prepare("
+                SELECT COUNT(DISTINCT tm.team_id) AS solve_count
+                FROM validated_flag vf
+                JOIN team_members tm ON vf.user_id = tm.user_id
+                WHERE vf.challenge_id = :challenge_id AND vf.is_valid = 1
+            ");
             $stmt->bindParam(':challenge_id', $challengeId, PDO::PARAM_INT);
             $stmt->execute();
-            $count = $stmt->fetchColumn();
-            return (int) $count;
+            return (int) $stmt->fetchColumn();
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération du nombre de résolutions pour le challenge {$challengeId} : " . $e->getMessage());
+            throw new Exception("Erreur lors du comptage des résolutions pour le challenge $challengeId : " . $e->getMessage());
         }
     }
 
-    public function getchallengeDev($hackathon_id, $user_id)
+    public function getchallengeAlgo($hackathon_id, $user_id)
     {
         try {
             $sql = "SELECT 
@@ -318,41 +373,38 @@ class Challenge
             c.description,
             c.difficulty,
             c.url_path,
-            c.resource_link,
-            c.instructions,
             c.points,
             c.is_active,
-            c.is_dynamic,
             c.created_at,
             c.updated_at,
-            c.created_by,
             c.hackathon_id,
-            -- Informations sur la soumission de l'utilisateur
-            cs.id as submission_id,
-            cs.status as submission_status,
-            cs.points as submission_points,
-            cs.submission_url,
-            cs.feedback,
-            cs.created_at as submitted_at,
-            -- Nombre total de soumissions
-            (SELECT COUNT(*) FROM challenge_submissions WHERE challenge_id = c.id) as total_submissions,
-            -- Technologies associées
-            GROUP_CONCAT(DISTINCT t.name SEPARATOR ', ') as technologies,
-            -- Nombre de participants ayant résolu
-            (SELECT COUNT(DISTINCT user_id) FROM challenge_solves WHERE challenge_id = c.id) as solvers_count
+
+            -- Nombre d’équipes ayant résolu ce challenge
+            (
+                SELECT COUNT(DISTINCT tm.team_id)
+                FROM challenge_solves cs2
+                JOIN team_members tm ON tm.user_id = cs2.user_id
+                WHERE cs2.challenge_id = c.id
+            ) as solvers_count,
+
+            -- Est-ce que l’équipe du user a déjà résolu ?
+            EXISTS (
+                SELECT 1
+                FROM challenge_solves cs3
+                JOIN team_members tm2 ON tm2.user_id = cs3.user_id
+                WHERE cs3.challenge_id = c.id
+                AND tm2.team_id = (
+                    SELECT team_id FROM team_members WHERE user_id = :user_id LIMIT 1
+                )
+            ) as team_has_solved
+
         FROM 
             {$this->table} c
-        -- Jointure pour les technologies
-        LEFT JOIN challenge_technologies ct ON c.id = ct.challenge_id
-        LEFT JOIN technologies t ON ct.technology_id = t.id
-        -- Jointure pour la soumission de l'utilisateur actuel
-        LEFT JOIN challenge_submissions cs ON c.id = cs.challenge_id AND cs.user_id = :user_id
         WHERE 
             c.type = 'dev'
+            AND c.category = 'algo'
             AND c.is_active = 1
             AND c.hackathon_id = :hackathon_id
-        GROUP BY 
-            c.id
         ORDER BY 
             c.difficulty,
             c.title";
@@ -364,7 +416,73 @@ class Challenge
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
-            throw new Exception("Erreur lors de la récupération des challenges : " . $e->getMessage());
+            throw new Exception(
+                "Erreur lors de la récupération des challenges algorithmiques !"
+                // pour debug
+                // . $e->getMessage()
+            );
+        }
+    }
+
+    public function getchallengeDev($hackathon_id, $team_id)
+    {
+        try {
+            $sql = "SELECT 
+                c.id,
+                c.title,
+                c.type,
+                c.category,
+                c.description,
+                c.difficulty,
+                c.url_path,
+                c.resource_link,
+                c.instructions,
+                c.points,
+                c.is_active,
+                c.is_dynamic,
+                c.created_at,
+                c.updated_at,
+                c.created_by,
+                c.hackathon_id,
+    
+                -- Soumission de l'équipe
+                cs.id as submission_id,
+                cs.status as submission_status,
+                cs.points as submission_points,
+                cs.submission_url,
+                cs.feedback,
+                cs.created_at as submitted_at,
+    
+                -- Technologies associées
+                GROUP_CONCAT(DISTINCT t.name SEPARATOR ', ') as technologies
+    
+            FROM 
+                {$this->table} c
+            LEFT JOIN challenge_technologies ct ON c.id = ct.challenge_id
+            LEFT JOIN technologies t ON ct.technology_id = t.id
+            LEFT JOIN challenge_submissions cs ON cs.challenge_id = c.id AND cs.team_id = :team_id
+            WHERE 
+                c.type = 'dev'
+                AND c.is_active = 1
+                AND c.hackathon_id = :hackathon_id
+            GROUP BY 
+                c.id
+            ORDER BY 
+                c.difficulty,
+                c.title";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':hackathon_id', $hackathon_id, PDO::PARAM_INT);
+            $stmt->bindParam(':team_id', $team_id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            throw new Exception(
+                "Erreur lors de la récupération des challenges Dev !"
+                // pour debug
+                // . $e->getMessage()
+            );
         }
     }
 
@@ -372,48 +490,48 @@ class Challenge
     {
         try {
             $sql = "SELECT 
-            c.id,
-            c.title,
-            c.type,
-            c.category,
-            c.description,
-            c.difficulty,
-            c.url_path,
-            c.resource_link,
-            c.points,
-            c.is_active,
-            c.is_dynamic,
-            c.created_at,
-            c.updated_at,
-            c.created_by,
-            c.hackathon_id,
-            f.is_dynamic as flag_is_dynamic,
-            vf.id as validation_id,
-            vf.is_valid as is_validated,
-            vf.validated_at as validated_at,
-            (
-                SELECT COUNT(DISTINCT vf2.user_id) 
-                FROM validated_flags vf2
-                INNER JOIN flags f2 ON vf2.flag_id = f2.id
-                WHERE f2.challenge_id = c.id
-                AND vf2.is_valid = 1
-            ) as solvers_count
-        FROM 
-            {$this->table} c
-        LEFT JOIN 
-            flags f ON c.id = f.challenge_id
-        LEFT JOIN 
-            validated_flags vf ON f.id = vf.flag_id 
-            AND vf.user_id = :user_id
-        WHERE 
-            c.type = 'ctf'
-            AND c.is_active = 1
-            AND c.hackathon_id = :hackathon_id
-        GROUP BY 
-            c.id
-        ORDER BY 
-            c.difficulty, 
-            c.title";
+                c.id,
+                c.title,
+                c.type,
+                c.category,
+                c.description,
+                c.difficulty,
+                c.url_path,
+                c.resource_link,
+                c.points,
+                c.is_active,
+                c.is_dynamic,
+                c.created_at,
+                c.updated_at,
+                c.created_by,
+                c.hackathon_id,
+                f.is_dynamic as flag_is_dynamic,
+                vf.id as validation_id,
+                vf.is_valid as is_validated,
+                vf.validated_at as validated_at,
+                (
+                    SELECT COUNT(DISTINCT tm.team_id)
+                    FROM validated_flags vf2
+                    INNER JOIN flags f2 ON vf2.flag_id = f2.id
+                    INNER JOIN team_members tm ON tm.user_id = vf2.user_id
+                    WHERE f2.challenge_id = c.id
+                    AND vf2.is_valid = 1
+                ) as solvers_count
+            FROM 
+                {$this->table} c
+            LEFT JOIN 
+                flags f ON c.id = f.challenge_id
+            LEFT JOIN 
+                validated_flags vf ON f.id = vf.flag_id AND vf.user_id = :user_id
+            WHERE 
+                c.type = 'ctf'
+                AND c.is_active = 1
+                AND c.hackathon_id = :hackathon_id
+            GROUP BY 
+                c.id
+            ORDER BY 
+                c.difficulty, 
+                c.title";
 
             $stmt = $this->db->prepare($sql);
             $stmt->bindParam(':hackathon_id', $hackathon_id, PDO::PARAM_INT);
@@ -422,7 +540,11 @@ class Challenge
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
-            throw new Exception("Erreur lors de la récupération des challenges : " . $e->getMessage());
+            throw new Exception(
+                "Erreur lors de la récupération des challenges CTF !"
+                // pour debug
+                // . $e->getMessage()
+            );
         }
     }
 }

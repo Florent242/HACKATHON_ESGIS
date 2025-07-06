@@ -125,16 +125,12 @@ class ParticipantController extends Controller
                 throw new Exception('Méthode non autorisée');
             }
 
-            if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                throw new Exception('Token CSRF invalide');
-            }
-
             $teamId = $input['team_id'] ?? null;
             if (!$teamId) {
                 throw new Exception("ID de l'équipe requis");
             }
 
-            $captainId = $input['captain_id'];
+            $captainId = $input['leader_id'];
 
             $success = $this->participant->registerTeam($hackathonId, $teamId, $captainId);
 

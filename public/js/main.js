@@ -128,7 +128,7 @@ const NOTIFICATION_OFFSET = 10; // Espacement entre les notifications en pixels
 
 function updateNotificationsPosition() {
     let topPosition = 20; // Position de départ en haut
-    
+
     // Parcourir toutes les notifications visibles
     activeNotifications.forEach(notification => {
         if (document.body.contains(notification)) {
@@ -139,9 +139,57 @@ function updateNotificationsPosition() {
     });
 }
 
+// Fonctions d'affichage/masquage des erreurs
+/**
+ * @description Affiche et anime un message d'erreur
+ * @param {HTMLElement} inputElement 
+ * @param {HTMLElement} errorElement 
+ * @param {string} message 
+ */
+function showError(inputElement, errorElement, message) {
+    // Ajouter la classe d'erreur à l'input
+    inputElement.parentElement.classList.add('input-error');
+
+    // Afficher et animer le message d'erreur
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden', 'fade-out');
+}
+
+/**
+ * @description Masque et anime un message d'erreur
+ * @param {HTMLElement} inputElement 
+ * @param {HTMLElement} errorElement 
+ */
+function hideError(inputElement, errorElement) {
+    // Retirer la classe d'erreur de l'input
+    inputElement.parentElement.classList.remove('input-error');
+
+    // Vérifier si l'erreur est déjà masquée
+    if (errorElement.classList.contains('hidden')) return;
+
+    // Supprimer l'ancienne animation si elle est encore en cours
+    errorElement.classList.remove('fade-in');
+
+    // Ajouter la classe de disparition
+    errorElement.classList.add('fade-out');
+
+    // Attendre la fin de l'animation avant de cacher complètement
+    errorElement.addEventListener('animationend', function () {
+        errorElement.classList.add('hidden');
+        errorElement.classList.remove('fade-out'); // Nettoyage après animation
+    }, { once: true });
+}
+
+/**
+ * @description Affiche une notification
+ * @param {string} message 
+ * @param {string} details 
+ * @param {string} type 
+ * @param {number} duration 
+ */
 function showNotification(message, details = null, type = 'info', duration = 5000) {
     const notification = document.createElement('div');
-    notification.className = `fixed ${type === 'success' ? 'left-1/2 transform -translate-x-1/2' : 'right-4'} bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 flex items-start justify-between gap-3 animate-fade-in z-[1000] cursor-pointer min-h-[60px] w-[45vw] sm:w-[28vw] md:w-[25vw] lg:w-[25vw]`;
+    notification.className = `fixed ${type === 'success' ? 'left-1/2 transform -translate-x-1/2' : 'right-4'} bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 flex items-start justify-between gap-3 animate-fade-in z-[1000] cursor-pointer min-h-[60px] w-[45vw] sm:w-[40vw] md:w-[40vw] lg:w-[40vw]`;
 
     let timeoutId;
     const startTimer = () => {
@@ -188,7 +236,7 @@ function showNotification(message, details = null, type = 'info', duration = 500
 
     // Message principal avec clamp
     const messageElement = document.createElement('p');
-    messageElement.className = 'text-white font-medium text-xs sm:text-sm md:text-base line-clamp-1';
+    messageElement.className = 'text-white font-medium text-sm sm:text-base line-clamp-1';
     messageElement.innerText = message;
     messageElement.title = message;
     textContainer.appendChild(messageElement);
@@ -196,7 +244,7 @@ function showNotification(message, details = null, type = 'info', duration = 500
     // Message de détails (en option)
     if (details) {
         const detailsElement = document.createElement('p');
-        detailsElement.className = 'text-gray-300/90 font-normal text-xs sm:text-sm md:text-xs mt-1 line-clamp-1';
+        detailsElement.className = 'text-gray-300/90 font-normal text-xs sm:text-sm mt-1 line-clamp-1';
         detailsElement.innerText = details;
         detailsElement.title = details;
         textContainer.appendChild(detailsElement);
@@ -213,7 +261,7 @@ function showNotification(message, details = null, type = 'info', duration = 500
 
     const closeIcon = document.createElement('i');
     closeIcon.setAttribute('data-lucide', 'x');
-    closeIcon.className = 'w-3 h-3 sm:w-4 sm:h-4';
+    closeIcon.className = 'w-4 h-4 max-sm:w-3 max-sm:h-3';
 
     closeButton.appendChild(closeIcon);
     closeButton.addEventListener('click', (e) => {
@@ -230,7 +278,7 @@ function showNotification(message, details = null, type = 'info', duration = 500
 
     // Ajouter la notification au DOM
     document.body.appendChild(notification);
-    
+
     // Ajouter à la liste des notifications actives
     activeNotifications.push(notification);
     updateNotificationsPosition();
@@ -250,6 +298,10 @@ function showNotification(message, details = null, type = 'info', duration = 500
     return notification;
 }
 
+/**
+ * @description Masque et anime une notification
+ * @param {HTMLElement} notification 
+ */
 function hideNotification(notification) {
     notification.classList.add('animate-fade-out');
     notification.addEventListener('animationend', () => {
@@ -264,7 +316,12 @@ function hideNotification(notification) {
     }, { once: true });
 }
 
-// Dans un fichier utils.js ou directement dans auth.js
+/**
+ * @description Stocke un message flash dans localStorage
+ * @param {string} type 
+ * @param {string} message 
+ * @param {string} details 
+ */
 function setFlashMessage(type, message, details = null) {
     // Stocker le message dans localStorage
     localStorage.setItem('flashMessage', JSON.stringify({
@@ -275,6 +332,10 @@ function setFlashMessage(type, message, details = null) {
     }));
 }
 
+/**
+ * @description Récupère un message flash depuis localStorage
+ * @returns {Object|null}
+ */
 function getFlashMessage() {
     const message = localStorage.getItem('flashMessage');
     if (message) {
@@ -283,7 +344,13 @@ function getFlashMessage() {
     }
     return null;
 }
-// Fonction utilitaire pour gérer les requêtes API
+
+/**
+ * @description Fonction utilitaire pour gérer les requêtes API
+ * @param {string} endpoint 
+ * @param {Object} options 
+ * @returns {Promise<Object>}
+ */
 async function apiRequest(endpoint, options = {}) {
     try {
         const headers = {
@@ -297,7 +364,7 @@ async function apiRequest(endpoint, options = {}) {
         });
 
         if (!response.ok) {
-            throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
+            throw new Error(`${response.statusText}`);
         }
 
         const data = await response.json();
@@ -308,11 +375,20 @@ async function apiRequest(endpoint, options = {}) {
     }
 }
 
-function handleError(message, error) {
+/**
+ * @description Fonction utilitaire pour gérer les erreurs
+ * @param {string} message 
+ * @param {Error} error 
+ * @param {string} type 
+ */
+function handleError(message, error, type = 'error') {
     console.error(message, error)
-    showNotification(`${message}: ${error.message || "Erreur inconnue"}`, "error")
+    showNotification(`${message}`, `${error.message || "Erreur inconnue"}`, type)
 }
 
+/**
+ * @description Fonction utilitaire pour vérifier l'état de connexion
+ */
 async function initVerification() {
     const authCheck = await AuthService.verifyAuth();
     console.log('Auth check:', authCheck);
@@ -336,7 +412,9 @@ async function initVerification() {
     }
 }
 
-// Pour une gestion des connexions cote client mais non implemente
+/**
+ * @description Pour une gestion des connexions cote client mais non implemente
+ */
 try {
     // initVerification();
 } catch (error) {
@@ -348,6 +426,10 @@ try {
         AuthService.redirectToLogin();
     }
 }
+
+/**
+ * @description Fonction pour récupérer l'ID de l'utilisateur
+ */
 async function getUserId() {
     try {
         const response = await fetch('/api/users/me', {
@@ -367,7 +449,12 @@ async function getUserId() {
         return null;
     }
 }
-// Fonction pour mettre à jour les éléments du DOM
+
+/**
+ * @description Fonction pour mettre à jour les éléments du DOM
+ * @param {Object} elements 
+ * @param {Object} data 
+ */
 function updateDOM(elements, data) {
     Object.entries(elements).forEach(([key, selector]) => {
         const element = document.querySelectorAll(selector);

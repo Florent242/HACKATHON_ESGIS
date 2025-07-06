@@ -23,23 +23,48 @@ class Team
     public function getAll($userId)
     {
         try {
-            $query = "SELECT * FROM {$this->table} ORDER BY name";
+            $query = "
+            SELECT 
+                t.id,
+                t.name,
+                t.description,
+                t.type,
+                t.leader_id,
+                (
+                    SELECT COUNT(*) 
+                    FROM team_members tm_count 
+                    WHERE tm_count.team_id = t.id
+                ) AS members_count,
+                EXISTS (
+                    SELECT 1 
+                    FROM team_members tm_check 
+                    WHERE tm_check.team_id = t.id AND tm_check.user_id = :userId
+                ) AS is_member
+            FROM {$this->table} t
+            ORDER BY t.name
+        ";
+
             $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
             $stmt->execute();
+
             $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-
-            foreach ($result as &$team) {
-                unset($team['invitation_code']);
+            // Convertir "is_member" de string "0"/"1" à booléen
+            foreach ($result as &$row) {
+                $row['is_member'] = (bool) $row['is_member'];
             }
-
 
             return $result;
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des équipes: ' . $e->getMessage());
-            return [];
+            throw new Exception('Erreur lors de la récupération des équipes !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
+
 
     /**
      * Récupère une équipe par son ID
@@ -58,14 +83,17 @@ class Team
                 return false;
             }
             if ($userId && !$this->isMember($id, $userId)) {
-                
+
                 unset($result['invitation_code']);
             }
 
             return $result;
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération de l\'équipe: ' . $e->getMessage());
-            return false;
+            throw new Exception('Erreur lors de la récupération de l\'équipe !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 
@@ -101,16 +129,6 @@ class Team
             if ($checkLeaderStmt->fetch(PDO::FETCH_ASSOC)) {
                 throw new Exception('Utilisateur leader deja leader d\'une equipe');
             }
-
-            // // Vérifier si le hackathon existe
-            // $checkHackathonQuery = "SELECT id FROM hackathons WHERE id = :id LIMIT 1";
-            // $checkHackathonStmt = $this->db->prepare($checkHackathonQuery);
-            // $checkHackathonStmt->bindParam(':id', $data['hackathon_id'], PDO::PARAM_INT);
-            // $checkHackathonStmt->execute();
-
-            // if (!$checkHackathonStmt->fetch(PDO::FETCH_ASSOC)) {
-            //     throw new Exception('Hackathon non trouvé');
-            // }
 
             // Préparer les données
             $name = $data['name'];
@@ -155,17 +173,14 @@ class Team
                 return $teamId;
             } catch (Exception $e) {
                 $this->db->rollBack();
-                throw $e;
+                throw new Exception('Erreur lors de la création de l\'équipe !'
+                // Pour le debug
+                // .$e->getMessage()
+                );
             }
         } catch (Exception $e) {
-            error_log(
-                'Erreur lors de la création de l\'équipe: '
-                    // Pour le debug
-                    . $e->getMessage()
-            );
-            throw new Exception('Erreur lors de la création de l\'équipe: '
-                // Pour le debug
-                . $e->getMessage());
+            error_log('Erreur lors de la création de l\'équipe: ' . $e->getMessage());
+            throw new Exception($e->getMessage());
         }
     }
 
@@ -219,7 +234,7 @@ class Team
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log('Erreur lors de la mise à jour de l\'équipe: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la mise à jour de l\'équipe: ' . $e->getMessage());
+            throw new Exception($e->getMessage());
         }
     }
 
@@ -243,7 +258,10 @@ class Team
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log('Erreur lors de la suppression de l\'équipe: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la suppression de l\'équipe: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la suppression de l\'équipe !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 
@@ -263,7 +281,10 @@ class Team
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des équipes par hackathon: ' . $e->getMessage());
-            return [];
+            throw new Exception('Erreur lors de la récupération des équipes par hackathon !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 
@@ -286,7 +307,10 @@ class Team
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des équipes par utilisateur: ' . $e->getMessage());
-            return [];
+            throw new Exception('Erreur lors de la récupération des équipes par utilisateur !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 
@@ -308,7 +332,10 @@ class Team
             return (int)$stmt->fetchColumn() > 0;
         } catch (PDOException $e) {
             error_log('Erreur lors de la vérification d\'appartenance à l\'équipe: ' . $e->getMessage());
-            return false;
+            throw new Exception('Erreur lors de la vérification d\'appartenance à l\'équipe !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 
@@ -347,7 +374,10 @@ class Team
             return true;
         } catch (Exception $e) {
             error_log('Erreur lors de l\'ajout du membre à l\'équipe: ' . $e->getMessage());
-            throw new Exception('Erreur lors de l\'ajout du membre à l\'équipe: ' . $e->getMessage());
+            throw new Exception('Erreur lors de l\'ajout du membre à l\'équipe !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
     //verifier que seul le leader accepte les demandes d'adhésion
@@ -362,7 +392,10 @@ class Team
             return (int)$stmt->fetchColumn() > 0;
         } catch (PDOException $e) {
             error_log('Erreur lors de la vérification de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
-            return false;
+            throw new Exception('Erreur lors de la vérification de la demande d\'adhésion à l\'équipe !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 
@@ -416,7 +449,10 @@ class Team
             return (int)$stmt->fetchColumn() > 0;
         } catch (PDOException $e) {
             error_log('Erreur lors de la vérification de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
-            return false;
+            throw new Exception('Erreur lors de la vérification de la demande d\'adhésion à l\'équipe !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
     public function teamRequest($teamId, $userId)
@@ -425,7 +461,7 @@ class Team
         try {
             // Vérifier si l'utilisateur est déjà membre de l'équipe
             if ($this->isMember($teamId, $userId)) {
-                throw new Exception('L\'utilisateur est déjà membre de cette équipe', 400);
+                throw new Exception('L\'utilisateur est déjà membre de cette équipe');
             }
 
             // Vérifier s'il existe déjà une demande en attente
@@ -437,7 +473,7 @@ class Team
             $stmtCheck->execute();
 
             if ((int)$stmtCheck->fetchColumn() > 0) {
-                throw new Exception('Une demande d\'adhésion est déjà en attente pour cette équipe', 400);
+                throw new Exception('Une demande d\'adhésion est déjà en attente pour cette équipe');
             }
 
             // Récupérer le leader_id de l'équipe
@@ -450,7 +486,7 @@ class Team
             error_log("Résultat de la requête SQL pour teamId $teamId: " . var_export($team, true));
 
             if (!$team) {
-                throw new Exception('Équipe non trouvée', 404);
+                throw new Exception('Équipe non trouvée');
             }
 
             $leaderId = $team['leader_id'];
@@ -472,7 +508,10 @@ class Team
             return true;
         } catch (Exception $e) {
             error_log('Erreur lors de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la demande d\'adhésion à l\'équipe: ' . $e->getMessage(), (int)($e->getCode() ?: 400));
+            throw new Exception('Erreur lors de la demande d\'adhésion à l\'équipe !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 
@@ -500,7 +539,10 @@ class Team
             return true;
         } catch (Exception $e) {
             error_log('Erreur lors de l\'acceptation de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
-            throw new Exception('Erreur lors de l\'acceptation de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
+            throw new Exception('Erreur lors de l\'acceptation de la demande d\'adhésion à l\'équipe !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 
@@ -528,7 +570,10 @@ class Team
             return true;
         } catch (Exception $e) {
             error_log('Erreur lors de la rejet de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la rejet de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la rejet de la demande d\'adhésion à l\'équipe !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 
@@ -564,7 +609,10 @@ class Team
             return true;
         } catch (Exception $e) {
             error_log('Erreur lors de la suppression du membre de l\'équipe: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la suppression du membre de l\'équipe: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la suppression du membre de l\'équipe !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 
@@ -610,7 +658,10 @@ class Team
         } catch (Exception $e) {
             $this->db->rollBack();
             error_log('Erreur lors du changement de leader: ' . $e->getMessage());
-            throw new Exception('Erreur lors du changement de leader: ' . $e->getMessage());
+            throw new Exception('Erreur lors du changement de leader !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 
@@ -632,7 +683,7 @@ class Team
 
             if (!$team) {
                 error_log("Équipe non trouvée pour teamId: $teamId");
-                throw new Exception('Équipe non trouvée', 404);
+                throw new Exception('Équipe non trouvée');
             }
 
             // Récupérer les membres acceptés
@@ -644,7 +695,7 @@ class Team
             if (!$stmt) {
                 $errorInfo = $this->db->errorInfo();
                 error_log("Erreur de préparation de la requête SQL : " . json_encode($errorInfo));
-                throw new Exception("Erreur de préparation de la requête SQL : " . $errorInfo[2], 500);
+                throw new Exception("Erreur de préparation de la requête SQL : " . $errorInfo[2]);
             }
             $stmt->bindParam(':team_id', $teamId, PDO::PARAM_INT);
             $stmt->execute();
@@ -657,7 +708,10 @@ class Team
             error_log("Erreur dans getMembers pour teamId $teamId: " . $e->getMessage() . " (Code: " . $e->getCode() . ")");
             // Convertir explicitement le code en entier
             $errorCode = is_numeric($e->getCode()) ? (int)$e->getCode() : 500;
-            throw new Exception("Une erreur est survenue lors de la récupération des membres de l'équipe : " . $e->getMessage(), $errorCode);
+            throw new Exception("Une erreur est survenue lors de la récupération des membres de l'équipe !"
+            // Pour le debug
+            // . $e->getMessage(), $errorCode
+            );
         }
     }
 
@@ -717,7 +771,7 @@ class Team
             $team = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$team) {
-                throw new Exception('Code d\'invitation invalide', 404);
+                throw new Exception('Code d\'invitation invalide');
             }
 
             $teamId = $team['id'];
@@ -751,7 +805,7 @@ class Team
             return $teamId;
         } catch (Exception $e) {
             error_log('Erreur dans joinTeamViaCode: ' . $e->getMessage());
-            throw new Exception($e->getMessage(), (int)$e->getCode() ?: 400);
+            throw new Exception($e->getMessage());
         }
     }
 }

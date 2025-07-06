@@ -17,7 +17,7 @@ class TokenManager
     private $key;
     private $db;
     private $algorithm = 'HS256';
-    private $domain = 'localhost';
+    private $domain = 'hackathon.esgis.bj';
     private $shortTermExpiry = 3600; // 1 heure
 
 
@@ -142,11 +142,12 @@ class TokenManager
                 $currentUa = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
                 if (
-                    $tokenData['ip_address'] !== $currentIp ||
                     $tokenData['user_agent'] !== $currentUa
                 ) {
                     $this->logSecurityEvent($decoded->sub, 'token_validation_failed', [
-                        'reason' => 'ip_or_ua_mismatch',
+                        'reason' => 'ua_mismatch',
+                        'stored_ua' => $tokenData['user_agent'],
+                        'current_ua' => $currentUa,
                         'stored_ip' => $tokenData['ip_address'],
                         'current_ip' => $currentIp
                     ]);

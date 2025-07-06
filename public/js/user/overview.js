@@ -388,7 +388,7 @@ const handleRemoveMember = async (id) => {
                 name = member.username;
             }
         });
-        showNotification(`${name} a été retiré de l'équipe.`, `info`);
+        showNotification('Success !',`${name} a été retiré de l'équipe.`, 'info');
         window.location.reload();
     }
 };
@@ -402,10 +402,10 @@ const handlePromoteLeader = async (id) => {
         }
     });
     if (promoteLeader.success) {
-        showNotification(`${name} est le nouveau leader de l'équipe.`, 'info');
+        showNotification('Success !',`${name} est le nouveau leader de l'équipe.`, 'info');
         window.location.reload();
     } else {
-        showNotification(`Erreur lors de la promotion de ${name} en tant que leader.`, 'error');
+        showNotification('Echec de la promotion !', `Erreur lors de la promotion de ${name} en tant que leader.`, 'error');
     }
 };
 
@@ -688,17 +688,17 @@ const invitUser = () => {
     lucide.createIcons();
     document.querySelector('#invitClose').onclick = () => closeModal();
     }else{
-        showNotification('Vous n\'avez pas les permissions pour inviter un utilisateur.', 'error');
+        showNotification('Echec de l\'invitation !','Vous n\'avez pas les permissions pour inviter un utilisateur.', 'error');
     }
 };
 
 const copyInvitCode = async () => {
     navigator.clipboard.writeText(team.invitation_code)
     .then(() => {
-        showNotification('Code copié avec succès.', 'info');
+        showNotification('Success !','Code copié avec succès.', 'info');
     })
     .catch(() => {
-        showNotification('Erreur lors de la copie du code.', 'error');
+        showNotification('Echec de la copie !','Erreur lors de la copie du code.', 'error');
     });
 }
 window.onkeydown=(e)=>{
@@ -807,14 +807,14 @@ const handleSettingsAction = () => {
             if (response && response.success && response.data && response.data.invitation_code) {
                 newCodeDiv.textContent = response.data.invitation_code;
                 team.invitation_code = response.data.invitation_code; // Mettre à jour la variable globale
-                showNotification('Le code d\'invitation a été mis à jour avec succès.', 'info');
+                showNotification('Modification effectuée !','Le code d\'invitation a été mis à jour avec succès.', 'info');
             } else {
                 console.warn('Données manquantes dans la réponse API:', response);
-                showNotification('Le code d\'invitation a été mis à jour, mais le nouveau code n\'est pas disponible.', 'warning');
+                showNotification('Modification echouée !','Le code d\'invitation a été mis à jour, mais le nouveau code n\'est pas disponible.', 'warning');
             }
         } catch (error) {
             console.error('Erreur lors de la mise à jour du code:', error);
-            showNotification('Échec de la mise à jour du code d\'invitation: ' + error.message, 'error');
+            showNotification('Modification echouée !', error.message, 'error');
         }
     };
 
@@ -940,7 +940,7 @@ const apiReq = async (apiRoute, method = 'GET', data = null) => {
         headers: {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
-            'credentials': 'include'
+            'credentials': 'include',
         }
     }
     if (data) {
@@ -971,14 +971,14 @@ const manageOverviewData = {
         const deleteT = await apiReq(`teams/${teamId}`, 'delete');
         console.log(deleteT);
         if (deleteT.success) {
-            showNotification('L\'équipe a été supprimée avec succès.', 'info');
+            showNotification("Suppression effectuée !","L\'équipe a été supprimée avec succès.", 'info');
             window.location.href = '/user/teams';
         }
     },
     deleteMember: async (id) => {
         const deleteM = await apiReq(`teams/${teamId}/members/remove`, 'POST', { user_id: id });
         if (deleteM.success) {
-            showNotification('Le membre a été retiré avec succès.', 'info');
+            showNotification("Suppression effectuée !","Le membre a été retiré avec succès.", 'info');
             window.location.reload();
         }
     },
@@ -987,12 +987,12 @@ const manageOverviewData = {
         const updateT = await apiReq(`teams/${id}`, 'POST', data);
         console.log('Réponse complète de l\'API updateTeam:', JSON.stringify(updateT, null, 2));
         if (updateT.success) {
-            showNotification('L\'équipe a été mise à jour avec succès.', 'info');
+            showNotification('Modification effectuée !','L\'équipe a été mise à jour avec succès.', 'info');
             window.location.reload();
         }else {
             const errorMessage = updateT.errot || 'Erreur inconnue lors de la mise à jour de l\'équipe';
             console.log('Erreur lors de la mise à jour de l\'équipe:', errorMessage);
-            showNotification(`L'equipe n'a pas pu etre mise à jour. ${errorMessage}`, 'error');
+            showNotification(`Echec de la modification !`,errorMessage, 'error');
         }
     },
     
@@ -1014,17 +1014,19 @@ const manageOverviewData = {
     acceptRequest: async (id) => {
         const acceptR = await apiReq(`teams/${teamId}/leader/accept`,'POST',{user_id:id});
         if(acceptR.success){
-            showNotification(`Demande acceptée.`, 'info');
+            showNotification(`Demande acceptée !`, acceptR.message || null, 'info');
+            window.location.reload();
         }else{
-            showNotification(`Erreur lors de l'acceptation de la demande.`, 'error');
+            showNotification(`Erreur lors de l'adhesion.`, acceptR.message || null, 'error');
         }
     },
     deleteRequest: async (id) => {
         const deleteR = await apiReq(`teams/${teamId}/leader/reject`,'POST',{user_id:id});
         if(deleteR.success){
-            showNotification(`Demande refusée.`, 'error');
+            showNotification(`Demande refusée !`, deleteR.message || null, 'error');
+            window.location.reload();
         }else{
-            showNotification(`Erreur lors du refus de la demande.`, 'error');
+            showNotification(`Erreur lors du refus.`, deleteR.message || null, 'error');
         }
     },
     getAllTeamRequests: async () => {
