@@ -1,7 +1,6 @@
 import { createEle } from "/js/dom.js";
 
 // Configuration de base
-const API_BASE_URL = '/api';
 const CHALLENGE_ELEMENTS = {
     // Filtres et recherche
     filterGroups: ".filter-buttons[data-type]",
@@ -65,7 +64,7 @@ async function checkHackathonAccess(hackathonId) {
 async function loadChallenges() {
     try {
         const userId = await getUserId();
-        const data = await apiRequest(`/challenges/ctf/1/${userId}`);
+        const data = await apiRequest(`/challenges/ctf/1/${userId}/1`);
         renderChallenges(data.data || []);
     } catch (error) {
         handleError('Erreur lors du chargement des challenges', error);
@@ -113,10 +112,14 @@ function renderChallenges(challenges) {
                         <!-- Title -->
                         <h2 class="cyber-card-title text-xl max-lg:text-lg font-bold align-middle">${challenge.title}</h2>
 
-                        <!-- Tag and duration -->
-                        <div class="flex items-center gap-3 text-sm text-slate-400">
+                        <!-- Tag -->
+                        <div class="flex items-center justify-between gap-3 text-sm text-slate-400">
                             <div class="flex items-center gap-1">
                                 <span class="bg-slate-700 px-2 py-0.5 border border-slate-400 rounded-full text-sm max-lg:text-xs font-medium align-middle category">${challenge.category?.name || challenge.category || challenge.type || 'Unknown'}</span>
+                            </div>
+                            <div class="status solved" id="status" style="display: ${challenge.is_validated ? 'flex' : 'none'};">
+                                <i class="w-4 h-4 stroke-current" data-lucide="check-circle" style="color: var(--green);"></i>
+                                <span class="text-sm max-lg:text-xs">Solved</span>
                             </div>
                         </div>
 
@@ -146,10 +149,6 @@ function renderChallenges(challenges) {
                                 <span class="text-sm max-lg:text-xs font-semibold align-middle">Hack Now</span>
                             </button>
                             ` : ''}
-                            <div class="status solved" id="status" style="display: ${challenge.is_validated ? 'flex' : 'none'};">
-                                <i class="w-4 h-4 stroke-current" data-lucide="check-circle" style="color: var(--green);"></i>
-                                <span class="text-sm max-lg:text-xs">Solved</span>
-                            </div>
                         </div>
                     `;
 
@@ -340,6 +339,7 @@ function applyFilters() {
         card.style.display = show ? "" : "none";
     });
 }
+
 // Gestion de la recherche
 function setupSearch() {
     const searchInput = document.querySelector(CHALLENGE_ELEMENTS.searchInput);
@@ -672,6 +672,7 @@ function setupFlagForm() {
         const userId = await getUserId();
         const formData = new FormData(form);
         formData.append("csrf_token", document.querySelector('meta[name="csrf-token"]').content);
+        formData.append("hackathon_id", 1);
 
         try {
             const res = await apiRequest(`/challenges/ctf/submit/${userId}`, {
@@ -682,6 +683,7 @@ function setupFlagForm() {
             if (res.success) {
                 showNotification("Félicitations !", res.message, "success");
                 hideError(input, error);
+                form.reset();
                 updateSolvesCount();
             } else {
                 showNotification(res.message || "Échec de la validation", res.error || null, "error");

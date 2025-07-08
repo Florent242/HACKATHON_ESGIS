@@ -83,13 +83,19 @@ class TeamController extends Controller
     /**
      * Récupère les équipes d'un utilisateur
      */
-    public function getByUser()
+    public function getByUser($teamId)
     {
         try {
             $this->validateMethod('GET');
             $currentUserId = $this->tokenManager->getCurrentUserId();
             if (!$currentUserId) {
                 throw new Exception('Utilisateur non authentifié');
+            }
+
+            //verifier si l'utilisateur est leader de l'équipe
+            $isLeader = $this->team->isLeader($teamId, $currentUserId);
+            if (!$isLeader) {
+                throw new Exception('Non autorisé à récupérer les équipes');
             }
 
             $teams = $this->team->getByUser($currentUserId);
@@ -394,7 +400,7 @@ class TeamController extends Controller
                 throw new Exception('Utilisateur non authentifié');
             }
 
-            if (!$this->team->isLeader($teamId, $currentUserId) && !hasRole('admin') && !hasRole('organizer')) {
+            if (!$this->team->isLeader($teamId, $currentUserId)) {
                 throw new Exception('Non autorisé à ajouter un membre');
             }
 
@@ -431,7 +437,7 @@ class TeamController extends Controller
                 throw new Exception('Utilisateur non authentifié');
             }
 
-            if (!$this->team->isLeader($teamId, $currentUserId) && !hasRole('admin') && !hasRole('organizer')) {
+            if (!$this->team->isLeader($teamId, $currentUserId)) {
                 throw new Exception('Non autorisé à retirer un membre');
             }
 
@@ -468,7 +474,7 @@ class TeamController extends Controller
                 throw new Exception('Utilisateur non authentifié');
             }
 
-            if (!$this->team->isLeader($teamId, $currentUserId) && !hasRole('admin') && !hasRole('organizer')) {
+            if (!$this->team->isLeader($teamId, $currentUserId)) {
                 throw new Exception('Non autorisé à changer le leader');
             }
 
@@ -507,7 +513,7 @@ class TeamController extends Controller
                 throw new Exception('Utilisateur non authentifié');
             }
 
-            if (!$this->team->isLeader($teamId, $currentUserId) && !hasRole('admin') && !hasRole('organizer')) {
+            if (!$this->team->isLeader($teamId, $currentUserId)) {
                 throw new Exception('Non autorisé à accepter une demande');
             }
 
@@ -552,7 +558,7 @@ class TeamController extends Controller
                 throw new Exception('Utilisateur non authentifié');
             }
 
-            if (!$this->team->isLeader($teamId, $currentUserId) && !hasRole('admin') && !hasRole('organizer')) {
+            if (!$this->team->isLeader($teamId, $currentUserId)) {
                 throw new Exception('Non autorisé à rejeter une demande');
             }
 
@@ -731,6 +737,12 @@ class TeamController extends Controller
             $currentUserId = $this->tokenManager->getCurrentUserId();
             if (!$currentUserId) {
                 throw new Exception('Utilisateur non authentifié');
+            }
+
+            //verifier si l'utilisateur est leader de l'équipe
+            $isLeader = $this->team->isLeader($teamId, $currentUserId);
+            if (!$isLeader) {
+                throw new Exception('Non autorisé à récupérer les demandes d\'adhésion');
             }
 
             $teamRequests = $this->team->getAllTeamRequests($teamId);

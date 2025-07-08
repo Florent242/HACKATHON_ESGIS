@@ -168,7 +168,6 @@ const apiReq = async (apiRoute, method = 'GET', data = null) => {
         headers: {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
-            // 'Authorization': `Bearer ${token}`
         }
     }
     if (data) {
@@ -176,9 +175,9 @@ const apiReq = async (apiRoute, method = 'GET', data = null) => {
         optionRequest.body = new URLSearchParams(data);
     }
     if (method !== 'GET') {
-        optionRequest.headers['X-CSRF-Token'] = document.querySelector('input[name="csrf_token"]').value;
+        data['csrf_token'] = document.querySelector('input[name="csrf_token"]').value;
+        console.log(optionRequest.body, data['csrf_token'] || null);
     }
-    console.log(optionRequest.body, optionRequest.headers['X-CSRF-Token'] || null);
     const reponse = 
     await fetch('/api/' + apiRoute, optionRequest)
             .then(rep => rep.json())
@@ -194,11 +193,16 @@ const getHackathon = async (id)=>{
         hackathon = response.data;
     }
 
-    const organizer= await apiReq(`users/${hackathon['created_by']}`);
-
-    if(organizer && organizer.sucess){
-        hackathon['organizer']=organizer.data['fullname'];
+    try{
+        const organizer= await apiReq(`users/${hackathon['created_by']}`);
+        if(organizer && organizer.success){
+            hackathon['organizer']=organizer.data['fullname'];
+        }
+    }catch(e){
+        console.log(e)
     }
+
+    
 }
 
 const renderHackathonTechno=(hackathon)=>{
@@ -305,11 +309,13 @@ const getUserConnected = async ()=>{
 }
 
 const getUserTeams = async ()=>{
-    const response = await apiReq('teams/user');
-    if(response.success){
-        userTeams = response.data;
-        console.log('Équipes de l\'utilisateur:', userTeams);
-    }
+    const response = await apiRequest(`/teams/user`,{
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    });
+    console.log(response.data)
     // userTeams=userTeams.filter((team)=>team['leader_id']===userConnected.id);
 }
 const createHeader = ()=>{
@@ -772,7 +778,7 @@ const showRegistrationModal = async() => {
         createTeamBtn.addEventListener('click', () => {
             closeModal(modal);
             // Rediriger vers la page de création d'équipe
-            window.location.href = '/user/team.php';
+            window.location.href = '/user/teams';
         });
     }
     

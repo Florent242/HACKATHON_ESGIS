@@ -27,19 +27,27 @@ use Auth\Model\TokenManager;
 use Piston\PistonRequest;
 use Piston\PistonExecutor;
 use Auth\Controller\ParticipantController;
+use Auth\Controller\ScoreController;
 
-// ✅ Inclure une seule fois le fichier de configuration
+// Inclure le fichier autoload de Composer pour charger les variables d'environnement
+// require_once __DIR__ . '/../vendor/autoload.php';
+
+// Charger les variables d'environnement
+// $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
+// $dotenv->load();
+
+// Inclure une seule fois le fichier de configuration
 if (!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/includes/config.php';
 }
 
-// ✅ Inclure les fichiers contenant des fonctions
+// Inclure les fichiers contenant des fonctions
 if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/includes/functions.php';
 }
 
 
-// ✅ Inclure les classes seulement si elles n'existent pas déjà
+// Inclure les classes seulement si elles n'existent pas déjà
 $files = [
     'Database'            => '/models/Database.php',
     'Controller'          => '/controllers/Controller.php',
@@ -53,6 +61,7 @@ $files = [
     'AdminController'     => '/controllers/AdminController.php',
     'TokenManager'        => '/models/TokenManager.php',
     'ParticipantController' => '/controllers/ParticipantController.php',
+    'ScoreController'     => '/controllers/ScoreController.php',
 ];
 
 foreach ($files as $class => $path) {
@@ -228,8 +237,53 @@ try {
                 ], $e->getCode() ?: 400);
             }
             break;
+        case 'scores':
 
+            $controller = new ScoreController($db, $tokenManager);
 
+            if ($method === 'GET' && is_numeric($id) && isset($id)) {
+                // Route /api/scores/{hackathon_id}/{action}
+                if (isset($action)) {
+                    
+                    switch ($action) {
+                        case 'phases':
+                            $controller->getPhases((int)$id);
+                            break;
+                        case 'leaderboard':
+                            // Route /api/scores/{hackathon_id}/{action}/{phase_id}
+                            if(isset($request[3]) && is_numeric($request[3])) {
+                                $controller->getLeaderboard((int)$id, (int)$request[3]);
+                            } else {
+                                return jsonResponse([
+                                    'success' => false,
+                                    'error' => 'Phase ID requis.'
+                                ], 400);
+                            }
+                            break;
+                        default:
+                            jsonResponse([
+                                'success' => false,
+                                'error' => 'Méthode non autorisée !!!!'
+                            ], 405);
+                    }
+                } else {
+                    jsonResponse([
+                        'success' => false,
+                        'error' => 'Hackathon ID et phase ID requis.'. print_r($request, true)
+                    ], 400);
+                }
+            } elseif ($method === 'POST' && is_numeric($id) && isset($id)) {
+                // Route /api/scores/{hackathon_id}/{phase_id}
+                if (isset($id) && is_numeric($id) && isset($action) && is_numeric($action) && isset($input['team_id']) && is_numeric($input['team_id'])) {
+                    $controller->updateScore($input['team_id'], (int)$id, (int)$action, $input);
+                } else {
+                    jsonResponse([
+                        'success' => false,
+                        'error' => 'Hackathon ID et phase ID requis.'
+                    ], 400);
+                }
+            }
+            break;
         case 'users':
             $controller = new UserController($db, $tokenManager);
             // Vérification du token JWT pour toutes les routes sauf OPTIONS
@@ -302,7 +356,7 @@ try {
                         jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
                 }
             } elseif (is_numeric($id)) {
-                // Route /api/users/{id}
+                // Route /api/{id}
                 if ($action === null) {
                     switch ($method) {
                         case 'GET':
@@ -705,7 +759,7 @@ try {
             } elseif ($id === 'hackathon' && is_numeric($action)) {
                 $controller->getByHackathon($action);
             } elseif ($id === 'user') {
-                $controller->getByUser();
+                $controller->getByUser($action);
             } else {
                 throw new Exception('ID non valide pour /teams');
             }
@@ -715,14 +769,14 @@ try {
             if ($id === 'algo') {
                 // GET /api/challenges/algo/{hackathon_id}/{user_id}
                 if ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3])) {
-                    $controller->getChallengeAlgo($request[2], $request[3]);
+                    $controller->getChallengeAlgo($request[2], $request[3], $request[4] = null);
                 } else {
                     throw new Exception('Méthode non autorisée ou paramètres invalides', 400);
                 }
             } elseif ($id === 'dev') {
                 // GET /api/challenges/dev/{hackathon_id}/{user_id}
                 if ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3])) {
-                    $controller->getChallengesDev($request[2], $request[3]);
+                    $controller->getChallengesDev($request[2], $request[3], $request[4] = null);
                 } else {
                     throw new Exception('Méthode non autorisée ou paramètres invalides', 400);
                 }
@@ -730,7 +784,7 @@ try {
                 // GET /api/challenges/ctf/{hackathon_id}/{user_id}
                 if ($method === 'GET' && isset($action) && is_numeric($action) && isset($request[3]) && is_numeric($request[3])) {
 
-                    $controller->getChallengesCTF($action, $request[3]);
+                    $controller->getChallengesCTF($action, $request[3], $request[4] = null);
                 } else if ($method === 'POST' && isset($action) && $action === 'submit') {
 
                     if (!isset($request[3]) || !is_numeric($request[3])) {
@@ -738,7 +792,7 @@ try {
                     }
 
                     // POST /api/challenges/ctf/submit/{user_id}
-                    $controller->submitChallengeCTF($request[3], $input);
+                    $controller->submitChallengeCTF($request[3], $input, $request[4] = null);
                 } else {
                     throw new Exception('Méthode non autorisée ou paramètres invalides', 400);
                 }
@@ -878,13 +932,22 @@ try {
     if (isAjaxRequest()) {
         header('Content-Type: application/json');
         $statusCode = $e->getCode() ?: 500;
-        jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
-        echo json_encode([
-            'debug' => print_r($request, true)
-        ]);
+        jsonResponse(['success' => false, 'error' => "Une erreure est survenue au niveau de l'API. Veuillez contacter le support technique !"
+        // pour debug
+        . $e->getMessage()
+    ]);
+
+        // pour debug
+        // echo json_encode([
+        //     'debug' => print_r($request, true)
+        // ]);
         return;
     }
-    setFlashMessage('error', 'Erreur API', $e->getMessage());
+    setFlashMessage('error', 'Erreur API', "Une erreure est survenue au niveau de l'API. Veuillez contacter le support technique !"
+    
+    // pour debug
+    // .$e->getMessage()
+    );
     header('Location: /');
     exit();
 }

@@ -86,7 +86,7 @@ class ChallengeController extends Controller
         }
     }
 
-    public function submitChallengeCTF($user_id, $input)
+    public function submitChallengeCTF($user_id, $input, $phase_id = null)
     {
         try {
             $this->validateMethod('POST');
@@ -96,7 +96,7 @@ class ChallengeController extends Controller
             }
 
             // Appel à la méthode qui gère toute la logique (valide ou non, dynamique, etc)
-            $result = $this->challenge->submitChallengeCTF($user_id, $input);
+            $result = $this->challenge->submitChallengeCTF($user_id, $input, $phase_id);
 
             if ($result['success']) {
                 $this->jsonResponse([
@@ -119,11 +119,11 @@ class ChallengeController extends Controller
         }
     }
 
-    public function getChallengeAlgo ($hackathon_id, $user_id){
+    public function getChallengeAlgo ($hackathon_id, $user_id, $phase_id = null){
 
         try {
             $this->validateMethod('GET');
-            $challenges = $this->challenge->getchallengeAlgo($hackathon_id, $user_id);
+            $challenges = $this->challenge->getchallengeAlgo($hackathon_id, $user_id, $phase_id);
             $this->jsonResponse([
                 'success' => true,
                 'data' => $challenges
@@ -136,14 +136,14 @@ class ChallengeController extends Controller
         }
     }
     
-    public function getChallengesDev($hackathon_id, $user_id)
+    public function getChallengesDev($hackathon_id, $user_id, $phase_id = null)
     {
         try {
             $this->validateMethod('GET');
             if (!isset($hackathon_id) || !isset($user_id)) {
                 throw new Exception('hackathon_id et user_id sont requis');
             }
-            $challenges = $this->challenge->getchallengeDev($hackathon_id, $user_id);
+            $challenges = $this->challenge->getchallengeDev($hackathon_id, $user_id, $phase_id);
             $this->jsonResponse([
                 'success' => true,
                 'data' => $challenges
@@ -156,14 +156,14 @@ class ChallengeController extends Controller
         }
     }
 
-    public function getChallengesCTF($hackathon_id, $user_id)
+    public function getChallengesCTF($hackathon_id, $user_id, $phase_id = null)
     {
         try {
             $this->validateMethod('GET');
             if (!isset($hackathon_id) || !isset($user_id)) {
                 throw new Exception('hackathon_id et user_id sont requis');
             }
-            $challenges = $this->challenge->getchallengeCTF($hackathon_id, $user_id);
+            $challenges = $this->challenge->getchallengeCTF($hackathon_id, $user_id, $phase_id);
             $this->jsonResponse([
                 'success' => true,
                 'data' => $challenges
@@ -230,6 +230,21 @@ class ChallengeController extends Controller
                 'success' => true,
                 'data' => $challenges
             ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function isRegistered($user_id, $hackathon_id)
+    {
+        try {
+            $this->validateMethod('GET');
+            $isRegistered = $this->challenge->isRegistered($user_id, $hackathon_id);
+            
+            return $isRegistered;
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,

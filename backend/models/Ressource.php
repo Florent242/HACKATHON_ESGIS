@@ -33,7 +33,10 @@ class Ressource {
 
             return $this->db->lastInsertId();
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la création de la ressource : " . $e->getMessage());
+            throw new Exception("Erreur lors de la création de la ressource !"
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -50,7 +53,10 @@ class Ressource {
             $stmt->execute([':id' => $id]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la recherche de la ressource : " . $e->getMessage());
+            throw new Exception("Erreur lors de la recherche de la ressource !"
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -74,7 +80,10 @@ class Ressource {
             $stmt = $this->db->prepare($sql);
             return $stmt->execute($params);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la mise à jour de la ressource : " . $e->getMessage());
+            throw new Exception("Erreur lors de la mise à jour de la ressource !"
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -84,7 +93,10 @@ class Ressource {
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([':id' => $id]);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la suppression de la ressource : " . $e->getMessage());
+            throw new Exception("Erreur lors de la suppression de la ressource !"
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -100,7 +112,10 @@ class Ressource {
             $stmt->execute([':hackathon_id' => $hackathonId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des ressources : " . $e->getMessage());
+            throw new Exception("Erreur lors de la récupération des ressources !"
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -132,31 +147,34 @@ class Ressource {
             $stmt->execute($params);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la recherche des ressources : " . $e->getMessage());
+            throw new Exception("Erreur lors de la recherche des ressources !"
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
     private function validate($data) {
         if (empty($data['titre'])) {
-            throw new Exception("Le titre est obligatoire");
+            throw new Exception("Le titre est obligatoire !");
         }
 
         if (empty($data['description'])) {
-            throw new Exception("La description est obligatoire");
+            throw new Exception("La description est obligatoire !");
         }
 
         if (empty($data['type'])) {
-            throw new Exception("Le type est obligatoire");
+            throw new Exception("Le type est obligatoire !");
         }
 
         $this->validateType($data['type']);
 
         if (empty($data['hackathon_id'])) {
-            throw new Exception("L'ID du hackathon est obligatoire");
+            throw new Exception("L'ID du hackathon est obligatoire !");
         }
 
         if (!is_numeric($data['hackathon_id'])) {
-            throw new Exception("L'ID du hackathon doit être un nombre");
+            throw new Exception("L'ID du hackathon doit être un nombre !");
         }
 
         // Vérifier si le hackathon existe
@@ -165,13 +183,13 @@ class Ressource {
         $stmt->execute([':id' => $data['hackathon_id']]);
 
         if (!$stmt->fetch()) {
-            throw new Exception("Hackathon non trouvé");
+            throw new Exception("Hackathon non trouvé !");
         }
     }
 
     private function validateType($type) {
         if (!in_array($type, ['document', 'video', 'lien'])) {
-            throw new Exception("Type de ressource invalide");
+            throw new Exception("Type de ressource invalide !");
         }
     }
 }

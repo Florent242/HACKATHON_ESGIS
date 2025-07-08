@@ -253,8 +253,8 @@
     <div class="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm hidden" id="challenge-modal">
 
         <!-- Modal -->
-        <div id="modal-container" class="fixed z-1000 inset-0 flex items-center justify-center h-fit w-fit mx-auto my-auto max-md:mx-4 max-sm:mx-2">
-            <div id="modal-content" class="bg-[#0f172a] text-white w-full max-w-3xl rounded-xl shadow-xl p-6 space-y-6 border border-white/10 max-md:text-xs max-md:font-medium max-sm:font-semibold max-sm:text-xs max-sm:px-2">
+        <div id="modal-container" class="fixed z-1000 inset-0 w-full flex items-center justify-center h-fit w-fit mx-auto my-auto max-md:px-6 max-sm:px-4">
+            <div id="modal-content" class="bg-[#0f172a] text-white w-full mx-auto max-w-3xl rounded-xl shadow-xl p-6 space-y-6 border border-white/10 max-md:text-xs max-md:font-medium max-sm:font-semibold max-sm:text-xs max-sm:px-2">
 
                 <!-- Header -->
                 <div class="flex justify-between items-start">

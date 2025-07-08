@@ -55,7 +55,10 @@ class Notification {
             
             return $this->db->lastInsertId();
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la création de la notification : " . $e->getMessage());
+            throw new Exception("Erreur lors de la création de la notification !" 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -72,7 +75,10 @@ class Notification {
             $stmt->execute([':id' => $id]);
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la recherche de la notification : " . $e->getMessage());
+            throw new Exception("Erreur lors de la recherche de la notification !" 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -94,7 +100,10 @@ class Notification {
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des notifications : " . $e->getMessage());
+            throw new Exception("Erreur lors de la récupération des notifications : " 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -110,7 +119,10 @@ class Notification {
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([':id' => $id]);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors du marquage de la notification : " . $e->getMessage());
+            throw new Exception("Erreur lors du marquage de la notification : " 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -126,7 +138,10 @@ class Notification {
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([':user_id' => $userId]);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors du marquage des notifications : " . $e->getMessage());
+            throw new Exception("Erreur lors du marquage des notifications !" 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -142,7 +157,10 @@ class Notification {
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([':id' => $id]);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la suppression de la notification : " . $e->getMessage());
+            throw new Exception("Erreur lors de la suppression de la notification !" 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -176,7 +194,10 @@ class Notification {
             $stmt = $this->db->prepare($sql);
             return $stmt->execute($params);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la mise à jour de la notification : " . $e->getMessage());
+            throw new Exception("Erreur lors de la mise à jour de la notification !" 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -192,7 +213,10 @@ class Notification {
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([':user_id' => $userId]);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la suppression des notifications : " . $e->getMessage());
+            throw new Exception("Erreur lors de la suppression des notifications !" 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -209,7 +233,10 @@ class Notification {
             $stmt->execute([':user_id' => $userId]);
             return $stmt->fetchColumn();
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors du comptage des notifications : " . $e->getMessage());
+            throw new Exception("Erreur lors du comptage des notifications !" 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -225,7 +252,10 @@ class Notification {
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([':user_id' => $userId]);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la suppression des notifications : " . $e->getMessage());
+            throw new Exception("Erreur lors de la suppression des notifications !" 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 }

@@ -25,7 +25,10 @@ class Project {
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération des projets: ' . $e->getMessage());
+            error_log('Erreur lors de la récupération des projets !' 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
             return [];
         }
     }
@@ -44,7 +47,10 @@ class Project {
 
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération du projet: ' . $e->getMessage());
+            error_log('Erreur lors de la récupération du projet !' 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
             return false;
         }
     }
@@ -109,7 +115,10 @@ class Project {
             return $this->db->lastInsertId();
         } catch (PDOException $e) {
             error_log('Erreur lors de la création du projet: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la création du projet: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la création du projet !' 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -158,7 +167,10 @@ class Project {
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log('Erreur lors de la mise à jour du projet: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la mise à jour du projet: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la mise à jour du projet !' 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -182,7 +194,10 @@ class Project {
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log('Erreur lors de la suppression du projet: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la suppression du projet: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la suppression du projet !' 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -219,7 +234,10 @@ class Project {
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération des projets par hackathon: ' . $e->getMessage());
+            error_log('Erreur lors de la récupération des projets par hackathon !' 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
             return [];
         }
     }
@@ -252,7 +270,10 @@ class Project {
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log('Erreur lors de la mise à jour du statut du projet: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la mise à jour du statut du projet: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la mise à jour du statut du projet !'
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -301,7 +322,10 @@ class Project {
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log('Erreur lors de la mise à jour du score du projet: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la mise à jour du score du projet: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la mise à jour du score du projet !'
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -327,7 +351,10 @@ class Project {
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log('Erreur lors de la mise à jour de la version du projet: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la mise à jour de la version du projet: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la mise à jour de la version du projet !'
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -349,7 +376,10 @@ class Project {
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération des évaluations du projet: ' . $e->getMessage());
+            error_log('Erreur lors de la récupération des évaluations du projet !'
+            // Pour debuger
+            //  . $e->getMessage()
+            );
             return [];
         }
     }

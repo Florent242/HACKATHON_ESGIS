@@ -91,7 +91,10 @@ class TokenManager
         } catch (Exception $e) {
             $this->db->rollBack();
             error_log('Erreur de génération de token: ' . $e->getMessage());
-            throw new Exception('Génération de token impossible: ' . $e->getMessage());
+            throw new Exception('Génération de token impossible !'
+            // Pour debuger
+            //  . $e->getMessage()
+        );
         }
     }
 
@@ -218,7 +221,10 @@ class TokenManager
             return $this->generateLongTermToken($tokenData['user_id']);
         } catch (Exception $e) {
             error_log('Refresh token error: ' . $e->getMessage());
-            throw new Exception('Could not refresh token');
+            throw new Exception('Could not refresh token !'
+            // Pour debuger
+            //  . $e->getMessage()
+        );
         }
     }
 

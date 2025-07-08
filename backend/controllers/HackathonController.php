@@ -5,12 +5,9 @@ namespace Auth\Controller;
 use Exception;
 use Auth\Model\Hackathon;
 
-if (!defined('CONFIG_INCLUDED')) {
-    require_once __DIR__ . '/../includes/config.php';
-}
-if (!defined('FUNCTIONS_INCLUDED')) {
-    require_once __DIR__ . '/../includes/functions.php';
-}
+use PDOException;
+use Auth\Model\TokenManager;
+
 if (!class_exists('Hackathon')) {
     require_once __DIR__ . '/../models/Hackathon.php';
 }
@@ -109,6 +106,7 @@ class HackathonController extends Controller
                 ':user_id' => (int)$userId,
                 ':hackathon_id' => (int)$hackathonId
             ]);
+
             if (!$stmt->fetchColumn() > 0) {
                 return [
                     'success' => false,

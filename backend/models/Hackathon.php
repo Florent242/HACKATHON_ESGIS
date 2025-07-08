@@ -29,7 +29,10 @@ class Hackathon
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération des hackathons: ' . $e->getMessage());
+            error_log('Erreur lors de la récupération des hackathons !'
+            // Pour debuger
+            //  . $e->getMessage()
+            );
             return [];
         }
     }
@@ -49,7 +52,10 @@ class Hackathon
 
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération du hackathon: ' . $e->getMessage());
+            error_log('Erreur lors de la récupération du hackathon !'
+            // Pour debuger
+            //  . $e->getMessage()
+            );
             return false;
         }
     }
@@ -114,7 +120,10 @@ class Hackathon
             return $this->db->lastInsertId();
         } catch (PDOException $e) {
             error_log('Erreur lors de la création du hackathon: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la création du hackathon: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la création du hackathon !'
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -176,7 +185,10 @@ class Hackathon
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log('Erreur lors de la mise à jour du hackathon: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la mise à jour du hackathon: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la mise à jour du hackathon !' 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -201,7 +213,10 @@ class Hackathon
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log('Erreur lors de la suppression du hackathon: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la suppression du hackathon: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la suppression du hackathon !' 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 
@@ -384,7 +399,10 @@ class Hackathon
             ];
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des statistiques: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la récupération des statistiques: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la récupération des statistiques: ' 
+            // Pour debuger
+            //  . $e->getMessage()
+            );
         }
     }
 }

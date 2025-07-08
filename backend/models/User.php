@@ -192,7 +192,10 @@ class User
                 'error' => $e->getMessage()
             ], 'error');
             error_log('Erreur lors de la création de l\'utilisateur: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la création de l\'utilisateur: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la création de l\'utilisateur !'
+            // Pour debuger
+            //  . $e->getMessage()
+        );
         }
     }
 
@@ -246,7 +249,10 @@ class User
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log('Erreur lors de la mise à jour de l\'utilisateur: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la mise à jour de l\'utilisateur: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la mise à jour de l\'utilisateur !'
+            // Pour debuger
+            //  . $e->getMessage()
+        );
         }
     }
 
@@ -288,7 +294,10 @@ class User
             $stmt->execute([':username' => $username]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
         } catch (PDOException $e) {
-            throw new Exception(message: 'Erreur lors de la recherche par username: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la recherche par username !'
+            // Pour debuger
+            //  . $e->getMessage()
+        );
         }
     }
 
@@ -300,7 +309,10 @@ class User
             $stmt->execute([':email' => $email]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
         } catch (PDOException $e) {
-            throw new Exception('Erreur lors de la recherche par email: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la recherche par email !'
+            // Pour debuger
+            //  . $e->getMessage()
+        );
         }
     }
     /**
@@ -316,7 +328,10 @@ class User
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des utilisateurs: ' . $e->getMessage());
-            throw new Exception("Cette adresse email est déjà utilisée. User");
+            throw new Exception("Cette adresse email est déjà utilisée. "
+        // Pour debuger
+        //  . $e->getMessage()
+        );
         }
     }
 
