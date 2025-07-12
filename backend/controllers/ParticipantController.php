@@ -350,36 +350,6 @@ class ParticipantController extends Controller
         }
     }
 
-    public function create()
-    {
-        try {
-            $this->validateMethod('POST');
-
-            $requiredFields = ['hackathon_id', 'user_id'];
-            $this->validateRequiredFields($_POST, $requiredFields);
-
-            $data = [
-                'hackathon_id' => (int)$_POST['hackathon_id'],
-                'user_id' => (int)$_POST['user_id'],
-                'statut' => 'en_attente',
-                'created_at' => date('Y-m-d H:i:s')
-            ];
-
-            $participantId = $this->participant->create($data, $this->tokenManager->generateToken());
-
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Participation créée avec succès',
-                'data' => ['id' => $participantId]
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
-        }
-    }
-
     // Récupérer un participant par son id
     public function get($id)
     {

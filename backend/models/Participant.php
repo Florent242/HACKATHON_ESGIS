@@ -93,6 +93,11 @@ class Participant
                     logActivity('Team registration' , 'Vous avez été automatiquement inscrit au hackathon suite a l\'inscription de votre équipe', ['memberId' => $memberId , 'teamId' => $teamId, 'hackathonId' => $hackathonId], $memberId, 'info');
                 }
             }
+
+            // mise a jour de hackathon_id de l'equipe dans la table teams
+            $stmt = $this->db->prepare("UPDATE teams SET hackathon_id = :hackathon_id WHERE id = :team_id");
+            $stmt->execute([':hackathon_id' => $hackathonId, ':team_id' => $teamId]);
+            
             $this->db->commit();
             return true;
         } catch (PDOException $e) {

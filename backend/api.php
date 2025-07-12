@@ -539,9 +539,6 @@ try {
                 if ($method === 'GET') {
                     // GET /api/hackathons
                     $controller->getAll();
-                } elseif ($method === 'POST') {
-                    // POST /api/hackathons
-                    $controller->create();
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
                 }

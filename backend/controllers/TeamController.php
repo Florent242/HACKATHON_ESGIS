@@ -333,6 +333,12 @@ class TeamController extends Controller
                 throw new Exception('Équipe non trouvée');
             }
 
+            $hackathonId = $team['hackathon_id'];
+
+            // Verifier si l'équipe est inscrite au hackathon
+            if ($hackathonId && $this->team->isRegisteredToHackathon($teamId, $hackathonId)) {
+                throw new Exception("L'équipe est déjà inscrite a un hackathon, plus aucune modification n'est autorisée !");
+            }
             // Démarrer une transaction
             $this->db->beginTransaction();
 
