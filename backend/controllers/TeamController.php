@@ -81,9 +81,32 @@ class TeamController extends Controller
     }
 
     /**
+     * Récupère le nombre d'équipes d'un hackathon
+     * @param int $hackathonId ID du hackathon
+     */
+    public function countByHackathon($hackathonId)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            $teams = $this->team->countByHackathon($hackathonId);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $teams
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
      * Récupère les équipes d'un utilisateur
      */
-    public function getByUser($teamId)
+    public function getByUser($userId)
     {
         try {
             $this->validateMethod('GET');
@@ -92,13 +115,7 @@ class TeamController extends Controller
                 throw new Exception('Utilisateur non authentifié');
             }
 
-            //verifier si l'utilisateur est leader de l'équipe
-            $isLeader = $this->team->isLeader($teamId, $currentUserId);
-            if (!$isLeader) {
-                throw new Exception('Non autorisé à récupérer les équipes');
-            }
-
-            $teams = $this->team->getByUser($currentUserId);
+            $teams = $this->team->getByUser($userId);
 
             $this->jsonResponse([
                 'success' => true,

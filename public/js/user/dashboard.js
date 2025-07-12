@@ -680,6 +680,52 @@ function setupEventListeners() {
         });
     }
 
+    // Gestion du bouton voir tous les événements
+    const seeAllEventsButton = document.querySelector('#see-all-events');
+    if (seeAllEventsButton) {
+        seeAllEventsButton.addEventListener('click', async () => {
+            try {
+                window.location.href = '/user/hackathon';
+            } catch (error) {
+                handleError('Erreur lors de la récupération des événements', error, 'error');
+            }
+        });
+    }
+
+    // Gestion du bouton voir toutes les activités
+    const seeAllActivitiesButton = document.querySelector('#see-all-activities');
+    if (seeAllActivitiesButton) {
+        seeAllActivitiesButton.addEventListener('click', async () => {
+            try {
+                window.location.href = '/user/profile#activities';
+            } catch (error) {
+                handleError('Erreur lors de la récupération des activités', error, 'error');
+            }
+        });
+    }
+
+    // Gestion des boutons de challenges
+    const btnDevChallenges = document.querySelector('#btn-dev-challenges');
+    const btnHackChallenges = document.querySelector('#btn-hack-challenges');
+    if (btnDevChallenges) {
+        btnDevChallenges.addEventListener('click', async () => {
+            try {
+                window.location.href = '/user/challenge_dev';
+            } catch (error) {
+                handleError('Erreur lors de la récupération des défis', error, 'error');
+            }
+        });
+    }
+    if (btnHackChallenges) {
+        btnHackChallenges.addEventListener('click', async () => {
+            try {
+                window.location.href = '/user/challenge_security';
+            } catch (error) {
+                handleError('Erreur lors de la récupération des défis', error, 'error');
+            }
+        });
+    }
+
     // Gestion des notifications
     const notificationButtons = document.querySelectorAll('.notification-dismiss');
     notificationButtons.forEach(button => {

@@ -28,11 +28,13 @@ const CHALLENGE_ELEMENTS = {
     challengeEmptyState: "#challenges-empty-state"
 };
 
+const hackathonId = document.querySelector('meta[name="hackathon-id"]').content;
+const phaseId = document.querySelector('meta[name="phase-id"]').content;
+
 // Fonction utilitaire pour gérer les erreurs
 function handleError(title = 'Une erreur est survenue', error = null, type = 'error') {
     console.error(title, error);
     showNotification(title, error, type);
-    // Vous pouvez ajouter ici une notification à l'utilisateur
 }
 
 // Fonction utilitaire pour vérifier la participation au hackathon
@@ -64,11 +66,73 @@ async function checkHackathonAccess(hackathonId) {
 async function loadChallenges() {
     try {
         const userId = await getUserId();
-        const data = await apiRequest(`/challenges/ctf/1/${userId}/1`);
+        const data = await apiRequest(`/challenges/ctf/${hackathonId}/${userId}/${phaseId}`);
+
+        console.log('challenge data', data);
+        if (!data.success) {
+            if (
+                data.status === "phase_inactive" ||
+                data.message?.includes("période de l'événement")
+            ) {
+                showPhaseInactiveState(data.message);
+            } else {
+                handleError("Erreur lors de la récupération des challenges", data.message);
+            }
+            return;
+        }
         renderChallenges(data.data || []);
     } catch (error) {
         handleError('Erreur lors du chargement des challenges', error);
     }
+}
+
+function showPhaseInactiveState(message = "Les challenges ne sont pas disponibles pour le moment.") {
+    const emptyState = document.getElementById("challenges-empty-state");
+    if (!emptyState) return;
+
+    const title = document.getElementById("empty-title");
+    const desc = document.getElementById("empty-message");
+    const icon = document.getElementById("empty-icon");
+
+    if (title) title.textContent = "Phase inactive";
+    if (desc) desc.textContent = message;
+    if (icon) icon.setAttribute("data-lucide", "lock");
+
+    emptyState.classList.remove("hidden");
+    emptyState.classList.add("flex");
+
+    // Met à jour les icônes si besoin
+    lucide.createIcons();
+}
+
+function showAccessDeniedModal(message) {
+    const html = `
+    <div class="flex flex-col items-center justify-center min-h-screen w-full bg-gray-900/90 backdrop-blur-lg fixed inset-0 p-6 text-center z-50">
+        <div class="bg-gray-800/90 border border-gray-700 rounded-xl p-8 max-w-2xl w-full mx-auto shadow-2xl">
+            <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-6 mx-auto">
+                <i data-lucide="alert-triangle" class="w-10 h-10 text-red-500"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-white mb-4">Accès refusé</h1>
+            <p class="text-gray-300 text-lg mb-8">${message}</p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/user/hackathon" 
+                   class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                    Retour aux hackathons
+                </a>
+                <a href="/user" 
+                   class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
+                    <i data-lucide="home" class="w-5 h-5"></i>
+                    Tableau de bord
+                </a>
+            </div>
+        </div>
+        <p class="text-gray-500 text-sm mt-8">Besoin d'aide ? <a href="https://discord.gg/FbztK5Uagd" class="text-blue-400 hover:underline">Contactez le support</a></p>
+    </div>`;
+
+    const mainContainer = document.querySelector(".main-container");
+    mainContainer.innerHTML = html;
+    lucide.createIcons();
 }
 
 // Fonction pour afficher les challenges
@@ -93,6 +157,10 @@ function renderChallenges(challenges) {
                 card.dataset[key] = typeof value === 'object' ? JSON.stringify(value) : value;
             }
         });
+
+        card.dataset["solved"] = challenge.is_validated ? "true" : "false";
+        card.dataset["hackers"] = challenge.solvers_count || 0;
+
 
         card.innerHTML = `
                         <div class="flex items-center justify-between">
@@ -230,9 +298,7 @@ function renderTopHackers(hackers) {
     }
 
     if (!container || !emptyState) {
-        container.innerHTML = ''; $rawData = file_get_contents('php://input');
-        $data = json_decode($rawData, true);
-        $token = $data['csrf_token'] ?? null;
+        container.innerHTML = '';
         console.error('Elements de classement non trouvés');
         return;
     }
@@ -249,14 +315,14 @@ function renderTopHackers(hackers) {
 async function updateSolvesCount() {
     try {
         const data = await apiRequest('/challenges/solves');
-        const elements = document.querySelectorAll('.stat .value'); // Sélectionnez tous les compteurs
+        const elements = document.querySelectorAll('.cyber-card .stat-value');
 
         if (data && Array.isArray(data.data)) {
             // Mettre à jour chaque carte individuellement
             document.querySelectorAll('.cyber-card').forEach((card, index) => {
                 const challengeData = data.data[index];
                 if (challengeData) {
-                    const solveCount = card.querySelector('.stat .value');
+                    const solveCount = card.querySelector('.stat-value');
                     if (solveCount) {
                         solveCount.textContent = `${challengeData.solves || 0} Résolution${challengeData.solves !== 1 ? 's' : ''}`;
                     }
@@ -266,7 +332,7 @@ async function updateSolvesCount() {
     } catch (error) {
         handleError('Erreur lors de la mise à jour des résolutions', error);
         // Valeur par défaut
-        document.querySelectorAll('.stat .value').forEach(el => {
+        document.querySelectorAll('.stat-value').forEach(el => {
             el.textContent = '0 Résolutions';
         });
     }
@@ -537,7 +603,7 @@ function setupModal() {
             e.preventDefault();
             const file = downloadBtn.getAttribute("data-resource_link");
             if (!file) {
-                showNotification("Oups !","Aucun fichier à télécharger", "error");
+                showNotification("Oups !", "Aucun fichier à télécharger", "error");
                 return;
             }
 
@@ -672,7 +738,8 @@ function setupFlagForm() {
         const userId = await getUserId();
         const formData = new FormData(form);
         formData.append("csrf_token", document.querySelector('meta[name="csrf-token"]').content);
-        formData.append("hackathon_id", 1);
+        formData.append("hackathon_id", hackathonId);
+        formData.append("phase_id", phaseId);
 
         try {
             const res = await apiRequest(`/challenges/ctf/submit/${userId}`, {
@@ -724,33 +791,7 @@ async function initializeChallenges() {
 document.addEventListener('DOMContentLoaded', async () => {
     const participationChecked = await checkHackathonAccess(1);
     if (!participationChecked.success) {
-        const div = `
-        <div class="flex flex-col items-center justify-center min-h-screen w-full bg-gray-900/90 backdrop-blur-lg z-50 fixed inset-0 p-6 text-center">
-        <div class="bg-gray-800/90 border border-gray-700 rounded-xl p-8 max-w-2xl w-full mx-auto shadow-2xl">
-        <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-6 mx-auto">
-            <i data-lucide="alert-triangle" class="w-10 h-10 text-red-500"></i>
-        </div>
-        <h1 class="text-3xl font-bold text-white mb-4">Accès refusé</h1>
-        <p class="text-gray-300 text-lg mb-8">${participationChecked.message}</p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="/user/hackathon" 
-               class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
-                <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                Retour aux hackathons
-            </a>
-            <a href="/user" 
-               class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2">
-                <i data-lucide="home" class="w-5 h-5"></i>
-                Tableau de bord
-            </a>
-        </div>
-    </div>
-    <p class="text-gray-500 text-sm mt-8">Besoin d'aide ? <a href="https://discord.gg/FbztK5Uagd" class="text-blue-400 hover:underline">Contactez le support</a></p>
-</div>
-</div>`;
-        const mainContainer = document.querySelector(".main-container");
-        mainContainer.innerHTML = div;
-        lucide.createIcons();
+        showAccessDeniedModal(participationChecked.message);
         return;
     }
     initializeChallenges();

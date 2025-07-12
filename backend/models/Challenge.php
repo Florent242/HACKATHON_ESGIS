@@ -192,8 +192,8 @@ class Challenge
             }
 
             $stmt = $this->db->prepare("UPDATE flags SET solves = solves + 1 WHERE id = :flag_id");
-            $stmt->execute([':flag_id' => $flag['id']]); 
-            
+            $stmt->execute([':flag_id' => $flag['id']]);
+
             // Récupère solve_count pour ce flag
             $stmt = $this->db->prepare("
                         SELECT COUNT(DISTINCT user_id)
@@ -356,9 +356,10 @@ class Challenge
             ");
             return (int) $stmt->fetchColumn();
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors du comptage total des résolutions !" 
-            // pour debug
-            // . $e->getMessage()
+            throw new Exception(
+                "Erreur lors du comptage total des résolutions !"
+                // pour debug
+                // . $e->getMessage()
             );
         }
     }
@@ -383,9 +384,10 @@ class Challenge
             $stmt->execute();
             return (int) $stmt->fetchColumn();
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors du comptage des résolutions pour le challenge $challengeId !"
-            // pour debug
-            // . $e->getMessage()
+            throw new Exception(
+                "Erreur lors du comptage des résolutions pour le challenge $challengeId !"
+                // pour debug
+                // . $e->getMessage()
             );
         }
     }
@@ -393,10 +395,6 @@ class Challenge
     public function getchallengeAlgo($hackathon_id, $user_id, $phase_id = null)
     {
         try {
-            // Verifier si l'utiisateur est inscrit au hackathon
-            if (!$this->isRegistered($user_id, $hackathon_id)) {
-                throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
-            }
             $sql = "SELECT 
             c.id,
             c.title,
@@ -580,13 +578,13 @@ class Challenge
                 AND c.is_active = 1
                 AND c.hackathon_id = :hackathon_id
             ";
-             if ($phase_id !== null) {
+            if ($phase_id !== null) {
                 $sql .= " AND c.phase_id = :phase_id";
             }
-    
+
             $sql .= " GROUP BY c.id
                       ORDER BY c.difficulty, c.title";
-    
+
 
             $stmt = $this->db->prepare($sql);
             $stmt->bindParam(':hackathon_id', $hackathon_id, PDO::PARAM_INT);
@@ -618,6 +616,148 @@ class Challenge
         } catch (Exception $e) {
             throw new Exception(
                 "Erreur lors de la vérification de l'inscription !"
+                // pour debug
+                // . $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * Verifier si c'est la periode de lancement des challenges
+     */
+    public function isChallengeLaunchPeriod(int $hackathon_id): bool
+    {
+        try {
+            $sql = "SELECT 1 FROM hackathons WHERE id = :hackathon_id AND start_date <= NOW() AND end_date >= NOW()";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':hackathon_id', $hackathon_id, PDO::PARAM_INT);
+            $stmt->execute();
+            return (bool) $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            throw new Exception(
+                "Erreur lors de la vérification de la période de lancement des challenges !"
+                // pour debug
+                // . $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * Récupère les performances de l'utilisateur
+     */
+    public function getUserPerformance($user_id, $hackathon_id, $phase_id = null)
+    {
+        try {
+            $params = [
+                ':user_id' => $user_id,
+                ':hackathon_id' => $hackathon_id,
+            ];
+            $phaseCondition = '';
+            if ($phase_id !== null) {
+                $phaseCondition = 'AND c.phase_id = :phase_id';
+                $params[':phase_id'] = $phase_id;
+            }
+
+            $sql = "
+            SELECT 
+                COUNT(DISTINCT c.id) AS total_challenges,
+                COUNT(DISTINCT solved.challenge_id) AS total_solved_challenges,
+                COALESCE(SUM(solved.points), 0) AS total_points
+            FROM challenges c
+
+            LEFT JOIN (
+                -- ✅ 1. Algo / Projet / Finale : toutes soumissions acceptées
+                SELECT cs.challenge_id, MAX(cs.points) AS points
+                FROM challenge_submissions cs
+                WHERE cs.user_id = :user_id
+                AND cs.status = 'active'
+                GROUP BY cs.challenge_id
+
+                UNION
+
+                -- ✅ 2. CTF : flags validés
+                SELECT vf.challenge_id, SUM(vf.points_gained) AS points
+                FROM validated_flags vf
+                JOIN challenges ctf ON vf.challenge_id = ctf.id
+                WHERE vf.user_id = :user_id
+                AND vf.is_valid = 1
+                AND ctf.type = 'ctf'
+                GROUP BY vf.challenge_id
+            ) AS solved ON solved.challenge_id = c.id
+
+            WHERE c.is_active = 1
+            AND c.hackathon_id = :hackathon_id
+            $phaseCondition
+            ";
+
+            $stmt = $this->db->prepare($sql);
+            foreach ($params as $k => $v) {
+                $stmt->bindValue($k, $v, PDO::PARAM_INT);
+            }
+            $stmt->execute();
+
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            throw new Exception("Erreur lors de la récupération des performances de l'utilisateur !");
+        }
+    }
+
+
+    /**
+     * Verifier si le challenge est ouvert
+     * @param int $challenge_id
+     * @return bool
+     */
+    public function isChallengeOpen(int $challenge_id): bool
+    {
+        try {
+            $sql = "
+            SELECT 1
+            FROM challenges c
+            JOIN hackathons h ON h.id = c.hackathon_id
+            WHERE c.id = :challenge_id
+            AND h.start_date <= NOW()
+            AND h.end_date >= NOW()
+            ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':challenge_id', $challenge_id, PDO::PARAM_INT);
+            $stmt->execute();
+            return (bool) $stmt->fetchColumn();
+        } catch (Exception $e) {
+            throw new Exception(
+                "Erreur lors de la vérification de l'ouverture du challenge !"
+                // pour debug
+                // . $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * Verifier si la phase est active
+     * @param int $hackathon_id
+     * @param int $phase_id
+     * @return bool
+     */
+    public function isPhaseActive(int $hackathon_id, int $phase_id): bool
+    {
+        try {
+            $sql = "
+        SELECT 1
+        FROM phases
+        WHERE hackathon_id = :hackathon_id
+          AND id = :phase_id
+          AND start_at <= NOW()
+          AND end_at >= NOW()
+    ";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':hackathon_id' => $hackathon_id,
+                ':phase_id' => $phase_id
+            ]);
+            return (bool) $stmt->fetchColumn();
+        } catch (Exception $e) {
+            throw new Exception(
+                "Erreur lors de la vérification de l'activité de la phase !"
                 // pour debug
                 // . $e->getMessage()
             );

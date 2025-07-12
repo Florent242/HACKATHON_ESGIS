@@ -31,10 +31,10 @@
                 </h1>
 
                 <div class="challenges-link flex flex-row gap-5 items-center">
-                    <button class="cursor-pointer flex flex-row items-center justify-center gap-1 rounded-xl bg-blue-500 text-white p-2 text-sm max-md:text-center max-md:text-xs whitespace-nowrap btn-primary btn-participate">
+                    <button class="cursor-pointer flex flex-row items-center justify-center gap-1 rounded-xl bg-blue-500 text-white p-2 text-sm max-md:text-center max-md:text-xs whitespace-nowrap btn-primary btn-participate" id="btn-dev-challenges">
                         <i data-lucide="code" class="max-md:w-3 max-md:h-3 w-4 h-4 stroke-current"></i>Challenge dev
                     </button>
-                    <button class="cursor-pointer flex flex-row items-center justify-center gap-1 rounded-xl bg-blue-500 text-white p-2 text-sm max-md:text-center max-md:text-xs whitespace-nowrap btn-primary btn-participate">
+                    <button class="cursor-pointer flex flex-row items-center justify-center gap-1 rounded-xl bg-blue-500 text-white p-2 text-sm max-md:text-center max-md:text-xs whitespace-nowrap btn-primary btn-participate" id="btn-hack-challenges">
                         <i data-lucide="shield" class="max-md:w-3 max-md:h-3 w-4 h-4 stroke-current"></i>Challenge hack
                     </button>
                 </div>
@@ -147,7 +147,7 @@
                                 </div>
                                 <h3 class="text-gray-200 text-lg font-medium">Pas de défi disponible</h3>
                                 <p class="text-sm text-gray-400">Tu n'as pas encore rejoint ou commencé de défi. Explore-les pour te lancer !</p>
-                                <a href="/user/challenge_security" class="text-blue-500 hover:underline text-sm cursor-pointer transition duration-300 ease-in-out">Explorer les défis</a>
+                                <a href="/user/hackathon" class="text-blue-500 hover:underline text-sm cursor-pointer transition duration-300 ease-in-out">Explorer les différents hackathons</a>
                             </div>
 
 
@@ -165,14 +165,6 @@
                                     <p class="text-gray-500 text-sm activity-time">Il y a 3 heures</p>
                                 </div>
                             </div>
-                            <!-- 
-                            <div class="flex flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1 recent-activity-item">
-                                <i data-lucide="file-text" class="w-5 h-5 flex self-center stroke-current"></i>
-                                <div>
-                                    <p class="text-gray-400 activity-text">Projet "API REST" mis à jour</p>
-                                    <p class="text-gray-500 text-sm activity-time">Il y a 1 jour</p>
-                                </div>
-                            </div> -->
                             <div class="flex flex-col items-center text-center py-10 px-6" id="no-recent-activities">
                                 <div class="animate-bounce-slow mb-3">
                                     <i data-lucide="history" class="w-12 h-12 text-emerald-400/60"></i>
@@ -182,7 +174,7 @@
                             </div>
 
                         </div>
-                        <button class="cursor-pointer flex items-center w-full justify-center text-center p-4 rounded-xl border-none text-white max-md:text-sm hover:bg-gray-700 hover:scale-103 transition duration-300 ease-in-out">Voir toutes les activités</button>
+                        <button class="cursor-pointer flex items-center w-full justify-center text-center p-4 rounded-xl border-none text-white max-md:text-sm hover:bg-gray-700 hover:scale-103 transition duration-300 ease-in-out" id="see-all-activities">Voir toutes les activités</button>
                     </section>
                 </div>
 
@@ -205,12 +197,6 @@
                                     <p class="text-gray-400 text-sm notification-message">Un nouveau challenge "Architecture Microservices" ajouté.</p>
                                     <p class="text-gray-500 text-xs notification-time">Il y a environ 2 heures</p>
                                 </div>
-                                <!-- 
-                                <div class="flex flex-col gap-2 justify-between bg-(--card-bg) p-4 rounded-xl border border-gray-700 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-                                    <p class="font-medium">Flag validé</p>
-                                    <p class="text-gray-400 text-sm">Félicitations ! Vous avez validé un flag.</p>
-                                    <p class="text-gray-500 text-xs">Il y a 5 heures</p>
-                                </div> -->
                                 <div class="flex flex-col items-center text-center py-10 px-6" id="no-notifications">
                                     <div class="animate-bounce-slow mb-3">
                                         <i data-lucide="bell-off" class="w-12 h-12 text-purple-400/60"></i>
@@ -218,10 +204,7 @@
                                     <h3 class="text-gray-200 text-lg font-medium">Rien à signaler</h3>
                                     <p class="text-gray-400 text-sm mt-1">Vous êtes à jour. Nous vous tiendrons informé dès qu’il y a du nouveau !</p>
                                 </div>
-
-
                             </div>
-                            <button class="cursor-pointer flex items-center w-full justify-center text-center p-4 rounded-xl border-none text-white max-md:text-sm hover:bg-gray-700 hover:scale-105 transition duration-300 ease-in-out">Voir toutes les notifications</button>
                         </div>
                     </section>
 
@@ -240,7 +223,7 @@
                             </div>
 
                         </div>
-                        <button class="cursor-pointer flex items-center w-full justify-center text-center p-4 rounded-xl text-white max-md:text-sm hover:bg-gray-700 hover:scale-105 transition duration-300 ease-in-out">Voir tous les événements</button>
+                        <button class="cursor-pointer flex items-center w-full justify-center text-center p-4 rounded-xl text-white max-md:text-sm hover:bg-gray-700 hover:scale-105 transition duration-300 ease-in-out" id="see-all-events">Voir tous les événements</button>
                     </section>
                 </aside>
             </div>

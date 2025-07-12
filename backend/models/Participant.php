@@ -49,6 +49,7 @@ class Participant
     public function registerTeam($hackathonId, $teamId, $captainId)
     {
         try {
+            $this->db->beginTransaction();
             // Vérifier que c'est bien le capitaine
             $stmt = $this->db->prepare("SELECT leader_id FROM teams WHERE id = :team_id");
             $stmt->execute([':team_id' => $teamId]);
@@ -79,19 +80,23 @@ class Participant
             logActivity('Team registration' , 'Inscription d\'une équipe ', [$captainId, $teamId, $hackathonId],$captainId, 'info');
 
             // Récupérer tous les membres
-            $stmt = $this->db->prepare("SELECT user_id FROM teams_members WHERE team_id = :team_id");
+            $stmt = $this->db->prepare("SELECT user_id FROM team_members WHERE team_id = :team_id");
             $stmt->execute([':team_id' => $teamId]);
             $members = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
             // Inscription dans hackathon_participants
             $stmt = $this->db->prepare("INSERT INTO hackathon_participants (user_id, team_id, hackathon_id, participation_status) VALUES (:user_id, :team_id, :hackathon_id, 'pending')");
             foreach ($members as $memberId) {
-                $stmt->execute([':user_id' => $memberId, ':team_id' => $teamId, ':hackathon_id' => $hackathonId]);
-                logActivity('Team registration' , 'Vous avez été automatiquement inscrit au hackathon suite a l\'inscription de votre équipe', ['memberId' => $memberId , 'teamId' => $teamId, 'hackathonId' => $hackathonId], $memberId, 'info');
+                // Vérifier si le participant n'est pas déjà inscrit
+                if (!$this->isRegistered($hackathonId, $memberId)) {
+                    $stmt->execute([':user_id' => $memberId, ':team_id' => $teamId, ':hackathon_id' => $hackathonId]);
+                    logActivity('Team registration' , 'Vous avez été automatiquement inscrit au hackathon suite a l\'inscription de votre équipe', ['memberId' => $memberId , 'teamId' => $teamId, 'hackathonId' => $hackathonId], $memberId, 'info');
+                }
             }
-
+            $this->db->commit();
             return true;
         } catch (PDOException $e) {
+            $this->db->rollBack();
             throw new Exception(
                 "Erreur lors de l'inscription de l'équipe ! En cas de probleme permanant contactez le support technique sur discord ! "
                 // pour le debugage

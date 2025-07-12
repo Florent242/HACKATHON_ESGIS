@@ -1,4 +1,3 @@
-console.log("challenge_dev.js chargé");
 // Variable globale pour stocker les challenges
 let allChallenges = [];
 
@@ -103,12 +102,12 @@ async function fetchChallenges(hackathonId) {
                 'X-Requested-With': 'XMLHttpRequest',
             }
         });
-        console.log(response);
+       
 
-        if (!response.success) {
-            const errorData = await response.json().catch(() => ({ message: 'Erreur HTTP' }));
-            throw new Error(`Erreur ${response.status}: ${errorData.message || 'Impossible de contacter le serveur'}`);
-        }
+        // if (!response.success) {
+        //     const errorData = response.message;
+        //     throw new Error(`Erreur ${response.status}: ${errorData || 'Impossible de contacter le serveur'}`);
+        // }
 
         allChallenges = response.data;
         console.log(allChallenges);
@@ -180,7 +179,7 @@ function displayChallenges(challenges) {
  */
 function createChallengeCard(challenge) {
     const card = document.createElement("div");
-    card.className = "bg-card p-6 shadow flex flex-col relative card";
+    card.className = "bg-card p-6 shadow flex flex-col relative card challenge-card";
 
     // Couleur selon la difficulté
     const difficultyColors = {

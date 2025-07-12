@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="hackathon-id" content="1">
+    <meta name="phase-id" content="1">
     <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token']; ?>">
     <title>EsgisHub - Challenges</title>
     <link rel="stylesheet" href="/css/styles/user/challenge_secu.css">
@@ -215,16 +217,14 @@
                 <!-- Empty state -->
                 <div id="challenges-empty-state" class="w-full py-12 hidden items-center justify-center flex-col animate-fade-in">
                     <div class="relative mx-auto flex items-center justify-center">
-                        <!-- Effet de halo animé -->
                         <div class="absolute inset-0 rounded-full bg-blue-500/10 blur-xl animate-pulse-slow"></div>
-                        <!-- Icône principale -->
                         <div class="relative z-10 flex items-center justify-center h-20 w-20 rounded-2xl bg-gradient-to-br from-blue-600/20 to-blue-800/30 backdrop-blur-sm border border-blue-500/20 shadow-lg shadow-blue-500/10 mb-6 animate-pulse-slow">
-                            <i data-lucide="shield-question" class="w-10 h-10 text-blue-400"></i>
+                            <i id="empty-icon" data-lucide="shield-question" class="w-10 h-10 text-blue-400"></i>
                         </div>
                     </div>
 
-                    <h3 class="text-2xl font-bold text-white mb-2 text-center">Aucun challenge disponible</h3>
-                    <p class="text-gray-400 text-center max-w-md mb-6 leading-relaxed">
+                    <h3 id="empty-title" class="text-2xl font-bold text-white mb-2 text-center">Aucun challenge disponible</h3>
+                    <p id="empty-message" class="text-gray-400 text-center max-w-md mb-6 leading-relaxed">
                         Il n'y a pas encore de challenge de sécurité disponible pour le moment. Revenez bientôt pour découvrir de nouveaux défis passionnants !
                     </p>
 

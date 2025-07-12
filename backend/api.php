@@ -551,17 +551,16 @@ try {
                     if ($method === 'GET') {
                         // GET /api/hackathons/{id}
                         $controller->get($id);
-                    } elseif ($method === 'POST' || $method === 'PUT') {
-                        // POST || PUT /api/hackathons/{id}
-                        $controller->update($id);
-                    } elseif ($method === 'DELETE') {
-                        // DELETE /api/hackathons/{id}
-                        $controller->delete($id);
-                    } else {
+                    }
+                    else {
                         throw new Exception('Méthode non autorisée', 405);
                     }
                 } else {
+                    // Route /api/hackathons/{id}/{action}
                     switch ($action) {
+                        case 'active-phase':
+                            $controller->getActivePhase($id);
+                            break;                        
                         case 'teams':
                             $controller->getTeams($id);
                             break;
@@ -757,8 +756,10 @@ try {
                     }
                 }
             } elseif ($id === 'hackathon' && is_numeric($action)) {
+                // GET /api/teams/hackathon/{hackathon_id}
                 $controller->getByHackathon($action);
             } elseif ($id === 'user') {
+                // GET /api/teams/user/{user_id}
                 $controller->getByUser($action);
             } else {
                 throw new Exception('ID non valide pour /teams');
@@ -946,7 +947,7 @@ try {
     setFlashMessage('error', 'Erreur API', "Une erreure est survenue au niveau de l'API. Veuillez contacter le support technique !"
     
     // pour debug
-    // .$e->getMessage()
+    .$e->getMessage()
     );
     header('Location: /');
     exit();

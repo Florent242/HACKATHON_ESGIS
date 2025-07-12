@@ -7,7 +7,7 @@
 const CONFIG = {
     hacksec_id: 1,
     hackdev_id: 2,
-    REFRESH_INTERVAL: 30000, // 30 secondes
+    REFRESH_INTERVAL: 15000, // 15 secondes
     ENDPOINTS: {
         PHASES: '/scores/',
         LEADERBOARD: `/scores/`

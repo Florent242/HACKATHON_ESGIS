@@ -107,9 +107,6 @@ if (!isset($_SESSION['csrf_token'])) {
                     <a href="/user/documentation" class="mobile-nav-link">
                         Documentation
                     </a>
-                    <a href="/user/blog" class="mobile-nav-link">
-                        Blog
-                    </a>
                     <a href="/user/faq" class="mobile-nav-link">
                         FAQ
                     </a>
@@ -126,7 +123,7 @@ if (!isset($_SESSION['csrf_token'])) {
                 <i data-lucide="circle-user"></i>
                 <span>Mon espace</span>
             </a>
-            <a href="/user/profile" class="mobile-nav-action">
+            <a href="/user/profile#paramètres" class="mobile-nav-action">
                 <i data-lucide="settings"></i>
                 <span>Paramètres</span>
             </a>

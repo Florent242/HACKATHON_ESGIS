@@ -133,7 +133,6 @@ class Team
             // Préparer les données
             $name = $data['name'];
             $description = $data['description'] ?? null;
-            $hackathonId = $data['hackathon_id'];
             $type = $data['type'];
             $leaderId = $data['leader_id'];
             $invitationCode = $this->generateInvitationCode();
@@ -143,12 +142,11 @@ class Team
             $this->db->beginTransaction();
 
             try {
-                $query = "INSERT INTO {$this->table} (name, description, hackathon_id, type, leader_id, invitation_code, created_at)
-                          VALUES (:name, :description, :hackathon_id, :type, :leader_id, :invitation_code, :created_at)";
+                $query = "INSERT INTO {$this->table} (name, description, type, leader_id, invitation_code, created_at)
+                          VALUES (:name, :description, :type, :leader_id, :invitation_code, :created_at)";
                 $stmt = $this->db->prepare($query);
                 $stmt->bindParam(':name', $name);
                 $stmt->bindParam(':description', $description);
-                $stmt->bindParam(':hackathon_id', $hackathonId, PDO::PARAM_INT);
                 $stmt->bindParam(':type', $type);
                 $stmt->bindParam(':leader_id', $leaderId, PDO::PARAM_INT);
                 $stmt->bindParam(':invitation_code', $invitationCode);
@@ -210,7 +208,7 @@ class Team
             }
 
             // Champs à mettre à jour
-            $allowedFields = ['name', 'description', 'hackathon_id', 'leader_id', 'invitation_code'];
+            $allowedFields = ['name', 'description', 'leader_id', 'invitation_code'];
 
             foreach ($allowedFields as $field) {
                 if (isset($data[$field])) {
@@ -279,6 +277,29 @@ class Team
             $stmt->execute();
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération des équipes par hackathon: ' . $e->getMessage());
+            throw new Exception('Erreur lors de la récupération des équipes par hackathon !'
+            // Pour le debug
+            // . $e->getMessage()
+        );
+        }
+    }
+
+    /**
+     * Récupère le nombre d'équipes d'un hackathon
+     * @param int $hackathonId ID du hackathon
+     * @return int Nombre d'équipes
+     */
+    public function countByHackathon($hackathonId)
+    {
+        try {
+            $query = "SELECT COUNT(*) FROM {$this->table} WHERE hackathon_id = :hackathon_id";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':hackathon_id', $hackathonId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return $stmt->fetchColumn();
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des équipes par hackathon: ' . $e->getMessage());
             throw new Exception('Erreur lors de la récupération des équipes par hackathon !'
@@ -455,6 +476,14 @@ class Team
         );
         }
     }
+
+    /**
+     * Envoie une demande d'adhésion à une équipe
+     * @param int $teamId ID de l'équipe
+     * @param int $userId ID de l'utilisateur
+     * @throws Exception
+     * @return bool true si succès, sinon false
+     */
     public function teamRequest($teamId, $userId)
     {
         error_log("Appel de teamRequest avec teamId: " . var_export($teamId, true) . ", userId: " . var_export($userId, true));
@@ -715,18 +744,6 @@ class Team
         }
     }
 
-    /**
-     * Récupère les équipes d'un hackathon
-     * @param int $hackathonId ID du hackathon
-     * @return array Liste des équipes
-     */
-
-
-    /**
-     * Récupère les équipes d'un utilisateur
-     * @param int $userId ID de l'utilisateur
-     * @return array Liste des équipes
-     */
     /**
      * Génère un code d'invitation unique pour une équipe au format E8CBC-P3JO-MMAZ
      * @return string Code d'invitation

@@ -119,11 +119,18 @@ class ChallengeController extends Controller
         }
     }
 
-    public function getChallengeAlgo ($hackathon_id, $user_id, $phase_id = null){
+    public function getChallengeAlgo($hackathon_id, $user_id, $phase_id = null)
+    {
 
         try {
             $this->validateMethod('GET');
             $challenges = $this->challenge->getchallengeAlgo($hackathon_id, $user_id, $phase_id);
+
+            // Verifier si l'utiisateur est inscrit au hackathon
+            if (!$this->isRegistered($user_id, $hackathon_id)) {
+                throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
+            }
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $challenges
@@ -135,13 +142,23 @@ class ChallengeController extends Controller
             ], 400);
         }
     }
-    
+
     public function getChallengesDev($hackathon_id, $user_id, $phase_id = null)
     {
         try {
             $this->validateMethod('GET');
             if (!isset($hackathon_id) || !isset($user_id)) {
                 throw new Exception('hackathon_id et user_id sont requis');
+            }
+
+            // Vérifier si la phase est active
+            if ($phase_id !== null && !$this->challenge->isPhaseActive($hackathon_id, $phase_id)) {
+                throw new Exception("Cette phase n'est pas active actuellement !");
+            }
+
+            // Vérifier si la période du hackathon est active
+            if (!$this->challenge->isChallengeLaunchPeriod($hackathon_id)) {
+                throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
             }
             $challenges = $this->challenge->getchallengeDev($hackathon_id, $user_id, $phase_id);
             $this->jsonResponse([
@@ -160,9 +177,21 @@ class ChallengeController extends Controller
     {
         try {
             $this->validateMethod('GET');
+
             if (!isset($hackathon_id) || !isset($user_id)) {
                 throw new Exception('hackathon_id et user_id sont requis');
             }
+
+            // Vérifier si la phase est active
+            if ($phase_id !== null && !$this->challenge->isPhaseActive($hackathon_id, $phase_id)) {
+                throw new Exception("Cette phase n'est pas active actuellement !");
+            }
+
+            // Vérifier si la période du hackathon est active
+            if ($valid = !$this->challenge->isChallengeLaunchPeriod($hackathon_id)) {
+                throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.(valid: " . ($valid ? 'true' : 'false') . ")");
+            }
+
             $challenges = $this->challenge->getchallengeCTF($hackathon_id, $user_id, $phase_id);
             $this->jsonResponse([
                 'success' => true,
@@ -176,6 +205,31 @@ class ChallengeController extends Controller
         }
     }
 
+    public function getUserPerformance($user_id, $hackathon_id, $phase_id = null)
+    {
+        try {
+            if (!isset($user_id) || !isset($hackathon_id)) {
+                throw new Exception('user_id et hackathon_id sont requis');
+            }
+
+            // Vérifier si le user est inscrit au hackathon
+            if (!$this->isRegistered($user_id, $hackathon_id)) {
+                throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
+            }
+
+            $this->validateMethod('GET');
+            $performance = $this->challenge->getUserPerformance($user_id, $hackathon_id, $phase_id);
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $performance
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
 
     public function get($id)
     {
@@ -241,9 +295,12 @@ class ChallengeController extends Controller
     public function isRegistered($user_id, $hackathon_id)
     {
         try {
+            if (!isset($user_id) || !isset($hackathon_id)) {
+                throw new Exception('user_id et hackathon_id sont requis');
+            }
             $this->validateMethod('GET');
             $isRegistered = $this->challenge->isRegistered($user_id, $hackathon_id);
-            
+
             return $isRegistered;
         } catch (Exception $e) {
             $this->jsonResponse([

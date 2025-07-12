@@ -131,7 +131,7 @@ class ParticipantController extends Controller
             }
 
             $captainId = $input['leader_id'];
-
+            
             $success = $this->participant->registerTeam($hackathonId, $teamId, $captainId);
 
             if (!$success) {

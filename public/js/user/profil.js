@@ -652,11 +652,24 @@ function setupEventListeners() {
         })
     }
 
-    // Gestionnaire pour le bouton "All challenges"
-    const allChallengesButton = document.querySelector(".All-challenges")
-    if (allChallengesButton) {
-        allChallengesButton.addEventListener("click", () => {
+    const allChallengesDevButton = document.querySelector(".All-challenges-dev")
+    if (allChallengesDevButton) {
+        allChallengesDevButton.addEventListener("click", () => {
+            window.location.href = "/user/challenge_dev"
+        })
+    }
+
+    const allChallengesHackButton = document.querySelector(".All-challenges-hack")
+    if (allChallengesHackButton) {
+        allChallengesHackButton.addEventListener("click", () => {
             window.location.href = "/user/challenge_security"
+        })
+    }
+
+    const viewAllActivitiesButton = document.querySelector("#view-all-activities")
+    if (viewAllActivitiesButton) {
+        viewAllActivitiesButton.addEventListener("click", () => {
+            document.querySelector("[data-tab='tab3']").click()
         })
     }
 

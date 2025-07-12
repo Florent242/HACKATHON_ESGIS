@@ -66,6 +66,33 @@
       .custom-btn:hover {
         transform: scale(1.05);
       }
+      
+      /* Animation d'apparition pour les cartes */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      .challenge-card {
+        animation: fadeInUp 0.6s ease-out forwards;
+        opacity: 0;
+      }
+      
+      .challenge-card:nth-child(1) { animation-delay: 0.1s; }
+      .challenge-card:nth-child(2) { animation-delay: 0.2s; }
+      .challenge-card:nth-child(3) { animation-delay: 0.3s; }
+      .challenge-card:nth-child(4) { animation-delay: 0.4s; }
+      .challenge-card:nth-child(5) { animation-delay: 0.5s; }
+      .challenge-card:nth-child(6) { animation-delay: 0.6s; }
+      .challenge-card:nth-child(7) { animation-delay: 0.7s; }
+      .challenge-card:nth-child(8) { animation-delay: 0.8s; }
+      
       .tag-category {
         padding: 4px 12px;
         border-radius: 9999px;
@@ -100,18 +127,8 @@
 <body class="min-h-screen">
     <?php require_once '../includes/user/header.php'; ?>
 
-    <!-- Top Bar -->
-    <nav
-      class="w-full bg-card px-4 md:px-8 py-3 flex flex-col md:flex-row items-start md:items-center justify-between border-b border-main gap-2"
-    >
-      <div class="flex flex-wrap items-center gap-2 md:gap-4">
-        <span class="text-base md:text-lg flex items-center gap-2 cursor-pointer hover:underline"
-          ><i class="w-4 h-4 stroke-current" data-lucide="arrow-left"></i> Retour aux hackathons</span>
-        <span class="ml-0 md:ml-6 text-orange-400 font-semibold flex items-center gap-2"
-          
-      </div>
-      
-    </nav>
+   
+    
 
     <div class="flex flex-col lg:flex-row max-w-7xl mx-auto mt-6 md:mt-8 gap-6 md:gap-8 px-2 md:px-0">
       <!-- Sidebar -->

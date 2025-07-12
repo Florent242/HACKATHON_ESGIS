@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EsgisHub - Hackathons</title>
 
+  <link rel="stylesheet" href="/css/styles/user/hackaton.css">
   <link rel="stylesheet" href="/css/styles/user/header.css">
   <link rel="stylesheet" href="/css/dist/output.css">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -24,7 +25,6 @@
     }
 
     body {
-      font-family: "Montserrat", sans-serif;
       background: var(--background);
       color: var(--text);
     }

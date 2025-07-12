@@ -363,15 +363,27 @@ async function apiRequest(endpoint, options = {}) {
             headers: { ...headers, ...options.headers }
         });
 
+        const data = await response.json(); // On parse toujours le body
+
         if (!response.ok) {
-            throw new Error(`${response.statusText}`);
+
+            return {
+                success: false,
+                status: data.status || response.status,
+                message: data.message || data.error || 'Erreur inconnue',
+                data: null
+            };
         }
 
-        const data = await response.json();
         return data;  // Retourne bien les données récupérées
     } catch (error) {
         handleError('Erreur lors de la requête API', error, 'error');
-        throw error;
+        return {
+            success: false,
+            status: 'client_error',
+            message: 'Erreur côté client',
+            data: null
+        };
     }
 }
 
@@ -382,8 +394,8 @@ async function apiRequest(endpoint, options = {}) {
  * @param {string} type 
  */
 function handleError(message, error, type = 'error') {
-    console.error(message, error)
-    showNotification(`${message}`, `${error.message || "Erreur inconnue"}`, type)
+    console.error(message, error.message || error.error || error || "Erreur inconnue")
+    showNotification(`${message}`, `${error.message || error.error || error || "Erreur inconnue"}`, type)
 }
 
 /**

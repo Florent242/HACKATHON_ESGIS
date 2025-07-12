@@ -1,8 +1,7 @@
-
 let hackathon=null
 let userConnected= null;
 let userTeams= [];
-
+let userTeam=null;
 // État de chargement
 let isLoading = true;
 
@@ -166,18 +165,15 @@ const apiReq = async (apiRoute, method = 'GET', data = null) => {
     const optionRequest = {
         method: method,
         headers: {
-            'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
         }
     }
-    if (data) {
-        optionRequest.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-        optionRequest.body = new URLSearchParams(data);
-    }
-    if (method !== 'GET') {
+    if (data && method!=="GET") {
         data['csrf_token'] = document.querySelector('input[name="csrf_token"]').value;
-        console.log(optionRequest.body, data['csrf_token'] || null);
+        optionRequest.body = JSON.stringify(data);
     }
+    
     const reponse = 
     await fetch('/api/' + apiRoute, optionRequest)
             .then(rep => rep.json())
@@ -192,16 +188,6 @@ const getHackathon = async (id)=>{
     if(response.success){
         hackathon = response.data;
     }
-
-    try{
-        const organizer= await apiReq(`users/${hackathon['created_by']}`);
-        if(organizer && organizer.success){
-            hackathon['organizer']=organizer.data['fullname'];
-        }
-    }catch(e){
-        console.log(e)
-    }
-
     
 }
 
@@ -309,14 +295,15 @@ const getUserConnected = async ()=>{
 }
 
 const getUserTeams = async ()=>{
-    const response = await apiRequest(`/teams/user`,{
+    const response = await apiRequest(`/teams/user/${userConnected.id}`,{
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
         }
     });
-    console.log(response.data)
-    // userTeams=userTeams.filter((team)=>team['leader_id']===userConnected.id);
+    if(userTeams)
+    userTeams=response.data
+    //  userTeams=userTeams.filter((team)=>team['leader_id']===userConnected.id);
 }
 const createHeader = ()=>{
     console.log(hackathon);
@@ -442,7 +429,7 @@ const createMain = ()=>{
        <hr style="margin: 30px 0 20px; border: 0.1px solid var(--text); opacity: 0.1;">
 
         <p class="subtitle" style="text-align: left;">
-            Organisateur: <strong>${hackathon['organizer']}</strong>
+            Organisateur: <strong>${hackathon['created_by']}</strong>
         </p>
 
         <p class="subtitle" style="text-align: left;">
@@ -565,12 +552,39 @@ const closeModal = (modal, animation = null, callback = null) => {
 
 // Fonction pour obtenir l'équipe dont l'utilisateur est leader
 const getUserLeaderTeam = () => {
-    return userTeams.find(team => team.leader_id === userConnected.id);
+    // console.log(userTeams)
+    try {
+        // Vérifier si userTeams est un tableau non vide
+        if (!Array.isArray(userTeams) || userTeams.length === 0) {
+            console.log('Aucune équipe trouvée pour cet utilisateur');
+            return null;
+        }
+
+        // Trouver l'équipe où l'utilisateur est leader
+        const leaderTeam = userTeams.find(team => team && team.leader_id === userConnected?.id);
+        
+        if (!leaderTeam) {
+            console.log('Utilisateur non trouvé comme leader d\'une équipe');
+            return null;
+        }
+
+        // Créer une copie de l'équipe pour éviter de modifier l'original
+        const teamCopy = {...leaderTeam};
+        teamCopy.team_id = teamCopy.id;
+        delete teamCopy.id;
+        
+        return teamCopy;
+    } catch (error) {
+        console.error('Erreur lors de la récupération de l\'équipe leader:', error);
+        return null;
+    }
 };
 
 // Fonction pour afficher la modale de confirmation d'inscription
 const showRegistrationModal = async() => {
-    const userTeam = getUserLeaderTeam();
+    if(!userTeam){
+        userTeam = getUserLeaderTeam();
+    }
     let modalContent = '';
     
     if (userTeam) {
@@ -726,7 +740,7 @@ const showRegistrationModal = async() => {
                     border-radius: 6px;
                     cursor: pointer;
                     transition: all 0.3s ease;
-                ">Créer une équipe</button>
+                ">Joindre/Créer une équipe</button>
             </div>
         `;
     }
@@ -754,22 +768,36 @@ const showRegistrationModal = async() => {
             try {
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = 'Inscription en cours...';
-
-                const response = await apiReq(`participants/${hackathon.id}/register-team`, 'POST', {
-                    team: userTeam
-                });
                 
+                const response = await apiReq(`participants/${hackathon.id}/register-team`, 'POST', userTeam);
                 if (response.success) {
                     closeModal(modal, 'slide-to-top', () => {
-                        showSuccessMessage('Inscription réussie !', 'Votre équipe a été inscrite au hackathon avec succès.');
+                        showNotification('Inscription réussie !', 'success');
                         // setTimeout(() => { location.reload(); }, 2000);
                     });
                     return;
                 } else {
+                    setTimeout(()=>{
+                        confirmBtn.textContent='Error';
+                        confirmBtn.style.transition="all ease 0.5s";
+                        confirmBtn.style.background="rgba(227, 44, 44, 0.81)";    
+                    }, 1500);
+                    setTimeout(()=>{
+                       closeModal(modal)   
+                    }, 3000);
+                    handleError( "Erreur d'inscription", response.message || response.error || response || "Erreur inconnue", 'error');
                 }
             } catch (error) {
-                console.log(error);
-            } 
+                setTimeout(()=>{
+                    confirmBtn.textContent='Error';
+                    confirmBtn.style.transition="all ease 0.5s";
+                    confirmBtn.style.background="rgba(227, 44, 44, 0.81)";    
+                }, 1500);
+                setTimeout(()=>{
+                   closeModal(modal)   
+                }, 3000);
+                console.log(error)
+            }
         });
     }
     
@@ -818,14 +846,15 @@ window.addEventListener('DOMContentLoaded', async ()=>{
     const loadingOverlay = createLoadingAnimation();
     
     try {
+        await getUserConnected(),
+
         // Charger les données en parallèle
         await Promise.all([
-            getUserConnected(),
             getUserTeams(),
             getHackathon(window.location.href.split('/').pop())
         ]);
         
-        console.log(userConnected);
+        console.log(userConnected,userTeams);
         
         // Créer le contenu une fois les données chargées
         createHeader();

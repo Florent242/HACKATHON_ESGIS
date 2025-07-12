@@ -31,20 +31,14 @@
                     <p class="max-lg:text-xs text-center text-sm text-gray-400 special_comp">Security Engineer | Bug Hunter</p>
                 </div>
 
-                <div class="flex flex-row gap-2 justify-center space-x-2">
-                    <span class="bg-blue-600 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center gap-1"><i class="w-4 h-4 stroke-current" data-lucide="star"></i>Top #</span>
-                    <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center gap-1"><i class="w-4 h-4 stroke-current" data-lucide="flag"></i>0 Flags</span>
-                    <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center gap-1"><i class="w-4 h-4 stroke-current" data-lucide="users"></i>0 Teams</span>
-                </div>
-
                 <div class="modify-profile cursor-pointer w-full flex flex-row items-center justify-center gap-2 rounded-xl transition-all duration-300 ease-in-out text-white hover:bg-gray-700 p-1 max-md:w-full border border-gray-700">
-                    <i data-lucide="user"></i> <span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs">Modify the profile</span>
+                    <i data-lucide="user"></i> <span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs">Modifier le profil</span>
                 </div>
             </div>
             <!-- Informations personnelles -->
             <div class="fade-in-left">
                 <div class="space-y-4 w-full flex flex-col gap-4 border border-gray-700 p-5 rounded-2xl shadow-lg card-bg">
-                    <h3 class="text-lg font-semibold m-0">Personal Information</h3>
+                    <h3 class="text-lg font-semibold m-0">Informations personnelles</h3>
                     <ul class="space-y-2 text-sm text-gray-400">
                         <li id="mail" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="mail"></i><span class="Email"><i data-lucide="loader-circle" class="animate-spin"></i></span></li>
                         <li id="university" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="university"></i><span class="university"><i data-lucide="loader-circle" class="animate-spin"></i></span></li>
@@ -63,19 +57,19 @@
             <div class="flex flex-row items-start gap-1 p-1 bg-gray-700 rounded-xl max-md:sticky">
                 <button class="max-lg:text-sm tab-link transition-all duration-300 ease-in-out flex flex-row items-center gap-1 px-2 py-0.5 text-xm max-md:text-xs text-white border-transparent hover:bg-gray-900/50 rounded-lg bg-gray-900/75" data-tab="tab1">
                     <i class="w-4 h-4 stroke current" data-lucide="chart-no-axes-combined"></i>
-                    Overview
+                    Vue d'ensemble
                 </button>
                 <button class="max-lg:text-sm tab-link transition-all duration-300 ease-in-out flex flex-row items-center gap-1 px-2 py-0.5 text-xm max-md:text-xs text-white border-transparent hover:bg-gray-900/50 rounded-lg " data-tab="tab2">
                     <i class="w-4 h-4 stroke current" data-lucide="flag"></i>
-                    Challenges
+                    Défis
                 </button>
                 <button class="max-lg:text-sm tab-link transition-all duration-300 ease-in-out flex flex-row items-center gap-1 px-2 py-0.5 text-xm max-md:text-xs text-white border-transparent hover:bg-gray-900/50 rounded-lg " data-tab="tab3">
                     <i class="w-4 h-4 stroke current" data-lucide="activity-square"></i>
-                    Activity
+                    Activité
                 </button>
                 <button class="max-lg:text-sm tab-link transition-all duration-300 ease-in-out flex flex-row items-center gap-1 px-2 py-0.5 text-xm max-md:text-xs text-white border-transparent hover:bg-gray-900/50 rounded-lg " data-tab="tab4">
                     <i class="w-4 h-4 stroke current" data-lucide="settings"></i>
-                    Settings
+                    Paramètres
                 </button>
             </div>
 
@@ -90,14 +84,14 @@
                             <div class="challenges-card rounded-lg p-6 transition-all duration-300 ease-in-out hover:border-blue-600 hover:shadow-md hover:shadow-blue-600/70 hover:-translate-y-1">
                                 <div class="flex flex-col gap-6 justify-between items-start w-full h-full">
                                     <div class="w-full flex flex-row justify-between items-center gap-2">
-                                        <p class="max-lg:text-xs text-gray-300">Challenges total résolus</p>
+                                        <p class="max-lg:text-xs text-gray-300">Challenges résolus</p>
                                         <i data-lucide="flag" class="w-8 h-8 p-2 stroke-current bg-(--blue-opac) text-blue-600 rounded-lg"></i>
                                     </div>
                                     <div class="w-full flex flex-col gap-1 items-start">
 
                                         <h3 class="text-3xl font-bold text-white m-0" id="number-challenges-solved"><i data-lucide="loader-circle" class="stroke-current animate-spin w-8 h-8"></i></h3>
 
-                                        <p class="max-lg:text-xs text-gray-400"><span id="number-hacking-challenges"></span> en cours de participation</p>
+                                        <p class="max-lg:text-xs text-gray-400"><span id="number-hacking-challenges"></span> disponibles</p>
                                     </div>
                                 </div>
                             </div>
@@ -111,7 +105,7 @@
                                     </div>
                                     <div class="w-full flex flex-col gap-1 items-start">
                                         <h3 class="text-3xl font-bold text-white m-0" id="total-points"><i data-lucide="loader-circle" class="stroke-current animate-spin w-8 h-8"></i></h3>
-                                        <p class="max-lg:text-xs text-green-400">+<span id="points-change-percent"></span> points derniers jours</p>
+                                        <p class="max-lg:text-xs text-green-400">+<span id="points-change-percent"></span> points ces derniers jours</p>
                                     </div>
                                 </div>
                             </div>
@@ -130,7 +124,7 @@
                                                 <i data-lucide="loader-circle" class="stroke-current animate-spin w-8 h-8"></i>
                                             </span>
                                         </h3>
-                                        <p class="max-lg:text-xs text-gray-400">Top 50%</p>
+                                        <p class="max-lg:text-xs text-gray-400">Top <span id="number-ranking"></span></p>
                                     </div>
                                 </div>
                             </div>
@@ -162,36 +156,6 @@
                                     </div>
                                 </div>
 
-                                <!-- 
-                                <div class="border-b border-slate-800 pb-4 transition duration-300 ease-in-out hover:-translate-y-1">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center">
-                                            <div class="flex items-center justify-center size-fit bg-blue-700/30 p-2 rounded-full mr-4">
-                                                <i data-lucide="shield" class="w-4 h-4 stroke-current text-blue-500"></i>
-                                            </div>
-                                            <div>
-                                                <p class="max-lg:text-xs text-white max-md:text-xs max-md:font-normal">Started "XSS Attack Simulation"</p>
-                                                <p class="max-lg:text-xs text-gray-400 max-md:text-xs max-md:font-normal">Challenge in progress</p>
-                                            </div>
-                                        </div>
-                                        <p class="max-lg:text-xs flex self-baseline text-gray-400 max-md:text-xs max-md:font-normal">5 days ago</p>
-                                    </div>
-                                </div>
-
-                                <div class="border-b border-slate-800 pb-4 transition duration-300 ease-in-out hover:-translate-y-1">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center">
-                                            <div class="flex items-center justify-center size-fit bg-purple-700/30 p-2 rounded-full mr-4">
-                                                <i data-lucide="message-circle-code" class="w-4 h-4 stroke-current text-purple-500"></i>
-                                            </div>
-                                            <div>
-                                                <p class="max-lg:text-xs text-white max-md:text-xs max-md:font-normal">Received feedback on "Network Security"</p>
-                                                <p class="max-lg:text-xs text-gray-400 max-md:text-xs max-md:font-normal">From moderator</p>
-                                            </div>
-                                        </div>
-                                        <p class="max-lg:text-xs flex self-baseline text-gray-400 max-md:text-xs max-md:font-normal">1 week ago</p>
-                                    </div>
-                                </div> -->
                                 <div class="flex flex-col items-center text-center py-10 px-6" id="no-recent-activities">
                                     <div class="animate-fade-in mb-3">
                                         <i data-lucide="history" class="w-12 h-12 text-emerald-400/60"></i>
@@ -202,8 +166,8 @@
                             </div>
 
                             <!-- View All Button -->
-                            <button class="max-lg:text-sm w-full mt-4 py-3 text-center rounded-lg border border-slate-700 text-white hover:bg-slate-800 transition max-md:text-xs max-md:font-normal">
-                                View All Activity
+                            <button class="max-lg:text-sm w-full mt-4 py-3 text-center rounded-lg border border-slate-700 text-white hover:bg-slate-800 transition max-md:text-xs max-md:font-normal" id="view-all-activities">
+                                Voir tout
                             </button>
                         </div>
                     </div>
@@ -215,13 +179,13 @@
                         <div class="size-fit flex flex-row items-start gap-1 p-1 bg-gray-400/50 rounded-xl max-md:sticky">
 
                             <button class="max-lg:text-sm sub-tab-link flex flex-row items-center gap-1 px-2 py-0.5 text-xm max-md:text-xs text-white border-transparent hover:bg-gray-900/50 rounded-lg bg-gray-900/75" data-sub-tab="subTab1">
-                                In Progress
+                                En cours
                             </button>
                             <button class="max-lg:text-sm sub-tab-link flex flex-row items-center gap-1 px-2 py-0.5 text-xm max-md:text-xs text-white border-transparent hover:bg-gray-900/50 rounded-lg " data-sub-tab="subTab2">
-                                Completed
+                                Terminés
                             </button>
                             <button class="max-lg:text-sm sub-tab-link flex flex-row items-center gap-1 px-2 py-0.5 text-xm max-md:text-xs text-white border-transparent hover:bg-gray-900/50 rounded-lg " data-sub-tab="subTab3">
-                                All Challenges
+                                Tous les défis
                             </button>
 
                         </div>
@@ -246,23 +210,6 @@
                                             <button class="max-lg:text-sm bg-blue-500 text-white px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50 max-md:font-normal">Continue Challenge</button>
                                         </a>
                                     </div>
-
-                                    <!-- Data Exfiltration Challenge Card -->
-                                    <!-- 
-                                    <div class="card-bg w-full flex flex-col justify-between gap-2 p-4 border border-gray-700 rounded-xl shadow-md mx-auto transition delay-150 duration-300 ease-in-out hover:-translate-y-1" id="in-progress-challenge-item">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">Forencis</span>
-                                            <span class="bg-red-500/20 text-red-500 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">Hard</span>
-                                        </div>
-                                        <h2 class="text-xl font-bold text-md text-white max-lg:text-sm max-md:font-normal">Data Exfiltration Challenge</h2>
-                                        <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">Find hidden data exfiltration methods</p>
-                                        <div class="flex flex-row items-center justify-between mb-2">
-                                            <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">Started: Jan 5, 2024</p>
-                                            <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">200 points</p>
-                                        </div>
-                                        <button class="max-lg:text-sm bg-blue-500 text-white px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50 max-md:font-normal">Continue Challenge</button>
-                                    </div> -->
-                                    
                                 </div>
                                 <div
                                     id="no-in-progress-challenges"
@@ -291,22 +238,6 @@
                                         </div>
                                         <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal challenge-end-date">Completed on: March 15, 2023</p>
                                     </div>
-
-                                    <!-- 
-                                    <div class="card-bg w-full flex flex-col justify-between gap-2 p-4 border border-gray-700 rounded-xl shadow-md mx-auto transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-                                        <div class="flex items-center justify-between mb-4">
-                                            <span class="bg-gray-700 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">Cryptography</span>
-                                            <span class="bg-green-500/20 text-green-500 rounded-full text-xs px-2 py-0.5 font-normal text-center flex items-center justify-center">Easy</span>
-                                        </div>
-                                        <h2 class="text-xl font-bold text-md text-white max-lg:text-sm max-md:font-normal">Base64 Encoding</h2>
-                                        <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">Decode and encode base64 messages</p>
-                                        <div class="flex flex-row items-center justify-between mb-2">
-                                            <p class="flex flex-row items-center text-sm font-normal max-lg:text-xs text-white max-md:font-normal"><i data-lucide="trophy" class="w-4 h-4 stroke-current"></i>Completed</p>
-                                            <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">100 points</p>
-                                        </div>
-                                        <p class="text-base font-normal max-lg:text-xs text-gray-400 max-md:font-normal">Completed on: March 15, 2023</p>
-                                    </div> -->
-                                    
                                 </div>
                                 <div
                                     id="no-completed-challenges"
@@ -320,9 +251,12 @@
                             </div>
 
                             <div class="sub-tab-content hidden" id="subTab3">
-                                <div id="all-challenges-container">
-                                    <div class="All-challenges cursor-pointer w-fit mx-auto flex flex-row items-center justify-center gap-2 rounded-full transition-all duration-300 ease-in-out text-white hover:bg-gray-700 py-2 px-4 max-md:w-full border border-gray-700 hover:-translate-y-1 all-challenge-item">
-                                        <i data-lucide="link-2"></i><span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs">All challenges</span>
+                                <div id="all-challenges-container" class="flex flex-row items-center justify-center gap-2 max-md:flex-col max-md:items-center max-md:gap-4">
+                                    <div class="All-challenges-dev cursor-pointer w-fit mx-auto flex flex-row items-center justify-center gap-2 rounded-full transition-all duration-300 ease-in-out text-white hover:bg-gray-700 py-2 px-4 max-md:w-full border border-gray-700 hover:-translate-y-1 all-challenge-item">
+                                        <i data-lucide="link-2"></i><span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs">Tous les défis dev</span>
+                                    </div>
+                                    <div class="All-challenges-hack cursor-pointer w-fit mx-auto flex flex-row items-center justify-center gap-2 rounded-full transition-all duration-300 ease-in-out text-white hover:bg-gray-700 py-2 px-4 max-md:w-full border border-gray-700 hover:-translate-y-1 all-challenge-item">
+                                        <i data-lucide="link-2"></i><span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs">Tous les défis hack</span>
                                     </div>
                                 </div>
                                 <div id="no-all-challenges" class="flex-col items-center justify-center text-center py-12 px-6 border border-dashed border-gray-700/50 rounded-xl bg-gray-800/40 shadow-inner hidden">
@@ -330,7 +264,7 @@
                                         <i data-lucide="package-x" class="w-12 h-12 text-red-400/80"></i>
                                     </div>
                                     <h3 class="text-white text-lg font-semibold">Aucun challenge disponible</h3>
-                                    <p class="text-gray-400 text-sm mt-1">Sois patient, de nouveaux défis arrivent très bientôt !</p>
+                                    <p class="text-gray-400 text-sm mt-1">Sois patient, de nouveaux défis arrivent bientôt !</p>
                                 </div>
 
                             </div>
@@ -344,7 +278,7 @@
                     <div class="card-bg rounded-lg p-6 border border-gray-700">
                         <div class="flex items-center justify-start gap-2 mb-6">
                             <i data-lucide="activity" class="w-6 h-6 stroke-blue-500"></i>
-                            <h3 class="text-xl font-bold text-white">Activities</h3>
+                            <h3 class="text-xl font-bold text-white">Activités</h3>
                         </div>
 
                         <!-- Activity Items -->
@@ -357,45 +291,14 @@
                                             <i data-lucide="check-square" class="w-4 h-4 stroke-current text-green-500"></i>
                                         </div>
                                         <div>
-                                            <p class="max-lg:text-xs text-white max-md:text-xs max-md:font-normal">Completed "SQL Injection Basics"</p>
+                                            <p class="max-lg:text-xs text-white max-md:text-xs max-md:font-normal">Complété "SQL Injection Basics"</p>
                                             <p class="max-lg:text-xs max-md:text-xs max-md:font-normal">100 points</p>
                                         </div>
                                     </div>
-                                    <p class="max-lg:text-xs flex self-baseline text-gray-400 max-md:text-xs max-md:font-normal">2 days ago</p>
+                                    <p class="max-lg:text-xs flex self-baseline text-gray-400 max-md:text-xs max-md:font-normal">2 jours avant</p>
                                 </div>
                             </div>
 
-                            <!-- Started Challenge -->
-                            <!-- 
-                            <div class="border-b border-slate-800 pb-4 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center">
-                                        <div class="flex items-center justify-center size-fit bg-blue-700/30 p-2 rounded-full mr-4">
-                                            <i data-lucide="shield" class="w-4 h-4 stroke-current text-blue-500"></i>
-                                        </div>
-                                        <div>
-                                            <p class="max-lg:text-xs text-white max-md:text-xs max-md:font-normal">Started "XSS Attack Simulation"</p>
-                                            <p class="max-lg:text-xs text-gray-400 max-md:text-xs max-md:font-normal">Challenge in progress</p>
-                                        </div>
-                                    </div>
-                                    <p class="max-lg:text-xs flex self-baseline text-gray-400 max-md:text-xs max-md:font-normal">5 days ago</p>
-                                </div>
-                            </div>
-
-                            <div class="border-b border-slate-800 pb-4 transition delay-150 duration-300 ease-in-out hover:-translate-y-1">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center">
-                                        <div class="flex items-center justify-center size-fit bg-purple-700/30 p-2 rounded-full mr-4">
-                                            <i data-lucide="message-circle-code" class="w-4 h-4 stroke-current text-purple-500"></i>
-                                        </div>
-                                        <div>
-                                            <p class="max-lg:text-xs text-white max-md:text-xs max-md:font-normal">Received feedback on "Network Security"</p>
-                                            <p class="max-lg:text-xs text-gray-400 max-md:text-xs max-md:font-normal">From moderator</p>
-                                        </div>
-                                    </div>
-                                    <p class="max-lg:text-xs flex self-baseline text-gray-400 max-md:text-xs max-md:font-normal">1 week ago</p>
-                                </div>
-                            </div> -->
                             <div class="flex flex-col items-center justify-center text-center py-12 px-6 border border-dashed border-gray-700/50 rounded-xl bg-gray-800/40 shadow-inner" id="no-activities">
                                 <div class="animate-bounce-slow mb-4">
                                     <i data-lucide="activity" class="w-12 h-12 text-sky-400/80"></i>
@@ -408,10 +311,6 @@
 
                         </div>
 
-                        <!-- Load more button -->
-                        <button class="max-lg:text-sm w-full mt-4 py-3 text-center rounded-lg border border-slate-700 text-white hover:bg-slate-800 transition max-md:text-xs max-md:font-normal load-more-button">
-                            Load More
-                        </button>
                     </div>
                 </div>
 
@@ -424,7 +323,7 @@
 
                             <div class="flex items-center justify-start gap-2 mb-6">
                                 <i data-lucide="user" class="w-6 h-6 stroke-blue-500"></i>
-                                <h1 class="text-2xl font-bold text-white">Personal Information</h1>
+                                <h1 class="text-2xl font-bold text-white">Informations personnelles</h1>
                             </div>
 
                             <!-- Full Name -->
@@ -453,7 +352,7 @@
                             <!-- School/University and Location -->
                             <div class="grid grid-cols-2 gap-4 mb-6">
                                 <div>
-                                    <label for="school" class="block text-sm font-medium text-gray-700 mb-2">School/University</label>
+                                    <label for="school" class="block text-sm font-medium text-gray-700 mb-2">École/Université</label>
                                     <input type="text" id="school"
                                         name="school"
                                         value="ESGIS University" class="input-gradient-royal block w-full rounded-md border border-gray-700/40 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm">
@@ -478,19 +377,19 @@
                             </div>
 
                             <!-- Update Profile Button -->
-                            <button class="bg-blue-500 w-full text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50">Update Profile</button>
+                            <button class="bg-blue-500 w-full text-white px-4 py-2 rounded-lg transition duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50">Modifier le profil</button>
                         </form>
 
                         <form class="form-card-background p-6 rounded-lg shadow-md w-full mx-auto border border-gray-700">
                             <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                             <div class="flex items-center justify-start gap-2 mb-6">
                                 <i data-lucide="settings" class="w-6 h-6 stroke-blue-500"></i>
-                                <h1 class="text-2xl font-bold text-white">Account Settings</h1>
+                                <h1 class="text-2xl font-bold text-white">Paramètres du compte</h1>
                             </div>
 
                             <!-- Current Password -->
                             <div class="mb-6">
-                                <label for="current_password" class="block text-sm font-medium text-gray-300 mb-2">Current Password</label>
+                                <label for="current_password" class="block text-sm font-medium text-gray-300 mb-2">Mot de passe actuel</label>
                                 <input type="password" id="current_password"
                                     name="currentPassword"
                                     class="input-gradient-royal block w-full rounded-md border border-gray-700/40 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm">
@@ -499,7 +398,7 @@
 
                             <!-- New Password -->
                             <div class="mb-6">
-                                <label for="new_password" class="block text-sm font-medium text-gray-300 mb-2">New Password</label>
+                                <label for="new_password" class="block text-sm font-medium text-gray-300 mb-2">Nouveau mot de passe</label>
                                 <input type="password" id="new_password"
                                     name="newPassword"
                                     class="input-gradient-royal block w-full rounded-md border border-gray-700/40 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm">
@@ -508,7 +407,7 @@
 
                             <!-- Confirm New Password -->
                             <div class="mb-6">
-                                <label for="confirm_new_password" class="block text-sm font-medium text-gray-300 mb-2">Confirm New Password</label>
+                                <label for="confirm_new_password" class="block text-sm font-medium text-gray-300 mb-2">Confirmer le nouveau mot de passe</label>
                                 <input type="password" id="confirm_new_password"
                                     name="confirmPassword"
                                     class="input-gradient-royal block w-full rounded-md border border-gray-700/40 px-3 py-2 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-sky-500 sm:text-sm">
@@ -516,7 +415,7 @@
                             </div>
 
                             <!-- Change Password Button -->
-                            <button class="bg-blue-500 w-full text-white px-4 py-3 rounded-lg transition duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50 mb-6">Change Password</button>
+                            <button class="bg-blue-500 w-full text-white px-4 py-3 rounded-lg transition duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50 mb-6">Changer le mot de passe</button>
 
                             <!-- Email Notifications -->
                             <!-- <div class="mb-6">
@@ -531,9 +430,6 @@
         </section>
 
     </div>
-
-    <!-- Footer -->
-    <?php require_once '../includes/user/footer.php'; ?>
 </body>
 
 </html>

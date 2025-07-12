@@ -4,12 +4,13 @@ namespace Auth\Controller;
 
 use Exception;
 use Auth\Model\Hackathon;
-
-use PDOException;
-use Auth\Model\TokenManager;
+use Auth\Model\Phase;
 
 if (!class_exists('Hackathon')) {
     require_once __DIR__ . '/../models/Hackathon.php';
+}
+if (!class_exists('Phase')) {
+    require_once __DIR__ . '/../models/Phase.php';
 }
 if (!class_exists('Controller')) {
     require_once __DIR__ . '/Controller.php';
@@ -18,14 +19,41 @@ if (!class_exists('Controller')) {
 class HackathonController extends Controller
 {
     private $hackathon;
+    private $phase;
     private $db;
+    public $tokenManager;
 
     public function __construct($db, $tokenManager)
     {
         parent::__construct($tokenManager);
         $this->db = $db;
         $this->hackathon = new Hackathon($this->db);
+        $this->phase = new Phase($this->db);
+        $this->tokenManager = $tokenManager;
     }
+
+    public function getActivePhase($hackathonId) {
+        $userId = $this->tokenManager->getCurrentUserId(); // récupère l’ID user depuis session/jwt
+        $phase = $this->phase->getActiveForUser($hackathonId, $userId);
+    
+        if (!$phase) {
+            echo json_encode([
+                'success' => false,
+                'message' => "Aucune phase active disponible pour vous."
+            ]);
+            return;
+        }
+    
+        echo json_encode([
+            'success' => true,
+            'phase_id' => $phase['id'],
+            'title' => $phase['title'],
+            'start_at' => $phase['start_at'],
+            'end_at' => $phase['end_at']
+        ]);
+    }
+    
+
 
     /**
      * Crée un nouveau hackathon
