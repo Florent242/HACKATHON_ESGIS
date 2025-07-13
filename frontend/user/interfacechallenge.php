@@ -123,6 +123,55 @@
             min-height: 200px;
             max-height: 300px;
         }
+
+        .challenge-info {
+  background: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
+  border-radius: 16px;
+  border: 1px solid #1E293B;
+  padding: 24px 20px;
+  min-height: 320px;
+  max-width: 500px;
+  margin: auto;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+}
+.challenge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.difficulty-badge {
+  background: #22C55E;
+  color: #fff;
+  padding: 0.25em 1em;
+  border-radius: 999px;
+  font-size: 0.85em;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(34,197,94,0.15);
+}
+.objectif-section, .regles-section {
+  margin-bottom: 1.5em;
+}
+
+.card {
+  background: #10101a;
+  border: 1px solid #232e39;
+  border-radius: 16px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.challenge-info {
+  max-width: 420px;
+  margin: auto;
+}
+.difficulty-badge {
+  background: #22C55E;
+  color: #fff;
+  padding: 0.25em 1em;
+  border-radius: 999px;
+  font-size: 0.85em;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(34,197,94,0.15);
+}
     </style>
 </head>
 <body class="min-h-screen">
@@ -156,23 +205,31 @@
         <div class="flex flex-col gap-4">
             <!-- Objectif & Règles -->
             <div id="objectif-regles" class="bg-gradient-to-br from-[#030B20] to-[#030F2A] rounded p-4 border border-[#1E293B] min-h-[320px] h-[350px] max-h-[400px] overflow-y-auto">
-                <!-- Nom du challenge -->
-                <h1 id="challenge-title" class="text-2xl font-bold text-[#3B82F6] mb-4"></h1>
-                <div class="space-y-4">
-                    <div class="flex items-center">
-                        <div class="w-6 h-6 rounded-full bg-[#3B82F6] flex items-center justify-center mr-2">
-                            <i class="ri-target-line text-black"></i>
-                        </div>
-                        <h2 class="text-lg font-semibold text-white">Objectif</h2>
+                <!-- Titre + badge -->
+                <div class="flex items-center justify-between mb-2">
+                    <h1 id="challenge-title" class="text-2xl font-bold text-[#3B82F6]"></h1>
+                    <span id="challenge-difficulty" class="difficulty-badge bg-[#22C55E] text-white px-3 py-1 rounded-full text-xs font-semibold"></span>
+                </div>
+                <!-- Meta infos -->
+                <div class="flex items-center text-xs text-[#94A3B8] mb-2 gap-3">
+                    <span><i class="ri-time-line"></i> <span id="challenge-time">1s</span></span>
+                    <span><i class="ri-database-2-line"></i> <span id="challenge-memory">256MB</span></span>
+                </div>
+                <!-- Carte Objectif -->
+                <div class="objectif-card bg-[#10101a] border border-[#232e39] rounded-xl p-4 mb-4">
+                    <div class="flex items-center mb-2">
+                        <i class="ri-target-line text-[#3B82F6] text-lg mr-2"></i>
+                        <span class="font-semibold text-white">Objectif</span>
                     </div>
-                    <div id="challenge-description" class="mt-2 text-white text-sm"></div>
-                    <div class="flex items-center">
-                        <div class="w-6 h-6 rounded-full bg-[#22C55E] flex items-center justify-center mr-2">
-                            <i class="ri-check-line text-black"></i>
-                        </div>
-                        <h2 class="text-lg font-semibold text-white">Règles</h2>
+                    <div id="challenge-description" class="text-white text-sm pl-7"></div>
+                </div>
+                <!-- Carte Règles -->
+                <div class="regles-card bg-[#10101a] border border-[#232e39] rounded-xl p-4">
+                    <div class="flex items-center mb-2">
+                        <i class="ri-check-line text-[#22C55E] text-lg mr-2"></i>
+                        <span class="font-semibold text-white">Règles</span>
                     </div>
-                    <div id="challenge-instructions" class="text-white space-y-4"></div>
+                    <ul id="challenge-instructions" class="list-disc pl-10 text-[#22C55E] text-sm space-y-1"></ul>
                 </div>
             </div>
             <!-- Console de Sortie -->
@@ -182,10 +239,12 @@
                         <h2 class="text-sm font-medium text-white">Sortie console</h2>
                     </div>
                     <div class="flex items-center gap-2">
-                        
+                        <button id="toggleConsole" class="text-[#94A3B8] hover:text-white text-xl" title="Réduire/agrandir la console">
+                            <i id="toggleConsoleIcon" class="ri-subtract-line"></i>
+                        </button>
                     </div>
                 </div>
-                <div id="consoleOutput" class="font-mono text-sm space-y-4 bg-[#030B20] rounded p-2 min-h-[150px]">
+                <div id="consoleOutput" class="font-mono text-sm space-y-4 bg-[#10101a] rounded p-2 min-h-[150px]">
                     <div class="text-[#94A3B8]">Prêt à exécuter du code...</div>
                 </div>
                 

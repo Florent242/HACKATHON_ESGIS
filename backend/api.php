@@ -707,10 +707,10 @@ try {
                                         throw new Exception('Méthode non autorisée');
                                     }
                                 } else {
-                                    throw new Exception('Action non reconnue');
+                                    throw new Exception('Action non reconnue .');
                                 }
                             } else {
-                                throw new Exception('Action non reconnue');
+                                throw new Exception('Action non reconnue !');
                             }
                             break;
                         case 'invit':

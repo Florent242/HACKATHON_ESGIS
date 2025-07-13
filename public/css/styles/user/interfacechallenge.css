@@ -123,3 +123,8 @@ body {
     background-color: rgba(239, 68, 68, 0.2);
     border-left: 4px solid var(--red);
 }
+
+.objectif-section,
+.regles-section {
+    margin-bottom: 1.5em;
+}

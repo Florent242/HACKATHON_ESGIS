@@ -589,12 +589,19 @@ class TeamController extends Controller
                 throw new Exception('ID utilisateur manquant');
             }
 
-            $this->team->rejectRequest($teamId, $userId);
+            $result = $this->team->rejectRequest($teamId, $userId);
 
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Demande d\'adhésion rejetée avec succès'
-            ]);
+            if ($result) {
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => 'Demande d\'adhésion rejetée avec succès'
+                ]);
+            } else {
+                $this->jsonResponse([
+                    'success' => false,
+                    'error' => 'Erreur lors du rejet de la demande d\'adhésion'
+                ]);
+            }
         } catch (Exception $e) {
             error_log("Erreur dans rejectRequest: " . $e->getMessage());
             $this->jsonResponse([
@@ -618,12 +625,19 @@ class TeamController extends Controller
                 throw new Exception('Utilisateur non authentifié');
             }
 
-            $this->team->teamRequest($teamId, $currentUserId);
+            $result = $this->team->teamRequest($teamId, $currentUserId);
 
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Demande d\'adhésion envoyée avec succès'
-            ]);
+            if ($result['success']) {
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => $result['message']
+                ]);
+            } else {
+                $this->jsonResponse([
+                    'success' => false,
+                    'error' => $result['message']
+                ]);
+            }
         } catch (Exception $e) {
             error_log("Erreur dans teamRequest: " . $e->getMessage());
             $this->jsonResponse([

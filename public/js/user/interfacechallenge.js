@@ -184,14 +184,64 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     if (challenge && challenge.data) {
         // Titre
-        document.getElementById('challenge-title').textContent = challenge.data.title || '';
+        const challengeTitle = document.getElementById('challenge-title');
+        if (challengeTitle) challengeTitle.textContent = challenge.data.title || '';
+
+        // Difficulté
+        const challengeDifficulty = document.getElementById('challenge-difficulty');
+        if (challengeDifficulty) {
+            let diff = challenge.data.difficulty || '';
+            if (diff === 'easy') diff = 'facile';
+            else if (diff === 'medium') diff = 'moyen';
+            else if (diff === 'hard') diff = 'difficile';
+            challengeDifficulty.textContent = diff;
+        }
 
         // Description (objectif)
-        document.getElementById('challenge-description').textContent = challenge.data.description || '';
+        const challengeDescription = document.getElementById('challenge-description');
+        if (challengeDescription) challengeDescription.textContent = challenge.data.description || '';
 
         // Instructions (règles)
-        // Si tu veux garder la mise en forme (sauts de ligne), utilise innerHTML et remplace les \n par <br>
-        const instructions = challenge.data.instructions ? challenge.data.instructions.replace(/\n/g, '<br>') : '';
-        document.getElementById('challenge-instructions').innerHTML = instructions;
+        const challengeInstructions = document.getElementById('challenge-instructions');
+        if (challengeInstructions) {
+            // Si instructions contient des sauts de ligne ou des points, on split
+            let rules = challenge.data.instructions || '';
+            let items = [];
+            if (rules.includes('\n')) {
+                items = rules.split(/\n+/).map(s => s.trim()).filter(Boolean);
+            } else if (rules.includes('. ')) {
+                items = rules.split(/\. /).map(s => s.trim()).filter(Boolean);
+            } else if (rules.includes(';')) {
+                items = rules.split(';').map(s => s.trim()).filter(Boolean);
+            } else {
+                items = [rules];
+            }
+            challengeInstructions.innerHTML = items.map(rule => `<li>${rule}</li>`).join('');
+        }
+    }
+
+    // --- Ajout du toggle console ici ---
+    const toggleBtn = document.getElementById('toggleConsole');
+    const toggleIcon = document.getElementById('toggleConsoleIcon');
+    const consoleOutput = document.getElementById('consoleOutput');
+    let isCollapsed = false;
+
+    if (!toggleBtn) console.warn('toggleConsole button not found');
+    if (!toggleIcon) console.warn('toggleConsoleIcon not found');
+    if (!consoleOutput) console.warn('consoleOutput not found');
+
+    if (toggleBtn && toggleIcon && consoleOutput) {
+        toggleBtn.addEventListener('click', function() {
+            isCollapsed = !isCollapsed;
+            if (isCollapsed) {
+                consoleOutput.style.display = 'none';
+                toggleIcon.classList.remove('ri-subtract-line');
+                toggleIcon.classList.add('ri-add-line');
+            } else {
+                consoleOutput.style.display = '';
+                toggleIcon.classList.remove('ri-add-line');
+                toggleIcon.classList.add('ri-subtract-line');
+            }
+        });
     }
 });

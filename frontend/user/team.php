@@ -26,8 +26,8 @@
         </div>
 
         <div class="nav-tabs">
-            <button class="nav-tab active" data-tab="all">All Teams</button>
-            <button class="nav-tab" data-tab="my">My Teams</button>
+            <button class="nav-tab active" data-tab="all">Toutes les équipes</button>
+            <button class="nav-tab" data-tab="my">Mon équipe</button>
         </div>
 
         <div id="allTeamsSection">
@@ -79,7 +79,6 @@
                     <label for="teamTypeSelect">Type d'équipe</label>
                     <select name="type" id="teamTypeSelect" required>
                         <option value="">Sélectionnez le type</option>
-                        <option value="mixte">Mixte</option>
                         <option value="dev">Dev</option>
                         <option value="hack">CTF</option>
                     </select>
@@ -89,6 +88,19 @@
                     <label for="teamDescriptionInput">Description</label>
                     <textarea name="description" id="teamDescriptionInput" placeholder="Décrivez votre équipe..." rows="4"></textarea>
                 </div>
+
+                <div style="
+                background: #fef3c7;
+                border: 1px solid #f59e0b;
+                border-radius: 8px;
+                padding: 10px;
+                margin-bottom: 15px;
+            ">
+                <p style="margin: 0; color: #92400e; font-size: 14px;">
+                    <i data-lucide="info" style="width: 16px; height: 16px; display: inline; margin-right: 8px;"></i>
+                    Vous ne pouvez former qu'une seule equipe et etre membre que d'une seule equipe.
+                </p>
+            </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" id="cancelCreateTeam">Annuler</button>
                     <button type="submit" class="btn btn-primary">Créer</button>

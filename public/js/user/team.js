@@ -36,8 +36,11 @@ function initTabs() {
 // Fonction pour vérifier si l'utilisateur appartient à une équipe
 function isUserInTeam(team, userId) {
     // Vérifier si l'utilisateur est le leader de l'équipe
-    if (team.leader_id && team.leader_id == userId) {
-        return { isMember: true, role: 'captain' };
+    if (team.is_member || team.leader_id == userId) {
+        if (team.leader_id === userId) {
+            return { isMember: true, role: 'captain' };
+        }
+        return { isMember: true, role: 'member' };
     }
 
     // Vérifier si l'utilisateur est dans la liste des membres
@@ -159,7 +162,7 @@ function createTeamCard(team) {
 }
 
 // Fonction pour créer une équipe via l'API (VERSION CORRIGÉE)
-async function createTeamViaAPI(teamData) {
+async function createTeamViaAPI() {
     try {
         const userId = await getUserId();
         if (!userId) {
@@ -187,7 +190,7 @@ async function createTeamViaAPI(teamData) {
             body: formData
         });
 
-        if (!response.ok) {
+        if (!response.success) {
             throw new Error(`${response.error}`);
         }
 
@@ -217,18 +220,12 @@ async function joinTeamViaCode(invitationCode) {
             body: formData
         });
 
-        if (!response.ok) {
-            throw new Error(`${response.error}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success) {
+        if (response.success) {
             // Rafraîchir les données des équipes
             await fetchAndDisplayAllTeams();
-            return { success: true, message: data.message };
+            return { success: true, message: response.message };
         } else {
-            return { success: false, error: data.error || 'Code d\'invitation invalide' };
+            return { success: false, error: response.error || 'Code d\'invitation invalide' };
         }
     } catch (error) {
         console.error('Erreur dans joinTeamViaCode:', error.message);
@@ -254,20 +251,19 @@ async function sendJoinRequest(teamName) {
             body: formData
         });
 
-        if (!response.ok) {
-            throw new Error(`${response.error}`);
-        }
+        if (response.success) {
 
-        const data = await response.json();
+            return { success: true, message: response.message || response.error || response.data || response || 'Demande envoyée avec succès' };
 
-        if (data.success) {
-            return { success: true, message: data.message };
         } else {
-            return { success: false, error: data.error || 'Erreur lors de l\'envoi de la demande' };
+
+            return { success: false, error: response.error || response.message || response.data || response || 'Erreur lors de l\'envoi de la demande' };
         }
     } catch (error) {
+
         console.error('Erreur dans sendJoinRequest:', error.message);
-        return { success: false, error: error.message || 'Erreur de réseau' };
+
+        return { success: false, error: error.message || error.error || error.data || error || 'Erreur de réseau' };
     }
 }
 
@@ -315,7 +311,6 @@ function initActionButtons() {
 
             const teamName = document.getElementById('teamNameInput').value;
             const teamType = document.getElementById('teamTypeSelect').value;
-            const teamDescription = document.getElementById('teamDescriptionInput').value;
 
             // Validation côté client
             if (!teamName.trim()) {
@@ -327,14 +322,6 @@ function initActionButtons() {
                 return;
             }
 
-            const newTeamData = {
-                name: teamName.trim(),
-                type: teamType,
-                description: teamDescription.trim(),
-                hackathon_id: 1,
-                leader_id: 1
-            };
-
             const submitButton = createTeamForm.querySelector('button[type="submit"]');
             if (submitButton) {
                 submitButton.disabled = true;
@@ -342,17 +329,17 @@ function initActionButtons() {
             }
 
             try {
-                const result = await createTeamViaAPI(newTeamData);
+                const result = await createTeamViaAPI();
 
                 if (result.success) {
-                    showNotification("Félicitations !",`L'équipe "${teamName}" a été créée avec succès !`, 'success');
+                    showNotification("Félicitations !", `L'équipe "${teamName}" a été créée avec succès !`, 'success');
                     createTeamModal.classList.add('hidden');
                     createTeamForm.reset();
                 } else {
-                    showNotification("Oups !",`${result.error}`, 'error');
+                    showNotification("Oups !", `${result.error || result.message || result || 'Une erreur est survenue lors de la création de l\'équipe'}`, 'error');
                 }
             } catch (error) {
-                showNotification("Oups !",'Une erreur est survenue lors de la création de l\'équipe', 'error');
+                showNotification("Oups !", 'Une erreur est survenue lors de la création de l\'équipe', 'error');
             } finally {
                 if (submitButton) {
                     submitButton.disabled = false;
@@ -415,7 +402,7 @@ function initActionButtons() {
             const invitationCode = document.getElementById('invitationCode').value.trim();
 
             if (!invitationCode) {
-                showNotification("Attention !",'Veuillez entrer un code d\'invitation', 'warning');
+                showNotification("Attention !", 'Veuillez entrer un code d\'invitation', 'warning');
                 return;
             }
 
@@ -429,14 +416,14 @@ function initActionButtons() {
                 const result = await joinTeamViaCode(invitationCode);
 
                 if (result.success) {
-                    showNotification("Félicitations !","Vous avez rejoint l\'équipe avec succès !", 'success');
+                    showNotification("Félicitations !", "Vous avez rejoint l\'équipe avec succès !", 'success');
                     joinTeamModal.classList.add('hidden');
                     inviteCodeForm.reset();
                 } else {
-                    showNotification("Oups !",`${result.error}`, 'error');
+                    showNotification("Oups !", `${result.error}`, 'error');
                 }
             } catch (error) {
-                showNotification("Oups !","Une erreur est survenue lors de la tentative de rejoindre l\'équipe", 'error');
+                showNotification("Oups !", "Une erreur est survenue lors de la tentative de rejoindre l\'équipe", 'error');
             } finally {
                 if (submitButton) {
                     submitButton.disabled = false;
@@ -452,7 +439,7 @@ function initActionButtons() {
             const requestTeamName = document.getElementById('requestTeamName').value.trim();
 
             if (!requestTeamName) {
-                showNotification("Attention !","Veuillez entrer le nom de l\'équipe", 'warning');
+                showNotification("Attention !", "Veuillez entrer le nom de l\'équipe", 'warning');
                 return;
             }
 
@@ -466,20 +453,27 @@ function initActionButtons() {
                 const result = await sendJoinRequest(requestTeamName);
 
                 if (result.success) {
-                    showNotification("Félicitations !","Votre demande a été envoyée avec succès !", 'success');
+
+                    showNotification("Félicitations !", "Votre demande a été envoyée avec succès !", 'success');
                     joinTeamModal.classList.add('hidden');
                     sendRequestForm.reset();
+
                 } else {
-                    showNotification("Oups !",`${result.error || 'Erreur lors de l\'envoi de la demande'}`, 'error');
+
+                    showNotification("Oups !", `${result.error || result.message || result || 'Erreur lors de l\'envoi de la demande'}`, 'error');
                 }
             } catch (error) {
-                showNotification("Oups !","Une erreur est survenue lors de l\'envoi de la demande", 'error');
+
+                showNotification("Oups !", "Une erreur est survenue lors de l\'envoi de la demande", 'error');
             } finally {
+
                 if (submitButton) {
+
                     submitButton.disabled = false;
                     submitButton.textContent = 'Envoyer';
                 }
             }
+
         });
     }
 
@@ -500,7 +494,7 @@ function initTeamActions() {
         button.addEventListener('click', (e) => {
             const teamCard = e.target.closest('.team-card');
             const teamId = teamCard.getAttribute('data-team-id');
-            
+
             // Redirection vers la page de détail de l'équipe
             window.location.href = `/user/teams/overview/${teamId}`;
         });
@@ -510,7 +504,7 @@ function initTeamActions() {
 // Fonction pour afficher un état de chargement
 function showLoadingState(container, message = 'Chargement...') {
     container.classList.add('relative', 'min-h-[200px]');
-    
+
     container.innerHTML = `
         <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div class="bg-gray-800 p-6 rounded-lg shadow-xl flex flex-col items-center">
@@ -542,7 +536,7 @@ function applySearch() {
     if (!allTeamsGrid) return;
 
     if (fetchedAllTeamsData.length === 0) {
-        showLoadingState(allTeamsGrid,'Chargement des équipes...');
+        showLoadingState(allTeamsGrid, 'Chargement des équipes...');
         return;
     }
 
@@ -560,7 +554,7 @@ function applySearch() {
         const message = searchTerm
             ? `Aucune équipe trouvée pour "${searchTerm}".`
             : 'Aucune équipe disponible.';
-        showEmptyState(allTeamsGrid,message);
+        showEmptyState(allTeamsGrid, message);
     } else {
         allTeamsGrid.innerHTML = '';
         filteredTeams.forEach(team => {
@@ -590,7 +584,7 @@ async function fetchAndDisplayAllTeams() {
 
     const allTeamsGrid = document.getElementById('allTeamsGrid');
     if (allTeamsGrid) {
-        showLoadingState(allTeamsGrid,'Chargement des équipes...');
+        showLoadingState(allTeamsGrid, 'Chargement des équipes...');
     }
 
     try {
@@ -622,13 +616,13 @@ async function fetchAndDisplayAllTeams() {
             applySearch();
         } else {
             if (allTeamsGrid) {
-                showEmptyState(allTeamsGrid,'Erreur lors du chargement des équipes.');
+                showEmptyState(allTeamsGrid, 'Erreur lors du chargement des équipes.');
             }
         }
     } catch (error) {
         console.error('Erreur lors du chargement des équipes:', error);
         if (allTeamsGrid) {
-            showEmptyState(allTeamsGrid,'Impossible de joindre l\'API.');
+            showEmptyState(allTeamsGrid, 'Impossible de joindre l\'API.');
         }
     } finally {
         isFetchingTeams = false;
