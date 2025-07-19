@@ -89,7 +89,9 @@ class TokenManager
                 'expires_at' => date('Y-m-d H:i:s', $expiryTime)
             ];
         } catch (Exception $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             error_log('Erreur de génération de token: ' . $e->getMessage());
             throw new Exception('Génération de token impossible !'
             // Pour debuger

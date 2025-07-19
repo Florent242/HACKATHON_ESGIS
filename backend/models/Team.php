@@ -75,9 +75,27 @@ class Team
     public function find($id, $userId = null)
     {
         try {
-            $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
+            // On récupère l'équipe ainsi que son score
+            $query = "SELECT t.*, (
+                SELECT COUNT(*) 
+                FROM team_members tm_count 
+                WHERE tm_count.team_id = t.id
+            ) AS members_count,
+            EXISTS (
+                SELECT 1 
+                FROM team_members tm_check 
+                WHERE tm_check.team_id = t.id AND tm_check.user_id = :userId
+            ) AS is_member,
+            (
+                SELECT total_points 
+                FROM scores s 
+                WHERE s.team_id = t.id
+            ) AS points
+            FROM {$this->table} t 
+            WHERE t.id = :id LIMIT 1";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
             $stmt->execute();
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$result) {
@@ -87,7 +105,7 @@ class Team
 
                 unset($result['invitation_code']);
             }
-
+            $result['points'] ??= 0;
             return $result;
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération de l\'équipe: ' . $e->getMessage());
@@ -112,6 +130,16 @@ class Team
                 throw new Exception('Nom et leader sont requis pour créer une équipe');
             }
 
+            // Vérifier si le nom d'equipe existe deja
+            $checkTeamName = "SELECT name FROM {$this->table} WHERE name = :name LIMIT 1";
+            $checkTeamNameStmt = $this->db->prepare($checkTeamName);
+            $checkTeamNameStmt->bindParam(':name', $data['name'], PDO::PARAM_STR);
+            $checkTeamNameStmt->execute();
+
+            if ($checkTeamNameStmt->fetch(PDO::FETCH_ASSOC)) {
+                throw new Exception('Nom d\'equipe deja utilisé');
+            }
+
             // Vérifier si l'utilisateur leader existe
             $checkUserQuery = "SELECT id FROM users WHERE id = :id LIMIT 1";
             $checkUserStmt = $this->db->prepare($checkUserQuery);
@@ -123,7 +151,7 @@ class Team
             }
 
             // verifier si le leader_id est deja leader d'une equipe
-            $checkLeaderQuery = "SELECT id FROM teams WHERE leader_id = :id LIMIT 1";
+            $checkLeaderQuery = "SELECT id FROM {$this->table} WHERE leader_id = :id LIMIT 1";
             $checkLeaderStmt = $this->db->prepare($checkLeaderQuery);
             $checkLeaderStmt->bindParam(':id', $data['leader_id'], PDO::PARAM_INT);
             $checkLeaderStmt->execute();
@@ -182,7 +210,9 @@ class Team
 
                 return $teamId;
             } catch (Exception $e) {
-                $this->db->rollBack();
+                if ($this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
                 throw new Exception(
                     'Erreur lors de la création de l\'équipe !'
                     // Pour le debug
@@ -190,10 +220,11 @@ class Team
                 );
             }
         } catch (Exception $e) {
-            error_log('Erreur lors de la création de l\'équipe ! ' 
-            // Pour le debug
-            // . $e->getMessage()
-        );
+            error_log(
+                'Erreur lors de la création de l\'équipe ! '
+                // Pour le debug
+                // . $e->getMessage()
+            );
             throw new Exception($e->getMessage());
         }
     }
@@ -247,10 +278,11 @@ class Team
 
             return $stmt->execute();
         } catch (PDOException $e) {
-            error_log('Erreur lors de la mise à jour de l\'équipe ! ' 
-            // Pour le debug
-            // . $e->getMessage()
-        );
+            error_log(
+                'Erreur lors de la mise à jour de l\'équipe ! '
+                // Pour le debug
+                // . $e->getMessage()
+            );
             throw new Exception($e->getMessage());
         }
     }
@@ -401,6 +433,9 @@ class Team
     public function addMember($teamId, $userId, $isLeader = false)
     {
         try {
+            if (!$this->db->inTransaction()) {
+                $this->db->beginTransaction();
+            }
             // Vérifier si l'utilisateur est déjà membre de l'équipe
             if ($this->isMember($teamId, $userId)) {
                 throw new Exception('L\'utilisateur est déjà membre de cette équipe');
@@ -435,13 +470,23 @@ class Team
                 $updateStmt->execute();
             }
 
+            // Mettre à jour toutes les demandes d'adhésion en cours du nouveau membre de l'équipe
+            $updateQuery = "UPDATE teams_adhesions SET status = 'rejected' WHERE user_id = :user_id AND status = 'pending'";
+            $updateStmt = $this->db->prepare($updateQuery);
+            $updateStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $updateStmt->execute();
+
+            $this->db->commit();
             return true;
         } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             error_log('Erreur lors de l\'ajout du membre à l\'équipe: ' . $e->getMessage());
             throw new Exception(
                 'Erreur lors de l\'ajout du membre à l\'équipe !'
                 // Pour le debug
-                . $e->getMessage()
+                // . $e->getMessage()
             );
         }
     }
@@ -460,7 +505,7 @@ class Team
             throw new Exception(
                 'Erreur lors de la vérification de la demande d\'adhésion à l\'équipe !'
                 // Pour le debug
-                . $e->getMessage()
+                // . $e->getMessage()
             );
         }
     }
@@ -491,7 +536,11 @@ class Team
             return true;
         } catch (PDOException $e) {
             error_log('Erreur lors de la mise à jour du code d\'invitation de l\'équipe: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la mise à jour du code d\'invitation : ' . $e->getMessage());
+            throw new Exception(
+                'Erreur lors de la mise à jour du code d\'invitation .'
+                // Pour le debug
+                // . $e->getMessage()
+            );
         }
     }
 
@@ -541,7 +590,7 @@ class Team
      * @throws Exception
      * @return bool true si succès, sinon false
      */
-    public function teamRequest($teamId, $userId):array
+    public function teamRequest($teamId, $userId): array
     {
         error_log("Appel de teamRequest avec teamId: " . var_export($teamId, true) . ", userId: " . var_export($userId, true));
         try {
@@ -608,9 +657,9 @@ class Team
             $stmt->execute();
 
             error_log("Demande d'adhésion insérée pour teamId: $teamId, userId: $userId");
-            
+
             if ($stmt->rowCount() > 0) {
-                logActivity('join', 'User ' . $userId . 'Demande d\'adhésion a une equipe', $teamId, $userId);
+                logActivity('join', 'Vous avez envoyé une demande d\'adhésion a l\'equipe ' . $team['name'], $teamId, $userId);
                 return [
                     'success' => true,
                     'message' => 'Demande d\'adhésion envoyée avec succès'
@@ -625,7 +674,7 @@ class Team
             throw new Exception(
                 'Erreur lors de la demande d\'adhésion à l\'équipe !'
                 // Pour le debug
-                . $e->getMessage()
+                // . $e->getMessage()
             );
         }
     }
@@ -639,10 +688,14 @@ class Team
     public function acceptRequest($teamId, $userId)
     {
         try {
+            if (!$this->db->inTransaction()) {
+                $this->db->beginTransaction();
+            }
             // Vérifier si l'utilisateur est déjà membre de l'équipe
             if ($this->isMember($teamId, $userId)) {
                 throw new Exception('L\'utilisateur est déjà membre de cette équipe');
             }
+
             $team = $this->find($teamId);
             $hackathonId = $team['hackathon_id'];
 
@@ -651,25 +704,76 @@ class Team
                 throw new Exception("L'équipe est déjà inscrite a un hackathon, plus aucune modification n'est autorisée !");
             }
 
+            // Verifier si l'utilisateur est deja membre d'une equipe
+            try {
+                $teamMemberShip = "SELECT COUNT(*) FROM team_members WHERE user_id = :user_id";
+                $stmt = $this->db->prepare($teamMemberShip);
+                $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+                $stmt->execute();
+            } catch (Exception $e) {
+                error_log('Erreur lors de la verification de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
+                throw new Exception(
+                    'Erreur lors de la verification de la demande d\'adhésion à l\'équipe !'
+                    // Pour le debug
+                    // . $e->getMessage()
+                );
+            }
+
+            if ((int)$stmt->fetchColumn() > 0) {
+                // mettre a jour la demande d'adhésion
+                try {
+                    $query = "UPDATE teams_adhesions SET status = 'rejected' WHERE teams_id = :teams_id AND user_id = :user_id";
+                    $stmt = $this->db->prepare($query);
+                    $stmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
+                    $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+                    $stmt->execute();
+                } catch (Exception $e) {
+                    error_log('Erreur lors de la mise a jour de la demande d\'adhésion: ' . $e->getMessage());
+                    throw new Exception(
+                        'Erreur lors de la mise a jour de la demande d\'adhésion !'
+                        // Pour le debug
+                        // . $e->getMessage()
+                    );
+                }
+                throw new Exception('L\'utilisateur est deja membre d\'une equipe');
+            }
+
             // accepte une demande d'adhésion
-            $query = "UPDATE teams_adhesions SET status = 'validated' WHERE teams_id = :teams_id AND user_id = :user_id";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
-            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $stmt->execute();
+            try {
+                $query = "UPDATE teams_adhesions SET status = 'validated' WHERE teams_id = :teams_id AND user_id = :user_id";
+                $stmt = $this->db->prepare($query);
+                $stmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
+                $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+                $stmt->execute();
+            } catch (Exception $e) {
+                error_log('Erreur lors de l\'acceptation de la demande d\'adhésion: ' . $e->getMessage());
+                throw new Exception(
+                    'Erreur lors de l\'acceptation de la demande d\'adhésion !'
+                    // Pour le debug
+                    // . $e->getMessage()
+                );
+            }
 
             if ($stmt->rowCount() > 0) {
                 // Insere le membre dans l'équipe
                 $this->addMember($teamId, $userId);
+                if ($this->db->inTransaction()) {
+                    $this->db->commit();
+                }
                 return true;
+            }
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
             }
             return false;
         } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             error_log('Erreur lors de l\'acceptation de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
-            throw new Exception(
-                'Erreur lors de l\'acceptation de la demande d\'adhésion à l\'équipe !'
-                // Pour le debug
-                // . $e->getMessage()
+            throw new Exception('Erreur lors de l\'acceptation de la demande d\'adhésion à l\'équipe !' 
+            // Pour le debug
+            // . $e->getMessage()
             );
         }
     }
@@ -683,6 +787,9 @@ class Team
     public function rejectRequest($teamId, $userId)
     {
         try {
+            if (!$this->db->inTransaction()) {
+                $this->db->beginTransaction();
+            }
             // Vérifier si l'utilisateur est déjà membre de l'équipe
             if ($this->isMember($teamId, $userId)) {
                 throw new Exception('L\'utilisateur est déjà membre de cette équipe');
@@ -696,23 +803,37 @@ class Team
             }
 
             // accepte une demande d'adhésion
-            $query = "UPDATE teams_adhesions SET status = 'rejected' WHERE teams_id = :teams_id AND user_id = :user_id";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
-            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $stmt->execute();
+            try {
+                $query = "UPDATE teams_adhesions SET status = 'rejected' WHERE teams_id = :teams_id AND user_id = :user_id";
+                $stmt = $this->db->prepare($query);
+                $stmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
+                $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+                $stmt->execute();
+            } catch (Exception $e) {
+                error_log('Erreur lors du rejet de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
+                throw new Exception(
+                    'Erreur lors du rejet de la demande d\'adhésion à l\'équipe !'
+                    // Pour le debug
+                    // . $e->getMessage()
+                );
+            }
 
             if ($stmt->rowCount() > 0) {
+                if ($this->db->inTransaction()) {
+                    $this->db->commit();
+                }
                 return true;
+            }
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
             }
             return false;
         } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             error_log('Erreur lors de la rejet de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
-            throw new Exception(
-                'Erreur lors de la rejet de la demande d\'adhésion à l\'équipe !'
-                // Pour le debug
-                // . $e->getMessage()
-            );
+            throw new Exception($e->getMessage());
         }
     }
 
@@ -743,21 +864,26 @@ class Team
                 throw new Exception('Le leader de l\'équipe ne peut pas être retiré. Changez d\'abord de leader.');
             }
 
-            // Supprimer le membre
-            $query = "DELETE FROM team_members WHERE team_id = :team_id AND user_id = :user_id";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':team_id', $teamId, PDO::PARAM_INT);
-            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $stmt->execute();
+            try {
+                // Supprimer le membre
+                $query = "DELETE FROM team_members WHERE team_id = :team_id AND user_id = :user_id";
+                $stmt = $this->db->prepare($query);
+                $stmt->bindParam(':team_id', $teamId, PDO::PARAM_INT);
+                $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+                $stmt->execute();
 
-            return true;
+                return true;
+            } catch (Exception $e) {
+                error_log('Erreur lors de la suppression du membre de l\'équipe: ' . $e->getMessage());
+                throw new Exception(
+                    'Erreur lors de l\'operation de suppression du membre de l\'équipe !'
+                    // Pour le debug
+                    // . $e->getMessage()
+                );
+            }
         } catch (Exception $e) {
             error_log('Erreur lors de la suppression du membre de l\'équipe: ' . $e->getMessage());
-            throw new Exception(
-                'Erreur lors de la suppression du membre de l\'équipe !'
-                // Pour le debug
-                // . $e->getMessage()
-            );
+            throw new Exception($e->getMessage());
         }
     }
 
@@ -785,34 +911,44 @@ class Team
             if ($hackathonId && $this->isRegisteredToHackathon($teamId, $hackathonId)) {
                 throw new Exception("L'équipe est déjà inscrite a un hackathon, plus aucune modification n'est autorisée !");
             }
-            $this->db->beginTransaction();
+            try {
+                $this->db->beginTransaction();
 
-            // Mettre à jour le champ leader_id dans la table team_members
-            $updateMemberQuery = "UPDATE team_members SET leader_id = :leader_id WHERE team_id = :team_id";
-            $updateMemberStmt = $this->db->prepare($updateMemberQuery);
-            $updateMemberStmt->bindParam(':leader_id', $newLeaderId, PDO::PARAM_INT);
-            $updateMemberStmt->bindParam(':team_id', $teamId, PDO::PARAM_INT);
-            $updateMemberStmt->execute();
+                // Mettre à jour le champ leader_id dans la table team_members
+                $updateMemberQuery = "UPDATE team_members SET leader_id = :leader_id WHERE team_id = :team_id";
+                $updateMemberStmt = $this->db->prepare($updateMemberQuery);
+                $updateMemberStmt->bindParam(':leader_id', $newLeaderId, PDO::PARAM_INT);
+                $updateMemberStmt->bindParam(':team_id', $teamId, PDO::PARAM_INT);
+                $updateMemberStmt->execute();
 
-            // Mettre à jour le champ leader_id dans la table teams
-            $updateTeamQuery = "UPDATE {$this->table} SET leader_id = :leader_id WHERE id = :team_id";
-            $updateTeamStmt = $this->db->prepare($updateTeamQuery);
-            $updateTeamStmt->bindParam(':leader_id', $newLeaderId, PDO::PARAM_INT);
-            $updateTeamStmt->bindParam(':team_id', $teamId, PDO::PARAM_INT);
-            $updateTeamStmt->execute();
+                // Mettre à jour le champ leader_id dans la table teams
+                $updateTeamQuery = "UPDATE {$this->table} SET leader_id = :leader_id WHERE id = :team_id";
+                $updateTeamStmt = $this->db->prepare($updateTeamQuery);
+                $updateTeamStmt->bindParam(':leader_id', $newLeaderId, PDO::PARAM_INT);
+                $updateTeamStmt->bindParam(':team_id', $teamId, PDO::PARAM_INT);
+                $updateTeamStmt->execute();
 
-            $this->db->commit();
-            logActivity('join', 'Changement du leader de votre equipe', $teamId, $newLeaderId);
+                $this->db->commit();
+                logActivity('join', 'Changement du leader de votre equipe', $teamId, $newLeaderId);
 
-            return true;
+                return true;
+            } catch (Exception $e) {
+                if ($this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
+                error_log('Erreur lors du changement de leader: ' . $e->getMessage());
+                throw new Exception(
+                    'Erreur lors de l\'operation de changement de leader !'
+                    // Pour le debug
+                    // . $e->getMessage()
+                );
+            }
         } catch (Exception $e) {
-            $this->db->rollBack();
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             error_log('Erreur lors du changement de leader: ' . $e->getMessage());
-            throw new Exception(
-                'Erreur lors du changement de leader !'
-                // Pour le debug
-                . $e->getMessage()
-            );
+            throw new Exception($e->getMessage());
         }
     }
 
@@ -826,7 +962,7 @@ class Team
         error_log("Appel de getMembers avec teamId: " . var_export($teamId, true));
         try {
             // Vérifier si l'équipe existe
-            $queryTeam = "SELECT id FROM {$this->table} WHERE id = :team_id LIMIT 1";
+            $queryTeam = "SELECT id, hackathon_id FROM {$this->table} WHERE id = :team_id LIMIT 1";
             $stmtTeam = $this->db->prepare($queryTeam);
             $stmtTeam->bindParam(':team_id', $teamId, PDO::PARAM_INT);
             $stmtTeam->execute();
@@ -837,17 +973,50 @@ class Team
                 throw new Exception('Équipe non trouvée');
             }
 
-            // Récupérer les membres acceptés
-            $query = "SELECT u.id, u.username, u.fullname, u.email, u.special_comp, u.study_level
-                      FROM team_members tm 
-                      JOIN users u ON tm.user_id = u.id 
-                      WHERE tm.team_id = :team_id";
+            $query = "SELECT 
+            u.id, 
+            u.username, 
+            u.fullname, 
+            u.email, 
+            u.special_comp, 
+            u.study_level, 
+            SUM(";
+
+            switch ($team['hackathon_id']) {
+                case 1:
+                    $query .= "IFNULL(vf.points_gained, 0)";
+                    break;
+                case 2:
+                    $query .= "IFNULL(cs.total_score, 0)";
+                    break;
+                default:
+                    $query .= "0";
+            }
+
+            $query .= ") AS total_points
+            FROM team_members tm
+            JOIN users u ON tm.user_id = u.id ";
+
+            switch ($team['hackathon_id']) {
+                case 1:
+                    $query .= "LEFT JOIN validated_flags vf ON u.id = vf.user_id ";
+                    break;
+                case 2:
+                    $query .= "LEFT JOIN challenge_submissions cs ON u.id = cs.user_id ";
+                    break;
+            }
+
+            $query .= "WHERE tm.team_id = :team_id 
+                   GROUP BY u.id";
+
+            // Préparation
             $stmt = $this->db->prepare($query);
             if (!$stmt) {
                 $errorInfo = $this->db->errorInfo();
                 error_log("Erreur de préparation de la requête SQL : " . json_encode($errorInfo));
                 throw new Exception("Erreur de préparation de la requête SQL : " . $errorInfo[2]);
             }
+
             $stmt->bindParam(':team_id', $teamId, PDO::PARAM_INT);
             $stmt->execute();
             $members = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -862,7 +1031,7 @@ class Team
             throw new Exception(
                 "Une erreur est survenue lors de la récupération des membres de l'équipe !"
                 // Pour le debug
-                // . $e->getMessage(), $errorCode
+                // . $e->getMessage(),$errorCode
             );
         }
     }
@@ -913,7 +1082,7 @@ class Team
     {
         try {
             // Vérifier si le code d'invitation existe
-            $query = "SELECT id, hackathon_id FROM {$this->table} WHERE invitation_code = :code LIMIT 1";
+            $query = "SELECT id, hackathon_id, name FROM {$this->table} WHERE invitation_code = :code LIMIT 1";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':code', $code, PDO::PARAM_STR);
             $stmt->execute();
@@ -927,44 +1096,70 @@ class Team
             $hackathonId = $team['hackathon_id'];
 
             // Verifier si l'équipe est inscrite au hackathon
-            // if ($this->isRegisteredToHackathon($teamId, $hackathonId)) {
-            //     throw new Exception("L'équipe est déjà inscrite a un hackathon, plus aucune modification n'est autorisée !");
-            // }
+            if ($this->isRegisteredToHackathon($teamId, $hackathonId)) {
+                throw new Exception("L'équipe est déjà inscrite a un hackathon, plus aucune modification n'est autorisée !");
+            }
 
             // Vérifier si l'utilisateur est déjà membre
             if ($this->isMember($teamId, $userId)) {
                 throw new Exception('Vous êtes déjà membre de cette équipe');
             }
 
-            // Vérifier si l'utilisateur a une demande en attente
-            $requestQuery = "SELECT COUNT(*) FROM teams_adhesions WHERE teams_id = :teams_id AND user_id = :user_id AND status = 'pending'";
-            $requestStmt = $this->db->prepare($requestQuery);
-            $requestStmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
-            $requestStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $requestStmt->execute();
-            if ((int)$requestStmt->fetchColumn() > 0) {
-                throw new Exception('Vous avez déjà une demande d\'adhésion en attente pour cette équipe');
+            // Vérifier si l'utilisateur est deja dans une equipe
+            try {
+                $query = "SELECT COUNT(*) FROM team_members WHERE user_id = :user_id";
+                $stmt = $this->db->prepare($query);
+                $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+                $stmt->execute();
+
+                $stmt->fetchColumn();
+            } catch (PDOException $e) {
+                error_log('Erreur lors de la vérification d\'appartenance à l\'équipe: ' . $e->getMessage());
+                throw new Exception(
+                    'Erreur lors de la vérification d\'appartenance à l\'équipe !'
+                    // Pour le debug
+                    // . $e->getMessage()
+                );
             }
 
-            // Ajouter l'utilisateur comme membre
-            $this->addMember($teamId, $userId);
+            if ($stmt->fetchColumn() > 0) {
+                throw new Exception('Vous êtes déjà membre d\'une equipe');
+            }
 
-            // Supprimer toute demande d'adhésion existante
-            $deleteRequestQuery = "DELETE FROM teams_adhesions WHERE teams_id = :teams_id AND user_id = :user_id";
-            $deleteRequestStmt = $this->db->prepare($deleteRequestQuery);
-            $deleteRequestStmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
-            $deleteRequestStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $deleteRequestStmt->execute();
-            logActivity('join', 'User ' . $userId . 'Adhesion a une equipe via code invitation ', $teamId, $userId);
+            try {
+                // Vérifier si l'utilisateur a une demande en attente
+                $requestQuery = "SELECT COUNT(*) FROM teams_adhesions WHERE teams_id = :teams_id AND user_id = :user_id AND status = 'pending'";
+                $requestStmt = $this->db->prepare($requestQuery);
+                $requestStmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
+                $requestStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+                $requestStmt->execute();
+                if ((int)$requestStmt->fetchColumn() > 0) {
+                    throw new Exception('Vous avez déjà une demande d\'adhésion en attente pour cette équipe');
+                }
 
-            return $teamId;
+                // Ajouter l'utilisateur comme membre
+                $this->addMember($teamId, $userId);
+
+                // Supprimer toute demande d'adhésion existante
+                $deleteRequestQuery = "DELETE FROM teams_adhesions WHERE teams_id = :teams_id AND user_id = :user_id";
+                $deleteRequestStmt = $this->db->prepare($deleteRequestQuery);
+                $deleteRequestStmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
+                $deleteRequestStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+                $deleteRequestStmt->execute();
+                logActivity('join', 'User ' . $userId . 'Adhesion a l\'equipe ' . $team['name'] . 'via code invitation ', $teamId, $userId);
+
+                return $teamId;
+            } catch (Exception $e) {
+                error_log('Erreur lors de l\'adhésion à l\'équipe via code invitation: ' . $e->getMessage());
+                throw new Exception(
+                    'Erreur lors de l\'adhésion à l\'équipe via code invitation !'
+                    // Pour le debug
+                    // . $e->getMessage()
+                );
+            }
         } catch (Exception $e) {
             error_log('Erreur dans joinTeamViaCode: ' . $e->getMessage());
-            throw new Exception(
-                'Erreur lors de l\'adhésion à l\'équipe via code invitation !'
-                // Pour le debug
-                . $e->getMessage()
-            );
+            throw new Exception($e->getMessage());
         }
     }
 

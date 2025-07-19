@@ -234,11 +234,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         toggleBtn.addEventListener('click', function() {
             isCollapsed = !isCollapsed;
             if (isCollapsed) {
-                consoleOutput.style.display = 'none';
+                document.body.classList.add('console-collapsed');
                 toggleIcon.classList.remove('ri-subtract-line');
                 toggleIcon.classList.add('ri-add-line');
             } else {
-                consoleOutput.style.display = '';
+                document.body.classList.remove('console-collapsed');
                 toggleIcon.classList.remove('ri-add-line');
                 toggleIcon.classList.add('ri-subtract-line');
             }

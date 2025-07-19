@@ -38,7 +38,7 @@ if (empty($_SESSION['csrf_token'])) {
             <div class="auth-form" id="loginForm">
                 <h1>Espace Utilisateur</h1>
                 <p>Connectez-vous à votre compte étudiant</p> <br>
-                <form action="/api/auth/login" method="POST"  id="signinForm">
+                <form action="/api/auth/login" method="POST" id="signinForm">
                     <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
                     <div class="form-group">
                         <label for="email_user">Email ou nom d'utilisateur</label>
@@ -56,9 +56,12 @@ if (empty($_SESSION['csrf_token'])) {
                         </div>
                     </div>
 
-                    <div class="mb-1">
-                        <label for="remember_me">Rester connecté</label>
-                        <input type="checkbox" class="text-white checked:bg-blue-500" name="remember_me" id="remember_me">
+                    <div class="flex flex-row justify-center items-center mx-auto max-w-[60%] max-md:text-xs">
+                        <label for="remember_me" class="animated-checkbox">
+                            <input type="checkbox" id="remember_me" name="remember_me" class="animated-checkbox-input">
+                            <span class="animated-checkbox-check"></span>
+                            <span class="animated-checkbox-label text-sm max-md:text-xs">Rester connecté</span>
+                        </label>
                     </div>
                     <button type="submit" class="submit-btn"> <i data-lucide="send"></i>Se connecter</button>
                 </form>
@@ -118,7 +121,7 @@ if (empty($_SESSION['csrf_token'])) {
                                 <span class="error-message absolute top-full text-red-500 text-xs mt-1 hidden" id="emailError"></span>
                             </div>
                         </div>
-                        
+
                         <div class="flex gap-2 flex-row justify-between">
                             <div class="form-group">
                                 <label for="phone" class="label after:ml-1 after:text-red-500 after:content-['*']">Téléphone</label>
@@ -171,12 +174,11 @@ if (empty($_SESSION['csrf_token'])) {
                             <div class="relative w-full">
                                 <div class="flex items-center bg-gray-800/80 border border-gray-600/50 rounded-md px-2.5 py-1.5 text-sm focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all w-full duration-150">
                                     <i data-lucide="code" class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0"></i>
-                                    <select 
-                                        id="main_skill" 
-                                        name="main_skill" 
-                                        required 
-                                        class="w-full bg-transparent text-xs text-gray-100 placeholder-gray-400 border-none focus:ring-0 focus:outline-none appearance-none cursor-pointer pr-5 py-0.5"
-                                    >
+                                    <select
+                                        id="main_skill"
+                                        name="main_skill"
+                                        required
+                                        class="w-full bg-transparent text-xs text-gray-100 placeholder-gray-400 border-none focus:ring-0 focus:outline-none appearance-none cursor-pointer pr-5 py-0.5">
                                         <option value="" class="bg-gray-800 text-gray-300">Sélectionnez votre compétence</option>
                                         <optgroup label="Développement" class="bg-gray-800 text-gray-200">
                                             <option value="fullstack" class="hover:bg-indigo-600">Développement Full-Stack</option>

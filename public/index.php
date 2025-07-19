@@ -95,9 +95,6 @@ switch ($url) {
     case '/user/leaderboard':
         require_once '../frontend/user/leaderboard.php'; // Inclure la page "Admin"
         break;
-    case '/user/resources':
-        require_once '../frontend/user/resources.php'; // Inclure la page "Ressources"
-        break;
     case '/user/faq':
         require_once '../frontend/user/faq.php'; // Inclure la page "Ressources"
         break;

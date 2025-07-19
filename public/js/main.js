@@ -189,7 +189,7 @@ function hideError(inputElement, errorElement) {
  */
 function showNotification(message, details = null, type = 'info', duration = 5000) {
     const notification = document.createElement('div');
-    notification.className = `fixed ${type === 'success' ? 'left-1/2 transform -translate-x-1/2' : 'right-4'} bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 flex items-start justify-between gap-3 animate-fade-in z-[1000] cursor-pointer min-h-[60px] w-[45vw] sm:w-[40vw] md:w-[40vw] lg:w-[40vw]`;
+    notification.className = `fixed ${type === 'success' ? 'left-1/2 transform -translate-x-1/2' : 'right-4'} bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 flex items-start justify-between gap-3 animate-fade-in z-[1000] cursor-pointer min-h-[60px] w-[35vw] sm:w-[45vw] md:w-[45vw] lg:w-[45vw]`;
 
     let timeoutId;
     const startTimer = () => {
@@ -236,7 +236,7 @@ function showNotification(message, details = null, type = 'info', duration = 500
 
     // Message principal avec clamp
     const messageElement = document.createElement('p');
-    messageElement.className = 'text-white font-medium text-sm sm:text-base line-clamp-1';
+    messageElement.className = 'text-white font-medium text-sm max-md:text-xs line-clamp-1';
     messageElement.innerText = message;
     messageElement.title = message;
     textContainer.appendChild(messageElement);
@@ -244,7 +244,7 @@ function showNotification(message, details = null, type = 'info', duration = 500
     // Message de détails (en option)
     if (details) {
         const detailsElement = document.createElement('p');
-        detailsElement.className = 'text-gray-300/90 font-normal text-xs sm:text-sm mt-1 line-clamp-1';
+        detailsElement.className = 'text-gray-300/90 font-normal text-sm max-md:text-[0.6rem] mt-1 line-clamp-2';
         detailsElement.innerText = details;
         detailsElement.title = details;
         textContainer.appendChild(detailsElement);
@@ -365,13 +365,40 @@ async function apiRequest(endpoint, options = {}) {
 
         const data = await response.json(); // On parse toujours le body
 
-        if (!response.ok) {
+        // Afficher les détails de debug si disponibles (même pour les réponses 200)
+        if (data.debug_message) {
+            console.group('🔍 Debug API Info');
+            console.log('Message:', data.debug_message);
+            console.log('File:', data.debug_file);
+            console.log('Line:', data.debug_line);
+            if (data.debug_trace) console.log('Trace:', data.debug_trace);
+            console.groupEnd();
+        }
 
+        if (!response.ok) {
             return {
                 success: false,
                 status: data.status || response.status,
                 message: data.message || data.error || 'Erreur inconnue',
+                debug_message: data.debug_message || null,
+                debug_file: data.debug_file || null,
+                debug_line: data.debug_line || null,
+                debug_trace: data.debug_trace || null,
                 data: null
+            };
+        }
+
+        // Vérifier si la réponse contient une erreur même avec un status 200
+        if (data.success === false) {
+            return {
+                success: false,
+                status: response.status,
+                message: data.error || data.message || 'Erreur inconnue',
+                debug_message: data.debug_message || null,
+                debug_file: data.debug_file || null,
+                debug_line: data.debug_line || null,
+                debug_trace: data.debug_trace || null,
+                data: data
             };
         }
 
@@ -387,6 +414,7 @@ async function apiRequest(endpoint, options = {}) {
     }
 }
 
+// TODO: Retirer certaines parties potentiellements a titre exploitable de cette fonction
 /**
  * @description Fonction utilitaire pour gérer les erreurs
  * @param {string} message 
@@ -394,9 +422,77 @@ async function apiRequest(endpoint, options = {}) {
  * @param {string} type 
  */
 function handleError(message, error, type = 'error') {
-    console.error(message, error.message || error.error || error || "Erreur inconnue")
-    showNotification(`${message}`, `${error.message || error.error || error || "Erreur inconnue"}`, type)
+    // Log détaillé dans la console
+    console.group('🔴 Erreur API');
+    console.error('Message:', message);
+    console.error('Erreur:', error);
+    
+    // Si l'erreur a des propriétés de debug, les afficher
+    if (error && typeof error === 'object') {
+        if (error.debug_message) console.error('Debug message:', error.debug_message);
+        if (error.debug_file) console.error('Debug file:', error.debug_file);
+        if (error.debug_line) console.error('Debug line:', error.debug_line);
+        if (error.debug_trace) console.error('Debug trace:', error.debug_trace);
+        if (error.stack) console.error('Stack:', error.stack);
+    }
+    console.groupEnd();
+    
+    // Préparer le message pour la notification
+    let notificationMessage = message;
+    let notificationDetails = error.message || error.error || error || "Erreur inconnue";
+    
+    // Si on a des infos de debug, les ajouter aux détails
+    if (error && error.debug_message) {
+        notificationDetails = `${error.debug_message}`;
+        if (error.debug_file && error.debug_line) {
+            notificationDetails += ` (${error.debug_file}:${error.debug_line})`;
+        }
+    }
+    
+    showNotification(notificationMessage, notificationDetails, type);
 }
+
+/**
+ * @description Fonction helper pour debug - testez une requête API depuis la console
+ * Usage: await testApiRequest('/challenges/dev/1/1', 'POST', {action: 'validate', challenge_id: 47, code: 'print("test")', language: 'python'})
+ * @param {string} endpoint 
+ * @param {string} method 
+ * @param {Object} body 
+ */
+async function testApiRequest(endpoint, method = 'GET', body = null) {
+    console.group('🧪 Test API Request');
+    console.log('Endpoint:', endpoint);
+    console.log('Method:', method);
+    console.log('Body:', body);
+    
+    try {
+        const options = {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        };
+        
+        if (body && method !== 'GET') {
+            options.body = JSON.stringify(body);
+        }
+        
+        const result = await apiRequest(endpoint, options);
+        
+        console.log('Result:', result);
+        console.groupEnd();
+        
+        return result;
+    } catch (error) {
+        console.error('Test failed:', error);
+        console.groupEnd();
+        throw error;
+    }
+}
+
+// Exposer la fonction de test globalement pour faciliter le debug
+window.testApiRequest = testApiRequest;
 
 /**
  * @description Fonction utilitaire pour vérifier l'état de connexion

@@ -8,6 +8,7 @@ const teamName = document.querySelector('#teamStats strong');
 const teamAvatar = document.querySelector('#teamAvatar');
 const teamCategory = document.querySelector('.name span');
 const memberNumber = document.querySelector('#teamStats .member span');
+const teamScore = document.querySelector('#teamStats .score span');
 const aboutSection = document.querySelector('#ulOptionContentZone');
 let listItems = document.querySelectorAll('ul li');
 
@@ -141,7 +142,10 @@ const handleNavBar = async () => {
         <li>
             <i data-lucide="bell"></i>
             <span>Demandes</span>  
-            <span id="requestNumber"></span>          
+            ${joinRequests.length > 0 ? 
+            `<span id="requestNumber" class="ml-1.5 flex items-center justify-center min-w-5 h-5 px-2.5 border border-red-500 text-xs font-medium bg-gradient-to-br from-red-500/40 to-red-600/70 text-white rounded-full transform transition-all duration-200 hover:scale-110 shadow-md hover:shadow-red-500/30">
+                ${joinRequests.length}
+            </span>` : ''}
         </li>`;
         navBar.insertAdjacentHTML('beforeend', otherNavBarItems);
         listItems = document.querySelectorAll('ul li');
@@ -239,17 +243,31 @@ const renderMember = (member) => {
     const isMobile = window.innerWidth <= 650;
 
     memberDiv.innerHTML = `
-        <div class="member-info">
-            <div class="member-avatar">${member.profil_picture ? member.profil_picture : (member.username.charAt(0).toUpperCase() + member.username.charAt(1).toUpperCase())}
+        <div class="member-info gap-4 max-md:gap-2">
+            <div class="member-avatar">${member.profil_picture ? `<img src="${member.profil_picture}" alt="${member.username}">` : (member.username.charAt(0).toUpperCase() + member.username.charAt(1).toUpperCase())}
             </div>
             <div class="member-details">
                 <div class="member-header">
-                    <h4 class="flexDivIcon" style="gap:10px;">${member.username} ${team.leader_id === member.id ? '<i data-lucide="crown" class="crown-icon"></i>' : ''} <span class="role-badge ${team.leader_id === member.id ? 'captain' : 'member'} ">${team.leader_id === member.id ? 'Capitaine' : 'Membre'}</span></h4>                    
+                    <h4 class="flexDivIcon gap-2 text-base max-md:text-xs">${member.username} ${team.leader_id === member.id ? '<i data-lucide="crown" class="w-3 h-3 stroke-current"></i>' : ''} <span class="role-badge ${team.leader_id === member.id ? 'captain' : 'member'} text-base max-md:text-xs">${team.leader_id === member.id ? 'Capitaine' : 'Membre'}</span></h4>                    
                 </div>
-                <p>${member.special_comp}</p>
+                <p class="max-md:text-xs">${member.special_comp}</p>
+            </div>
+            <div class="flex flex-col justify-end gap-2 items-center">
+                <i data-lucide="chart-no-axes-combined" class="w-4 h-4 stroke-current"></i>
+                <span class="text-sm max-md:text-xs">${member.total_points || 0} pts</span>
             </div>
         </div>
-        ${(team.leader_id !== member.id && userConnected.id === team.leader_id) ? `<div class="flexDivIcon promoteRemoveBtn" style="gap:10px;"><button class="promoteLeaderBtn flexDivIcon" onclick="handlePromoteLeader(${member.id})"><i data-lucide="crown" width="15" height="15"></i><span>Promouvoir leader</span></button> <button class="removeMemberBtn flexDivIcon" onclick="handleRemoveMember(${member.id})"><i data-lucide="user-minus" width="15" height="15"></i><span>Retirer</span></button></div>` : ''}
+        ${(team.leader_id !== member.id && userConnected.id === team.leader_id) ?
+        `<div class="flexDivIcon promoteRemoveBtn">
+            <button class="promoteLeaderBtn flexDivIcon" onclick="handlePromoteLeader(${member.id}, '${member.username}')">
+                <i data-lucide="crown" class="w-4 h-4 stroke-current"></i>
+                <span class="text-base max-md:text-xs">Promouvoir</span>
+            </button> 
+            <button class="removeMemberBtn flexDivIcon" onclick="handleRemoveMember(${member.id}, '${member.username}')">
+                <i data-lucide="user-minus" class="w-4 h-4 stroke-current"></i>
+                <span class="text-base max-md:text-xs">Retirer</span>
+            </button>
+        </div>` : ''}
     `;
     return memberDiv;
 };
@@ -367,22 +385,59 @@ const loadTeamMembers = () => {
 // FONCTIONS DE GESTION DES ÉVÉNEMENTS
 // ========================================
 
-const handleRemoveMember = async (id) => {
+const handleRemoveMember = async (id, username, validated = false) => {
+    if (!validated) {
+        const modale = createModal(`
+        <div>
+            <h3>Êtes-vous sûr de vouloir retirer ${username} de l'équipe ?</h3>
+            <div class="flexDivIcon" style="gap:10px; margin-top:10px;">
+            <button type="button" style="padding:10px 20px; border-radius:10px;" onclick="handleRemoveMember(${id}, '${username}',true)">Oui</button>
+            <button type="button" style="padding:10px 20px; border-radius:10px;" onclick="closeModal()">Non</button>
+            </div>
+        </div>
+    `);
+        document.body.insertAdjacentElement('beforeend', modale);
+        modale.showModal();
+        modale.animate(modaleAnimation, { duration: 300, easing: 'ease-in-out' });
+        lucide.createIcons();
+        return;
+    }
+    closeModal();
     const removeMember = await manageOverviewData.deleteMember(id);
+    let name;
+    team.members.forEach(member => {
+        if (member.id === id) {
+            name = member.username;
+        }
+    });
     if (removeMember.success) {
-        let name;
-        team.members.forEach(member => {
-            if (member.id === id) {
-                name = member.username;
-            }
-        });
-        showNotification('Success !', `${name} a été retiré de l'équipe.`, 'info');
-        // window.location.reload();
-        loadTeamMembers();
+        showNotification('Success !', `${name} a été retiré de l'équipe. Rechargement dans quelques instants...`, 'info');
+        setTimeout(() => {
+            window.location.reload();
+        }, 3000);
+    } else {
+        showNotification('Echec de la suppression !', removeMember.message || removeMember.error || `Erreur lors de la suppression de ${name} de l'équipe.`, 'error');
     }
 };
 
-const handlePromoteLeader = async (id) => {
+const handlePromoteLeader = async (id, username, validated = false) => {
+    if (!validated) {
+        const modale = createModal(`
+        <div>
+            <h3>Êtes-vous sûr de vouloir promouvoir ${username} en leader ?</h3>
+            <div class="flexDivIcon" style="gap:10px; margin-top:10px;">
+            <button type="button" style="padding:10px 20px; border-radius:10px;" onclick="handlePromoteLeader(${id}, '${username}',true)">Oui</button>
+            <button type="button" style="padding:10px 20px; border-radius:10px;" onclick="closeModal()">Non</button>
+            </div>
+        </div>
+    `);
+        document.body.insertAdjacentElement('beforeend', modale);
+        modale.showModal();
+        modale.animate(modaleAnimation, { duration: 300, easing: 'ease-in-out' });
+        lucide.createIcons();
+        return;
+    }
+    closeModal();
     const promoteLeader = await manageOverviewData.promoteLeader(id);
     let name;
     team.members.forEach(member => {
@@ -391,11 +446,12 @@ const handlePromoteLeader = async (id) => {
         }
     });
     if (promoteLeader.success) {
-        showNotification('Success !', `${name} est le nouveau leader de l'équipe.`, 'info');
-        // window.location.reload();
-        loadTeamMembers();
+        showNotification('Success !', `${name} est le nouveau leader de l'équipe. Rechargement dans quelques instants...`, 'info');
+        setTimeout(() => {
+            window.location.reload();
+        }, 3000);
     } else {
-        showNotification('Echec de la promotion !', `Erreur lors de la promotion de ${name} en tant que leader.`, 'error');
+        showNotification('Echec de la promotion !', promoteLeader.message || promoteLeader.error || `Erreur lors de la promotion de ${name} en tant que leader.`, 'error');
     }
 };
 
@@ -466,8 +522,6 @@ const handleJoinRequest = async (id, action, validate) => {
     // Supprimer la demande après l'animation
     setTimeout(() => {
         if (!result) {
-            showNotification('Echec !', `${result.message || result.error || result || 'Erreur lors de l\'acceptation de la demande'}`, 'error');
-
             return;
         }
 
@@ -542,9 +596,8 @@ const handleJoinRequest = async (id, action, validate) => {
         // Mettre à jour le compteur de demandes
         const requestCount = document.getElementById('requestNumber');
         if (requestCount) {
-
             requestCount.textContent = joinRequests.length > 0 ? `(${joinRequests.length})` : '';
-
+            joinRequests.length === 0 ? requestCount.style.display = 'none' : '';
         }
 
     }, 300); // Attendre la fin de l'animation (500ms)
@@ -596,7 +649,6 @@ const handleTabClick = () => {
                     break;
                 case 3: // Demandes
                     await getJoinRequests();
-                    renderJoinRequestsContent();
 
                     animateContentChange(tabContents.requests, () => {
                         lucide.createIcons();
@@ -706,13 +758,16 @@ const invitUser = () => {
 };
 
 const copyInvitCode = async () => {
-    navigator.clipboard.writeText(team.invitation_code)
-        .then(() => {
-            showNotification('Success !', 'Code copié avec succès.', 'info');
-        })
-        .catch(() => {
-            showNotification('Echec de la copie !', 'Erreur lors de la copie du code.', 'error');
-        });
+    try {
+        if (!team?.invitation_code) {
+            throw new Error("Aucun code d'invitation disponible");
+        }
+        await navigator.clipboard.writeText(team.invitation_code);
+        showNotification('Succès', 'Code copié avec succès', 'success');
+    } catch (error) {
+        console.error('Erreur lors de la copie du code:', error);
+        showNotification('Echec de la copie !', null, 'warning');
+    }
 }
 window.onkeydown = (e) => {
     if (e.key.toUpperCase() === 'V' && e.ctrlKey) {
@@ -823,11 +878,11 @@ const handleSettingsAction = () => {
                 showNotification('Modification effectuée !', 'Le code d\'invitation a été mis à jour avec succès.', 'info');
             } else {
                 console.warn('Données manquantes dans la réponse API:', response);
-                showNotification('Modification echouée !', 'Le code d\'invitation a été mis à jour, mais le nouveau code n\'est pas disponible.', 'warning');
+                showNotification('Modification echouée !', response.message || response.error || 'Le code d\'invitation n\'a pas pu être mis à jour.', 'warning');
             }
         } catch (error) {
             console.error('Erreur lors de la mise à jour du code:', error);
-            showNotification('Modification echouée !', error.message, 'error');
+            showNotification('Modification echouée !', error.message || error.error || 'Le code d\'invitation n\'a pas pu être mis à jour.', 'error');
         }
     };
 
@@ -845,7 +900,7 @@ const handleSettingsAction = () => {
 // FONCTIONS DE GESTION DES DONNÉES
 // ========================================
 
-const defineTeamNameOverviewData = async () => {
+let defineTeamNameOverviewData = async () => {
     await getTeam();
     await getJoinRequests();
     console.log(team);
@@ -854,11 +909,12 @@ const defineTeamNameOverviewData = async () => {
     const teamAvatar = document.getElementById('teamAvatar');
     teamAvatar.textContent = team.name[0].toUpperCase() + team.name[1].toUpperCase();
     tabContents = {
-        details: `
+        get details() {
+            return `
             <div class="aboutFirstContainer">
                 <p class="flexDivIcon" style="gap:20px;">
                     <i data-lucide="shield" class="icon" style="color:var(--blue);"></i>
-                    <strong>A propos de nous</strong>
+                    <strong class="flex justify-center items-center text-3xl">A propos de nous</strong>
                 </p>      
                 ${isMember ? `
                     <button id="editBtn" class="flexDivIcon" style="gap:10px; color:white;" onclick="handleAboutSection();">
@@ -869,10 +925,12 @@ const defineTeamNameOverviewData = async () => {
             </div>                
     
             <p id="aboutText">                
-                ${team.description ? team.description : 'No description. Create one.'}
+                ${team.description ? team.description : 'Aucune description. Créez-en une.'}
             </p>
-        `,
-        members: `
+        `;
+        },
+        get members() {
+            return `
             <div class="members-container">
                 <div class="members-header">
                  <div class="flexDivIcon" style="gap:25px;">
@@ -884,8 +942,10 @@ const defineTeamNameOverviewData = async () => {
                     ${team.members.map(member => renderMember(member).outerHTML).join('')}
                 </div>
             </div>
-        `,
-        settings: `
+        `;
+        },
+        get settings() {
+            return `
             <div class="settings-container">
             <div class="flexDivIcon" style="justify-content:flex-start;" >
                 <i data-lucide='settings' class="icon" style="color:var(--blue);"></i>
@@ -895,8 +955,10 @@ const defineTeamNameOverviewData = async () => {
                     ${renderSettings()}
                 </div>
             </div>
-        `,
-        requests: `
+        `;
+        },
+        get requests() {
+            return `
             <div class="requests-container">
                 <div class="flexDivIcon" style="justify-content:flex-start; margin-bottom:30px;">
                     <i data-lucide='clock' class="icon" style=" color:var(--yellow); background:var(--icon-yellow-bg);"></i>
@@ -906,12 +968,16 @@ const defineTeamNameOverviewData = async () => {
                     ${renderJoinRequestsContent()}
                 </div>
             </div>
-        `
+        `;
+        }
     };
 };
 
 const getJoinRequests = async () => {
-    joinRequests = await manageOverviewData.getAllTeamRequests();
+    const waitJoinRequests = await manageOverviewData.getAllTeamRequests() || null;
+    if (waitJoinRequests) {
+        joinRequests = waitJoinRequests;
+    }
 }
 
 const getTeam = async () => {
@@ -920,8 +986,12 @@ const getTeam = async () => {
         if (waitTeam) {
             team = waitTeam;
             if (teamName) teamName.textContent = waitTeam.name;
-            if (teamCategory) teamCategory.textContent = waitTeam.type;
+            if (teamCategory) {
+                teamCategory.textContent = waitTeam.type;
+                teamCategory.classList.add(waitTeam.type);
+            }
             if (memberNumber) memberNumber.textContent = team.members.length;
+            if (teamScore) teamScore.textContent = team.points + ' pts';
             const aboutText = document.getElementById('aboutText');
             if (aboutText) aboutText.textContent = waitTeam.description;
         }
@@ -983,16 +1053,12 @@ const manageOverviewData = {
         const deleteT = await apiReq(`teams/${teamId}`, 'delete');
         console.log(deleteT);
         if (deleteT.success) {
-            showNotification("Suppression effectuée !", "L\'équipe a été supprimée avec succès.", 'info');
-            window.location.href = '/user/teams';
-        }
-    },
-    deleteMember: async (id) => {
-        const deleteM = await apiReq(`teams/${teamId}/members/remove`, 'POST', { user_id: id });
-        if (deleteM.success) {
-            showNotification("Suppression effectuée !", "Le membre a été retiré avec succès.", 'info');
-            // window.location.reload();
-            loadTeamMembers();
+            showNotification("Suppression effectuée !", "L\'équipe a été supprimée avec succès. Redirection après 3 secondes.", 'info');
+            setTimeout(() => {
+                window.location.href = '/user/teams';
+            }, 3000);
+        } else {
+            showNotification("Suppression echouée !", deleteT.message || deleteT.error || "Une erreur est survenue lors de la suppression de l\'équipe.", 'error');
         }
     },
     updateTeam: async (id, data) => {
@@ -1011,11 +1077,16 @@ const manageOverviewData = {
 
     updateInvitCode: async () => await apiReq(`teams/${teamId}/invit/update`, 'POST'),
 
+    deleteMember: async (id) => {
+        const deleteM = await apiReq(`teams/${teamId}/members/remove`, 'POST', { user_id: id });
+        return deleteM;
+    },
+
     promoteLeader: async (id) => {
         const promoteLeader = await apiReq(`teams/${teamId}/leader/change`, 'POST', { new_leader_id: id });
-        if (promoteLeader.success)
-            return promoteLeader;
+        return promoteLeader;
     },
+
     acceptRequest: async (id) => {
         const acceptR = await apiReq(`teams/${teamId}/leader/accept`, 'POST', { user_id: id });
 
@@ -1026,7 +1097,7 @@ const manageOverviewData = {
             // window.location.reload();
         } else {
 
-            showNotification(`Erreur lors de l'adhesion.`, acceptR.message || null, 'error');
+            showNotification(`Erreur lors de l'adhesion.`, acceptR.message || acceptR.error || acceptR.data || acceptR || null, 'error');
             return false;
         }
     },
@@ -1037,7 +1108,7 @@ const manageOverviewData = {
             return true;
             // window.location.reload();
         } else {
-            showNotification(`Erreur lors du refus.`, deleteR.message || null, 'error');
+            showNotification(`Erreur lors du refus.`, deleteR.message || deleteR.error || deleteR.data || deleteR || null, 'error');
             return false;
         }
     },
@@ -1066,12 +1137,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (userConnected.id === team.leader_id) {
         const sectionTeamInfo = document.querySelector('#teamInfo');
-        sectionTeamInfo.innerHTML += `
-        <button id="invit" class="flexDivIcon" onclick="invitUser()">
-            <i data-lucide="user-plus"></i>
-            <p>Inviter un utilisateur</p>
-        </button>
-        `
+        if (sectionTeamInfo) {
+            sectionTeamInfo.innerHTML += `
+            <button id="invit" class="flexDivIcon" onclick="invitUser()">
+                <i data-lucide="user-plus"></i>
+                <p>Inviter un utilisateur</p>
+            </button>`;
+        }
+
     }
     // S'assurer que la section about a le contenu par défaut avec animation
     if (aboutSection) {
@@ -1087,6 +1160,7 @@ const showSkeletons = () => {
     if (teamName) teamName.innerHTML = '<div style="display:flex; align-items:center; gap:10px;"> <span class="skeleton title" style="width:120px; margin-bottom:0;"></span>';
     if (teamCategory) teamCategory.innerHTML = '<span class="skeleton text" style="width:80px; margin-top:15px;"></span></div>';
     if (memberNumber) memberNumber.innerHTML = '<span class="skeleton text" style="width:40px;"></span>';
+    if (teamScore) teamScore.innerHTML = '<span class="skeleton text" style="width:40px;"></span>';
     if (aboutSection) aboutSection.innerHTML = `
         <div class="aboutFirstContainer">
             <span class="skeleton title" style="width:180px;"></span>
@@ -1095,12 +1169,9 @@ const showSkeletons = () => {
         <span class="skeleton text" style="width:100%;height:2.5em; margin-bottom:10px;"></span>
         <span class="skeleton text" style="width:90%;height:2.5em; margin-bottom:10px;"></span>
     `;
-    document.querySelector('.name').style.display = 'flex';
-    document.querySelector('.name').style.gap = '10px';
     // Liste membres
     const membersList = document.querySelector('.members-list');
     if (membersList) {
         membersList.innerHTML = Array(3).fill(`<div class="member-card"><span class="skeleton avatar"></span><div style="flex:1;padding-left:10px;"><span class="skeleton text" style="width:60%; margin-bottom:8px;"></span><span class="skeleton text" style="width:40%; margin-bottom:8px;"></span></div></div>`).join('');
     }
 };
-

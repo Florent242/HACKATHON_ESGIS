@@ -22,21 +22,6 @@ function jsonResponse($data, $statusCode = 200) {
 //     return isset($_SESSION['user_id']);
 // }
 
-// Fonction pour obtenir l'utilisateur connecté
-function getCurrentUser() {
-    if (!isAuthenticated()) {
-        return null;
-    }
-    
-    require_once MODELS_PATH . '/User.php';
-    require_once MODELS_PATH . '/Database.php';
-    
-    $database = Database::getInstance();
-    $db = $database->getConnection();
-    $userModel = new User($db);
-    return $userModel->find($_SESSION['user_id']);
-}
-
 // Fonction pour vérifier le rôle de l'utilisateur
 // function hasRole($role) {
 //     $user = getCurrentUser();

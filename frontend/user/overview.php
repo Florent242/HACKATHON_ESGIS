@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,22 +17,28 @@
         Retour
     </button>
     <section id="teamInfo">
-        <div id="teamAvatar">
-            
-        </div>
-        <div id="teamStats">        
-            <p class="name"> <strong></strong>  <span>[Catégorie]</span><p> 
-            <div style="display:flex; gap:30px;">
-                <div class="member flexDivIcon" style="gap:20px;">
-                    <i data-lucide="users" class="icon" style=" background:#0859c61a; color:var(--blue);"></i>
-                    <p>Membres <br> <span   ></span></p>
-                </div> 
-                <div class="score flexDivIcon" style="gap:20px;">
-                    <i data-lucide="trophy" class="icon" style="gap:20px; background:#eab3081a; color:var(--yellow);"></i>
-                    <p>Score <br> <span> 0 pts</span></p>
-                </div>
-            </div>                
-                    
+        <div class="flex gap-5">
+            <div id="teamAvatar">
+                
+            </div>
+    
+            <div id="teamStats">        
+                <p class="name flex gap-5">
+                    <strong></strong>  
+                    <span class="team-type flex justify-center items-center"></span>
+                </p> 
+                <div class="flex gap-5">
+                    <div class="member flexDivIcon gap-5">
+                        <i data-lucide="users" class="icon" style=" background:#0859c61a; color:var(--blue);"></i>
+                        <div class="w-full size-fit">Membres<br><span></span></div>
+                    </div> 
+                    <div class="score flexDivIcon gap-5">
+                        <i data-lucide="trophy" class="icon" style="gap:20px; background:#eab3081a; color:var(--yellow);"></i>
+                        <div class="w-full size-fit">Score<br><span class="flex flex-row justify-center items-center whitespace-nowrap"> 0 pts</span></div>
+                    </div>
+                </div>                
+                        
+            </div>
         </div>
         
     </section>
@@ -56,7 +62,7 @@
         <div class="aboutFirstContainer">
             <p class="flexDivIcon"style="gap:20px;" >
                 <i data-lucide="shield"></i>
-                <strong>A propos de nous</strong>
+                <strong class="flex justify-center items-center text-medium">A propos de nous</strong>
             </p>      
             
             <button id="editBtn" class="flexDivIcon" type="button" style="gap:10px; color:white;">

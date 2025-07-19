@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overview Hackathon</title>
     <link rel="stylesheet" href="/css/dist/output.css">
+    <link rel="stylesheet" href="/css/styles/user/header.css">
     <link rel="stylesheet" href="/css/styles/user/overviewHackathon.css">
     <script src="/js/user/overviewHackathon.js" defer></script>
     <script src="https://unpkg.com/lucide@latest">
@@ -14,10 +15,12 @@
 </head>
 
 <body>
-    <div class="container">
-        <header>
+    <?php require_once '../includes/user/header.php'; ?>
 
-        </header>
+    <div class="container">
+        <section id="header">
+
+        </section>
 
         <main>
 

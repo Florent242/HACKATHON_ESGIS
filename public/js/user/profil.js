@@ -811,6 +811,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Initialiser la page de profil
     await initializeProfilePage()
 
+    const url = new URL(window.location.href);
+    const tab = url.hash;
+    switch (tab) {
+        case "#settings":
+            document.querySelector("[data-tab='tab4']").click()
+            break;
+        case "#activities":
+            document.querySelector("[data-tab='tab3']").click()
+            break;
+        default:
+            break;
+    }
+
     // Initialiser les icônes Lucide
     if (window.lucide) {
         window.lucide.createIcons()

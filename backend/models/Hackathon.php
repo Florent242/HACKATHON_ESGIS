@@ -45,7 +45,11 @@ class Hackathon
     public function find($id)
     {
         try {
-            $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
+            $query = "SELECT h.*, 
+                     (SELECT COUNT(*) FROM hackathon_teams WHERE hackathon_id = h.id) as teams_count 
+                     FROM {$this->table} h 
+                     WHERE h.id = :id 
+                     LIMIT 1";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $stmt->execute();

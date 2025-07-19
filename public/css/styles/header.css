@@ -20,8 +20,18 @@
     --glow: 0 0 20px rgba(59, 130, 246, 0.3);
 }
 
+html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin!important; /* Chrome, Edge et Firefox */
+    scrollbar-gutter: stable both-edges!important; /* Chrome, Edge et Firefox */
+    scrollbar-color: var(--background) var(--blue-opac)!important; /* Chrome, Edge et Firefox */
+    overflow-x: hidden;
+    width: 100vw;
+}
+
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    width: 100vw;
 }
 
 /* ==================================================
@@ -31,7 +41,7 @@ body {
 header {
     position: sticky;
     top: 0;
-    width: 100%;
+    width: 100vw;
     border-bottom: 1px solid var(--border);
     background: var(--background-blur);
     backdrop-filter: blur(20px);
@@ -92,14 +102,14 @@ header::before {
 }
 
 .logo-circle {
-    width: 9rem;
-    height: 3rem;
+    width: 4rem;
+    height: 4rem;
     background: transparent;
     border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 6px;
+    padding: 0.2rem;
     box-shadow: 0 4px 12px rgba(25, 49, 109, 0.2);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -716,7 +726,7 @@ nav a:focus,
         width: 100%;
         font-size: 0.8rem;
         font-weight: 500;
-        padding: px 24px;
+        padding: 0.5rem 1rem;
         min-height: 48px;
     }
 }

@@ -36,9 +36,10 @@ class Score
                 )
             WHERE s.hackathon_id = :hackathon_id
               AND s.phase_id = :phase_id
+              AND s.is_active = 1
             GROUP BY t.id
             ORDER BY points DESC, lastSubmission ASC
-            LIMIT 100
+            LIMIT 100   
         ";
 
             $stmt = $this->db->prepare($sql);

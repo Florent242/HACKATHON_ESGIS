@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle hero buttons
     const startJourneyBtn = document.querySelector('.btn-primary');
-    const exploreChallengesBtn = document.querySelector('.btn-secondary');
+    const exploreChallengesBtn = document.querySelector('.btn-standard');
 
     // handle start journey button
     startJourneyBtn?.addEventListener('click', () => {
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // handle explore challenges button
     exploreChallengesBtn?.addEventListener('click', () => {
-        window.location.href = '/challenges';
+        window.location.href = '/hackathon';
     });
 
     // Animate stats on scroll

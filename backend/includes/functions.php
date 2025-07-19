@@ -3,7 +3,8 @@ if (!defined('FUNCTIONS_INCLUDED')) {
     define('FUNCTIONS_INCLUDED', true);
 }
 
-function sendResponse($statusCode, $data = [], $headers = []) {
+function sendResponse($statusCode, $data = [], $headers = [])
+{
     http_response_code($statusCode);
     header('Content-Type: application/json');
     foreach ($headers as $key => $value) {
@@ -13,23 +14,206 @@ function sendResponse($statusCode, $data = [], $headers = []) {
     exit;
 }
 
+function recalculateCTFScores(PDO $db, int $hackathonId, ?int $phaseId = null): void
+{
+    try {
+        // Récupérer les équipes concernées
+        $teamsStmt = $db->prepare("
+            SELECT id, team_id 
+            FROM hackathon_teams 
+            WHERE hackathon_id = :hackathon_id
+        ");
+        $teamsStmt->execute([':hackathon_id' => $hackathonId]);
+        $teams = $teamsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($teams as $team) {
+            $teamId = $team['team_id'];
+
+            // Total des points pour cette équipe via les flags validés
+            $scoreStmt = $db->prepare("
+                SELECT SUM(vf.points_gained) AS total_points
+                FROM validated_flags vf
+                JOIN team_members tm ON tm.user_id = vf.user_id
+                WHERE tm.team_id = :team_id AND vf.is_valid = 1
+            ");
+            $scoreStmt->execute([':team_id' => $teamId]);
+            $result = $scoreStmt->fetch(PDO::FETCH_ASSOC);
+            $totalPoints = (int)($result['total_points'] ?? 0);
+
+            // Mise à jour ou insertion dans la table scores
+            $updateStmt = $db->prepare("
+                INSERT INTO scores (team_id, hackathon_id, phase_id, total_points)
+                VALUES (:team_id, :hackathon_id, :phase_id, :total_points)
+                ON DUPLICATE KEY UPDATE total_points = :update_points, last_update = NOW()
+            ");
+            $updateStmt->execute([
+                ':team_id' => $teamId,
+                ':hackathon_id' => $hackathonId,
+                ':phase_id' => $phaseId,
+                ':total_points' => $totalPoints,
+                ':update_points' => $totalPoints
+            ]);
+
+            echo "→ Équipe $teamId : points recalculés = $totalPoints\n";
+
+            if ($updateStmt) {
+                echo "=== Operation de mise a jour de la table score reussi avec success pour l'equipe $teamId ! === \n";
+            } else {
+                echo "=== /!\ Operation de mise a jour de la table score echoue pour l'equipe $teamId ! === \n";
+            }
+        }
+    } catch (PDOException $e) {
+        error_log("Erreur CTF recalculation : " . $e->getMessage());
+    }
+}
+
+function recalculateChallengeScores(PDO $db, int $hackathonId, ?int $phaseId = null): void
+{
+    try {
+        // Récupérer les équipes du hackathon
+        $teamsStmt = $db->prepare("
+            SELECT id, team_id 
+            FROM hackathon_teams 
+            WHERE hackathon_id = :hackathon_id
+        ");
+        $teamsStmt->execute([':hackathon_id' => $hackathonId]);
+        $teams = $teamsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($teams as $team) {
+            $teamId = $team['team_id'];
+
+            // Total des points cumulés depuis les soumissions
+            $scoreStmt = $db->prepare("
+                SELECT SUM(cs.total_score) AS total_points
+                FROM challenge_submissions cs
+                JOIN team_members tm ON tm.user_id = cs.user_id
+                WHERE tm.team_id = :team_id
+            ");
+            $scoreStmt->execute([':team_id' => $teamId]);
+            $result = $scoreStmt->fetch(PDO::FETCH_ASSOC);
+            $totalPoints = (int)($result['total_points'] ?? 0);
+
+            // Mise à jour dans scores
+            $updateStmt = $db->prepare("
+                INSERT INTO scores (team_id, hackathon_id, phase_id, total_points)
+                VALUES (:team_id, :hackathon_id, :phase_id, :total_points)
+                ON DUPLICATE KEY UPDATE total_points = :update_points, last_update = NOW()
+            ");
+            $updateStmt->execute([
+                ':team_id' => $teamId,
+                ':hackathon_id' => $hackathonId,
+                ':phase_id' => $phaseId,
+                ':total_points' => $totalPoints,
+                ':update_points' => $totalPoints
+            ]);
+
+            if ($updateStmt) {
+                echo "=== Operation de mise a jour des challenges de la table score reussi avec succes pour l'equipe $teamId ! === \n";
+            } else {
+                echo "=== /!\ Operation de mise a jour des challenges de la table score echoue pour l'equipe $teamId ! === \n";
+            }
+        }
+    } catch (PDOException $e) {
+        error_log("Erreur CHALLENGE recalculation : " . $e->getMessage());
+    }
+}
+
+function deactivateOrphanScores(PDO $db, int $hackathonId, ?int $phaseId = null): void
+{
+    try {
+        $sql = "
+            UPDATE scores s
+            LEFT JOIN hackathon_teams ht
+              ON s.team_id = ht.team_id AND s.hackathon_id = ht.hackathon_id
+            SET s.is_active = 0
+            WHERE ht.id IS NULL
+              AND s.hackathon_id = :hackathon_id
+              AND (:phase_id IS NULL OR s.phase_id = :score_phase_id)
+        ";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            ':hackathon_id' => $hackathonId,
+            ':phase_id' => $phaseId,
+            ':score_phase_id' => $phaseId
+        ]);
+
+        echo "[INFO] Désactivation des scores orphelins terminée pour le hackathon $hackathonId\n";
+    } catch (PDOException $e) {
+        error_log("Erreur lors de la désactivation des scores orphelins : " . $e->getMessage());
+    }
+}
+
+function updateFlagSolves(PDO $db): void
+{
+    try {
+        // Récupérer le nombre de validations valides par flag
+        $stmt = $db->prepare("
+            SELECT flag_id, COUNT(*) AS solve_count
+            FROM validated_flags
+            WHERE is_valid = 1
+            GROUP BY flag_id
+        ");
+        $stmt->execute();
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Réinitialiser tous les counts à 0 au préalable
+        $resetStmt = $db->prepare("UPDATE flags SET solves = 0");
+        $resetStmt->execute();
+
+        // Mettre à jour chaque flag avec le nombre de solves
+        $updateStmt = $db->prepare("UPDATE flags SET solves = :solve_count WHERE id = :flag_id");
+
+        foreach ($results as $row) {
+            $updateStmt->execute([
+                ':solve_count' => $row['solve_count'],
+                ':flag_id' => $row['flag_id']
+            ]);
+            echo "→ Flag #{$row['flag_id']} mis à jour avec {$row['solve_count']} solves\n";
+        }
+
+        echo "[OK] Tous les flags ont été mis à jour avec les solves\n";
+    } catch (PDOException $e) {
+        error_log("Erreur updateFlagSolves : " . $e->getMessage());
+        echo "[ERROR] Erreur updateFlagSolves : " . $e->getMessage();
+    }
+}
+
+function recalculateAllHackathonScores(PDO $db): void
+{
+    // Hackathon 1 = CTF
+    recalculateCTFScores($db, 1, 1); // tu peux passer null si phase pas gérée
+
+    // Désactivation des scores orphelins
+    deactivateOrphanScores($db, 1, 1);
+
+    updateFlagSolves($db);
+
+    // Hackathon 2 = Challenge
+    // recalculateChallengeScores($db, 2, 1);
+}
+
 // Fonction pour valider une adresse email
-function validateEmail($email) {
+function validateEmail($email)
+{
     return filter_var($email, FILTER_VALIDATE_EMAIL);
 }
 
 // Fonction pour valider une URL
-function validateUrl($url) {
+function validateUrl($url)
+{
     return filter_var($url, FILTER_VALIDATE_URL);
 }
 
 // Fonction pour nettoyer une chaîne de caractères
-function sanitizeString($string) {
+function sanitizeString($string)
+{
     return htmlspecialchars(strip_tags(trim($string)), ENT_QUOTES, 'UTF-8');
 }
 
 // Fonction pour générer un slug
-function generateSlug($string) {
+function generateSlug($string)
+{
     $string = strtolower($string);
     $string = preg_replace('/[^a-z0-9\-]/', '-', $string);
     $string = preg_replace('/-+/', '-', $string);
@@ -37,12 +221,14 @@ function generateSlug($string) {
 }
 
 // Fonction pour formater une date
-function formatDate($date, $format = 'd/m/Y H:i') {
+function formatDate($date, $format = 'd/m/Y H:i')
+{
     return date($format, strtotime($date));
 }
 
 // Fonction pour générer un mot de passe aléatoire
-function generateRandomPassword($length = 12) {
+function generateRandomPassword($length = 12)
+{
     $chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+';
     $password = '';
     for ($i = 0; $i < $length; $i++) {
@@ -52,13 +238,15 @@ function generateRandomPassword($length = 12) {
 }
 
 // Fonction pour valider une date
-function validateDate($date, $format = 'Y-m-d H:i:s') {
+function validateDate($date, $format = 'Y-m-d H:i:s')
+{
     $d = DateTime::createFromFormat($format, $date);
     return $d && $d->format($format) === $date;
 }
 
 // Fonction pour calculer le temps écoulé
-function timeAgo($datetime) {
+function timeAgo($datetime)
+{
     $time = strtotime($datetime);
     $now = time();
     $diff = $now - $time;
@@ -80,17 +268,20 @@ function timeAgo($datetime) {
 }
 
 // Fonction pour valider un numéro de téléphone
-function validatePhone($phone) {
+function validatePhone($phone)
+{
     return preg_match('/^[+]?[0-9]{8,15}$/', $phone);
 }
 
 // Fonction pour formater un nombre
-function formatNumber($number, $decimals = 0) {
+function formatNumber($number, $decimals = 0)
+{
     return number_format($number, $decimals, ',', ' ');
 }
 
 // Fonction pour tronquer un texte
-function truncateText($text, $length = 100, $ending = '...') {
+function truncateText($text, $length = 100, $ending = '...')
+{
     if (strlen($text) <= $length) {
         return $text;
     }
@@ -98,12 +289,14 @@ function truncateText($text, $length = 100, $ending = '...') {
 }
 
 // Fonction pour générer un identifiant unique
-function generateUniqueId($prefix = '') {
+function generateUniqueId($prefix = '')
+{
     return uniqid($prefix, true);
 }
 
 // Fonction pour valider un fichier
-function validateFile($file, $allowedTypes = ['image/jpeg', 'image/png'], $maxSize = 5242880) {
+function validateFile($file, $allowedTypes = ['image/jpeg', 'image/png'], $maxSize = 5242880)
+{
     if (!isset($file['error']) || is_array($file['error'])) {
         return false;
     }
@@ -124,7 +317,8 @@ function validateFile($file, $allowedTypes = ['image/jpeg', 'image/png'], $maxSi
 }
 
 // Fonction pour uploader un fichier
-function uploadFile($file, $destination, $newName = null) {
+function uploadFile($file, $destination, $newName = null)
+{
     if (!is_dir($destination)) {
         mkdir($destination, 0777, true);
     }
@@ -140,7 +334,8 @@ function uploadFile($file, $destination, $newName = null) {
 }
 
 // Fonction pour supprimer un fichier
-function deleteFile($filepath) {
+function deleteFile($filepath)
+{
     if (file_exists($filepath)) {
         return unlink($filepath);
     }
@@ -148,7 +343,8 @@ function deleteFile($filepath) {
 }
 
 // Fonction pour envoyer un email
-function sendEmail($to, $subject, $message, $headers = []) {
+function sendEmail($to, $subject, $message, $headers = [])
+{
     $defaultHeaders = [
         'MIME-Version: 1.0',
         'Content-type: text/html; charset=UTF-8',
@@ -160,7 +356,8 @@ function sendEmail($to, $subject, $message, $headers = []) {
 }
 
 // Fonction pour générer un token JWT
-function generateJwtToken($data, $expiration = 3600) {
+function generateJwtToken($data, $expiration = 3600)
+{
     $header = base64_encode(json_encode([
         'typ' => 'JWT',
         'alg' => 'HS256'
@@ -177,7 +374,8 @@ function generateJwtToken($data, $expiration = 3600) {
 }
 
 // Fonction pour vérifier un token JWT
-function verifyJwtToken($token) {
+function verifyJwtToken($token)
+{
     list($header, $payload, $signature) = explode('.', $token);
 
     $validSignature = hash_hmac('sha256', "$header.$payload", 'your-secret-key');
@@ -196,8 +394,9 @@ function verifyJwtToken($token) {
 }
 
 // Fonction pour afficher un message flash
-function setFlashMessage($type, $message,$details = null) {
-    if(session_status() === PHP_SESSION_NONE) {
+function setFlashMessage($type, $message, $details = null)
+{
+    if (session_status() === PHP_SESSION_NONE) {
         session_start();
     }
     $_SESSION['notification'] = [
@@ -208,7 +407,8 @@ function setFlashMessage($type, $message,$details = null) {
 }
 
 // Fonction pour récupérer et effacer le message flash
-function getFlashMessage() {
+function getFlashMessage()
+{
     if (!isset($_SESSION) || !is_array($_SESSION)) {
         session_start();
     }
@@ -221,7 +421,8 @@ function getFlashMessage() {
 }
 
 // Fonction pour enregistrer les activités
-function logActivity($action, $description, $data = [], $userId = null, $level = 'info') {
+function logActivity($action, $description, $data = [], $userId = null, $level = 'info')
+{
     // Vérifier si la table existe
     global $db;
 
@@ -286,7 +487,7 @@ function logActivity($action, $description, $data = [], $userId = null, $level =
 
         // Également, enregistrer dans le fichier de log
         $logMessage = date('Y-m-d H:i:s') . " [$level] - $action - $description - " .
-                     "User: $userId - IP: $ipAddress - Data: $dataJson";
+            "User: $userId - IP: $ipAddress - Data: $dataJson";
         error_log($logMessage);
 
         return $result;
@@ -296,6 +497,7 @@ function logActivity($action, $description, $data = [], $userId = null, $level =
     }
 }
 
-function logSecurity($action, $description, $data = [], $userId = null, $level = 'info') {
+function logSecurity($action, $description, $data = [], $userId = null, $level = 'info')
+{
     // TODO: Implementer le log de sécurité
 }

@@ -191,13 +191,13 @@ async function createTeamViaAPI() {
         });
 
         if (!response.success) {
-            throw new Error(`${response.error}`);
+            throw new Error(`${response.error || response.message || response.data || response || 'Erreur lors de la création de l\'équipe'}`);
         }
 
         return response;
     } catch (error) {
         console.error('Erreur dans createTeamViaAPI:', error.message);
-        return { success: false, error: error.message };
+        return { success: false, error: error.message || error.error || error.data || error || 'Erreur de réseau' };
     }
 }
 
@@ -223,13 +223,13 @@ async function joinTeamViaCode(invitationCode) {
         if (response.success) {
             // Rafraîchir les données des équipes
             await fetchAndDisplayAllTeams();
-            return { success: true, message: response.message };
+            return { success: true, message: response.message || response.error || response.data || response || '' };
         } else {
-            return { success: false, error: response.error || 'Code d\'invitation invalide' };
+            return { success: false, error: response.error || response.message || response.data || response || 'Code d\'invitation invalide' };
         }
     } catch (error) {
         console.error('Erreur dans joinTeamViaCode:', error.message);
-        return { success: false, error: error.message || 'Erreur de réseau' };
+        return { success: false, error: error.message || error.error || error.data || error || 'Erreur de réseau' };
     }
 }
 
@@ -420,10 +420,10 @@ function initActionButtons() {
                     joinTeamModal.classList.add('hidden');
                     inviteCodeForm.reset();
                 } else {
-                    showNotification("Oups !", `${result.error}`, 'error');
+                    showNotification("Oups !", `${result.error || result.message || result || 'Erreur lors de la tentative de rejoindre l\'équipe'}`, 'error');
                 }
             } catch (error) {
-                showNotification("Oups !", "Une erreur est survenue lors de la tentative de rejoindre l\'équipe", 'error');
+                showNotification("Oups !", `${error.error || error.message || error.data || error || 'Une erreur est survenue lors de la tentative de rejoindre l\'équipe'}`, 'error');
             } finally {
                 if (submitButton) {
                     submitButton.disabled = false;
@@ -464,7 +464,7 @@ function initActionButtons() {
                 }
             } catch (error) {
 
-                showNotification("Oups !", "Une erreur est survenue lors de l\'envoi de la demande", 'error');
+                showNotification("Oups !", `${error.error || error.message || error.data || error || 'Une erreur est survenue lors de l\'envoi de la demande'}`, 'error');
             } finally {
 
                 if (submitButton) {

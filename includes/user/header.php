@@ -7,6 +7,16 @@ if (!isset($_SESSION['csrf_token'])) {
 }
 
 ?>
+<head>
+    <link rel="stylesheet" href="/css/styles/user/header.css">
+    <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token']; ?>">
+    <link rel="shortcut icon" href="/assets/20ans-gold.png" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<script>
+    // Rendre le token CSRF disponible globalement pour JavaScript
+    window.csrfToken = '<?php echo $_SESSION['csrf_token']; ?>';
+</script>
 <script defer type="module" src="/js/user/header.js"></script>
 <!-- Modal -->
 <div id="fenetre_modal" class="mymodal">
@@ -53,7 +63,9 @@ if (!isset($_SESSION['csrf_token'])) {
     <div class="mobile-nav">
         <div class="mobile-nav-header">
             <div class="logo">
-                <div class="logo-circle">E</div>
+                <div class="logo-circle">
+                    <img src="/assets/20ans-gold.png" alt="Logo EsgisHub" class="logo-img">
+                </div>
                 <span>EsgisHub</span>
             </div>
             <button class="close-mobile-nav">
@@ -77,9 +89,6 @@ if (!isset($_SESSION['csrf_token'])) {
                     <a href="/user/hackathon" class="mobile-nav-link">
                         Hackathons
                     </a>
-                    <a href="/user/workshop" class="mobile-nav-link">
-                        Workshop
-                    </a>
                 </div>
             </div>
 
@@ -100,7 +109,7 @@ if (!isset($_SESSION['csrf_token'])) {
 
             <div class="mobile-nav-category">
                 <div class="mobile-nav-category-header" data-category="2">
-                    <span>Resources</span>
+                    <span>Ressources</span>
                     <i data-lucide="chevron-down"></i>
                 </div>
                 <div class="mobile-nav-category-content" data-category="2">
@@ -123,7 +132,7 @@ if (!isset($_SESSION['csrf_token'])) {
                 <i data-lucide="circle-user"></i>
                 <span>Mon espace</span>
             </a>
-            <a href="/user/profile#paramètres" class="mobile-nav-action">
+            <a href="/user/profile#settings" class="mobile-nav-action">
                 <i data-lucide="settings"></i>
                 <span>Paramètres</span>
             </a>
@@ -138,7 +147,7 @@ if (!isset($_SESSION['csrf_token'])) {
         <div class="logo-nav">
             <div class="logo">
                 <div class="logo-circle">
-                    <img src="/assets/Esgislogo.png" alt="Logo EsgisHub" class="logo-img">
+                    <img src="/assets/20ans-gold.png" alt="Logo EsgisHub" class="logo-img">
                 </div>
                 <span>EsgisHub</span>
             </div>
@@ -148,7 +157,7 @@ if (!isset($_SESSION['csrf_token'])) {
                     <!-- verifie et attribut la classe active au lien correspondant -->
                     <li data-item="0">Événements <i data-lucide="chevron-down"></i></li>
                     <li data-item="1">Communauté <i data-lucide="chevron-down"></i></li>
-                    <li data-item="2">Resources <i data-lucide="chevron-down"></i></li>
+                    <li data-item="2">Ressources <i data-lucide="chevron-down"></i></li>
                 </nav>
                 <nav class="header-dropdown">
                     <div class="dropdown-container">
@@ -169,11 +178,6 @@ if (!isset($_SESSION['csrf_token'])) {
                                         Hackathons
                                     </li>
                                 </a>
-                                <a href="/user/workshop">
-                                    <li>
-                                        Workshop
-                                    </li>
-                                </a>
                             </ul>
                             <ul class="dropdown-item" data-item="1">
                                 <a href="/user/teams">
@@ -191,11 +195,6 @@ if (!isset($_SESSION['csrf_token'])) {
                                 <a href="/user/documentation">
                                     <li>
                                         Documentation
-                                    </li>
-                                </a>
-                                <a href="/user/blog">
-                                    <li>
-                                        Blog
                                     </li>
                                 </a>
                                 <a href="/user/faq">
@@ -238,7 +237,7 @@ if (!isset($_SESSION['csrf_token'])) {
                                 Mon espace
                             </li>
                         </a>
-                        <a href="/user/profile">
+                        <a href="/user/profile#settings">
                             <li class="flex items-center gap-2 p-1 rounded-lg text-white hover:text-blue-500 hover:bg-slate-900">
                                 <i data-lucide="settings" class="w-4 h-4 stroke-current"></i>
                                 Paramètres

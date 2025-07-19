@@ -273,12 +273,12 @@ function populateLeaderboard(teams) {
  */
 function createLeaderboardRow(team, rank) {
     const row = document.createElement('tr');
-    row.className = 'hover:bg-gray-50 transition-colors duration-200';
+    row.className = 'hover:bg-slate-700 transition-colors duration-200';
 
     // Ajout d'une classe spéciale pour l'équipe de l'utilisateur (à implémenter)
-    if (team.isCurrentUser) {
-        row.className += ' bg-blue-50 border-l-4 border-blue-500';
-    }
+    // if (team.isMember) {
+    //     row.className += ' bg-slate-600 border-l-4 border-blue-500';
+    // }
 
     // Colonne rang avec médaille
     const rankCell = document.createElement('td');
@@ -291,13 +291,13 @@ function createLeaderboardRow(team, rank) {
     teamCell.innerHTML = `
         <div class="flex items-center">
             <div class="flex-shrink-0 h-10 w-10">
-                <div class="h-10 w-10 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center">
+                <div class="h-10 w-10 rounded-full bg-gradient-to-r from-pink-500 to-violet-500 bg-clip flex items-center justify-center">
                     <i data-lucide="users" class="w-5 h-5 text-white"></i>
                 </div>
             </div>
             <div class="ml-4">
-                <div class="text-sm font-medium text-gray-900">${escapeHtml(team.name)}</div>
-                <div class="text-sm text-gray-500">${team.members ? team.members + ' membres' : ''}</div>
+                <div class="text-base font-medium ${rank === 1 ? 'bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent' : 'text-white'}">${team.name}</div>
+                <div class="text-sm text-gray-400">${team.members ? team.members + ' membres' : ''}</div>
             </div>
         </div>
     `;
@@ -344,12 +344,12 @@ function createRankDisplay(rank) {
         return `
             <div class="flex items-center">
                 <span class="text-2xl mr-2">${medals[rank]}</span>
-                <span class="font-bold">${rank}</span>
+                <span class="font-bold text-white">${rank}</span>
             </div>
         `;
     }
 
-    return `<span class="font-semibold">${rank}</span>`;
+    return `<span class="font-semibold text-white">${rank}</span>`;
 }
 
 /**
@@ -584,10 +584,16 @@ function handleGlobalError(event) {
  * Formate une date/heure
  */
 function formatDateTime(dateString) {
-    if (!dateString) return 'Jamais';
+    if (!dateString) return 'Non renseigné';
 
     try {
-        const date = new Date(dateString);
+        // Convertir le format "YYYY-MM-DD HH:MM:SS" en ISO
+        const [datePart, timePart] = dateString.split(' ');
+        const [year, month, day] = datePart.split('-');
+        const [hours, minutes, seconds] = timePart.split(':');
+        const isoString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        
+        const date = new Date(isoString);
         const now = new Date();
         const diff = now - date;
 

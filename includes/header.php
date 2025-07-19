@@ -62,13 +62,14 @@ function isMobile()
 // Génération des méta-données pour les performances
 $is_mobile = isMobile();
 ?>
-
-<!-- Styles CSS du header -->
-<link rel="stylesheet" href="/css/styles/header.css">
-
+<head>
+    <link rel="stylesheet" href="/css/styles/header.css">
+    <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token']; ?>">
+    <link rel="icon" href="/assets/20ans-gold.png" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
 <!-- Script JavaScript du header (chargé de manière différée) -->
 <script defer src="/js/header.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- Header principal -->
 <header role="banner" <?= $header_config['sticky'] ? 'data-sticky="true"' : '' ?>>
@@ -82,7 +83,7 @@ $is_mobile = isMobile();
             <!-- Logo -->
             <a href="/" class="logo" aria-label="Retour à l'accueil - <?= $header_config['site_name'] ?>">
                 <div class="logo-circle" aria-hidden="true">
-                    <img src="/assets/Esgislogo.png" alt="Logo EsgisHub" class="logo-img">
+                    <img src="/assets/20ans-gold.png" alt="Logo EsgisHub" class="logo-img">
                 </div>
                 <span><?= htmlspecialchars($header_config['site_name']) ?></span>
             </a>

@@ -495,7 +495,7 @@ class User
                     challenge_submissions AS uc ON uc.challenge_id = c.id
                 WHERE
                     uc.user_id = :userId 
-                    AND uc.status = 'active';";
+                    AND uc.status = 'pending';";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
             $stmt->execute();

@@ -50,62 +50,118 @@ class Participant
     {
         try {
             $this->db->beginTransaction();
+
+            // verifier les entrées
+            if (empty($hackathonId) || empty($teamId) || empty($captainId)) {
+                throw new Exception("Toutes les entrées sont obligatoires.");
+            }
             // Vérifier que c'est bien le capitaine
-            $stmt = $this->db->prepare("SELECT leader_id FROM teams WHERE id = :team_id");
+            $stmt = $this->db->prepare("SELECT leader_id, hackathon_id FROM teams WHERE id = :team_id");
             $stmt->execute([':team_id' => $teamId]);
             $team = $stmt->fetch();
 
-            if (!$team || $team['leader_id'] != $captainId) {
-                throw new Exception("Seul le capitaine peut inscrire cette équipe");
+            if (!$team) {
+                throw new Exception("Équipe introuvable.");
             }
 
-            // Vérifier que l’équipe n’est pas déjà inscrite
+            if ((int)$team['leader_id'] !== (int)$captainId) {
+                throw new Exception("Seul le capitaine peut inscrire cette équipe.");
+            }
+
+            // TODO: Vérifier si l'équipe est déjà inscrite à un hackathon /!\ faire attention il peut y avoir des équipes sans hackathon_id ou des non synchronisations entre les tables hackathon_teams, hackathon_participants et teams
+            // if (!empty($team['hackathon_id'])) {
+            //     throw new Exception("Cette équipe est déjà inscrite à un hackathon.");
+            // }
+
+            // Récupérer les limites de membres et la date limite d'inscription
+            $stmt = $this->db->prepare("
+                SELECT min_team_members, max_team_members, registration_deadline 
+                FROM hackathons 
+                WHERE id = :hackathon_id 
+                LIMIT 1
+            ");
+            $stmt->execute([':hackathon_id' => $hackathonId]);
+            $hackathon = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$hackathon) {
+                throw new Exception("Hackathon introuvable.");
+            }
+
+            // Vérifier la date limite d'inscription
+            if (time() > strtotime($hackathon['registration_deadline'])) {
+                throw new Exception("La date limite d'inscription est dépassée.");
+            }
+
+            // Compter les membres de l'équipe
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM team_members WHERE team_id = :team_id");
+            $stmt->execute([':team_id' => $teamId]);
+            $memberCount = (int) $stmt->fetchColumn();
+
+            if ($memberCount < $hackathon['min_team_members']) {
+                throw new Exception("L'équipe doit avoir au moins {$hackathon['min_team_members']} membres.");
+            }
+
+            if ($memberCount > $hackathon['max_team_members']) {
+                throw new Exception("L'équipe ne peut pas dépasser {$hackathon['max_team_members']} membres.");
+            }
+
+            // Vérifier si l’équipe est déjà inscrite dans hackathon_teams (sécurité redondante)
             $stmt = $this->db->prepare("SELECT COUNT(*) FROM hackathon_teams WHERE hackathon_id = :hackathon_id AND team_id = :team_id");
             $stmt->execute([':hackathon_id' => $hackathonId, ':team_id' => $teamId]);
-            if ($stmt->fetchColumn() > 0) {
-                throw new Exception("L’équipe est déjà inscrite à ce hackathon !");
-            }
-
-            // Verifier si la date limite d'inscription est passée
-            $stmt = $this->db->prepare("SELECT registration_deadline FROM hackathons WHERE id = :hackathon_id");
-            $stmt->execute([':hackathon_id' => $hackathonId]);
-            $endDate = $stmt->fetchColumn();
-            if (time() > strtotime($endDate)) {
-                throw new Exception("La date limite d'inscription est passée !");
+            if ((int)$stmt->fetchColumn() > 0) {
+                throw new Exception("L'équipe est déjà inscrite à ce hackathon.");
             }
 
             // Inscription dans hackathon_teams
-            $stmt = $this->db->prepare("INSERT INTO hackathon_teams (hackathon_id, team_id, leader_id) VALUES (:hackathon_id, :team_id, :leader_id)");
-            $stmt->execute([':hackathon_id' => $hackathonId, ':team_id' => $teamId, ':leader_id' => $captainId]);
-            logActivity('Team registration' , 'Inscription d\'une équipe ', [$captainId, $teamId, $hackathonId],$captainId, 'info');
+            $stmt = $this->db->prepare("
+                INSERT INTO hackathon_teams (hackathon_id, team_id, leader_id) 
+                VALUES (:hackathon_id, :team_id, :leader_id)
+            ");
+            $stmt->execute([
+                ':hackathon_id' => $hackathonId,
+                ':team_id' => $teamId,
+                ':leader_id' => $captainId
+            ]);
+            logActivity('Team registration', "Inscription de l'équipe", [$captainId, $teamId, $hackathonId], $captainId, 'info');
 
-            // Récupérer tous les membres
+            // Récupérer les membres de l'équipe
             $stmt = $this->db->prepare("SELECT user_id FROM team_members WHERE team_id = :team_id");
             $stmt->execute([':team_id' => $teamId]);
             $members = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-            // Inscription dans hackathon_participants
-            $stmt = $this->db->prepare("INSERT INTO hackathon_participants (user_id, team_id, hackathon_id, participation_status) VALUES (:user_id, :team_id, :hackathon_id, 'pending')");
+            // Préparer l'insertion des participants
+            $insertStmt = $this->db->prepare("
+                INSERT INTO hackathon_participants (user_id, team_id, hackathon_id, participation_status) 
+                VALUES (:user_id, :team_id, :hackathon_id, 'accepted')
+            ");
+
             foreach ($members as $memberId) {
-                // Vérifier si le participant n'est pas déjà inscrit
                 if (!$this->isRegistered($hackathonId, $memberId)) {
-                    $stmt->execute([':user_id' => $memberId, ':team_id' => $teamId, ':hackathon_id' => $hackathonId]);
-                    logActivity('Team registration' , 'Vous avez été automatiquement inscrit au hackathon suite a l\'inscription de votre équipe', ['memberId' => $memberId , 'teamId' => $teamId, 'hackathonId' => $hackathonId], $memberId, 'info');
+                    $insertStmt->execute([
+                        ':user_id' => $memberId,
+                        ':team_id' => $teamId,
+                        ':hackathon_id' => $hackathonId
+                    ]);
+                    logActivity('Team registration', "Vous avez été automatiquement inscrit au hackathon via votre équipe", [
+                        'memberId' => $memberId,
+                        'teamId' => $teamId,
+                        'hackathonId' => $hackathonId
+                    ], $memberId, 'info');
                 }
             }
 
             // mise a jour de hackathon_id de l'equipe dans la table teams
             $stmt = $this->db->prepare("UPDATE teams SET hackathon_id = :hackathon_id WHERE id = :team_id");
             $stmt->execute([':hackathon_id' => $hackathonId, ':team_id' => $teamId]);
-            
+
             $this->db->commit();
             return true;
         } catch (PDOException $e) {
             $this->db->rollBack();
             throw new Exception(
-                "Erreur lors de l'inscription de l'équipe ! En cas de probleme permanant contactez le support technique sur discord ! "
+                "Erreur lors de l'inscription de l'équipe. Si le problème persiste, contactez le support. "
                 // pour le debugage
-                //  . $e->getMessage()
+                 . $e->getMessage()
             );
         }
     }
@@ -121,8 +177,8 @@ class Participant
                 ':hackathon_id' => $hackathonId,
                 ':team_id' => $teamId
             ]);
-            logActivity('Team registration' , 'Désinscription d\'une équipe ', [$teamId, $hackathonId], $teamId, 'info');
-$stmt = $this->db->prepare('');
+            logActivity('Team registration', 'Désinscription d\'une équipe ', [$teamId, $hackathonId], $teamId, 'info');
+            $stmt = $this->db->prepare('');
             // Supprimer l'équipe du hackathon
             $sql2 = "DELETE FROM hackathon_teams
                  WHERE hackathon_id = :hackathon_id AND team_id = :team_id";
@@ -133,7 +189,7 @@ $stmt = $this->db->prepare('');
             ]);
         } catch (PDOException $e) {
             throw new Exception(
-                "Erreur lors de la désinscription de l’équipe !"
+                "Erreur lors de la désinscription de l’équipe. Si le problème persiste, contactez le support."
                 // pour le debugage
                 //  . $e->getMessage()
             );
@@ -163,7 +219,7 @@ $stmt = $this->db->prepare('');
             return $stmt->fetchColumn() > 0;
         } catch (PDOException $e) {
             throw new Exception(
-                "Erreur lors de la vérification : "
+                "Erreur lors de la vérification. Si le problème persiste, contactez le support."
                 // pour le debugage
                 //  . $e->getMessage()
             );
@@ -186,7 +242,7 @@ $stmt = $this->db->prepare('');
             return $stmt->fetch();
         } catch (PDOException $e) {
             throw new Exception(
-                "Erreur lors de la recherche de l'inscription ! En cas de probleme permanant contactez le support technique sur discord ! : "
+                "Erreur lors de la recherche de l'inscription. Si le problème persiste, contactez le support."
                 // pour le debugage
                 //  . $e->getMessage()
             );
@@ -212,7 +268,7 @@ $stmt = $this->db->prepare('');
             ]);
         } catch (PDOException $e) {
             throw new Exception(
-                "Erreur lors de la mise à jour du statut ! En cas de probleme permanant contactez le support technique sur discord ! : "
+                "Erreur lors de la mise à jour du statut. Si le problème persiste, contactez le support."
                 // pour le debugage
                 //  . $e->getMessage()
             );
@@ -228,7 +284,7 @@ $stmt = $this->db->prepare('');
             return $stmt->execute([':id' => $id]);
         } catch (PDOException $e) {
             throw new Exception(
-                "Erreur lors de l'annulation de l'inscription ! "
+                "Erreur lors de l'annulation de l'inscription. Si le problème persiste, contactez le support."
                 // pour le debugage
                 //  . $e->getMessage()
             );
@@ -264,7 +320,7 @@ $stmt = $this->db->prepare('');
             return $stmt->fetchAll();
         } catch (PDOException $e) {
             throw new Exception(
-                "Erreur lors de la récupération des participants ! "
+                "Erreur lors de la récupération des participants. Si le problème persiste, contactez le support."
                 // pour le debugage
                 //  . $e->getMessage()
             );
@@ -288,7 +344,7 @@ $stmt = $this->db->prepare('');
             return $stmt->fetchAll();
         } catch (PDOException $e) {
             throw new Exception(
-                "Erreur lors de la récupération des hackathons ! "
+                "Erreur lors de la récupération des hackathons. Si le problème persiste, contactez le support."
                 // pour le debugage
                 //  . $e->getMessage()
             );
@@ -328,7 +384,7 @@ $stmt = $this->db->prepare('');
             }
         } catch (PDOException $e) {
             throw new Exception(
-                "Erreur lors du comptage des participants ! : "
+                "Erreur lors du comptage des participants. Si le problème persiste, contactez le support."
                 // pour le debugage
                 //  . $e->getMessage()
             );
@@ -358,7 +414,7 @@ $stmt = $this->db->prepare('');
             return $stmt->execute($params);
         } catch (PDOException $e) {
             throw new Exception(
-                "Erreur lors de la mise à jour du participant ! "
+                "Erreur lors de la mise à jour du participant. Si le problème persiste, contactez le support."
                 // pour le debugage
                 //  . $e->getMessage()
             );
@@ -380,7 +436,7 @@ $stmt = $this->db->prepare('');
             return $stmt->execute([':id' => $id]);
         } catch (PDOException $e) {
             throw new Exception(
-                "Erreur lors de la suppression du participant ! "
+                "Erreur lors de la suppression du participant. Si le problème persiste, contactez le support."
                 // pour le debugage
                 //  . $e->getMessage()
             );

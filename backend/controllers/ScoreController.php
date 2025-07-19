@@ -63,19 +63,19 @@ class ScoreController extends Controller
     {
         try {
             $this->validateMethod('GET');
+            $score = new Score($this->db);
+            $phases = $score->getPhases((int)$hackathon_id);
+            
+            jsonResponse([
+                'success' => true,
+                'phases' => $phases
+            ]);
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
             ], 400);
         }
-        $score = new Score($this->db);
-        $phases = $score->getPhases($hackathon_id);
-
-        jsonResponse([
-            'success' => true,
-            'phases' => $phases
-        ]);
     }
 
     public function updateScore($team_id, $hackathon_id, $phase_id, $input)

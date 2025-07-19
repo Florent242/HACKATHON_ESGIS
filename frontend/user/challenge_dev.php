@@ -13,6 +13,7 @@
     <style>
       :root {
         --background: #0a0f1c;
+        
         --card-bg: linear-gradient(135deg, #1a1f2b 0%, #141925 100%);
         --card-hover: #1e293b;
         --primary: #3b82f6;

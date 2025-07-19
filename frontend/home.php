@@ -34,7 +34,7 @@
                     <i data-lucide="arrow-right"></i>
                 </button>
                 <button class="btn-primary btn-standard fade-in">
-                    Découvrir les défis
+                    Découvrir les hackathons
                 </button>
             </div>
         </div>

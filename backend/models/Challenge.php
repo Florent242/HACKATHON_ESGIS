@@ -545,10 +545,11 @@ class Challenge
                 c.type,
                 c.category,
                 c.description,
+                c.hint,
                 c.difficulty,
                 c.url_path,
                 c.resource_link,
-                c.points,
+                (SELECT points FROM flags WHERE challenge_id = c.id) as points,
                 c.is_active,
                 c.is_dynamic,
                 c.created_at,
@@ -761,6 +762,23 @@ class Challenge
                 // pour debug
                 // . $e->getMessage()
             );
+        }
+    }
+
+    /**
+     * Récupère tous les tests pour un challenge donné
+     * @param int $challenge_id
+     * @return array
+     */
+    public function getTestsForChallenge($challenge_id) {
+        try {
+            $sql = "SELECT * FROM challenge_tests WHERE challenge_id = :challenge_id ORDER BY id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':challenge_id', $challenge_id, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la récupération des tests : " . $e->getMessage());
         }
     }
 }

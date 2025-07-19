@@ -140,7 +140,7 @@
                             </th>
                         </tr>
                     </thead>
-                    <tbody id="leaderboard-body" class="bg-gray-900/30 divide-y divide-gray-700">
+                    <tbody id="leaderboard-body" class="bg-slate-900 divide-y divide-gray-700">
                         <!-- État initial : message d'attente -->
                         <tr id="waiting-state">
                             <td colspan="4" class="px-6 py-12 text-center text-gray-400">

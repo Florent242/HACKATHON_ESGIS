@@ -18,15 +18,14 @@
     </div>
     <?php require_once '../includes/user/header.php'; ?>
     <!-- Container -->
-    <div class="container mx-auto flex gap-6 flex-row justify-between max-md:flex-col mb-30 px-4">
+    <div class="container mx-auto flex gap-6 max-md:gap-4 flex-row justify-between max-md:flex-col px-4">
 
         <!-- Sidebar (Profil) -->
         <aside class="w-1/3 max-md:w-full rounded-lg shadow-lg flex flex-col gap-6">
             <div class="flex flex-col items-start gap-6">
                 <i data-lucide="circle-user" class="w-24 h-24 stroke-current"></i>
-                <!-- <img src="https://via.placeholder.com/100" alt="Profile Picture" class="rounded-full mx-auto"> -->
                 <div class="flex flex-col items-start gap-1">
-                    <h3 class="text-center text-2xl font-semibold fullName">John Doe</h3>
+                    <h3 class="text-center text-2xl max-md:text-xl font-semibold fullName">John Doe</h3>
                     <p class="max-lg:text-xs text-center text-blue-400">@<span class="Username">hackmaster</span></p>
                     <p class="max-lg:text-xs text-center text-sm text-gray-400 special_comp">Security Engineer | Bug Hunter</p>
                 </div>
@@ -38,8 +37,8 @@
             <!-- Informations personnelles -->
             <div class="fade-in-left">
                 <div class="space-y-4 w-full flex flex-col gap-4 border border-gray-700 p-5 rounded-2xl shadow-lg card-bg">
-                    <h3 class="text-lg font-semibold m-0">Informations personnelles</h3>
-                    <ul class="space-y-2 text-sm text-gray-400">
+                    <h3 class="text-lg max-md:text-md font-semibold m-0">Informations personnelles</h3>
+                    <ul class="space-y-2 text-sm max-md:text-xs text-gray-400">
                         <li id="mail" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="mail"></i><span class="Email"><i data-lucide="loader-circle" class="animate-spin"></i></span></li>
                         <li id="university" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="university"></i><span class="university"><i data-lucide="loader-circle" class="animate-spin"></i></span></li>
                         <li id="study_level" class="flex flex-row items-center gap-2"><i class="w-4 h-4 stroke-blue-500" data-lucide="graduation-cap"></i><span class="study_level"><i data-lucide="loader-circle" class="animate-spin"></i></span></li>

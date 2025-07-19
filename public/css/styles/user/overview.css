@@ -31,6 +31,33 @@ body{
     width: 100%;
 }
 
+.team-type {
+    padding: 0.2rem 0.3rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    pointer-events: none; /* Pas cliquable */
+    user-select: none;
+    text-transform: capitalize;
+    z-index: 10;
+}
+
+/* Couleurs par type */
+.team-type.Dev {
+    background-color: rgba(147, 51, 234, 0.1);
+    color: #a78bfa;
+    border-color: #a78bfa;
+}
+
+.team-type.Hack {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--red);
+    border-color: var(--red);
+}
+
 .editInput{
     background: var(--background);
     width: 98%;
@@ -251,6 +278,7 @@ li:hover {
     margin:0 auto 20px auto;
     padding:40px 70px;
     display:flex;
+    justify-content:space-between;
     gap:20px;
     position:relative;
 }   
@@ -285,7 +313,6 @@ img::-webkit-file-upload-button{
 }
 .name span{
     font-size:1rem;
-    padding:10px;
 }
 .member, .score{
     color:var(--text-secondary);
@@ -311,9 +338,6 @@ img::-webkit-file-upload-button{
 #invit{
     width: max-content;
     height: max-content;
-    position: relative;
-    top:90px;
-    right: 50px;
     padding:10px;
     border-radius:10px;
     background:var(--blue);
@@ -340,9 +364,7 @@ img::-webkit-file-upload-button{
     display:flex;
     justify-content:space-between;
 }
-.aboutFirstContainer p strong{
-    font-size:2em;
-}
+
 #editBtn{
     padding:5px 15px;
     background:var(--background);
@@ -352,8 +374,8 @@ img::-webkit-file-upload-button{
 }
 #aboutText{
     margin-top:20px;
-    font-size:1.1em;
-    text-align:center;
+    font-size:1.2em;
+    text-align:left;
     line-height:2rem;
     color:var(--text-secondary);
 }
@@ -402,7 +424,6 @@ img::-webkit-file-upload-button{
 .member-info {
     display: flex;
     align-items: center;
-    gap: 20px;
 }
 
 .member-avatar {
@@ -426,7 +447,6 @@ img::-webkit-file-upload-button{
 }
 
 .member-header h4 {
-    font-size: 1.2em;
     color: var(--text);
 }
 
@@ -438,7 +458,6 @@ img::-webkit-file-upload-button{
 
 .member-details p {
     color: var(--text-secondary);
-    font-size: 0.9em;
 }
 
 .role-badge {
@@ -459,23 +478,38 @@ img::-webkit-file-upload-button{
     color: var(--primary);
 }
 
-.removeMemberBtn, .promoteLeaderBt {
-    padding: 10px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    width: max-content;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9em;
+.removeMemberBtn, .promoteLeaderBtn {
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
     font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .removeMemberBtn {
     color: var(--red);
+}
+
+.removeMemberBtn:hover {
+    background: var(--red);
+    color: var(--text);
+    transform: translateY(-1px);
+}
+
+.removeMemberBtn i, .promoteLeaderBtn i {
+    width: 16px;
+    height: 16px;
+}
+
+.removeMemberBtn:hover i, .promoteLeaderBtn:hover i {
+    transform: scale(1.1);
+    color: var(--text);
 }
 
 .promoteLeaderBtn {
@@ -484,14 +518,32 @@ img::-webkit-file-upload-button{
 
 .promoteLeaderBtn:hover {
     background: var(--yellow);
-    color: var(--background);
-    transform: translateY(-1px);
-}
-
-.removeMemberBtn:hover {
-    background: var(--red);
     color: var(--text);
     transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.promoteLeaderBtn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.promoteLeaderBtn:focus-visible {
+    outline: 2px solid var(--yellow);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+/* Style pour l'icône à l'intérieur du bouton */
+.promoteLeaderBtn i {
+    width: 1rem;
+    height: 1rem;
+    transition: transform 0.2s ease-in-out;
+}
+
+.promoteLeaderBtn:hover i {
+    color: var(--text);
+    transform: scale(1.1);
 }
 
 .removeMemberBtn i, .promoteLeaderBtn i {
@@ -588,6 +640,7 @@ img::-webkit-file-upload-button{
 .btn-accept:hover, .btn-refuse:hover {
     opacity: 0.9;
     transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .no-requests {
@@ -635,7 +688,6 @@ img::-webkit-file-upload-button{
     }
     .name span {
         font-size: 0.9rem;
-        padding: 8px;
     }
 
     #invit {
@@ -662,14 +714,13 @@ img::-webkit-file-upload-button{
     }
 
     .member-card {
-        flex-direction: column;
+        flex-direction: row ;
         text-align: center;
-        padding: 15px;
+        padding: 10px;
     }
 
-    .member-info {
+    .member-card .promoteRemoveBtn{
         flex-direction: column;
-        width: 100%;
     }
 
     .member-details {
@@ -682,11 +733,11 @@ img::-webkit-file-upload-button{
     }
 
     .removeMemberBtn, .promoteLeaderBtn {
-        padding: 12px 16px;
+        padding: 0.3rem;
+        width: 100%;
         font-size: 0.85em;
         gap: 6px;
         border-radius: 6px;
-        min-width: 120px;
         justify-content: center;
     }
     
@@ -695,8 +746,13 @@ img::-webkit-file-upload-button{
         height: 14px;
     }
 
-    .removeMemberBtn:hover, .promoteLeaderBtn:hover {
+    .removeMemberBtn:hover{
         background: var(--red);
+        color: var(--text);
+        transform: translateY(-1px);
+    } 
+    .promoteLeaderBtn:hover {
+        background: var(--yellow);
         color: var(--text);
         transform: translateY(-1px);
     }
@@ -745,25 +801,28 @@ img::-webkit-file-upload-button{
     }
 
     .request-card {
-        flex-direction: column;
+        flex-direction: row;
         text-align: center;
+        justify-content: space-between;
+        align-items: center;
         padding: 15px;
     }
 
     .request-info {
-        flex-direction: column;
+        justify-content: center;
         width: 100%;
     }
 
     .request-details {
-        align-items: center;
+        align-items: start;
+        justify-content: left;
         margin: 10px 0;
     }
 
     .request-actions {
         width: 100%;
-        justify-content: center;
-        margin-top: 15px;
+        flex-direction: column;
+        align-items: end;
     }
 
     .btn-accept, .btn-refuse {
@@ -797,7 +856,6 @@ img::-webkit-file-upload-button{
 
     .name span {
         font-size: 0.8rem;
-        padding: 6px;
     }
 
     .member-avatar {
@@ -832,20 +890,15 @@ img::-webkit-file-upload-button{
     }
 
     .removeMemberBtn, .promoteLeaderBtn {
-        padding: 10px 12px;
+        padding: 1rem;
         font-size: 0.8em;
         gap: 4px;
         border-radius: 4px;
         min-width: 100px;
     }
-    
-    .removeMemberBtn i, .promoteLeaderBtn i {
-        width: 12px;
-        height: 12px;
-    }
 }
 @media (min-width: 850px) and (max-width: 970px){
-    .member-info {
+    .member-card .promoteRemoveBtn{
         flex-direction: column;
         width: 100%;
         gap: 10px;
@@ -860,13 +913,13 @@ img::-webkit-file-upload-button{
         justify-content: center;
     }
     .member-card{
-        flex-direction: column;
+        flex-direction: row;
         text-align: center;
-        padding: 15px;
-        gap: 20px;
+        padding: 10px;
+        gap: 10px;
     }
     .promoteLeaderBtn, .removeMemberBtn{
-        width: 40%;
+        width: auto;
     }
     .promoteRemoveBtn{
         width: 100%;

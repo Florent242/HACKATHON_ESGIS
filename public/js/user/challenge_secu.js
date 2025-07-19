@@ -668,15 +668,39 @@ function openModal(card) {
         downloadButton.disabled = true;
     }
 
+    // Réinitialiser le conteneur
     document.querySelector("#challenge-hint").innerHTML = "";
-    const hintList = document.createElement("ul");
-    // diviser le hint par \n et ajouter chaque hint dans la liste
-    challengeDetails.hint.split("\n").forEach(hint => {
-        const hintItem = document.createElement("li");
-        hintItem.textContent = hint.trim();
-        hintList.appendChild(hintItem);
-    });
-    document.querySelector("#challenge-hint").appendChild(hintList);
+
+    // Récupération des hints (possiblement JSON encodé en string)
+    let hints = challengeDetails.hint;
+
+    // Si hint est une string JSON, on la parse
+    if (typeof hints === "string") {
+        try {
+            hints = JSON.parse(hints);
+        } catch (e) {
+            console.error("Erreur de parsing JSON du champ hint :", e);
+            hints = [];
+        }
+    }
+
+    // Vérifie si on a bien un tableau
+    if (Array.isArray(hints)) {
+        const hintList = document.createElement("ul");
+        hintList.className = "list-none space-y-2 text-yellow-100 w-full"; // Tailwind : espace entre les <li>
+
+        hints.forEach(hint => {
+            const hintItem = document.createElement("li");
+            hintItem.className = "flex justify-start items-center gap-2 text-sm leading-relaxed"; // style propre + spacing
+            hintItem.innerHTML = `
+            <span class="text-yellow-400 mt-0.5"><i data-lucide="lightbulb" class="w-3 h-3 text-yellow-400"></i></span>
+            <span class="flex-1">${hint.trim()}</span>
+        `;
+            hintList.appendChild(hintItem);
+        });
+
+        document.querySelector("#challenge-hint").appendChild(hintList);
+    }
 
     // Mise à jour des tags
     const tagsContainer = document.getElementById("challenge-tags");
@@ -692,6 +716,7 @@ function openModal(card) {
         });
     }
 
+    lucide.createIcons();
     modal.style.display = "flex";
     modalContainer.classList.add('scale-in-center');
     modal.classList.remove('fade-out-bck');

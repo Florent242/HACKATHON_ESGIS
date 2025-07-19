@@ -1,4 +1,4 @@
-:root{
+:root {
     --background: hsl(222, 85%, 7%);
     --card: hsl(222, 65%, 12%);
     --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
@@ -18,61 +18,74 @@
     --icon-yellow-bg: #eab3081a;
 }
 
-*{
+* {
     box-sizing: border-box;
     transition: all 0.3s ease;
 }
-body{
+
+body {
     background: var(--background);
-    width: 100vw;
+    width: 100% !important;
     height: 100vh;
-    text-align: center;
     color: var(--text);
-    font-size: 1.4rem;
-    overflow-x: auto;
+    font-size: 1.2rem;
+    overflow-x: hidden !important;
 }
-header{
+
+#header,
+.container {
+    max-width: 100% !important;
+}
+
+#header {
     width: 100%;
     margin: 30px auto;
     border-radius: 10px;
     border: 1px solid #e0e0e0;
     padding: 50px;
-    background-image: linear-gradient(to bottom right, rgba(125, 47, 2, 0.3), rgba(202, 91, 22, 0.2),rgb(69, 26, 3, 0.3));
+    background-image: linear-gradient(to bottom right, rgba(125, 47, 2, 0.3), rgba(202, 91, 22, 0.2), rgb(69, 26, 3, 0.3));
     border: 1px solid rgb(245, 158, 11, 0.3);
     backdrop-filter: blur(12px);
 }
-.container{
+
+.container {
     width: 90%;
     margin: 30px auto;
     padding: 20px 30px;
     box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
     background: linear-gradient(45deg, var(--background), var(--card-bg), var(--card-hover));
-    transition:all ease 0.5s;
+    transition: all ease 0.5s;
 }
-h1{
+
+h1 {
     font-size: 3rem;
-    margin:0 0 40px 0;
+    margin: 0 0 40px 0;
 }
-h2{
+
+h2 {
     font-size: 2rem;
-    margin:20px 0;
+    margin: 20px 0;
 }
-.flexDiv{
+
+.flexDiv {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 10px;
 }
-span{
+
+span {
     color: var(--text-secondary);
 }
-.rounded{
+
+.rounded {
     border-radius: 10px;
     padding: 2px 10px;
-    width:max-content;
+    width: max-content;
     border: 1px solid var(--border);
 }
-.card{
+
+.card {
     border-radius: 10px;
     border: 1px solid var(--border);
     padding: 20px;
@@ -80,38 +93,37 @@ span{
     margin: 10px auto;
     box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
 }
-.description{
+
+.description {
     height: max-content;
 }
-.inscription{
+
+.inscription {
     height: max-content;
-    width: 30%;
 }
-header .infos{
-    /* display: flex;
-    flex-direction: column; */
-    width: 70%;
-}
-img{
+
+#hackathonImage {
     width: 35%;
     height: 300px;
     object-fit: cover;
     border-radius: 10px;
     border: 1px solid var(--border);
 }
-main{
+
+main {
     display: flex;
     gap: 20px;
 }
 
-.icon{
-    width:40px;
+.icon {
+    width: 40px;
     height: 40px;
     padding: 10px;
     border-radius: 10px;
     background: var(--blue);
 }
-.btn{
+
+.btn {
     width: 100%;
     padding: 10px;
     border-radius: 10px;
@@ -124,35 +136,41 @@ main{
     border: none;
     margin: 20px 0;
 }
-.subtitle{
+
+.subtitle {
     font-size: 0.75em;
     color: var(--text-secondary);
     margin: 20px 0;
 }
-.flex{
+
+.flex {
     display: flex;
     align-items: center;
     gap: 10px;
 }
-.flex .card{
+
+.flex .card {
     width: calc(100% - 30px);
     min-height: 170px;
 }
-.techno{
-    padding:10px 20px;
+
+.techno {
+    padding: 10px 20px;
     border-radius: 10px;
     background: var(--blue-opac);
     border: 1px solid var(--border);
     color: var(--blue);
     margin: 0;
 }
-.technoDiv{
+
+.technoDiv {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     margin-top: 30px;
 }
-.prize{
+
+.prize {
     width: 100%;
     padding: 20px 10px;
     border-radius: 10px;
@@ -160,23 +178,27 @@ main{
     border: 1px solid var(--border);
     box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
 }
-.rule{
+
+.rule {
     cursor: pointer;
     transition: all 0.3s ease;
     padding: 10px 10px 0;
     border-radius: 8px;
     margin: 5px 0;
 }
-.rule:hover{
+
+.rule:hover {
     color: var(--blue);
     background: rgba(59, 130, 246, 0.05);
 }
+
 .rule.active {
     background: rgba(59, 130, 246, 0.1);
     border-left: 3px solid var(--blue);
     color: var(--blue);
 }
-.rule-description{
+
+.rule-description {
     text-align: left;
     margin-left: 30px;
     margin-top: 10px;
@@ -188,9 +210,145 @@ main{
     line-height: 1.5;
     transition: height 0.3s ease-out;
 }
+
 .rule i[data-lucide="chevron-down"] {
     transition: transform 0.3s ease;
 }
+
 .rule.active i[data-lucide="chevron-down"] {
     transform: rotate(180deg);
+}
+
+/* --- Responsive Design pour overviewHackathon (corrigé avec !important) --- */
+
+@media (max-width: 1024px) {
+    .container {
+        width: 98% !important;
+        padding: 10px 5px !important;
+    }
+
+    main {
+        flex-direction: column !important;
+        gap: 16px !important;
+    }
+
+    #hackathonImage {
+        width: 90% !important;
+        height: 200px !important;
+        margin: 0 auto 20px auto !important;
+        display: block !important;
+    }
+}
+
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.5rem !important;
+        text-align: center !important;
+    }
+
+    h2 {
+        font-size: 1.1rem !important;
+    }
+
+    .container {
+        width: 100% !important;
+        padding: 5px 2px !important;
+        box-shadow: none !important;
+        margin: 10px 0 !important;
+    }
+
+    main {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .content-container {
+        width: 100% !important;
+        padding: 0 !important;
+    }
+
+    .card {
+        padding: 10px !important;
+        margin: 8px 0 !important;
+        font-size: 1em !important;
+    }
+
+    #header {
+        padding: 16px 5px !important;
+        margin: 10px 0 !important;
+    }
+
+    #hackathonImage {
+        width: 100% !important;
+        height: 120px !important;
+    }
+
+    .flexDiv,
+    .flex {
+        flex-direction: column !important;
+        gap: 8px !important;
+        align-items: flex-start !important;
+    }
+
+    .prize {
+        padding: 10px 5px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.1rem !important;
+        text-align: center !important;
+    }
+
+    h2 {
+        font-size: 0.95rem !important;
+    }
+
+    .container {
+        padding: 2px 0 !important;
+        margin: 4px 0 !important;
+    }
+
+    .card {
+        padding: 6px !important;
+        font-size: 0.95em !important;
+    }
+
+    .flexDiv,
+    .flex {
+        flex-direction: column !important;
+        gap: 4px !important;
+        align-items: flex-start !important;
+    }
+
+    #header {
+        padding: 8px 2px !important;
+        margin: 8px 0 !important;
+    }
+
+    #hackathonImage {
+        height: 70px !important;
+        margin-bottom: 10px !important;
+    }
+
+    .subtitle,
+    .prize,
+    .rule-description {
+        font-size: 0.85em !important;
+    }
+
+    .content-container {
+        width: 100% !important;
+        padding: 0 !important;
+    }
+
+    .inscription {
+        padding: 0 !important;
+    }
+
+    .modal-content {
+        padding: 8px !important;
+        max-width: 98vw !important;
+    }
 }
