@@ -22,10 +22,31 @@ class HackathonController extends Controller
     private $phase;
     private $db;
     public $tokenManager;
+    public $isPublicRoute;
 
     public function __construct($db, $tokenManager)
     {
-        parent::__construct($tokenManager);
+        $this->publicRoutes = [
+            'api/hackathons/public',
+            'api/hackathons/[^/]+/stats',
+            'api/hackathons/[^/]+/active-phase',
+        ];
+        
+        $requestPath = ltrim($this->getRequestPath(), '/'); // Enlève le slash initial s'il existe
+        $isPublicRoute = false;
+        
+        foreach ($this->publicRoutes as $route) {
+            $pattern = '#^' . $route . '$#';
+            if (preg_match($pattern, $requestPath)) {
+                $isPublicRoute = true;
+                break;
+            }
+        }
+        
+        if (!$isPublicRoute) {
+            parent::__construct($tokenManager);
+        }
+        $this->isPublicRoute = $isPublicRoute;
         $this->db = $db;
         $this->hackathon = new Hackathon($this->db);
         $this->phase = new Phase($this->db);
@@ -62,6 +83,24 @@ class HackathonController extends Controller
         try {
             $this->validateMethod('GET');
             $hackathons = $this->hackathon->getAll();
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $hackathons
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function getPublicAll()
+    {
+        try {
+            $this->validateMethod('GET');
+            $hackathons = $this->hackathon->getPublicAll();
 
             $this->jsonResponse([
                 'success' => true,

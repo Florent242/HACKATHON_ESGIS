@@ -38,6 +38,29 @@ class Hackathon
     }
 
     /**
+     * Récupère tous les hackathons
+     * @return array Liste des hackathons
+     */
+    public function getPublicAll()
+    {
+        try {
+            $query = "SELECT h.id, h.name, h.description, h.type, h.start_date, h.end_date, h.registration_deadline, h.max_teams, h.min_team_members, h.max_team_members, h.status, h.location, h.created_at, h.updated_at 
+            FROM {$this->table} h 
+            ORDER BY start_date DESC";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération des informations publics des hackathons !'
+            // Pour debuger
+            //  . $e->getMessage()
+            );
+            return [];
+        }
+    }
+
+    /**
      * Récupère un hackathon par son ID
      * @param int $id ID du hackathon
      * @return array|bool Les données du hackathon ou false si non trouvé
