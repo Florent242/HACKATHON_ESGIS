@@ -32,6 +32,11 @@ html {
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     width: 100vw;
+    scroll-behavior: smooth;
+    scrollbar-width: thin!important; /* Chrome, Edge et Firefox */
+    scrollbar-gutter: stable both-edges!important; /* Chrome, Edge et Firefox */
+    scrollbar-color: var(--background) var(--blue-opac)!important; /* Chrome, Edge et Firefox */
+
 }
 
 /* ==================================================

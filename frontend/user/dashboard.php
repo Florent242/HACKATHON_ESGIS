@@ -20,7 +20,7 @@
 
     <!-- Navigation -->
     <?php require_once '../includes/user/header.php'; ?>
-    <main>
+    <main class="dashboard-container">
         <section class="header-dashboard flex flex-col items-center justify-center gap-12 max-md:gap-10 max-w-[1400px] max-md:mx-[5%] my-1 mx-auto p-5">
             <div class="container flex flex-row w-full max-md:flex-col items-center justify-between gap-5 mx-auto">
 
@@ -60,11 +60,11 @@
 
             <div class="text-white w-full max-w-[1400px]">
                 <!-- Grid des cartes -->
-                <div class="grid grid-cols-4 max-lg:grid-cols-2 max-md:grid-cols-1 items-stretch  justify-between max-md:flex-col max-md:w-full max-md:justify-center gap-4 w-full">
+                <div class="stats-grid grid grid-cols-4 max-lg:grid-cols-2 max-md:grid-cols-1 items-stretch  justify-between max-md:flex-col max-md:w-full max-md:justify-center gap-4 w-full">
 
                     <!-- Carte Défis de développement -->
                     <div class="fade-in-left">
-                        <div class="w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
+                        <div class="stat-card w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
                             <div class="flex flex-row gap-2 items-center justify-between mb-2">
                                 <h3 class="text-md font-normal">Défis de développement</h3>
                                 <i data-lucide="code" class="max-md:w-6 max-md:h-6 w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
@@ -77,7 +77,7 @@
 
                     <!-- Carte Défis de hacking -->
                     <div class="fade-in-left" style="transition-delay: 100ms;">
-                        <div class="w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
+                        <div class="stat-card w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
                             <div class="flex flex-row gap-2 items-center justify-between mb-2">
                                 <h3 class="text-md font-normal">Défis de hacking</h3>
                                 <i data-lucide="shield" class="max-md:w-6 max-md:h-6 w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
@@ -91,7 +91,7 @@
 
                     <!-- Carte Projets soumis -->
                     <div class="fade-in-right" style="transition-delay: 100ms;">
-                        <div class="w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
+                        <div class="stat-card w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
                             <div class="flex flex-row gap-2 items-center justify-between mb-2">
                                 <h3 class="text-md font-normal">Projets soumis</h3>
                                 <i data-lucide="file-text" class="max-md:w-6 max-md:h-6 w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
@@ -103,7 +103,7 @@
 
                     <!-- Carte Points totaux -->
                     <div class="fade-in-right">
-                        <div class="w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
+                        <div class="stat-card w-full h-full transition-all duration-300 ease-in hover:border-blue-500/20 hover:shadow-md hover:shadow-blue-500/50 flex flex-col gap-2 border border-gray-700 p-5 rounded-2xl shadow-lg relative" style="background: var(--card-bg);">
                             <div class="flex flex-row gap-2 items-center justify-between mb-2">
                                 <h3 class="text-md font-normal">Points totaux</h3>
                                 <i data-lucide="award" class="max-md:w-6 max-md:h-6 w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
@@ -117,14 +117,14 @@
             </div>
 
             <!-- Section Défis en cours et Notifications -->
-            <div class="flex flex-row max-md:flex-col gap-6 bg-(--card-bg) w-full text-white">
+            <div class="dashboard-content flex flex-row max-md:flex-col gap-6 bg-(--card-bg) w-full text-white">
                 <!-- Colonne principale -->
                 <div class="flex-1 space-y-6">
                     <div class="flex flex-row gap-4">
                         <h3 class="text-xl font-medium">Progession</h3>
                     </div>
                     <!-- Défis en cours -->
-                    <section class="fade-in-left space-y-4 w-full flex flex-col border border-gray-700 p-5 rounded-2xl shadow-lg card-bg">
+                    <section class="section-card fade-in-left space-y-4 w-full flex flex-col border border-gray-700 p-5 rounded-2xl shadow-lg card-bg">
                         <div class="flex flex-row justify-start items-center gap-2">
                             <i data-lucide="activity" class="max-md:w-6 max-md:h-6 w-10 h-10 stroke-blue-500 p-2 bg-(--blue-opac) rounded-lg"></i>
                             <h3 class="text-lg font-medium">Défis en cours</h3>
@@ -141,7 +141,7 @@
                                 <button class="cursor-pointer relative flex items-center justify-center mb-auto w-auto h-auto top-0 right-0 bg-blue-500 text-white px-3 py-1 rounded-2xl transition delay-150 duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50">Soumettre le projet</button>
                             </div>
                             
-                            <div class="flex flex-col items-center text-center gap-3 py-10 px-6" id="no-current-challenges">
+                            <div class="empty-stateflex flex-col items-center text-center gap-3 py-10 px-6" id="no-current-challenges">
                                 <div class="animate-bounce-slow mb-3">
                                     <i data-lucide="activity" class="w-12 h-12 text-blue-400/60"></i>
                                 </div>
@@ -155,7 +155,7 @@
                     </section>
 
                     <!-- Activité récente -->
-                    <section class="fade-in flex flex-col gap-2 space-y-4 p-5 border border-gray-700 rounded-2xl shadow-xl card-bg">
+                    <section class="section-card fade-in flex flex-col gap-2 space-y-4 p-5 border border-gray-700 rounded-2xl shadow-xl card-bg">
                         <h2 class="text-lg font-medium">Activité récente</h2>
                         <div class="flex flex-col items-center text-center" id="recent-activities-container">
                             <div class="hidden flex-row justify-start p-4 items-center w-full bg-(--card-bg) rounded-xl gap-5 border-b border-slate-800 pb-4  transition delay-150 duration-300 ease-in-out hover:-translate-y-1 recent-activity-item">
@@ -165,7 +165,7 @@
                                     <p class="text-gray-500 text-sm activity-time">Il y a 3 heures</p>
                                 </div>
                             </div>
-                            <div class="flex flex-col items-center text-center py-10 px-6" id="no-recent-activities">
+                            <div class="empty-state flex flex-col items-center text-center py-10 px-6" id="no-recent-activities">
                                 <div class="animate-bounce-slow mb-3">
                                     <i data-lucide="history" class="w-12 h-12 text-emerald-400/60"></i>
                                 </div>
@@ -174,14 +174,14 @@
                             </div>
 
                         </div>
-                        <button class="cursor-pointer flex items-center w-full justify-center text-center p-4 rounded-xl border-none text-white max-md:text-sm hover:bg-gray-700 hover:scale-103 transition duration-300 ease-in-out" id="see-all-activities">Voir toutes les activités</button>
+                        <button class="btn-primary card-button cursor-pointer flex items-center w-full justify-center text-center p-4 rounded-xl border-none text-white max-md:text-sm hover:bg-gray-700 hover:scale-103 transition duration-300 ease-in-out" id="see-all-activities">Voir toutes les activités</button>
                     </section>
                 </div>
 
                 <!-- Colonne latérale (Notifications et événements) -->
                 <aside class="md:w-1/3 flex flex-col gap-6 w-full">
                     <!-- Notifications -->
-                    <section class="space-y-6">
+                    <section class="section-card space-y-6">
                         <div class="flex flex-row gap-4">
                             <h3 class="text-xl font-medium">Notifications</h3>
                         </div>
@@ -197,7 +197,7 @@
                                     <p class="text-gray-400 text-sm notification-message">Un nouveau challenge "Architecture Microservices" ajouté.</p>
                                     <p class="text-gray-500 text-xs notification-time">Il y a environ 2 heures</p>
                                 </div>
-                                <div class="flex flex-col items-center text-center py-10 px-6" id="no-notifications">
+                                <div class="empty-state flex flex-col items-center text-center py-10 px-6" id="no-notifications">
                                     <div class="animate-bounce-slow mb-3">
                                         <i data-lucide="bell-off" class="w-12 h-12 text-purple-400/60"></i>
                                     </div>
@@ -209,12 +209,12 @@
                     </section>
 
                     <!-- Prochains événements -->
-                    <section class="fade-in space-y-4 w-full flex flex-col border border-gray-700 p-5 rounded-2xl shadow-lg card-bg">
+                    <section class="section-card fade-in space-y-4 w-full flex flex-col border border-gray-700 p-5 rounded-2xl shadow-lg card-bg">
                         <div class="flex flex-row justify-start items-center gap-2">
                             <h3 class="text-xl font-medium">Prochains événements</h3>
                         </div>
                         <div id="next-event-container" class="flex flex-col gap-2">
-                            <div class="flex flex-col items-center text-center py-12 px-6 border border-dashed border-gray-600/40 rounded-xl bg-gray-900/20" id="no-next-event">
+                            <div class="empty-state flex flex-col items-center text-center py-12 px-6 border border-dashed border-gray-600/40 rounded-xl bg-gray-900/20" id="no-next-event">
                                 <div class="animate-bounce-slow mb-4">
                                     <i data-lucide="calendar-x" class="w-14 h-14 text-red-400/70"></i>
                                 </div>
@@ -223,7 +223,7 @@
                             </div>
 
                         </div>
-                        <button class="cursor-pointer flex items-center w-full justify-center text-center p-4 rounded-xl text-white max-md:text-sm hover:bg-gray-700 hover:scale-105 transition duration-300 ease-in-out" id="see-all-events">Voir tous les événements</button>
+                        <button class="btn-primary card-button cursor-pointer flex items-center w-full justify-center text-center p-4 rounded-xl text-white max-md:text-sm hover:bg-gray-700 hover:scale-105 transition duration-300 ease-in-out" id="see-all-events">Voir tous les événements</button>
                     </section>
                 </aside>
             </div>
@@ -231,10 +231,10 @@
             <!-- Liens rapides -->
             <section class="flex flex-col w-full gap-4">
                 <h2 class="text-white text-lg font-semibold">Liens rapides</h2>
-                <div class="flex flex-wrap items-stretch justify-between max-md:flex-col max-md:w-full max-md:justify-center gap-5">
+                <div class="quick-links flex flex-wrap items-stretch justify-between max-md:flex-col max-md:w-full max-md:justify-center gap-5">
 
                     <!-- Carte 1 -->
-                    <div class="fade-in-left flex-1/3">
+                    <div class="quick-link fade-in-left flex-1/3">
                         <a href="/user/challenge_dev" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
                             <div class="bg-blue-900 text-blue-400 p-3 rounded-full">
                                 <i data-lucide="code"></i>
@@ -248,7 +248,7 @@
                     </div>
 
                     <!-- Carte 2 -->
-                    <div class="fade-in-right flex-1/3">
+                    <div class="quick-link fade-in-right flex-1/3">
                         <a href="/user/challenge_hacking" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
                             <div class="bg-gray-800 text-gray-400 p-3 rounded-full">
                                 <i data-lucide="shield"></i>
@@ -262,7 +262,7 @@
                     </div>
 
                     <!-- Carte 3 -->
-                    <div class="fade-in flex-1/3">
+                    <div class="quick-link fade-in flex-1/3">
                         <a href="/user/profile" class="flex items-center p-4 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg w-auto transition hover:scale-105">
                             <div class="bg-gray-800 text-gray-400 p-3 rounded-full">
                                 <i data-lucide="user"></i>

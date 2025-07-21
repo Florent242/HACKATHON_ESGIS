@@ -33,7 +33,6 @@
 body {
     background-color: var(--background);
     color: var(--text);
-    /* line-height: 1.5; */
     min-height: 100vh;
 }
 
@@ -48,11 +47,8 @@ main {
 
 .container {
     width: 100%;
-    /* Ensure it takes the full width */
     max-width: 1400px;
-    /* This may limit the width */
     margin: 0 auto;
-    /* Centering may affect width */
 }
 
 /* ==================================================
@@ -71,5 +67,385 @@ main {
 @media (max-width: 480px) {
     .stats-container {
         grid-template-columns: 1fr;
+    }
+}
+
+/* ==================================================
+   AMÉLIORATIONS RESPONSIVE DASHBOARD
+   ================================================== */
+
+/* Variables supplémentaires pour le responsive */
+:root {
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 3rem;
+}
+
+/* ==================================================
+   HEADER DASHBOARD - Améliorations
+   ================================================== */
+.header-dashboard {
+    padding: 1rem;
+    gap: 2rem;
+}
+
+@media (max-width: 768px) {
+    .header-dashboard {
+        padding: 0.75rem;
+        gap: 1.5rem;
+        margin: 0 1rem;
+    }
+    
+    .header-dashboard h1 {
+        font-size: 1.75rem;
+        line-height: 1.2;
+    }
+    
+    .challenges-link {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-dashboard h1 {
+        font-size: 1.5rem;
+    }
+    
+    .challenges-link {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .challenges-link button {
+        width: 100%;
+        padding: 0.75rem;
+    }
+}
+
+/* ==================================================
+   USER INFO CARD - Améliorations
+   ================================================== */
+.user-info {
+    padding: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .user-info {
+        padding: 1rem;
+        gap: 1rem;
+    }
+    
+    .user-circle i {
+        width: 4rem;
+        height: 4rem;
+    }
+    
+    .modify-profile {
+        width: 100%;
+        justify-content: center;
+        padding: 0.75rem 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .user-info {
+        padding: 1rem 0.75rem;
+    }
+    
+    .user-circle i {
+        width: 3rem;
+        height: 3rem;
+    }
+}
+
+/* ==================================================
+   GRID STATS - Améliorations majeures
+   ================================================== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 2fr);
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+}
+
+/* Cards stats responsive */
+.stat-card {
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+@media (max-width: 640px) {
+    .stat-card {
+        min-height: 120px;
+        padding: 1rem;
+    }
+    
+    .stat-card h3 {
+        font-size: 0.875rem;
+    }
+    
+    .stat-card .text-3xl {
+        font-size: 1.75rem;
+    }
+    
+    .stat-card i {
+        width: 2rem;
+        height: 2rem;
+    }
+}
+
+/* ==================================================
+   SECTION PROGRESSION ET NOTIFICATIONS
+   ================================================== */
+.dashboard-content {
+    display: flex;
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .dashboard-content {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .dashboard-content aside {
+        width: 100%;
+    }
+}
+
+/* Sections cards responsive */
+.section-card {
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 640px) {
+    .section-card {
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .section-card h3 {
+        font-size: 1rem;
+    }
+}
+
+/* ==================================================
+   CHALLENGE ITEMS - Améliorations
+   ================================================== */
+.current-challenge-item,
+.recent-activity-item,
+.notification-item {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+@media (max-width: 640px) {
+    .current-challenge-item {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+    
+    .current-challenge-item button {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    
+    .recent-activity-item {
+        padding: 0.75rem;
+    }
+    
+    .notification-item {
+        padding: 0.75rem;
+    }
+}
+
+/* ==================================================
+   LIENS RAPIDES - Améliorations
+   ================================================== */
+.quick-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.quick-link-card {
+    flex: 1;
+    min-width: 0; /* Permet aux flex items de rétrécir */
+}
+
+@media (max-width: 768px) {
+    .quick-links {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .quick-link-card {
+        width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .quick-links a {
+        padding: 0.75rem;
+    }
+    
+    .quick-links h3 {
+        font-size: 0.875rem;
+    }
+    
+    .quick-links p {
+        font-size: 0.75rem;
+    }
+}
+
+/* ==================================================
+   EMPTY STATES - Améliorations
+   ================================================== */
+.empty-state {
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+@media (max-width: 640px) {
+    .empty-state {
+        padding: 1.5rem 0.75rem;
+    }
+    
+    .empty-state i {
+        width: 2.5rem;
+        height: 2.5rem;
+    }
+    
+    .empty-state h3 {
+        font-size: 1rem;
+    }
+    
+    .empty-state p {
+        font-size: 0.875rem;
+    }
+}
+
+/* ==================================================
+   BOUTONS - Améliorations responsive
+   ================================================== */
+.btn-primary {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+@media (max-width: 640px) {
+    .btn-primary {
+        padding: 0.75rem;
+        font-size: 0.8125rem;
+        width: 100%;
+    }
+}
+
+/* Boutons dans les cards */
+.card-button {
+    margin-top: auto;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .card-button {
+        padding: 0.625rem;
+        font-size: 0.8125rem;
+    }
+}
+
+/* ==================================================
+   ANIMATIONS ET TRANSITIONS RESPONSIVES
+   ================================================== */
+@media (max-width: 768px) {
+    .fade-in-left,
+    .fade-in-right,
+    .fade-in {
+        animation-duration: 0.3s;
+    }
+    
+    /* Désactiver les animations sur mobile pour les performances */
+    .hover\:scale-105:hover {
+        transform: none;
+    }
+    
+    .transition {
+        transition-duration: 0.1s;
+    }
+}
+
+/* ==================================================
+   SCROLLING ET DÉBORDEMENT
+   ================================================== */
+.dashboard-container {
+    overflow-x: hidden;
+}
+
+@media (max-width: 640px) {
+    .text-nowrap {
+        white-space: normal;
+        word-break: break-word;
+    }
+    
+    /* Forcer le text-wrap sur mobile */
+    .whitespace-nowrap {
+        white-space: normal;
+    }
+}
+
+/* ==================================================
+   UTILITAIRES SUPPLÉMENTAIRES
+   ================================================== */
+@media (max-width: 640px) {
+    .hidden-mobile {
+        display: none !important;
+    }
+    
+    .mobile-full-width {
+        width: 100% !important;
+    }
+    
+    .mobile-center {
+        text-align: center !important;
+    }
+    
+    .mobile-stack {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+}
+
+/* Amélioration des marges sur très petits écrans */
+@media (max-width: 375px) {
+    .header-dashboard {
+        margin: 0 0.5rem;
+    }
+    
+    .stat-card {
+        padding: 0.75rem;
+    }
+    
+    .section-card {
+        padding: 0.75rem;
     }
 }

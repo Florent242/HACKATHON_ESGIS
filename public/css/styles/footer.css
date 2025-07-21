@@ -1,114 +1,202 @@
-/* FOOTER STYLES */
-footer {
-    background-color: var(--background-hover);
-    color: var(--text);
-    font-family: Arial, sans-serif;
-    border-top: 1px solid var(--border);
+/* Footer Styles - EsgisHub */
+
+/* Gradient background pour le footer */
+.footer-gradient {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    position: relative;
+    border-top: 1px solid rgba(100, 116, 139, 0.2);
 }
 
-.footer-container {
+.footer-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+}
+.footer-gradient::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 30%, rgba(30, 64, 175, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+/* Sections du footer */
+.footer-section {
+    position: relative;
+    z-index: 10;
+}
+
+/* Titres des sections */
+.footer-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 1rem;
+}
+
+.footer-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: #93c5fd;
+}
+
+/* Liens du footer */
+.footer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.footer-link {
+    color: #bfdbfe;
+    transition: color 0.2s ease-in-out;
+    font-size: 0.875rem;
+    display: block;
+    position: relative;
+}
+
+.footer-link::before {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background-color: #60a5fa;
+    transition: width 0.3s ease;
+}
+
+.footer-link:hover {
+    color: #ffffff;
+}
+
+.footer-link:hover::before {
     width: 100%;
 }
 
-.footer-content {
+/* Container pour les réseaux sociaux */
+.social-container {
     display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem 1rem;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
 }
 
-.footer-section {
-    flex: 1 1;
-    min-width: 180px;
-}
-
-.footer-section h3 {
-    font-size: 1.1rem;
-    margin-bottom: 0.75rem;
-    color: var(--text);
-}
-
-.footer-section ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.footer-section ul li {
-    margin-bottom: 0.5rem;
-}
-
-.footer-section ul li a {
-    color: var(--text);
-    text-decoration: none;
-    opacity: 0.8;
-    transition: opacity 0.3s;
-}
-
-.footer-section ul li a:hover {
-    opacity: 1;
-}
-
-.social {
+.social-link {
+    width: 2.5rem;
+    height: 2.5rem;
+    background-color: #2563eb;
+    border-radius: 0.5rem;
     display: flex;
-    flex-direction: column;
-}
-
-.social-icons {
-    display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
+    color: #bfdbfe;
+    transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
-.social a {
-    font-size: 1.25rem;
-    color: var(--text);
-    transition: color 0.3s;
+.social-link:hover {
+    background-color: #1d4ed8;
+    transform: scale(1.05);
 }
 
-.social a:hover,
-.social svg:hover {
-    color: var(--primary-hover);
+/* Newsletter signup */
+.newsletter-signup {
+    margin-top: 1.5rem;
 }
 
-.discord-icon {
-    width: 24px;
-    height: 24px;
-    fill: currentColor;
-    transition: fill 0.3s ease;
-}
-
-.discord-icon:hover {
-    fill: #7289DA;
-}
-
-.footer-bottom {
-    border-top: 1px solid var(--border);
-    text-align: center;
-    padding: 1rem;
+.newsletter-input {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    background-color: #1e3a8a;
+    border: 1px solid #2563eb;
+    border-radius: 0.5rem 0 0 0.5rem;
+    color: #ffffff;
     font-size: 0.875rem;
-    background-color: var(--background-hover);
-    color: var(--text);
+    transition: border-color 0.2s ease-in-out;
 }
 
-/* RESPONSIVE FOOTER */
+.newsletter-btn {
+    padding: 0.5rem 1rem;
+    background-color: #2563eb;
+    border-radius: 0 0.5rem 0.5rem 0;
+    color: #ffffff;
+    transition: background-color 0.2s ease-in-out;
+}
+
+/* Animation pour les icônes Lucide */
+.footer-section i[data-lucide] {
+    transition: transform 0.2s ease;
+}
+
+.footer-section:hover i[data-lucide] {
+    transform: scale(1.1);
+}
+
+/* Responsive design */
 @media (max-width: 768px) {
-    .footer-content {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
+    .footer-title {
+        font-size: 1rem;
     }
-
-    .footer-section {
-        width: 100%;
-        max-width: 300px;
-    }
-
-    .social-icons {
+    
+    .social-container {
         justify-content: center;
     }
+    
+    .newsletter-signup {
+        text-align: center;
+    }
+}
+
+/* Animation d'entrée pour le footer */
+.footer-gradient {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+@keyframes fadeInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Effet de brillance subtil */
+.footer-gradient::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.5), transparent);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { 
+        opacity: 0; 
+    }
+    50% { 
+        opacity: 1; 
+    }
+}
+
+/* États de focus pour l'accessibilité */
+.footer-link:focus,
+.social-link:focus,
+.newsletter-btn:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px #60a5fa, 0 0 0 4px #1e3a8a;
+    transition: box-shadow 0.2s ease-in-out;
 }

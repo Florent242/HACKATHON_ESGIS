@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EsgisHub - IDE de Programmation</title>
+    <meta name="csrf-token" content="<?= $_SESSION["csrf_token"];?>"
+ 
     
     <!-- CSS -->
     <link rel="stylesheet" href="/css/styles/user/hackaton.css">
@@ -109,12 +110,76 @@
             border-left: 4px solid var(--red);
         }
 
+
         /* Pour la div des instructions */
         #objectif-regles, .objectif-regles {
             min-height: 320px;
             height: 350px; /* ou la taille souhaitée */
             max-height: 400px;
             overflow-y: auto;
+            transition: height 0.3s;
+        }
+
+        /* Grille principale prend toute la hauteur */
+        .main-grid {
+            min-height: 100vh;
+            height: 100vh;
+        }
+
+        /* Colonne gauche en flex pour coller la console en bas */
+        .main-grid > .flex.flex-col.gap-4 {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        #objectif-regles {
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+        #consoleSection {
+            flex-shrink: 0;
+        }
+
+        /* Console réduite : seule la hauteur change, reste dans le flux */
+        body.console-collapsed #consoleOutput {
+            min-height: 40px !important;
+            max-height: 60px !important;
+            height: 40px !important;
+            font-size: 0.95em;
+            padding: 8px 16px;
+        }
+        body.console-collapsed #consoleSection .flex.items-center.justify-between.mb-4 {
+            margin-bottom: 0;
+            padding: 4px 16px;
+        }
+        body.console-collapsed #consoleSection h2 {
+            font-size: 0.95em;
+        }
+        body.console-collapsed #consoleSection .text-[#94A3B8] {
+            font-size: 0.95em;
+        }
+        body.console-collapsed #consoleSection .min-h-[150px] {
+            min-height: 40px !important;
+        }
+        body.console-collapsed #consoleSection .space-y-4 > * {
+            margin-bottom: 0 !important;
+        }
+        body.console-collapsed #consoleSection .font-mono {
+            font-size: 0.95em;
+        }
+        /* S'assure que la section d'infos prend tout l'espace restant */
+        body.console-collapsed #objectif-regles {
+            height: auto !important;
+            max-height: none !important;
+            flex: 1 1 0;
+        }
+        body.console-collapsed .main-grid > .flex.flex-col.gap-4 {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        body.console-collapsed #consoleSection {
+            flex-shrink: 0;
         }
 
         /* Pour l'éditeur */
@@ -122,6 +187,56 @@
             height: 260px !important; /* ou h-64 en Tailwind */
             min-height: 200px;
             max-height: 300px;
+        }
+
+        /* Console réduite */
+        body.console-collapsed #consoleSection {
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100vw;
+            z-index: 1001;
+            box-shadow: 0 -2px 16px rgba(0,0,0,0.15);
+            border-radius: 0;
+            margin: 0;
+            padding: 0;
+        }
+        body.console-collapsed #consoleOutput {
+            min-height: 40px !important;
+            max-height: 60px !important;
+            height: 40px !important;
+            font-size: 0.95em;
+            padding: 8px 16px;
+        }
+        body.console-collapsed #consoleSection .flex.items-center.justify-between.mb-4 {
+            margin-bottom: 0;
+            padding: 4px 16px;
+        }
+        body.console-collapsed #consoleSection h2 {
+            font-size: 0.95em;
+        }
+        body.console-collapsed #consoleSection {
+            background: #10101a;
+            border-top: 1px solid #232e39;
+        }
+        body.console-collapsed #consoleSection .text-[#94A3B8] {
+            font-size: 0.95em;
+        }
+        body.console-collapsed #consoleSection .rounded {
+            border-radius: 0 !important;
+        }
+        body.console-collapsed #consoleSection .min-h-[150px] {
+            min-height: 40px !important;
+        }
+        body.console-collapsed #consoleSection .space-y-4 > * {
+            margin-bottom: 0 !important;
+        }
+        body.console-collapsed #consoleSection .font-mono {
+            font-size: 0.95em;
+        }
+        body.console-collapsed #objectif-regles {
+            height: calc(100vh - 60px) !important;
+            max-height: none !important;
         }
 
         .challenge-info {
@@ -282,23 +397,40 @@
   <!-- Jeu de tests -->
   <div class="flex-1 bg-[#232e39] rounded border border-[#2d3b4e] p-4 min-w-[300px]">
     <h2 class="text-base font-semibold text-[#94a3b8] mb-4">Jeu de tests</h2>
-    <div class="bg-[#26323e] rounded flex items-center p-2 mb-2">
-      <span class="bg-[#3b4b5c] text-[#22c55e] font-bold rounded px-2 py-1 mr-3">01</span>
-      <span class="text-[#22c55e] flex-1">Danger imminent</span>
-      <button class="ml-auto bg-[#26323e] text-[#22c55e] border border-[#22c55e] rounded px-3 py-1 text-xs flex items-center hover:bg-[#1e293b] transition-colors">
-        <i class="ri-play-fill mr-1"></i>LANCER LE TEST
-      </button>
+    <div id="testResults" class="space-y-3">
+      <!-- Les résultats des tests apparaîtront ici -->
+      <div class="text-center text-[#94a3b8] py-8">
+        <i class="ri-flask-line text-3xl mb-2"></i>
+        <p>Lancez les tests pour voir les résultats</p>
+      </div>
     </div>
   </div>
   <!-- Actions -->
   <div class="w-64 bg-[#232e39] rounded border border-[#2d3b4e] p-4 flex flex-col gap-4">
     <h2 class="text-base font-semibold text-[#94a3b8] mb-4">Actions</h2>
-    <button class="w-full bg-[#2d3b4e] text-[#3b82f6] px-4 py-3 rounded whitespace-nowrap flex items-center justify-center font-medium mb-2">
+    <button id="runAllTests" class="w-full bg-[#2d3b4e] text-[#3b82f6] px-4 py-3 rounded whitespace-nowrap flex items-center justify-center font-medium mb-2 hover:bg-[#3b4b5c] transition-colors">
       <i class="ri-play-fill mr-2"></i>TOUS LES TESTS
     </button>
-    <button class="w-full bg-[#3b4b5c] text-[#eab308] px-4 py-3 rounded whitespace-nowrap flex items-center justify-center font-medium">
+    <button id="submitChallenge" class="w-full bg-[#3b4b5c] text-[#eab308] px-4 py-3 rounded whitespace-nowrap flex items-center justify-center font-medium hover:bg-[#4b5b6c] transition-colors">
       <i class="ri-check-line mr-2 text-[#eab308]"></i>SOUMETTRE
     </button>
+    <div class="mt-4 pt-4 border-t border-[#3b4b5c]">
+      <h3 class="text-sm font-medium text-[#94a3b8] mb-2">Informations</h3>
+      <div class="space-y-2 text-xs text-[#6b7280]">
+        <div class="flex justify-between">
+          <span>Langage:</span>
+          <span id="currentLanguage" class="text-[#3b82f6]">-</span>
+        </div>
+        <div class="flex justify-between">
+          <span>Dernière exec:</span>
+          <span id="lastExecution" class="text-[#eab308]">-</span>
+        </div>
+        <div class="flex justify-between">
+          <span>Meilleur score:</span>
+          <span id="bestScore" class="text-[#22c55e]">-</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
         </div>

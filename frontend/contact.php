@@ -94,13 +94,6 @@
             </div>
         </div>
     </div>
-       
-   
-    <script>
-        window.addEventListener("load", function() {
-            lucide.createIcons();
-        });
-    </script>
 
 </body>
 

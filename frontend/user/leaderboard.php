@@ -60,7 +60,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Sélecteur d'événement -->
                 <div class="space-y-2">
-                    <label for="event-select" class="block text-sm font-medium text-gray-300 flex items-center gap-2">
+                    <label for="event-select" class="text-sm font-medium text-gray-300 flex items-center gap-2">
                         <i data-lucide="trophy" class="w-4 h-4 text-yellow-400"></i>
                         Hackathon
                     </label>
@@ -73,7 +73,7 @@
                 
                 <!-- Sélecteur de phase -->
                 <div class="space-y-2">
-                    <label for="phase-select" class="block text-sm font-medium text-gray-300 flex items-center gap-2">
+                    <label for="phase-select" class="text-sm font-medium text-gray-300 flex items-center gap-2">
                         <i data-lucide="layers" class="w-4 h-4 text-purple-400"></i>
                         Phase
                     </label>

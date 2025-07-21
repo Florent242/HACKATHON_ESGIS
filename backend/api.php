@@ -29,86 +29,92 @@ use Piston\PistonExecutor;
 use Auth\Controller\ParticipantController;
 use Auth\Controller\ScoreController;
 
-// Inclure le fichier autoload de Composer pour charger les variables d'environnement
-// require_once __DIR__ . '/../vendor/autoload.php';
-
-// Charger les variables d'environnement
-// $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
-// $dotenv->load();
-
-// Inclure une seule fois le fichier de configuration
-if (!defined('CONFIG_INCLUDED')) {
-    require_once __DIR__ . '/includes/config.php';
-}
-
-// Inclure les fichiers contenant des fonctions
-if (!defined('FUNCTIONS_INCLUDED')) {
-    require_once __DIR__ . '/includes/functions.php';
-}
-
-
-// Inclure les classes seulement si elles n'existent pas déjà
-$files = [
-    'Database'            => '/models/Database.php',
-    'Controller'          => '/controllers/Controller.php',
-    'AuthController'      => '/controllers/AuthController.php',
-    'UserController'      => '/controllers/UserController.php',
-    'HackathonController' => '/controllers/HackathonController.php',
-    'TeamController'      => '/controllers/TeamController.php',
-    'ProjectController'   => '/controllers/ProjectController.php',
-    'ChallengeController' => '/controllers/ChallengeController.php',
-    'EvaluationController' => '/controllers/EvaluationController.php',
-    'AdminController'     => '/controllers/AdminController.php',
-    'TokenManager'        => '/models/TokenManager.php',
-    'ParticipantController' => '/controllers/ParticipantController.php',
-    'ScoreController'     => '/controllers/ScoreController.php',
-];
-
-foreach ($files as $class => $path) {
-    if (!class_exists($class)) {
-        require_once __DIR__ . $path;
-    }
-}
-
-// Configurer CORS pour toutes les requêtes API
-configureCors();
-
-// Initialisation de la base de données
-$db = Database::getInstance()->getConnection();
-
-$key = $_ENV['JWT_SECRET'] ?? 'your-secret-key';
-
-// Pour les requêtes OPTIONS, renvoyer directement une réponse
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-// Récupération de la méthode HTTP et de l'URL
-$method = $_SERVER['REQUEST_METHOD'];
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$uri = str_replace('/api/', '/', $uri); // Nettoyer l'URI
-$request = explode('/', trim($uri, '/'));
-
-// Extraction des composants de l'URL
-// /endpoint/id/action
-$endpoint = $request[0] ?? '';
-$id = $request[1] ?? null;
-$action = $request[2] ?? null;
-
-// Lecture des données du corps de la requête
-$rawInput = file_get_contents('php://input');
-$input = json_decode($rawInput, true);
-
-// Si c'est une requête POST et que le JSON n'est pas valide, utiliser $_POST
-if ($input === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = $_POST;
-}
-
-// Initialisation du gestionnaire de token
-$tokenManager = new TokenManager($key, $db);
-
 try {
+
+    // Inclure le fichier autoload de Composer pour charger les variables d'environnement
+    // require_once __DIR__ . '/../vendor/autoload.php';
+
+    // Charger les variables d'environnement
+    // $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
+    // $dotenv->load();
+
+    // Inclure une seule fois le fichier de configuration
+    if (!defined('CONFIG_INCLUDED')) {
+        require_once __DIR__ . '/includes/config.php';
+    }
+
+    // Inclure les fichiers contenant des fonctions
+    if (!defined('FUNCTIONS_INCLUDED')) {
+        require_once __DIR__ . '/includes/functions.php';
+    }
+
+
+    // Inclure les classes seulement si elles n'existent pas déjà
+    $files = [
+        'Database'            => '/models/Database.php',
+        'Controller'          => '/controllers/Controller.php',
+        'AuthController'      => '/controllers/AuthController.php',
+        'UserController'      => '/controllers/UserController.php',
+        'HackathonController' => '/controllers/HackathonController.php',
+        'TeamController'      => '/controllers/TeamController.php',
+        'ProjectController'   => '/controllers/ProjectController.php',
+        'ChallengeController' => '/controllers/ChallengeController.php',
+        'EvaluationController' => '/controllers/EvaluationController.php',
+        'AdminController'     => '/controllers/AdminController.php',
+        'TokenManager'        => '/models/TokenManager.php',
+        'ParticipantController' => '/controllers/ParticipantController.php',
+        'ScoreController'     => '/controllers/ScoreController.php',
+        'Auth\\Service\\ChallengeValidationService' => '/services/ChallengeValidationService.php',
+        'PistonRequest' => '/services/PistonRequest.php',
+        'PistonExecutor' => '/services/PistonExecutor.php',
+        'PistonResponse' => '/services/PistonResponse.php',
+    ];
+
+    foreach ($files as $class => $path) {
+        if (file_exists(__DIR__ . $path) && !class_exists($class)) {
+            require_once __DIR__ . $path;
+        }
+    }
+
+    // Configurer CORS pour toutes les requêtes API
+    configureCors();
+
+    // Initialisation de la base de données
+    $db = Database::getInstance()->getConnection();
+
+    $key = $_ENV['JWT_SECRET'] ?? 'your-secret-key';
+
+    // Pour les requêtes OPTIONS, renvoyer directement une réponse
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(200);
+        exit();
+    }
+
+    // Récupération de la méthode HTTP et de l'URL
+    $method = $_SERVER['REQUEST_METHOD'];
+    $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $uri = str_replace('/api/', '/', $uri); // Nettoyer l'URI
+    $request = explode('/', trim($uri, '/'));
+
+    // Extraction des composants de l'URL
+    // /endpoint/id/action
+    $endpoint = $request[0] ?? '';
+    $id = $request[1] ?? null;
+    $action = $request[2] ?? null;
+
+
+    // Lecture des données du corps de la requête
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true);
+
+    // Si c'est une requête POST et que le JSON n'est pas valide, utiliser $_POST
+    if ($input === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $input = $_POST;
+    }
+
+    // Initialisation du gestionnaire de token
+    $tokenManager = new TokenManager($key, $db);
+
     switch ($endpoint) {
         case 'auth':
             $controller = new AuthController($db);
@@ -244,14 +250,14 @@ try {
             if ($method === 'GET' && is_numeric($id) && isset($id)) {
                 // Route /api/scores/{hackathon_id}/{action}
                 if (isset($action)) {
-                    
+
                     switch ($action) {
                         case 'phases':
                             $controller->getPhases((int)$id);
                             break;
                         case 'leaderboard':
                             // Route /api/scores/{hackathon_id}/{action}/{phase_id}
-                            if(isset($request[3]) && is_numeric($request[3])) {
+                            if (isset($request[3]) && is_numeric($request[3])) {
                                 $controller->getLeaderboard((int)$id, (int)$request[3]);
                             } else {
                                 return jsonResponse([
@@ -269,7 +275,7 @@ try {
                 } else {
                     jsonResponse([
                         'success' => false,
-                        'error' => 'Hackathon ID et phase ID requis.'. print_r($request, true)
+                        'error' => 'Hackathon ID et phase ID requis.' . print_r($request, true)
                     ], 400);
                 }
             } elseif ($method === 'POST' && is_numeric($id) && isset($id)) {
@@ -468,7 +474,7 @@ try {
                             if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                 jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                             }
-                            // **Assurez-vous que vous avez une méthode `getCurrentChallenges()` dans UserController**
+                            // Route GET /api/users/{id}/current-challenges
                             $controller->getCurrentChallenges($id, $token);
                             break;
                         case 'current-hackathons':
@@ -548,8 +554,7 @@ try {
                     if ($method === 'GET') {
                         // GET /api/hackathons/{id}
                         $controller->get($id);
-                    }
-                    else {
+                    } else {
                         throw new Exception('Méthode non autorisée', 405);
                     }
                 } else {
@@ -557,7 +562,7 @@ try {
                     switch ($action) {
                         case 'active-phase':
                             $controller->getActivePhase($id);
-                            break;                        
+                            break;
                         case 'teams':
                             $controller->getTeams($id);
                             break;
@@ -577,6 +582,8 @@ try {
                 $controller->getPast();
             } elseif ($id === 'future') {
                 $controller->getFuture();
+            } elseif ($id === 'public') {
+                $controller->getPublicAll();
             } else {
                 throw new Exception('ID non valide pour /hackathons', 400);
             }
@@ -775,6 +782,20 @@ try {
                 // GET /api/challenges/dev/{hackathon_id}/{user_id}
                 if ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3])) {
                     $controller->getChallengesDev($request[2], $request[3], $request[4] = null);
+                }
+                // POST /api/challenges/dev/{hackathon_id}/{user_id} - pour validation et soumission algorithmique
+                elseif ($method === 'POST' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3])) {
+                    // Vérifier si c'est une validation ou soumission
+                    $action = $input['action'] ?? '';
+                    $challengeId = $input['challenge_id'] ?? null;
+
+                    if ($action === 'validate' && $challengeId) {
+                        $controller->validateCode($challengeId);
+                    } elseif ($action === 'submit' && $challengeId) {
+                        $controller->submitAlgorithmic($challengeId);
+                    } else {
+                        throw new Exception('Action non reconnue pour les défis dev', 400);
+                    }
                 } else {
                     throw new Exception('Méthode non autorisée ou paramètres invalides', 400);
                 }
@@ -793,6 +814,15 @@ try {
                     $controller->submitChallengeCTF($request[3], $input, $request[4] = null);
                 } else {
                     throw new Exception('Méthode non autorisée ou paramètres invalides', 400);
+                }
+            } elseif ($id === 'submissions' && is_numeric($action)) {
+                // GET /api/challenges/submissions/{submission_id}
+                if ($method === 'GET') {
+
+                    // TODO: corriger et adapter le code
+                    $controller->getSubmissionResults($action);
+                } else {
+                    throw new Exception('Méthode non autorisée pour les soumissions', 405);
                 }
             } elseif ($id === 'solves') {
                 // GET /api/challenges/solves
@@ -930,21 +960,24 @@ try {
     if (isAjaxRequest()) {
         header('Content-Type: application/json');
         $statusCode = $e->getCode() ?: 500;
-        jsonResponse(['success' => false, 'error' => "Une erreure est survenue au niveau de l'API. Veuillez contacter le support technique !"
-        // pour debug
-        . $e->getMessage()
-    ]);
+        jsonResponse([
+            'success' => false,
+            'error' => "Une erreure est survenue au niveau de l'API. Veuillez contacter le support technique !",
+            // pour debug
+            // 'debug_message' => $e->getMessage(),
+            // 'debug_file' => $e->getFile(),
+            // 'debug_line' => $e->getLine(),
+            // 'debug_trace' => $e->getTraceAsString()
+        ]);
 
-        // pour debug
-        // echo json_encode([
-        //     'debug' => print_r($request, true)
-        // ]);
         return;
     }
-    setFlashMessage('error', 'Erreur API', "Une erreure est survenue au niveau de l'API. Veuillez contacter le support technique !"
-    
-    // pour debug
-    .$e->getMessage()
+    setFlashMessage(
+        'error',
+        'Erreur API',
+        "Une erreure est survenue au niveau de l'API. Veuillez contacter le support technique !"
+        // pour debug
+        // . ' | Debug: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine()
     );
     header('Location: /');
     exit();

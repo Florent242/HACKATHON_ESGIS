@@ -620,9 +620,10 @@ async function loadNextEvent(userId) {
     }
 }
 // Fonction pour initialiser le dashboard
-async function initializeDashboard() {
+async function initializeDashboardResponsive() {
     try {
         const userId = await getUserId();
+        
         // Charger les données de base
         await Promise.all([
             loadUserInfo(userId),
@@ -633,8 +634,14 @@ async function initializeDashboard() {
             loadNextEvent(userId)
         ]);
 
+        // Appliquer les adaptations responsive
+        initResponsiveAdaptations();
+
         // Mettre en place les écouteurs d'événements
         setupEventListeners();
+        
+        // Ajouter l'écouteur de redimensionnement
+        window.addEventListener('resize', handleResize);
 
         // Configurer le rafraîchissement automatique
         setupAutoRefresh();
@@ -647,6 +654,7 @@ async function initializeDashboard() {
         }, 3000);
     }
 }
+
 
 // Configuration du rafraîchissement automatique
 async function setupAutoRefresh() {
@@ -735,6 +743,190 @@ function setupEventListeners() {
     });
 }
 
+// ==================================================
+// AMÉLIORATIONS JAVASCRIPT RESPONSIVE
+// ==================================================
+
+// Fonction pour détecter la taille d'écran
+function getScreenSize() {
+    if (window.innerWidth <= 480) return 'mobile';
+    if (window.innerWidth <= 768) return 'tablet';
+    if (window.innerWidth <= 1024) return 'desktop-small';
+    return 'desktop';
+}
+
+// Fonction pour adapter les animations selon la taille d'écran
+function adaptAnimationsForScreen() {
+    const screenSize = getScreenSize();
+    const animatedElements = document.querySelectorAll('.fade-in-left, .fade-in-right, .fade-in');
+    
+    if (screenSize === 'mobile') {
+        // Désactiver les animations complexes sur mobile
+        animatedElements.forEach(el => {
+            el.style.animationDuration = '0.2s';
+            el.style.transitionDuration = '0.2s';
+        });
+        
+        // Désactiver les effets de hover qui ne fonctionnent pas bien sur mobile
+        const hoverElements = document.querySelectorAll('.hover\\:scale-105');
+        hoverElements.forEach(el => {
+            el.style.transform = 'none';
+        });
+    }
+}
+
+// Fonction pour adapter l'affichage des statistiques selon l'écran
+function adaptStatsDisplay() {
+    const screenSize = getScreenSize();
+    const statCards = document.querySelectorAll('.stat-card');
+    
+    if (screenSize === 'mobile') {
+        statCards.forEach(card => {
+            // Réduire la taille des icônes sur mobile
+            const icons = card.querySelectorAll('i[data-lucide]');
+            icons.forEach(icon => {
+                if (icon.classList.contains('w-10')) {
+                    icon.classList.remove('w-10', 'h-10');
+                    icon.classList.add('w-8', 'h-8');
+                }
+            });
+            
+            // Adapter les textes trop longs
+            const longTexts = card.querySelectorAll('.text-nowrap, .whitespace-nowrap');
+            longTexts.forEach(text => {
+                text.classList.remove('text-nowrap', 'whitespace-nowrap');
+                text.style.wordBreak = 'break-word';
+            });
+        });
+    }
+}
+
+// Fonction pour gérer les challenges en cours sur mobile
+function adaptChallengesForMobile() {
+    const screenSize = getScreenSize();
+    const challengeItems = document.querySelectorAll('.current-challenge-item');
+    
+    if (screenSize === 'mobile') {
+        challengeItems.forEach(item => {
+            const button = item.querySelector('button');
+            if (button) {
+                button.style.width = '100%';
+                button.style.marginTop = '0.5rem';
+            }
+        });
+    }
+}
+
+// Fonction pour adapter les notifications sur mobile
+function adaptNotificationsForMobile() {
+    const screenSize = getScreenSize();
+    const notifications = document.querySelectorAll('.notification-item');
+    
+    if (screenSize === 'mobile') {
+        notifications.forEach(notification => {
+            // Tronquer les messages trop longs sur mobile
+            const messageEl = notification.querySelector('.notification-message');
+            if (messageEl && messageEl.textContent.length > 80) {
+                const originalText = messageEl.textContent;
+                messageEl.textContent = originalText.substring(0, 80) + '...';
+                messageEl.title = originalText; // Afficher le texte complet au survol
+            }
+        });
+    }
+}
+
+// Fonction pour gérer le scroll horizontal sur mobile
+function preventHorizontalScroll() {
+    const screenSize = getScreenSize();
+    
+    if (screenSize === 'mobile') {
+        // Empêcher le scroll horizontal
+        document.body.style.overflowX = 'hidden';
+        
+        // Vérifier tous les éléments qui pourraient déborder
+        const wideElements = document.querySelectorAll('[class*="max-w-"]');
+        wideElements.forEach(el => {
+            if (el.scrollWidth > window.innerWidth) {
+                el.style.maxWidth = '100vw';
+                el.style.paddingLeft = '1rem';
+                el.style.paddingRight = '1rem';
+            }
+        });
+    }
+}
+
+// Fonction pour adapter les boutons sur mobile
+function adaptButtonsForMobile() {
+    const screenSize = getScreenSize();
+    
+    if (screenSize === 'mobile') {
+        const buttons = document.querySelectorAll('.btn-primary');
+        buttons.forEach(button => {
+            // S'assurer que les boutons sont assez larges pour être cliqués facilement
+            if (button.offsetHeight < 44) {
+                button.style.minHeight = '44px';
+            }
+            
+            // Ajouter plus d'espace entre les boutons
+            button.style.marginBottom = '0.5rem';
+        });
+    }
+}
+
+// Fonction pour optimiser les images et icônes sur mobile
+function optimizeIconsForMobile() {
+    const screenSize = getScreenSize();
+    
+    if (screenSize === 'mobile') {
+        const largeIcons = document.querySelectorAll('i[data-lucide].w-24, i[data-lucide].w-20, i[data-lucide].w-16');
+        largeIcons.forEach(icon => {
+            icon.classList.remove('w-24', 'h-24', 'w-20', 'h-20', 'w-16', 'h-16');
+            icon.classList.add('w-12', 'h-12');
+        });
+    }
+}
+
+// Fonction principale pour initialiser toutes les adaptations responsive
+function initResponsiveAdaptations() {
+    adaptAnimationsForScreen();
+    adaptStatsDisplay();
+    adaptChallengesForMobile();
+    adaptNotificationsForMobile();
+    preventHorizontalScroll();
+    adaptButtonsForMobile();
+    optimizeIconsForMobile();
+}
+
+// Fonction pour gérer le redimensionnement de la fenêtre
+function handleResize() {
+    // Débouncer le redimensionnement pour éviter trop d'exécutions
+    clearTimeout(window.resizeTimeout);
+    window.resizeTimeout = setTimeout(() => {
+        initResponsiveAdaptations();
+        
+        // Actualiser les icônes Lucide après les modifications
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    }, 250);
+}
+
+// Fonction pour détecter l'orientation sur mobile
+function handleOrientationChange() {
+    setTimeout(() => {
+        initResponsiveAdaptations();
+        
+        // Forcer un reflow pour s'assurer que tout est bien positionné
+        document.body.style.display = 'none';
+        document.body.offsetHeight; // Trigger reflow
+        document.body.style.display = '';
+    }, 100);
+}
+
+// Ajouter les écouteurs d'événements pour l'orientation
+window.addEventListener('orientationchange', handleOrientationChange);
+window.addEventListener('resize', handleResize);
+
 // Initialisation lorsque le DOM est chargé
 document.addEventListener('DOMContentLoaded', () => {
     // Initialisation des icônes Lucide si disponible
@@ -742,9 +934,9 @@ document.addEventListener('DOMContentLoaded', () => {
         window.lucide.createIcons();
     }
 
-    // Initialisation du dashboard
-    initializeDashboard().then(() => {
-        console.log('Dashboard initialisé avec succès');
+    // Initialisation du dashboard avec améliorations responsive
+    initializeDashboardResponsive().then(() => {
+        console.log('Dashboard initialisé avec succès avec améliorations responsive');
     }).catch(error => {
         console.error('Erreur lors de l\'initialisation du dashboard:', error);
     });

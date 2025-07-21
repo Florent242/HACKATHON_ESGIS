@@ -190,7 +190,7 @@
         const windowHeight = window.innerHeight;
         const elementTop = el.getBoundingClientRect().top;
         const revealPoint = 100;
-        
+
         if (elementTop < windowHeight - revealPoint) {
           el.classList.add("visible");
         } else {
@@ -200,7 +200,7 @@
     }
 
     window.addEventListener('scroll', revealOnScroll);
-    
+
     document.addEventListener('DOMContentLoaded', () => {
       revealOnScroll();
       if (typeof lucide !== 'undefined') {
@@ -209,10 +209,12 @@
     });
 
     document.getElementById('scrollToEvents')?.addEventListener('click', () => {
-      document.getElementById('defis')?.scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('defis')?.scrollIntoView({
+        behavior: 'smooth'
+      });
     });
   </script>
-  
+
   <script src="/js/user/hackathon.js" defer></script>
 </body>
 
