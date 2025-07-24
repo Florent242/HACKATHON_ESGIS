@@ -155,13 +155,13 @@
         body.console-collapsed #consoleSection h2 {
             font-size: 0.95em;
         }
-        body.console-collapsed #consoleSection .text-[#94A3B8] {
+        body.console-collapsed #consoleSection {
             font-size: 0.95em;
         }
-        body.console-collapsed #consoleSection .min-h-[150px] {
+        body.console-collapsed #consoleSection {
             min-height: 40px !important;
         }
-        body.console-collapsed #consoleSection .space-y-4 > * {
+        body.console-collapsed #consoleSection {
             margin-bottom: 0 !important;
         }
         body.console-collapsed #consoleSection .font-mono {
@@ -219,19 +219,19 @@
             background: #10101a;
             border-top: 1px solid #232e39;
         }
-        body.console-collapsed #consoleSection .text-[#94A3B8] {
+        body.console-collapsed #consoleSection {
             font-size: 0.95em;
         }
         body.console-collapsed #consoleSection .rounded {
             border-radius: 0 !important;
         }
-        body.console-collapsed #consoleSection .min-h-[150px] {
+        body.console-collapsed #consoleSection {
             min-height: 40px !important;
         }
-        body.console-collapsed #consoleSection .space-y-4 > * {
+        body.console-collapsed #consoleSection {
             margin-bottom: 0 !important;
         }
-        body.console-collapsed #consoleSection .font-mono {
+        body.console-collapsed #consoleSection {
             font-size: 0.95em;
         }
         body.console-collapsed #objectif-regles {

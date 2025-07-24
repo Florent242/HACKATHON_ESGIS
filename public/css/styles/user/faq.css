@@ -1,173 +1,270 @@
 :root {
-    --background: #030B20;
-    --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
-    --card-hover: #1E293B;
-    --blue: #3B82F6;
-    --text: #FFFFFF;
-    --text-secondary: #94A3B8;
-    --border: #1E293B;
-    --color-primary: #3B82F6;
+    --background: #0a1128;
+    --card-bg: rgba(13, 17, 40, 0.8);
+    --card-hover: rgba(24, 32, 71, 0.6);
+    --primary: #3B82F6;
+    --primary-hover: #2563eb;
+    --text: #f8fafc;
+    --text-secondary: #94a3b8;
+    --border: rgba(99, 102, 241, 0.2);
+    --accent: #6366f1;
+    --success: #22C55E;
+    --error: #EF4444;
+    --warning: #F59E0B;
+    --radius: 0.75rem;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
-    background-color: var(--background);
+    background: var(--background);
     color: var(--text);
-    font-family: "Arial", sans-serif;
-    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 20%, rgba(56, 132, 255, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.15) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
 }
 
 h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #60a5fa 0%, #818cf8 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1rem;
     text-align: center;
-    font-size: 2rem;
+    line-height: 1.2;
 }
 
-.faq-container {
-    max-width: 800px;
-    margin: 20px auto;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 20px;
-}
-
-@media (min-width: 768px) {
-    .faq-container {
-        flex-direction: row;
-        justify-content: space-between;
-    }
-}
-
-@media (max-width: 480px) {
-    .faq-title {
-        font-size: 1.5em;
-    }
-    .faq-item {
-        margin-bottom: 10px;
-    }
-}
-
-.faq-item {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    transition: 0.3s ease;
-}
-
-.faq-question {
-    padding: 15px 20px;
-    font-size: 1.2rem;
-    font-weight: bold;
+h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
     color: var(--text);
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    margin: 2rem 0 1rem;
 }
 
-.faq-question i {
-    transition: transform 0.3s ease;
-}
-
-.faq-item.open .faq-question i {
-    transform: rotate(180deg);
-}
-
-.faq-answer {
-    max-height: 0;
-    overflow: hidden;
-    padding: 0 20px;
-    background-color: var(--card-hover);
+p {
     color: var(--text-secondary);
-    transition: max-height 0.4s ease-out, padding 0.3s ease-out;
-}
-
-.faq-item.open .faq-answer {
-    max-height: 200px;
-    /* Ajustable */
-    padding: 10px 20px;
-}
-
-.scroll-down {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: var(--blue);
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 10px;
-    cursor: pointer;
-    z-index: 1000;
-}
-
-.scrollDownBtn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: var(--blue);
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 10px;
-    cursor: pointer;
-    z-index: 1000;
-}
-
-#scrollDownBtn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: var(--blue);
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 10px;
-    cursor: pointer;
-    z-index: 1000;
-}
-
-#scroll-down {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: var(--blue);
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 10px;
-    cursor: pointer;
-    z-index: 1000;
+    margin-bottom: 1.5rem;
+    line-height: 1.7;
 }
 
 .accordion {
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    margin: 20px 0;
+    width: 100%;
+    border-radius: var(--radius);
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
 }
 
 .accordion-item {
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid var(--border);
+    transition: var(--transition);
+}
+
+.accordion-item:last-child {
+    border-bottom: none;
 }
 
 .accordion-header {
-    background-color: #f7f7f7;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    background: transparent;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
 }
 
-.accordion-button {
-    background-color: #f7f7f7;
+.accordion-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary);
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.3s ease;
+}
+
+.accordion-header:hover {
+    background: var(--card-hover);
+}
+
+.accordion-header:hover::before {
+    transform: scaleY(1);
+}
+
+.accordion-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+    transition: var(--transition);
+    position: relative;
+    z-index: 1;
+}
+
+.accordion-header i {
+    color: var(--primary);
+    transition: var(--transition);
+    font-size: 1.1rem;
+    min-width: 1.5rem;
+    text-align: center;
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
+    padding: 0 1.5rem;
+    background: rgba(15, 23, 42, 0.5);
+}
+
+.accordion-item.active .accordion-header {
+    background: var(--card-hover);
+}
+
+.accordion-item.active .accordion-header::before {
+    transform: scaleY(1);
+}
+
+.accordion-item.active .accordion-header i {
+    transform: rotate(180deg);
+}
+
+.accordion-item.active .accordion-content {
+    max-height: 500px;
+    padding: 0 1.5rem 1.5rem;
+}
+
+.accordion-content p {
+    margin: 0;
+    padding: 1rem 0 0;
+    color: var(--text-secondary);
+}
+
+/* Contact Section */
+.contact-section {
+    text-align: center;
+    margin-top: 3rem;
+    padding: 2rem;
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+}
+
+.contact-section h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #60a5fa 0%, #818cf8 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.contact-section p {
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 1.5rem;
+}
+
+.contact-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    color: white;
+    font-weight: 600;
+    padding: 0.75rem 1.75rem;
+    border-radius: 50px;
     border: none;
-    text-align: left;
-    width: 100%;
-    padding: 15px;
-    font-size: 16px;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
-.accordion-button:focus {
-    outline: none;
+.contact-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
-.accordion-body {
-    padding: 15px;
-    background-color: #fff;
+.contact-button:active {
+    transform: translateY(0);
 }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    main {
+        padding: 1.5rem 1rem;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .accordion-header {
+        padding: 1rem 1.25rem;
+    }
+    
+    .accordion-header h3 {
+        font-size: 1rem;
+    }
+    
+    .accordion-content {
+        padding: 0 1.25rem;
+    }
+    
+    .accordion-item.active .accordion-content {
+        padding: 0 1.25rem 1rem;
+    }
+}
+
+/* Animation for accordion items */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.accordion-item {
+    animation: fadeIn 0.4s ease-out forwards;
+    opacity: 0;
+}
+
+.accordion-item:nth-child(1) { animation-delay: 0.1s; }
+.accordion-item:nth-child(2) { animation-delay: 0.2s; }
+.accordion-item:nth-child(3) { animation-delay: 0.3s; }
+.accordion-item:nth-child(4) { animation-delay: 0.4s; }
+.accordion-item:nth-child(5) { animation-delay: 0.5s; }
+.accordion-item:nth-child(6) { animation-delay: 0.6s; }
+.accordion-item:nth-child(7) { animation-delay: 0.7s; }
+.accordion-item:nth-child(8) { animation-delay: 0.8s; }

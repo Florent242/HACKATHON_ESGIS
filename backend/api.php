@@ -32,11 +32,11 @@ use Auth\Controller\ScoreController;
 try {
 
     // Inclure le fichier autoload de Composer pour charger les variables d'environnement
-    // require_once __DIR__ . '/../vendor/autoload.php';
+    require_once __DIR__ . '/../vendor/autoload.php';
 
     // Charger les variables d'environnement
-    // $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
-    // $dotenv->load();
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
+    $dotenv->load();
 
     // Inclure une seule fois le fichier de configuration
     if (!defined('CONFIG_INCLUDED')) {
@@ -113,7 +113,7 @@ try {
     }
 
     // Initialisation du gestionnaire de token
-    $tokenManager = new TokenManager($key, $db);
+    $tokenManager = new TokenManager($db);
 
     switch ($endpoint) {
         case 'auth':
@@ -312,7 +312,7 @@ try {
                     if (isAjaxRequest()) {
                         jsonResponse([
                             'success' => false,
-                            'error' => 'api.php ' . $e->getMessage()
+                            'error' => 'Erreur au niveau de l\'API ' . $e->getMessage()
                         ], $e->getCode() ?: 401);
                     } else {
                         setFlashMessage('error', 'Erreur de connexion', $e->getMessage());
@@ -341,7 +341,7 @@ try {
                                 if (isAjaxRequest()) {
                                     jsonResponse([
                                         'success' => false,
-                                        'error' => 'api.php ' . $e->getMessage()
+                                        'error' => 'Erreur au niveau de l\'API ' . $e->getMessage()
                                     ], $e->getCode() ?: 404);
                                 } else {
                                     setFlashMessage('error', 'Erreur de connexion', $e->getMessage());
@@ -816,11 +816,11 @@ try {
                     throw new Exception('Méthode non autorisée ou paramètres invalides', 400);
                 }
             } elseif ($id === 'submissions' && is_numeric($action)) {
-                // GET /api/challenges/submissions/{submission_id}
+                // GET /api/challenges/submissions/{submission_id}/{user_id}
                 if ($method === 'GET') {
 
                     // TODO: corriger et adapter le code
-                    $controller->getSubmissionResults($action);
+                    $controller->getSubmissionResults($action, $request[3]);
                 } else {
                     throw new Exception('Méthode non autorisée pour les soumissions', 405);
                 }

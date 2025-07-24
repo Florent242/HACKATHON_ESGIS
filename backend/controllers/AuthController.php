@@ -8,6 +8,7 @@ use Auth\Model\User;
 use Auth\Model\TokenManager;
 use PDO;
 use PDOException;
+use Auth\Model\RedisManager;
 
 if (!class_exists('Auth\Model\TokenManager')) {
     require_once __DIR__ . '/../models/TokenManager.php';
@@ -22,11 +23,12 @@ if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/includes/functions.php';
 }
 
-class AuthController 
+class AuthController
 {
     private $user;
     private $db;
     private $tokenManager;
+    private $redisManager;
 
     public function __construct($db = null)
     {
@@ -41,19 +43,21 @@ class AuthController
         }
 
         $this->user = new User($this->db);
-        $this->tokenManager = new TokenManager($_ENV['JWT_SECRET'] ?? 'your-secret-key', $this->db, [
+        $this->tokenManager = new TokenManager($this->db, [
             'shortTermExpiry' => 3600, // 1 heure
             'longTermExpiry' => 2592000 // 30 jours
         ]);
+        $this->redisManager = new RedisManager();
 
         // Générer un token CSRF s'il n'existe pas
         if (empty($_SESSION['csrf_token'])) {
             $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         }
     }
-    
 
-    public function getCurrentUserId(): ?int {
+
+    public function getCurrentUserId(): ?int
+    {
         try {
             $token = $this->getBearerToken();
             if (!$token) {
@@ -70,7 +74,8 @@ class AuthController
         }
     }
 
-    protected function getBearerToken(): ?string {
+    protected function getBearerToken(): ?string
+    {
         $headers = $this->getAuthorizationHeader();
         if (!empty($headers) && preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
             return $matches[1];
@@ -209,7 +214,7 @@ class AuthController
             "expires" => time() + 60 * 60,
             "path" => "/",
             "httponly" => true,
-            "secure" => false, 
+            "secure" => false,
             "samesite" => "Strict",
         ]);
         return;
@@ -255,7 +260,7 @@ class AuthController
 
             if ($userId) {
                 // Générer un token court terme
-                $token = $this->tokenManager->generateJwt($userId);
+                $token = $this->tokenManager->generateJwt($userId, redis: true);
 
                 // Définir le cookie
                 $this->setAuthCookies($token);
@@ -283,7 +288,9 @@ class AuthController
     public function login()
     {
         try {
-            // Récupérer les données
+            $clientIp = $_SERVER['REMOTE_ADDR'];
+
+            // Identifier l'utilisateur pour bloquer par IP + identifiant
             $data = json_decode(file_get_contents("php://input"), true);
             if ($data === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $data = $_POST;
@@ -293,26 +300,28 @@ class AuthController
                 throw new Exception('Email et mot de passe requis');
             }
 
-            $attemptId = getUserAttemptId($data['identifier']);
-            // Récupérer l'identifiant brut depuis POST ou $data
-            $identifier = isset($_POST['identifier']) ? $_POST['identifier'] : $data['identifier'];
-            $identifier = trim(htmlspecialchars($identifier, ENT_QUOTES, 'UTF-8'));
+            $identifier = trim(htmlspecialchars($data['identifier'], ENT_QUOTES, 'UTF-8'));
+            
+            $redisKey = "login_attempts:{$clientIp}:{$identifier}";
 
-            if (empty($identifier)) {
-                throw new Exception('Identifiant invalide');
+            $attempts = (int) $this->redisManager->get($redisKey);
+            if ($attempts >= 5) {
+                $ttl = $this->redisManager->ttl($redisKey);
+                throw new Exception("Trop de tentatives. Réessayez dans " . ((int)($ttl / 60) < 1 ? "{$ttl} secondes" : (int)($ttl / 60)." minutes."), 401);
             }
 
-            $password = filter_input(INPUT_POST, 'password', FILTER_DEFAULT);
+            $password = $data['password'];
             $rememberMe = isset($data['remember_me']) && $data['remember_me'] === 'on';
 
-            // Authentifier l'utilisateur en verifiant son statut et son mot de passe
-            $user = $this->user->authenticate($identifier, $password);
+            // Authentification
+            $auth = $this->user->authenticate($identifier, $password);
 
-            if (isset($user) && $user) {
+            if ($auth['success']) {
+                $user = $auth['user'];
                 if (session_status() === PHP_SESSION_NONE) {
                     session_start();
                 }
-                // Créer la session
+
                 $_SESSION['user'] = [
                     'id' => $user['id'],
                     'email' => $user['email'],
@@ -321,42 +330,46 @@ class AuthController
                     'last_activity' => time()
                 ];
 
-                // Générer les tokens
-                $token = $this->tokenManager->generateJwt($user['id']);
+                // Génération des tokens
+                $token = $this->tokenManager->generateJwt($user['id'], redis: true);
                 $longTermToken = null;
 
                 if ($rememberMe) {
-                    /**
-                     * TODO: Gérer le refresh token
-                     */
+                    // TODO: Gérer le refresh token
                     $longTermTokenData = $this->tokenManager->generateLongTermToken($user['id']);
                     $longTermToken = $longTermTokenData['token'];
                 }
 
-                // Définir les cookies
+                // Auth cookies
                 $this->setAuthCookies($token, $longTermToken);
 
-                // Réponse JSON
+                // Réinitialiser les tentatives après succès
+                $this->redisManager->delete($redisKey);
+
                 echo json_encode([
                     'success' => true,
                     'token' => $token,
                     'refresh_token' => $longTermToken,
                     'user' => $user,
-                    'message' => 'Connexion reussie',
+                    'message' => 'Connexion réussie',
                     'redirect' => "/user"
                 ]);
                 exit();
             } else {
-                throw new Exception("Email ou mot de passe incorrect.");
+                // Échec : incrémenter les tentatives
+                $this->redisManager->increment($redisKey);
+                $this->redisManager->expire($redisKey, 120); // expire après 10 minutes
+                throw new Exception($auth['error'], 401);
             }
         } catch (Exception $e) {
-            echo json_encode([
+            $this->sendResponse([
                 'success' => false,
                 'message' => $e->getMessage()
-            ]);
+            ], $e->getCode() ?: 400);
             exit();
         }
     }
+
 
     // Traiter la déconnexion
     public function logout()
@@ -365,6 +378,9 @@ class AuthController
             // Révocation des tokens
             if (isset($_COOKIE['long_term_token'])) {
                 $this->tokenManager->revokeToken($_COOKIE['long_term_token']);
+            }
+            if (isset($_COOKIE['jwt_token'])) {
+                $this->tokenManager->revokeToken($_COOKIE['jwt_token'], true);
             }
             $userId = isset($_SESSION['user']) && isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 

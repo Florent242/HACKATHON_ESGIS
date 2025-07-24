@@ -1,4 +1,3 @@
-
 // Initialize Lucide icons
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
@@ -77,17 +76,17 @@ if (heroTitle) {
 function createParticle() {
     const particle = document.createElement('div');
     particle.style.cssText = `
-                position: fixed;
-                width: 2px;
-                height: 2px;
-                background: rgba(59, 130, 246, 0.5);
-                border-radius: 50%;
-                pointer-events: none;
-                z-index: 1;
-                left: ${Math.random() * 100}vw;
-                top: 100vh;
-                animation: float-up ${5 + Math.random() * 10}s linear infinite;
-            `;
+                    position: fixed;
+                    width: 2px;
+                    height: 2px;
+                    background: rgba(59, 130, 246, 0.5);
+                    border-radius: 50%;
+                    pointer-events: none;
+                    z-index: 1;
+                    left: ${Math.random() * 100}vw;
+                    top: 100vh;
+                    animation: float-up ${5 + Math.random() * 10}s linear infinite;
+                `;
 
     document.body.appendChild(particle);
 
@@ -102,11 +101,11 @@ setInterval(createParticle, 2000);
 // Add CSS for particle animation
 const style = document.createElement('style');
 style.textContent = `
-            @keyframes float-up {
-                to {
-                    transform: translateY(-100vh) rotate(360deg);
-                    opacity: 0;
+                @keyframes float-up {
+                    to {
+                        transform: translateY(-100vh) rotate(360deg);
+                        opacity: 0;
+                    }
                 }
-            }
-        `;
+            `;
 document.head.appendChild(style);

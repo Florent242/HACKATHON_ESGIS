@@ -368,7 +368,7 @@ function generateJwtToken($data, $expiration = 3600)
         'exp' => time() + $expiration
     ]));
 
-    $signature = hash_hmac('sha256', "$header.$payload", 'your-secret-key');
+    $signature = hash_hmac('sha256', "$header.$payload", $_ENV['JWT_SECRET'] ?? 'your-secret-key');
 
     return "$header.$payload.$signature";
 }
@@ -378,7 +378,7 @@ function verifyJwtToken($token)
 {
     list($header, $payload, $signature) = explode('.', $token);
 
-    $validSignature = hash_hmac('sha256', "$header.$payload", 'your-secret-key');
+    $validSignature = hash_hmac('sha256', "$header.$payload", $_ENV['JWT_SECRET'] ?? 'your-secret-key');
 
     if ($signature !== $validSignature) {
         return false;

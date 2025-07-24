@@ -733,7 +733,7 @@ document.addEventListener('DOMContentLoaded', async function() {
      */
     async function checkSubmissionResults(submissionId) {
         try {
-            const response = await apiRequest(`/challenges/submissions/${submissionId}`, {
+            const response = await apiRequest(`/challenges/submissions/${submissionId}/${await getUserId()}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

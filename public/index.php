@@ -14,7 +14,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-echo htmlspecialchars($_ENV['JWT_SECRET']);  // Sécurisé pour l'affichage HTML
 // echo print_r($_SESSION, true);
 // Récupérer l'URL demandée (par exemple /home ou /about)
 $url = $_SERVER['REQUEST_URI'] ?? "/";

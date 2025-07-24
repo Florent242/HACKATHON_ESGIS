@@ -7,26 +7,36 @@ use Firebase\JWT\Key;
 use PDO;
 use PDOException;
 use Exception;
+use Auth\Model\RedisManager;
 
 if (!class_exists('Firebase\JWT\JWT')) {
     require_once __DIR__ . '/../../vendor/autoload.php';
 }
 
-class TokenManager 
+if (!class_exists('Auth\Model\RedisManager')) {
+    require_once __DIR__ . '/RedisManager.php';
+}
+
+class TokenManager
 {
     private $key;
     private $db;
     private $algorithm = 'HS256';
     private $domain = 'hackathon.esgis.bj';
     private $shortTermExpiry = 3600; // 1 heure
-
+    private $redis;
 
     private $longTermExpiry = 2592000; // 30 jours
 
-    public function __construct(string $key, PDO $db, array $config = [])
+    public function __construct(PDO $db, array $config = [])
     {
-        $this->key = $key;
+        $this->key = $_ENV['JWT_SECRET'];
         $this->db = $db;
+        try {
+            $this->redis = new RedisManager();
+        } catch (Exception $e) {
+            throw new Exception("Connexion à Redis échouée : " . $e->getMessage());
+        }
 
         $this->algorithm = $config['algorithm'] ?? 'HS256';
         $this->shortTermExpiry = $config['shortTermExpiry'] ?? 3600;
@@ -37,19 +47,28 @@ class TokenManager
         }
     }
 
-    public function generateJwt(int $userId, int $expiryTime = 3600): string
+    public function generateJwt(int $userId, int $expiryTime = 3600, bool $redis = false): string
     {
         $expiryTime = $expiryTime ?? $this->shortTermExpiry;
+        $jti = bin2hex(random_bytes(16)); // ID unique du token
+        $now = time();
         $payload = [
             "iss" => $this->domain,
-            "iat" => time(),
-            "exp" => time() + $expiryTime,
+            "iat" => $now,
+            "exp" => $now + $expiryTime,
             "sub" => $userId,
-            "jti" => bin2hex(random_bytes(16)),
-            "nbf" => time() - 1
+            "jti" => $jti,
+            "nbf" => $now - 1
         ];
 
-        return JWT::encode($payload, $this->key, $this->algorithm);
+        $jwt = JWT::encode($payload, $this->key, $this->algorithm);
+
+        if ($redis) {
+            // Clé: jwt:{jti}, Valeur: userId, TTL: durée du token
+            $this->redis->set("jwt:$jti", $userId, $expiryTime);
+        }
+
+        return $jwt;
     }
 
     public function generateLongTermToken(int $userId): array
@@ -93,10 +112,11 @@ class TokenManager
                 $this->db->rollBack();
             }
             error_log('Erreur de génération de token: ' . $e->getMessage());
-            throw new Exception('Génération de token impossible !'
-            // Pour debuger
-            //  . $e->getMessage()
-        );
+            throw new Exception(
+                'Génération de token impossible !'
+                // Pour debuger
+                //  . $e->getMessage()
+            );
         }
     }
 
@@ -119,10 +139,16 @@ class TokenManager
                 throw new Exception('Invalid issuer');
             }
 
-            if ($decoded->exp < time()) {
-                throw new Exception('Token expiré');
+            // Vérifier si le token est dans redis si le token est de courte durée
+            if ($decoded->exp <= time() + 86400) {
+                $storedUserId = $this->redis->get("jwt:$decoded->jti");
+
+                if (!$storedUserId || (int)$storedUserId !== (int)$decoded->sub) {
+                    throw new Exception('Token invalide ou expiré (Redis)');
+                }
             }
 
+            // Vérifier si le token est dans la base de données si le token est de longue durée
             if ($decoded->exp > time() + 86400) {
                 $stmt = $this->db->prepare(
                     "SELECT * FROM user_tokens 
@@ -140,7 +166,7 @@ class TokenManager
                 $tokenData = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 if (!$tokenData) {
-                    throw new Exception('Token revoked or not found');
+                    throw new Exception('Token revoké ou non trouvé');
                 }
 
                 $currentIp = $_SERVER['REMOTE_ADDR'] ?? '';
@@ -157,7 +183,7 @@ class TokenManager
                         'current_ip' => $currentIp
                     ]);
 
-                    throw new Exception('Security validation failed');
+                    throw new Exception('Validation du token échouée');
                 }
             }
 
@@ -190,10 +216,14 @@ class TokenManager
         }
     }
 
-    public function revokeToken(string $token): bool
+    public function revokeToken(string $token, bool $redis = false): bool
     {
         try {
             $stmt = $this->db->prepare("DELETE FROM user_tokens WHERE token = :token");
+            if ($redis) {
+                $decoded = JWT::decode($token, new Key($this->key, $this->algorithm));
+                $this->redis->delete("jwt:$decoded->jti");
+            }
             return $stmt->execute([':token' => $token]);
         } catch (Exception $e) {
             error_log('Erreur lors de la révocation du token: ' . $e->getMessage());
@@ -223,10 +253,11 @@ class TokenManager
             return $this->generateLongTermToken($tokenData['user_id']);
         } catch (Exception $e) {
             error_log('Refresh token error: ' . $e->getMessage());
-            throw new Exception('Could not refresh token !'
-            // Pour debuger
-            //  . $e->getMessage()
-        );
+            throw new Exception(
+                'Could not refresh token !'
+                // Pour debuger
+                //  . $e->getMessage()
+            );
         }
     }
 
@@ -265,13 +296,14 @@ class TokenManager
         }
     }
 
-    public function getCurrentUserId(): ?int {
+    public function getCurrentUserId(): ?int
+    {
         try {
             $token = $this->getBearerToken();
             if (!$token) {
                 throw new Exception('Token manquant', 401);
             }
-            $tokenValidation = $this->validateToken($token); 
+            $tokenValidation = $this->validateToken($token);
             if (!$tokenValidation['valid']) {
                 throw new Exception('Token invalide: ' . ($tokenValidation['error'] ?? 'Aucun détail'), 401);
             }
@@ -282,7 +314,8 @@ class TokenManager
         }
     }
 
-    protected function getBearerToken(): ?string {
+    protected function getBearerToken(): ?string
+    {
         $headers = $this->getAuthorizationHeader();
         if (!empty($headers) && preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
             return $matches[1];
@@ -296,7 +329,7 @@ class TokenManager
         return null;
     }
 
-        /**
+    /**
      * Récupère le header Authorization
      */
     public function getAuthorizationHeader(): ?string

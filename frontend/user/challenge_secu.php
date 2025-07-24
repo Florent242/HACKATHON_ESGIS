@@ -110,11 +110,11 @@
                                     <span>Statut</span>
                                 </h3>
                                 <div class="filter-buttons" data-type="status">
-                                    <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2">
+                                    <button data-status="solved" class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2">
                                         <i class="w-4 h-4 text-green-400" data-lucide="check-circle"></i>
                                         <span>Résolu</span>
                                     </button>
-                                    <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2">
+                                    <button data-status="unsolved" class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2">
                                         <i class="w-4 h-4 text-red-400" data-lucide="x-circle"></i>
                                         <span>Non résolu</span>
                                     </button>
@@ -250,7 +250,7 @@
 
 
     <!-- Overlay -->
-    <div class="fixed inset-0 bg-black/50 z-10000 backdrop-blur-sm hidden" id="challenge-modal">
+    <div class="fixed inset-0 bg-black/50 z-1000 backdrop-blur-sm hidden" id="challenge-modal">
 
         <!-- Modal -->
         <div id="modal-container" class="fixed z-1000 inset-0 flex items-center justify-center h-fit w-fit mx-auto my-auto max-md:px-6 max-sm:px-4">

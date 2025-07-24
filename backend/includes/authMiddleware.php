@@ -18,13 +18,21 @@ if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/../includes/functions.php';
 }
 
+// Inclure le fichier autoload de Composer pour charger les variables d'environnement
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+// Charger les variables d'environnement
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
+$dotenv->load();
+
+
 class AuthMiddleware
 {
     private $key;
     private $db;
-    public function __construct($key)
+    public function __construct()
     {
-        $this->key = $key;
+        $this->key = $_ENV['JWT_SECRET'] ?? 'your-secret-key';
         $this->db = Database::getInstance()->getConnection();
     }
     public static function checkAuth()
@@ -64,13 +72,12 @@ class AuthMiddleware
                 }
                 $database = Database::getInstance();
                 $db = $database->getConnection();
-                $tokenManager = new TokenManager($_ENV['JWT_SECRET'] ?? 'your-secret-key', $db, [
+                $tokenManager = new TokenManager($db, [
                     'shortTermExpiry' => 3600, // 1 heure
                     'longTermExpiry' => 2592000 // 30 jours
                 ]);
                 $user = $tokenManager->validateToken($token);
-                if(!$user['valid'])
-                {
+                if (!$user['valid']) {
                     self::logout();
                 }
                 // Recréer la session à partir du token
@@ -108,13 +115,12 @@ class AuthMiddleware
                 $token = $_COOKIE['long_term_token'] ?? $_COOKIE['jwt_token'];
                 $database = Database::getInstance();
                 $db = $database->getConnection();
-                $tokenManager = new TokenManager($_ENV['JWT_SECRET'] ?? 'your-secret-key', $db, [
+                $tokenManager = new TokenManager($db, [
                     'shortTermExpiry' => 3600, // 1 heure
                     'longTermExpiry' => 2592000 // 30 jours
                 ]);
                 $user = $tokenManager->validateToken($token);
-                if(!$user['valid'])
-                {
+                if (!$user['valid']) {
                     self::logout();
                 }
                 // Recréer la session à partir du token
@@ -144,13 +150,12 @@ class AuthMiddleware
     {
         $database = Database::getInstance();
         $db = $database->getConnection();
-        $tokenManager = new TokenManager($_ENV['JWT_SECRET'] ?? 'your-secret-key', $db, [
+        $tokenManager = new TokenManager($db, [
             'shortTermExpiry' => 3600, // 1 heure
             'longTermExpiry' => 2592000 // 30 jours
         ]);
         $user = $tokenManager->validateToken($token);
-        if(!$user['valid'])
-        {
+        if (!$user['valid']) {
             self::logout();
         }
         // Recréer la session à partir du token

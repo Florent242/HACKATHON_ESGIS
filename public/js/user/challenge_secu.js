@@ -107,7 +107,7 @@ function showPhaseInactiveState(message = "Les challenges ne sont pas disponible
 
 function showAccessDeniedModal(message) {
     const html = `
-    <div class="flex flex-col items-center justify-center min-h-screen w-full bg-gray-900/90 backdrop-blur-lg fixed inset-0 p-6 text-center z-50">
+    <div class="flex flex-col items-center justify-center min-h-screen w-full bg-gray-900/90 backdrop-blur-lg fixed inset-0 p-6 text-center z-50 ">
         <div class="bg-gray-800/90 border border-gray-700 rounded-xl p-8 max-w-2xl w-full mx-auto shadow-2xl">
             <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-6 mx-auto">
                 <i data-lucide="alert-triangle" class="w-10 h-10 text-red-500"></i>
@@ -373,7 +373,7 @@ function applyFilters() {
         const type = group.getAttribute("data-type");
         const activeBtn = group.querySelector(".filter-btn.active");
         if (activeBtn) {
-            filters[type] = activeBtn.textContent.trim().toLowerCase();
+            filters[type] = activeBtn.getAttribute("data-difficulty")?.trim().toLowerCase() || activeBtn.getAttribute("data-category")?.trim().toLowerCase() || activeBtn.getAttribute("data-status")?.trim().toLowerCase() || activeBtn.textContent.trim().toLowerCase() || "all";
         }
     });
 
@@ -490,7 +490,7 @@ function setupSorting() {
             option.classList.add('active');
 
             // Get the sort direction from data attribute if exists
-            const sortDirection = option.getAttribute('data-direction') || 'asc';
+            const sortDirection = option.getAttribute('data-direction') || 'desc';
 
             // Update sort button text
             sortBtn.querySelector('span').textContent = option.textContent;
@@ -514,7 +514,7 @@ function setupSorting() {
 }
 
 // Function to sort challenges
-function sortChallenges(sortBy, direction = 'asc') {
+function sortChallenges(sortBy, direction = 'desc') {
     const cards = document.querySelectorAll('.cyber-card');
     const sortedCards = Array.from(cards).sort((a, b) => {
         let aValue, bValue;
@@ -524,13 +524,13 @@ function sortChallenges(sortBy, direction = 'asc') {
                 // Tri par date (plus récent en premier)
                 aValue = new Date(a.getAttribute('data-created-at') || '0');
                 bValue = new Date(b.getAttribute('data-created-at') || '0');
-                return direction === 'asc' ? bValue - aValue : aValue - bValue;
+                return direction === 'asc' ? aValue - bValue : bValue - aValue;
 
             case 'most solved':
                 // Tri par nombre de résolutions
                 aValue = parseInt(a.getAttribute('data-hackers') || '0');
                 bValue = parseInt(b.getAttribute('data-hackers') || '0');
-                return direction === 'asc' ? bValue - aValue : aValue - bValue;
+                return direction === 'asc' ? aValue - bValue : bValue - aValue;
 
             case 'difficulty':
                 // Tri par difficulté avec valeurs numériques
@@ -542,7 +542,7 @@ function sortChallenges(sortBy, direction = 'asc') {
                 };
                 aValue = difficultyValues[a.getAttribute('data-difficulty')?.toLowerCase() || 'easy'];
                 bValue = difficultyValues[b.getAttribute('data-difficulty')?.toLowerCase() || 'easy'];
-                return direction === 'asc' ? aValue - bValue : bValue - aValue;
+                return direction === 'desc' ? aValue - bValue : bValue - aValue;
 
             case 'title':
                 // Tri par titre
@@ -675,7 +675,7 @@ function openModal(card) {
     let hints = challengeDetails.hint;
 
     // Si hint est une string JSON, on la parse
-    if (typeof hints === "string") {
+    if (typeof hints === "string" && hints.trim() !== "") {
         try {
             hints = JSON.parse(hints);
         } catch (e) {

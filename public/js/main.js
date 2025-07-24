@@ -127,7 +127,7 @@ let activeNotifications = [];
 const NOTIFICATION_OFFSET = 10; // Espacement entre les notifications en pixels
 
 function updateNotificationsPosition() {
-    let topPosition = 20; // Position de départ en haut
+    let topPosition = 70; // Position de départ en haut
 
     // Parcourir toutes les notifications visibles
     activeNotifications.forEach(notification => {
@@ -189,7 +189,7 @@ function hideError(inputElement, errorElement) {
  */
 function showNotification(message, details = null, type = 'info', duration = 5000) {
     const notification = document.createElement('div');
-    notification.className = `fixed ${type === 'success' ? 'left-1/2 transform -translate-x-1/2' : 'right-4'} bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 flex items-start justify-between gap-3 animate-fade-in z-[1000] cursor-pointer min-h-[60px] w-[35vw] sm:w-[45vw] md:w-[45vw] lg:w-[45vw]`;
+    notification.className = `fixed right-4 bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 max-md:p-2 flex items-start justify-between gap-3 animate-fade-in z-[100000] cursor-pointer min-h-[4rem] max-h-[6rem] w-[45vw] sm:w-[45vw] md:w-[35vw] lg:w-[35vw]`;
 
     let timeoutId;
     const startTimer = () => {
@@ -244,7 +244,7 @@ function showNotification(message, details = null, type = 'info', duration = 500
     // Message de détails (en option)
     if (details) {
         const detailsElement = document.createElement('p');
-        detailsElement.className = 'text-gray-300/90 font-normal text-sm max-md:text-[0.6rem] mt-1 line-clamp-2';
+        detailsElement.className = 'text-gray-300/90 font-normal text-xs max-md:text-[0.6rem] mt-1 line-clamp-2 max-md:line-clamp-3';
         detailsElement.innerText = details;
         detailsElement.title = details;
         textContainer.appendChild(detailsElement);

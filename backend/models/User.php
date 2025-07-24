@@ -30,15 +30,26 @@ class User
                 throw new Exception("L'identifiant ne peut pas être vide.");
             }
 
+            if (empty($password)) {
+                throw new Exception("Le mot de passe ne peut pas être vide.");
+            }
+
+            try {
             $query = "SELECT * FROM {$this->table} WHERE email = :email OR username = :username LIMIT 1";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':email', $identifier);
             $stmt->bindParam(':username', $identifier);
             $stmt->execute();
+            } catch (Exception $e) {
+                throw new Exception("Erreur de l'authentification. " 
+                // pour debuger
+                // . $e->getMessage()
+            );
+            }
 
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$user) {
-                return false;
+                return [ 'success' => false, 'error' => 'Utilisateur non trouvé'];
             }
 
             // Vérifier le statut de l'utilisateur
@@ -48,15 +59,15 @@ class User
 
             if (password_verify($password, $user['password'])) {
                 unset($user['password']); // Ne pas renvoyer le mot de passe
-                return $user;
+                return [ 'success' => true, 'user' => $user];
             }else{
-                return false;
+                return [ 'success' => false, 'error' => 'Mot de passe incorrect'];
             }
 
             // return false;
         } catch (Exception $e) {
             error_log('Erreur d\'authentification: ' . $e->getMessage());
-            return false;
+            return [ 'success' => false, 'error' => $e->getMessage()];
         }
     }
 

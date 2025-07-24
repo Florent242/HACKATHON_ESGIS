@@ -64,8 +64,6 @@ body {
     scroll-behavior: smooth;
     scrollbar-width: none!important; /* Chrome, Edge et Firefox */
     scrollbar-gutter: stable both-edges!important; /* Chrome, Edge et Firefox */
-    /* Empêche le défilement horizontal */
-    /* overflow-x: hidden; */
 }
 
 header {
@@ -101,7 +99,7 @@ header::before {
     padding: 8px 12px;
     border-radius: 4px;
     font-size: 14px;
-    z-index: 10001; /* Augmenté pour passer devant la notification */
+    z-index: 1000;
     max-width: 300px;
     transform: translateX(-50%);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
