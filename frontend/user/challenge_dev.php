@@ -2,186 +2,75 @@
 <html lang="fr">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EsgisHub - Défis de développement</title>
-<!--    <link rel="stylesheet" href="/css/styles/user/challenge_dev.css">-->
-    <link rel="stylesheet" href="/css/styles/user/header.css">
-    <link rel="stylesheet" href="/css/dist/output.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script defer src="/js/user/challenge_dev.js"></script>
-    <style>
-      :root {
-        --background: #0a0f1c;
-        
-        --card-bg: linear-gradient(135deg, #1a1f2b 0%, #141925 100%);
-        --card-hover: #1e293b;
-        --primary: #3b82f6;
-        --primary-dark: #2563eb;
-        --text: #ffffff;
-        --text-secondary: #94a3b8;
-        --border: #2d3441;
-        --green: #22c55e;
-        --yellow: #eab308;
-        --red: #ef4444;
-      }
-      body {
-        background-color: var(--background);
-        color: var(--text);
-      }
-      .bg-card {
-        background: var(--card-bg);
-      }
-      .border-main {
-        border-color: var(--border);
-      }
-      .text-main {
-        color: var(--text);
-      }
-      .text-sec {
-        color: var(--text-secondary);
-      }
-      .bg-primary {
-        background-color: var(--primary);
-      }
-      .hover-bg-primary-dark:hover {
-        background-color: var(--primary-dark);
-      }
-      .progress-bar-bg {
-        background-color: var(--border);
-      }
-      .card {
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        transition: transform 0.2s ease, border-color 0.2s ease,
-          box-shadow 0.2s ease;
-      }
-      .card:hover {
-        transform: translateY(-4px) scale(1.02);
-        border-color: var(--primary);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-      }
-      .custom-btn {
-        transition: transform 0.2s ease, background-color 0.2s ease;
-      }
-      .custom-btn:hover {
-        transform: scale(1.05);
-      }
-      
-      /* Animation d'apparition pour les cartes */
-      @keyframes fadeInUp {
-        from {
-          opacity: 0;
-          transform: translateY(30px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      
-      .challenge-card {
-        animation: fadeInUp 0.6s ease-out forwards;
-        opacity: 0;
-      }
-      
-      .challenge-card:nth-child(1) { animation-delay: 0.1s; }
-      .challenge-card:nth-child(2) { animation-delay: 0.2s; }
-      .challenge-card:nth-child(3) { animation-delay: 0.3s; }
-      .challenge-card:nth-child(4) { animation-delay: 0.4s; }
-      .challenge-card:nth-child(5) { animation-delay: 0.5s; }
-      .challenge-card:nth-child(6) { animation-delay: 0.6s; }
-      .challenge-card:nth-child(7) { animation-delay: 0.7s; }
-      .challenge-card:nth-child(8) { animation-delay: 0.8s; }
-      
-      .tag-category {
-        padding: 4px 12px;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-        font-weight: 500;
-        display: inline-block;
-      }
-      .tag-purple {
-        background-color: rgba(168, 85, 247, 0.1);
-        color: #d8b4fe;
-        border: 1px solid rgba(168, 85, 247, 0.2);
-        box-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
-        text-shadow: 0 0 5px rgba(216, 180, 254, 0.5);
-      }
-      .tag-blue {
-        background-color: rgba(59, 130, 246, 0.1);
-        color: #93c5fd;
-        border: 1px solid rgba(59, 130, 246, 0.2);
-        box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
-        text-shadow: 0 0 5px rgba(147, 197, 253, 0.5);
-      }
-      .tag-green {
-        background-color: rgba(34, 197, 94, 0.1);
-        color: #86efac;
-        border: 1px solid rgba(34, 197, 94, 0.2);
-        box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
-        text-shadow: 0 0 5px rgba(134, 239, 172, 0.5);
-      }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="hackathon-id" content="2">
+  <meta name="phase-id" content="2">
+  <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token']; ?>">
+  <title>EsgisHub - Phase 1 : Challenges Algorithmiques</title>
+  <link rel="stylesheet" href="/css/styles/user/challenge_dev.css">
+  <?php require_once '../includes/user/head.php'; ?>
+  <script defer src="/js/user/challenge_dev.js"></script>
 </head>
 
-<body class="min-h-screen">
-    <?php require_once '../includes/user/header.php'; ?>
+<body class="min-h-screen bg-gradient-dark">
+  <?php require_once '../includes/user/header.php'; ?>
 
-   
-    
-
-    <div class="flex flex-col lg:flex-row max-w-7xl mx-auto mt-6 md:mt-8 gap-6 md:gap-8 px-2 md:px-0">
+  <main class="main-container">
+    <div class="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto px-4 py-6">
       <!-- Sidebar -->
-      <aside class="w-full lg:w-80 flex-shrink-0 flex flex-col gap-6 order-1 lg:order-none">
-        <!-- Performances -->
-        <div class="bg-card rounded-xl p-4 md:p-6 card mb-2">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="text-yellow-400 text-2xl"><i class="w-4 h-4 stroke-current" data-lucide="trophy"></i></span>
-            <span class="font-bold text-lg">Vos performances</span>
-          </div>
-          <div class="text-3xl md:text-4xl font-bold mb-1">320</div>
-          <div class="text-sec text-sm mb-2">points obtenus</div>
-          <div class="mb-3">
-            
-            
-          </div>
-          <div class="flex gap-2 mt-2">
-            <div class="progress-bar-bg rounded px-3 py-1 text-center flex-1">
-              <div class="font-bold text-lg" style="color: var(--green)">3</div>
-              <div class="text-xs text-sec">Résolus</div>
+      <aside class="w-full lg:w-80 flex-shrink-0">
+        <!-- Performance Card -->
+        <div class="dashboard-card performance-card mb-6">
+          <div class="card-header">
+            <div class="header-icon">
+              <i data-lucide="trophy" class="w-5 h-5"></i>
             </div>
-            <div class="progress-bar-bg rounded px-3 py-1 text-center flex-1">
-              <div class="font-bold text-lg" style="color: var(--primary)">
-                #15
+            <h3 class="card-title">Vos Performances</h3>
+          </div>
+          <div class="performance-content">
+            <div class="main-score">
+              <span class="score-value">0</span>
+              <span class="score-label">points obtenus</span>
+            </div>
+            <div class="performance-grid">
+              <div class="perf-item">
+                <div class="perf-value solved">0</div>
+                <div class="perf-label">Résolus</div>
               </div>
-              <div class="text-xs text-sec">Rang</div>
+              <div class="perf-item">
+                <div class="perf-value rank">#0</div>
+                <div class="perf-label">Rang</div>
+              </div>
             </div>
           </div>
         </div>
-        <!-- Règles importantes -->
-        <div class="bg-card rounded-xl p-3 md:p-4 card">
-          <div class="flex items-center gap-2 mb-2">
-            <span style="color: var(--primary); font-size:1rem;"><i class="fa fa-bullseye"></i></span>
-            <span class="font-bold text-base">Règles importantes</span>
+
+        <!-- Rules Card -->
+        <div class="dashboard-card rules-card">
+          <div class="card-header">
+            <div class="header-icon">
+              <i data-lucide="shield-check" class="w-5 h-5"></i>
+            </div>
+            <h3 class="card-title">Règles Importantes</h3>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-            <div style="display: flex; align-items: flex-start; gap: 0.7rem; background: var(--border); border-radius: 0.5rem; padding: 0.7rem 0.8rem;">
-              <div style="background: #193c2e; color: #4ade80; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; border-radius: 0.4rem; font-size: 0.95rem; margin-right: 0.3rem;">
-                <i class="fa fa-code"></i>
+          <div class="rules-content">
+            <div class="rule-item">
+              <div class="rule-icon">
+                <i data-lucide="code" class="w-4 h-4"></i>
               </div>
-              <div>
-                <div style="font-size: 0.95rem; font-weight: 500; color: #bcbcbc;">Langages autorisés :</div>
-                <div style="font-size: 0.98rem; font-weight: 600; color: #fff; margin-top: 0.1rem;">Python, Java, C++,<br>JavaScript</div>
+              <div class="rule-text">
+                <div class="rule-title">Langages autorisés</div>
+                <div class="rule-desc">Python, Java, C++, JavaScript</div>
               </div>
             </div>
-            <div style="display: flex; align-items: flex-start; gap: 0.7rem; background: var(--border); border-radius: 0.5rem; padding: 0.7rem 0.8rem;">
-              <div style="background: #3a2e19; color: #FFD600; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; border-radius: 0.4rem; font-size: 0.95rem; margin-right: 0.3rem;">
-                <i class="fa fa-clock"></i>
+            <div class="rule-item">
+              <div class="rule-icon">
+                <i data-lucide="clock" class="w-4 h-4"></i>
               </div>
-              <div>
-                <div style="font-size: 0.95rem; font-weight: 500; color: #bcbcbc;">Temps d'exécution max :</div>
-                <div style="font-size: 0.98rem; font-weight: 600; color: #fff; margin-top: 0.1rem;">2 secondes par test</div>
+              <div class="rule-text">
+                <div class="rule-title">Temps d'exécution max</div>
+                <div class="rule-desc">2 secondes par test</div>
               </div>
             </div>
           </div>
@@ -189,51 +78,117 @@
       </aside>
 
       <!-- Main Content -->
-      <main class="flex-1 order-0 lg:order-none">
-        <h1 class="text-2xl md:text-3xl font-bold mb-1">
-          Phase 1 : Challenges Algorithmiques
-        </h1>
-        <p class="text-sec mb-4 md:mb-6">
-          Résolvez les défis pour gagner des points et grimper le classement
-        </p>
-        <!-- Search & Filters -->
-        <div class="flex flex-row sm:flex-row gap-2 md:gap-3 mb-6 md:mb-8">
-          <div class="flex-1 relative flex items-center gap-2 bg-card border border-main text-main rounded-lg px-4 py-2">
-            <i class="w-4 h-4 stroke-current" data-lucide="search"></i>
-            <input
-              type="text"
-              placeholder="Rechercher un challenge par mot-clé..."
-              class="w-full placeholder-gray-400 focus:outline-none"
-            />
+      <div class="flex-1 min-w-0">
+        <div class="search-filter-section">
+          <div class="search-container">
+            <div class="search-input-wrapper">
+              <i data-lucide="search" class="search-icon"></i>
+              <input
+                type="text"
+                id="search-input"
+                placeholder="Rechercher un challenge par titre ou description..."
+                class="search-input" />
+            </div>
           </div>
-          <div class="flex gap-2">
-            <button
-              class="custom-btn bg-primary text-white px-4 py-2 rounded-lg font-semibold hover-bg-primary-dark"
-            >
-              Tous
-            </button>
-            <button
-              class="custom-btn bg-card text-main px-4 py-2 rounded-lg font-semibold border border-main hover-bg-primary-dark"
-            >
-              Facile
-            </button>
-            <button
-              class="custom-btn bg-card text-main px-4 py-2 rounded-lg font-semibold border border-main hover-bg-primary-dark"
-            >
-              Moyen
-            </button>
-            <button
-              class="custom-btn bg-card text-main px-4 py-2 rounded-lg font-semibold border border-main hover-bg-primary-dark"
-            >
-              Difficile
-            </button>
+
+          <div class="filter-controls">
+            <div class="filter-group">
+              <button class="filter-btn active" data-filter="all">
+                <i data-lucide="grid-3x3" class="w-4 h-4"></i>
+                Tous
+              </button>
+              <button class="filter-btn" data-filter="easy">
+                <i data-lucide="circle" class="w-4 h-4"></i>
+                Facile
+              </button>
+              <button class="filter-btn" data-filter="medium">
+                <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                Moyen
+              </button>
+              <button class="filter-btn" data-filter="hard">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                Difficile
+              </button>
+            </div>
+
+            <div class="sort-group">
+              <button class="sort-btn" data-sort="points-desc">
+                <i data-lucide="trending-down" class="w-4 h-4"></i>
+                Points ↓
+              </button>
+              <button class="sort-btn" data-sort="difficulty-asc">
+                <i data-lucide="trending-up" class="w-4 h-4"></i>
+                Difficulté ↑
+              </button>
+            </div>
           </div>
         </div>
-        <!-- Challenges Grid -->
-        <div id="challenges-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <!-- Les cartes de challenge seront insérées ici par JavaScript -->
+
+        <div class="results-counter">
+          <div class="results-info">
+            <span class="results-text">
+              <span id="filtered-count">0</span> challenge(s) trouvé(s)
+            </span>
+            <span class="active-filters" id="active-filters-text"></span>
+          </div>
         </div>
-      </main>
+
+        <div class="challenges-section">
+          <div id="challenges-grid" class="challenges-grid">
+            <div class="loading-state">
+              <div class="loading-spinner">
+                <i data-lucide="loader-2" class="w-8 h-8 animate-spin"></i>
+              </div>
+              <p class="loading-text">Chargement des challenges...</p>
+            </div>
+
+            <!-- Empty state -->
+            <div id="challenges-empty-state" class="w-full py-12 hidden items-center justify-center flex-col animate-fade-in">
+              <div class="relative mx-auto flex items-center justify-center">
+                <div class="absolute inset-0 rounded-full bg-blue-500/10 blur-xl animate-pulse-slow"></div>
+                <div class="relative z-10 flex items-center justify-center h-20 w-20 rounded-2xl bg-gradient-to-br from-blue-600/20 to-blue-800/30 backdrop-blur-sm border border-blue-500/20 shadow-lg shadow-blue-500/10 mb-6 animate-pulse-slow">
+                  <i id="empty-icon" data-lucide="shield-question" class="w-10 h-10 text-blue-400"></i>
+                </div>
+              </div>
+
+              <h3 id="empty-title" class="text-2xl font-bold text-white mb-2 text-center">Aucun challenge disponible</h3>
+              <p id="empty-message" class="text-gray-400 text-center max-w-md mb-6 leading-relaxed">
+                Il n'y a pas encore de challenge de sécurité disponible pour le moment. Revenez bientôt pour découvrir de nouveaux défis passionnants !
+              </p>
+
+              <div class="flex flex-col sm:flex-row gap-3">
+                <a href="/user/hackathon"
+                  class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2 group">
+                  <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-0.5"></i>
+                  Voir les hackathons
+                </a>
+                <button onclick="window.location.reload()"
+                  class="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-200 font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2 group">
+                  <i data-lucide="refresh-ccw" class="w-4 h-4 transition-transform group-hover:rotate-180"></i>
+                  Actualiser
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
-  </body>
+  </main>
+
+  <div id="challenge-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Détails du Challenge</h3>
+        <button class="modal-close" id="close-modal">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body">
+      </div>
+    </div>
+  </div>
+
+</body>
+
 </html>

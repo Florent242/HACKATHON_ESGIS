@@ -101,6 +101,7 @@ try {
     $endpoint = $request[0] ?? '';
     $id = $request[1] ?? null;
     $action = $request[2] ?? null;
+    
 
 
     // Lecture des données du corps de la requête
@@ -772,19 +773,19 @@ try {
         case 'challenges':
             $controller = new ChallengeController($db, $tokenManager);
             if ($id === 'algo') {
-                // GET /api/challenges/algo/{hackathon_id}/{user_id}
-                if ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3])) {
-                    $controller->getChallengeAlgo($request[2], $request[3], $request[4] = null);
+                // GET /api/challenges/algo/{hackathon_id}/{user_id}/{phase_id}
+                if ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3]) && isset($request[4]) && is_numeric($request[4])) {
+                    $controller->getChallengeAlgo($request[2], $request[3], $request[4]);
                 } else {
                     throw new Exception('Méthode non autorisée ou paramètres invalides', 400);
                 }
             } elseif ($id === 'dev') {
                 // GET /api/challenges/dev/{hackathon_id}/{user_id}
-                if ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3])) {
-                    $controller->getChallengesDev($request[2], $request[3], $request[4] = null);
+                if ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3]) && isset($request[4]) && is_numeric($request[4])) {
+                    $controller->getChallengesDev($request[2], $request[3], $request[4]);
                 }
                 // POST /api/challenges/dev/{hackathon_id}/{user_id} - pour validation et soumission algorithmique
-                elseif ($method === 'POST' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3])) {
+                elseif ($method === 'POST' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3]) ) {
                     // Vérifier si c'est une validation ou soumission
                     $action = $input['action'] ?? '';
                     $challengeId = $input['challenge_id'] ?? null;
@@ -801,17 +802,17 @@ try {
                 }
             } elseif ($id === 'ctf') {
                 // GET /api/challenges/ctf/{hackathon_id}/{user_id}
-                if ($method === 'GET' && isset($action) && is_numeric($action) && isset($request[3]) && is_numeric($request[3])) {
+                if ($method === 'GET' && isset($action) && is_numeric($action) && isset($request[3]) && is_numeric($request[3]) && isset($request[4]) && is_numeric($request[4])) {
 
-                    $controller->getChallengesCTF($action, $request[3], $request[4] = null);
-                } else if ($method === 'POST' && isset($action) && $action === 'submit') {
+                    $controller->getChallengesCTF($action, $request[3], $request[4]);
+                } else if ($method === 'POST' && isset($action) && $action === 'submit' && isset($request[3]) && is_numeric($request[3]) && isset($request[4]) && is_numeric($request[4])) {
 
-                    if (!isset($request[3]) || !is_numeric($request[3])) {
-                        throw new Exception('ID utilisateur manquant', 400);
+                    if (!isset($request[3]) || !is_numeric($request[3]) || !isset($request[4]) || !is_numeric($request[4])) {
+                        throw new Exception('ID utilisateur ou phase manquants', 400);
                     }
 
                     // POST /api/challenges/ctf/submit/{user_id}
-                    $controller->submitChallengeCTF($request[3], $input, $request[4] = null);
+                    $controller->submitChallengeCTF($request[3], $input, $request[4]);
                 } else {
                     throw new Exception('Méthode non autorisée ou paramètres invalides', 400);
                 }
@@ -964,7 +965,7 @@ try {
             'success' => false,
             'error' => "Une erreure est survenue au niveau de l'API. Veuillez contacter le support technique !",
             // pour debug
-            // 'debug_message' => $e->getMessage(),
+            'debug_message' => $e->getMessage(),
             // 'debug_file' => $e->getFile(),
             // 'debug_line' => $e->getLine(),
             // 'debug_trace' => $e->getTraceAsString()

@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Challenge Yourself</title>
+    <?php require_once '../includes/user/head.php'; ?>
     <link rel="stylesheet" href="/css/styles/user/dashboard.css">
-    <link rel="stylesheet" href="/css/styles/user/header.css">
     <link rel="stylesheet" href="/css/dist/output.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script defer src="/js/user/dashboard.js" type="module"></script>

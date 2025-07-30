@@ -114,11 +114,11 @@ class Challenge
     public function submitChallengeCTF($user_id, $input, $phase_id = null)
     {
         try {
+            $this->db->beginTransaction();
             // Verifier si l'utiisateur est inscrit au hackathon
             if (!$this->isRegistered($user_id, $input['hackathon_id'])) {
                 throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
             }
-            $this->db->beginTransaction();
 
             if (!isset($input['challenge_id']) || !isset($input['flag_value']) || !isset($input['hackathon_id'])) {
                 if ($this->db->inTransaction()) $this->db->rollBack();
@@ -273,6 +273,7 @@ class Challenge
                 ]);
             }
 
+            if ($this->db->inTransaction()) $this->db->commit();
 
             return [
                 'success' => true,
@@ -392,7 +393,7 @@ class Challenge
         }
     }
 
-    public function getchallengeAlgo($hackathon_id, $user_id, $phase_id = null)
+    public function getchallengeAlgo($hackathon_id, $user_id, $phase_id)
     {
         try {
             $sql = "SELECT 
@@ -667,16 +668,16 @@ class Challenge
             FROM challenges c
 
             LEFT JOIN (
-                -- ✅ 1. Algo / Projet / Finale : toutes soumissions acceptées
-                SELECT cs.challenge_id, MAX(cs.points) AS points
+                -- 1. Algo / Projet / Finale : toutes soumissions acceptées
+                SELECT cs.challenge_id, MAX(cs.total_score) AS points
                 FROM challenge_submissions cs
                 WHERE cs.user_id = :user_id
-                AND cs.status = 'active'
+                AND cs.status = 'completed'
                 GROUP BY cs.challenge_id
 
                 UNION
 
-                -- ✅ 2. CTF : flags validés
+                -- 2. CTF : flags validés
                 SELECT vf.challenge_id, SUM(vf.points_gained) AS points
                 FROM validated_flags vf
                 JOIN challenges ctf ON vf.challenge_id = ctf.id
@@ -747,8 +748,8 @@ class Challenge
         FROM phases
         WHERE hackathon_id = :hackathon_id
           AND id = :phase_id
-          AND start_at <= NOW()
-          AND end_at >= NOW()
+          AND start <= NOW()
+          AND end >= NOW()
     ";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
@@ -766,19 +767,366 @@ class Challenge
     }
 
     /**
-     * Récupère tous les tests pour un challenge donné
-     * @param int $challenge_id
+     * MÉTHODES POUR LES DÉFIS ALGORITHMIQUES
+     */
+
+    /**
+     * Récupère un défi algorithmique avec ses cas de test
+     * @param int $challengeId
+     * @param bool $includePrivateTests Inclure les tests privés (pour l'évaluation)
+     * @return array|null
+     */
+    public function findAlgorithmic($challengeId, $includePrivateTests = false)
+    {
+        try {
+            // Récupérer le défi de base
+            $challenge = $this->find($challengeId);
+            if (!$challenge || $challenge['category'] !== 'algo') {
+                return null;
+            }
+
+            // Récupérer les cas de test
+            $testCasesQuery = "
+                SELECT id, input_data, expected_output, is_public, points, timeout_seconds, memory_limit_mb
+                FROM challenge_algo_tests 
+                WHERE challenge_id = :challenge_id
+                " . ($includePrivateTests ? "" : "AND is_public = 1") . "
+                ORDER BY is_public DESC, test_order ASC, id ASC
+            ";
+            
+            $stmt = $this->db->prepare($testCasesQuery);
+            $stmt->execute([':challenge_id' => $challengeId]);
+            $testCases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $challenge['test_cases'] = $testCases;
+            $challenge['public_test_count'] = count(array_filter($testCases, fn($tc) => $tc['is_public']));
+            $challenge['total_test_count'] = count($testCases);
+
+            // Décoder la configuration algorithmique
+            if (!empty($challenge['algo_config'])) {
+                $challenge['algo_config'] = json_decode($challenge['algo_config'], true);
+            }
+
+            return $challenge;
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la recherche du défi algorithmique : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Crée une nouvelle soumission pour un défi algorithmique
+     * @param int $challengeId
+     * @param int $userId
+     * @param int $hackathonId
+     * @param string $language
+     * @param string $sourceCode
+     * @return int ID de la soumission
+     */
+    public function createSubmission($challengeId, $userId, $hackathonId, $language, $sourceCode)
+    {
+        try {
+            // Vérifier que l'utilisateur est inscrit au hackathon
+            if (!$this->isRegistered($userId, $hackathonId)) {
+                throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
+            }
+
+            // Vérifier que le défi existe et est algorithmique
+            $challenge = $this->findAlgorithmic($challengeId);
+            if (!$challenge) {
+                throw new Exception("Défi algorithmique non trouvé !");
+            }
+
+            // Vérifier que le langage est autorisé
+            // $allowedLanguages = explode(',', $challenge['allowed_languages']);
+            // if (!in_array($language, $allowedLanguages)) {
+            //     throw new Exception("Langage de programmation non autorisé pour ce défi !");
+            // }
+
+            $this->db->beginTransaction();
+
+            $stmt = $this->db->prepare("
+                INSERT INTO challenge_submissions 
+                (challenge_id, user_id, hackathon_id, language, code, status, submitted_at)
+                VALUES (:challenge_id, :user_id, :hackathon_id, :language, :source_code, 'pending', NOW())
+            ");
+
+            $stmt->execute([
+                ':challenge_id' => $challengeId,
+                ':user_id' => $userId,
+                ':hackathon_id' => $hackathonId,
+                ':language' => $language,
+                ':source_code' => $sourceCode
+            ]);
+
+            $submissionId = $this->db->lastInsertId();
+            $this->db->commit();
+
+            return $submissionId;
+            
+        } catch (PDOException $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw new Exception("Erreur lors de la création de la soumission : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Met à jour le statut et les résultats d'une soumission
+     * @param int $submissionId
+     * @param string $status
+     * @param float $score
+     * @param int $executionTime
+     * @param int $memoryUsed
+     * @param int $passedTests
+     * @param int $totalTests
+     * @param string|null $errorMessage
+     */
+    public function updateSubmissionResults($submissionId, $status, $score = 0, $executionTime = null, $memoryUsed = null, $passedTests = 0, $totalTests = 0, $errorMessage = null)
+    {
+        try {
+            $stmt = $this->db->prepare("
+                UPDATE challenge_submissions 
+                SET status = :status, 
+                    total_score = :score, 
+                    execution_time_ms = :execution_time, 
+                    memory_used_bytes = :memory_used,
+                    tests_passed = :passed_tests,
+                    total_tests = :total_tests,
+                    error_message = :error_message
+                WHERE id = :submission_id
+            ");
+
+            $stmt->execute([
+                ':submission_id' => $submissionId,
+                ':status' => $status,
+                ':score' => $score,
+                ':execution_time' => $executionTime,
+                ':memory_used' => $memoryUsed,
+                ':passed_tests' => $passedTests,
+                ':total_tests' => $totalTests,
+                ':error_message' => $errorMessage
+            ]);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la mise à jour de la soumission : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Enregistre le résultat d'un cas de test spécifique
+     * @param int $submissionId
+     * @param int $testCaseId
+     * @param string $status 'passed', 'failed', 'timeout', 'error'
+     * @param string|null $actualOutput
+     * @param int|null $executionTime
+     * @param int|null $memoryUsed
+     * @param string|null $errorMessage
+     */
+    public function saveTestCaseResult($submissionId, $testCaseId, $status, $actualOutput = null, $executionTime = null, $memoryUsed = null, $errorMessage = null)
+    {
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO test_case_results 
+                (submission_id, test_case_id, status, actual_output, execution_time_ms, error_message)
+                VALUES (:submission_id, :test_case_id, :status, :actual_output, :execution_time_ms, :error_message)
+                ON DUPLICATE KEY UPDATE
+                status = VALUES(status),
+                actual_output = VALUES(actual_output),
+                execution_time_ms = VALUES(execution_time_ms),
+                error_message = VALUES(error_message)
+            ");
+
+            $stmt->execute([
+                ':submission_id' => $submissionId,
+                ':test_case_id' => $testCaseId,
+                ':status' => $status,
+                ':actual_output' => $actualOutput,
+                ':execution_time_ms' => $executionTime,
+                ':error_message' => $errorMessage
+            ]);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de l'enregistrement du résultat du test : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Calcule le score total d'une soumission basé sur les tests réussis
+     * @param int $submissionId
+     * @return array Score et statistiques
+     */
+    public function calculateSubmissionScore($submissionId)
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT 
+                    COUNT(*) as total_tests,
+                    COUNT(CASE WHEN tcr.status = 'passed' THEN 1 END) as passed_tests,
+                    COALESCE(SUM(CASE WHEN tcr.status = 'passed' THEN cat.points ELSE 0 END), 0) as total_score,
+                    COALESCE(SUM(cat.points), 0) as max_possible_score,
+                    COALESCE(SUM(tcr.execution_time_ms), 0) as total_execution_time
+                FROM test_case_results tcr
+                JOIN challenge_algo_tests cat ON tcr.test_case_id = cat.id
+                WHERE tcr.submission_id = :submission_id
+            ");
+
+            $stmt->execute([':submission_id' => $submissionId]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return [
+                'total_score' => (int)$result['total_score'],
+                'max_possible_score' => (int)$result['max_possible_score'],
+                'passed_tests' => (int)$result['passed_tests'],
+                'total_tests' => (int)$result['total_tests'],
+                'total_execution_time_ms' => (int)$result['total_execution_time'],
+                'max_memory_used_mb' => 0 // Pas de données de mémoire pour l'instant
+            ];
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors du calcul du score : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Récupère la meilleure soumission d'un utilisateur pour un défi
+     * @param int $challengeId
+     * @param int $userId
+     * @return array|null
+     */
+    public function getBestSubmission($challengeId, $userId)
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT cs.*, u.username
+                FROM challenge_submissions cs
+                JOIN users u ON cs.user_id = u.id
+                WHERE cs.challenge_id = :challenge_id 
+                AND cs.user_id = :user_id 
+                AND cs.status = 'completed'
+                ORDER BY cs.score DESC, cs.execution_time ASC
+                LIMIT 1
+            ");
+
+            $stmt->execute([
+                ':challenge_id' => $challengeId,
+                ':user_id' => $userId
+            ]);
+
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la récupération de la meilleure soumission : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Récupère l'historique des soumissions d'un utilisateur pour un défi
+     * @param int $challengeId
+     * @param int $userId
+     * @param int $limit
      * @return array
      */
-    public function getTestsForChallenge($challenge_id) {
+    public function getSubmissionHistory($challengeId, $userId, $limit = 10)
+    {
         try {
-            $sql = "SELECT * FROM challenge_tests WHERE challenge_id = :challenge_id ORDER BY id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(':challenge_id', $challenge_id, PDO::PARAM_INT);
+            $stmt = $this->db->prepare("
+                SELECT cs.*, 
+                       COUNT(tcr.id) as test_results_count,
+                       COUNT(CASE WHEN tcr.status = 'passed' THEN 1 END) as passed_count
+                FROM challenge_submissions cs
+                LEFT JOIN test_case_results tcr ON cs.id = tcr.submission_id
+                WHERE cs.challenge_id = :challenge_id 
+                AND cs.user_id = :user_id
+                GROUP BY cs.id
+                ORDER BY cs.submitted_at DESC
+                LIMIT :limit
+            ");
+
+            $stmt->bindParam(':challenge_id', $challengeId, PDO::PARAM_INT);
+            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
             $stmt->execute();
+
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des tests : " . $e->getMessage());
+            throw new Exception("Erreur lors de la récupération de l'historique : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Récupère le classement pour un défi algorithmique
+     * @param int $challengeId
+     * @param int $limit
+     * @return array
+     */
+    public function getLeaderboard($challengeId, $limit = 50)
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT u.username, 
+                       ubs.best_score as score,
+                       ubs.execution_time,
+                       ubs.memory_used,
+                       ubs.language,
+                       ubs.submitted_at,
+                       ROW_NUMBER() OVER (ORDER BY ubs.best_score DESC, ubs.execution_time ASC) as rank_position
+                FROM user_best_submissions ubs
+                JOIN users u ON ubs.user_id = u.id
+                WHERE ubs.challenge_id = :challenge_id
+                ORDER BY ubs.best_score DESC, ubs.execution_time ASC
+                LIMIT :limit
+            ");
+
+            $stmt->bindParam(':challenge_id', $challengeId, PDO::PARAM_INT);
+            $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la récupération du classement : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Récupère les détails d'une soumission avec les résultats des tests
+     * @param int $submissionId
+     * @param int $userId Vérification de propriété
+     * @return array|null
+     */
+    public function getSubmissionDetails($submissionId, $userId)
+    {
+        try {
+            // Récupérer la soumission
+            $stmt = $this->db->prepare("
+                SELECT cs.*, c.title as challenge_title
+                FROM challenge_submissions cs
+                JOIN challenges c ON cs.challenge_id = c.id
+                WHERE cs.id = :submission_id AND cs.user_id = :user_id
+            ");
+
+            $stmt->execute([
+                ':submission_id' => $submissionId,
+                ':user_id' => $userId
+            ]);
+
+            $submission = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$submission) {
+                return null;
+            }
+
+            // Récupérer les résultats des tests
+            $stmt = $this->db->prepare("
+                SELECT tcr.*, tc.points, tc.is_public
+                FROM test_case_results tcr
+                JOIN challenge_algo_tests tc ON tcr.test_case_id = tc.id
+                WHERE tcr.submission_id = :submission_id
+                ORDER BY tc.is_public DESC, tc.test_order ASC, tc.id ASC
+            ");
+
+            $stmt->execute([':submission_id' => $submissionId]);
+            $testResults = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $submission['test_results'] = $testResults;
+            return $submission;
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la récupération des détails de la soumission : " . $e->getMessage());
         }
     }
 }

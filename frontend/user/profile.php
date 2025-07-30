@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Profil</title>
     <link rel="stylesheet" href="/css/styles/user/profil.css">
-    <link rel="stylesheet" href="/css/styles/user/header.css">
-    <link rel="stylesheet" href="/css/dist/output.css">
+    <?php require_once '../includes/user/head.php'; ?>
     <script defer src="/js/user/profil.js"></script>
     <!-- <script src="https://unpkg.com/lucide@latest"></script> -->
 </head>

@@ -59,7 +59,7 @@ class AdminController extends Controller
     }
     public function validateToken(string $token): array
     {
-        $tokenManager = new TokenManager($this->key, $this->db);
+        $tokenManager = new TokenManager($this->db);
         return $tokenManager->validateToken($token);
     }
     public function getBearerToken(): ?string

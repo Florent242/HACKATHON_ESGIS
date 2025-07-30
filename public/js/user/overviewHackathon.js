@@ -309,16 +309,16 @@ const createHeader = () => {
     const header = document.querySelector('#header');
 
     header.innerHTML = `
-        <div class="flexDiv rounded" style="opacity: 0; transform: translateY(-20px);">
-            <i data-lucide="zap" stroke="#fff"></i>
+        <div class="flexDiv flag">
+            <i data-lucide="zap" class="rounded" stroke="#fff"></i>
             <strong>A venir</strong>
         </div>
 
         <section class="flexDiv w-full" style="opacity: 0; transform: translateY(-30px);">
             <div class="infos">
-               <h1 class="text-2xl font-semibold text-center">${hackathon['name']}</h1>
+               <h1 class="text-2xl font-semibold text-center" style="margin-top:15px;">${hackathon['name']}</h1>
                <div class="flexDiv" style="margin: 30px;">
-                    <i data-lucide="calendar" stroke="#fff"></i>
+                    <i data-lucide="calendar" class="calendar" stroke="#fff"></i>
                     <p>
                         <span>Du</span> <strong>${new Date(hackathon['start_date']).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) + ' à ' + new Date(hackathon['start_date']).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</strong> <span>au</span> <strong>${new Date(hackathon['end_date']).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) + ' à ' + new Date(hackathon['end_date']).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</strong>
                      </p>
@@ -341,10 +341,10 @@ const createHeader = () => {
 const createMain = () => {
     const main = document.querySelector('main');
     main.innerHTML = `
-    <div class="content-container flex flex-col justify-center items-center gap-1" style="width:70%; opacity: 0; transform: scale(0.8);">
+    <div class="content-container flex flex-col justify-center items-center">
         <div class="description card">
             <div class="flexDiv">
-                 <i data-lucide="sparkle" stroke="#fff"></i>
+                 <i class="rounded" data-lucide="sparkle" stroke="#fff"></i>
                 <h2>Description & objectifs</h2>
             </div>
         <p class="flexDiv">${hackathon['description']}</p>
@@ -369,13 +369,13 @@ const createMain = () => {
             <div class="card">
                 <p class="flex justify-center" >
                     <i data-lucide="clock" stroke="var(--blue)" class="bg-[var(--blue-opac)] p-2 rounded" ></i>
-                    <strong class="text-center" style="font-size:1.6em;">Phases du hackathon</strong>
+                    <strong  style="font-size:1.6em;">Phases du hackathon</strong>
                 </p>
 
                 <div class="flex justify-center items-center mt-5">${renderHackathonPhases()}</div>
             </div>
 
-            <div class="card" style="margin:20px 0;">
+            <div class="card" style="margin:10px 0;">
                 <p class="flex justify-center">
                     <i data-lucide="trophy" class="bg-[var(--icon-yellow-bg)] p-2 rounded" stroke="yellow" ></i>
                     <strong style="font-size:1.6em;">Récompenses</strong>
@@ -428,13 +428,12 @@ const createMain = () => {
         </p>
 
         </div>
-
-        <div class="card" style="color:var(--text-secondary); font-size:0.9em; margin-top:20px;">
+        <div class="card deadline">
             <p class="flexDiv" style="transform:translateX(-10px);">
                 <i data-lucide="clock" stroke="white" class="bg-[#c23c3c] p-2 rounded" ></i>
                 <strong style="color:#c23c3c;">Date limite d'inscription:</strong> 
             </p>
-            <strong class="flexDiv" style="margin-left:10px; text-align:center;">${hackathon['registration_deadline'].replace(' ', ' à ')}</strong>
+            <strong class="flexDiv" style="margin:20px auto 0; text-align:center;">${hackathon['registration_deadline'].replace(' ', ' à ')}</strong>
         </div>
     </div>
     `;
@@ -468,7 +467,6 @@ const createModal = (content) => {
             padding: 30px;
             max-width: 600px;
             width: 90%;
-            max-height: 80vh;
             overflow: hidden;
             transform: scale(0.8);
             transition: transform 0.3s ease;

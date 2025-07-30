@@ -29,7 +29,7 @@ const CHALLENGE_ELEMENTS = {
 };
 
 const hackathonId = document.querySelector('meta[name="hackathon-id"]').content;
-const phaseId = document.querySelector('meta[name="phase-id"]').content;
+const   phaseId = document.querySelector('meta[name="phase-id"]').content;
 
 // Fonction utilitaire pour gérer les erreurs
 function handleError(title = 'Une erreur est survenue', error = null, type = 'error') {
@@ -72,7 +72,8 @@ async function loadChallenges() {
         if (!data.success) {
             if (
                 data.status === "phase_inactive" ||
-                data.message?.includes("période de l'événement")
+                data.message?.includes("période de l'événement") ||
+                data.message?.includes("phase")
             ) {
                 showPhaseInactiveState(data.message);
             } else {

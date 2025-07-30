@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Ressources</title>
     <link rel="stylesheet" href="/css/styles/user/ressources.css">
-    <link rel="stylesheet" href="/css/styles/user/header.css">
-    <link rel="stylesheet" href="/css/dist/output.css">
+    <?php require_once '../includes/user/head.php'; ?>
     <script src="/js/user/ressources.js"></script>
 </head>
 

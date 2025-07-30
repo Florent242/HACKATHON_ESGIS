@@ -6,9 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EsgisHub - Hackathons</title>
 
+  <?php require_once '../includes/user/head.php'; ?>
   <link rel="stylesheet" href="/css/styles/user/hackaton.css">
-  <link rel="stylesheet" href="/css/styles/user/header.css">
-  <link rel="stylesheet" href="/css/dist/output.css">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap" rel="stylesheet" />

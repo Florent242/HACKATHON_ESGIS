@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Ajouter les langages autorisés
         allowedLanguages.forEach(lang => {
             const option = document.createElement('button');
-            option.className = 'w-full px-4 py-2 text-sm text-white hover:bg-[#2D3B4E] flex items-center';
+            option.className = 'w-full px-4 py-2 z-10 text-sm text-white hover:bg-[#2D3B4E] flex items-center';
             option.setAttribute('data-language', lang.trim());
             option.innerHTML = `<i class="ri-code-line mr-2"></i>${lang.trim().toUpperCase()}`;
             
@@ -595,6 +595,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function submitChallenge() {
         if (isAlgorithmicChallenge()) {
             await submitFinalSolution();
+            console.log('Soumission du défi algorithmique');
         } else {
             await runAllTests();
         }
@@ -667,6 +668,7 @@ document.addEventListener('DOMContentLoaded', async function() {
      * Soumet la solution finale
      */
     async function submitFinalSolution() {
+        user_id = await getUserId();
         if (!editor) {
             showError('Éditeur non initialisé');
             return;
@@ -696,7 +698,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({
-                    user_id: await getUserId(),
+                    user_id: user_id,
                     hackathon_id: challenge.hackathon_id || 2,
                     challenge_id: challenge.id,
                     code: code,
@@ -766,8 +768,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <div class="flex justify-between items-center">
                     <h3 class="text-lg font-semibold text-white">Validation rapide</h3>
                     <div class="text-sm text-[#94a3b8]">
-                        Score: <span class="text-[#3b82f6] font-bold">${summary.score || 0}%</span> |
-                        Tests: <span class="text-[#22c55e] font-bold">${summary.passed_tests || 0}/${summary.total_tests || 0}</span>
+                        Score: <span class="text-[#3b82f6] font-bold">${data.score || 0} pts</span>
+                        ${data.max_score ? `<span class="text-[#64748b]">/ ${data.max_score} pts</span>` : ''} |
+                        Tests: <span class="text-[#22c55e] font-bold">${data.passed_tests || 0}/${data.total_tests || 0}</span>
                     </div>
                 </div>
                 <p class="text-sm text-[#94a3b8] mt-2">
@@ -809,20 +812,21 @@ document.addEventListener('DOMContentLoaded', async function() {
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                        <span class="text-[#94a3b8]">Score final:</span>
-                        <div class="text-[#3b82f6] font-bold text-lg">${submission.score || 0}%</div>
+                        <span class="text-[#94a3b8]">Score:</span>
+                        <div class="text-[#3b82f6] font-bold text-lg">${submission.total_score || 0} pts</div>
+                        <div class="text-[#64748b] text-xs">sur ${submission.max_score || 0} pts</div>
                     </div>
                     <div>
                         <span class="text-[#94a3b8]">Tests réussis:</span>
-                        <div class="text-[#22c55e] font-bold">${submission.passed_tests}/${submission.total_tests}</div>
+                        <div class="text-[#22c55e] font-bold">${submission.tests_passed || 0}/${submission.total_tests || 0}</div>
                     </div>
                     <div>
                         <span class="text-[#94a3b8]">Temps total:</span>
-                        <div class="text-[#eab308] font-bold">${submission.execution_time}ms</div>
+                        <div class="text-[#eab308] font-bold">${submission.execution_time_ms || 0}ms</div>
                     </div>
                     <div>
-                        <span class="text-[#94a3b8]">Mémoire:</span>
-                        <div class="text-[#a855f7] font-bold">${Math.round((submission.memory_used || 0) / 1024)}KB</div>
+                        <span class="text-[#94a3b8]">Mémoire max:</span>
+                        <div class="text-[#a855f7] font-bold">${submission.memory_used_bytes ? Math.round(submission.memory_used_bytes / 1024) : 0}KB</div>
                     </div>
                 </div>
             </div>

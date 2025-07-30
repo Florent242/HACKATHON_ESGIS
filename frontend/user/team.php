@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Équipes</title>
     <link rel="stylesheet" href="/css/styles/user/teams.css">
-    <link rel="stylesheet" href="/css/styles/user/header.css">
-    <link rel="stylesheet" href="/css/dist/output.css">
+    <?php require_once '../includes/user/head.php'; ?>
 </head>
 
 <body>

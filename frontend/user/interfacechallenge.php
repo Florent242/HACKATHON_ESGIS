@@ -1,442 +1,345 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="<?= $_SESSION["csrf_token"];?>"
- 
-    
-    <!-- CSS -->
-    <link rel="stylesheet" href="/css/styles/user/hackaton.css">
+    <meta name="csrf-token" content="<?= $_SESSION["csrf_token"]; ?>">
+
+    <?php require_once '../includes/user/head.php'; ?>
+
     <link rel="stylesheet" href="/css/styles/user/header.css">
     <link rel="stylesheet" href="/css/dist/output.css">
-    
+    <link rel="stylesheet" href="/css/styles/user/interfacechallenge.css">
+
     <!-- Fonts et Icônes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-    
-    <!-- Scripts Externes -->
-    <script src="https://cdn.tailwindcss.com/3.4.16" defer></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.js" defer></script>
-    
+
     <style>
-        :where([class^="ri-"])::before { content: ""; }
-        
-        /* Styles Responsives */
-        @media (max-width: 640px) {
-            .editor-container { height: 300px; }
-            #consoleOutput { height: 150px; }
-        }
-        @media (min-width: 641px) and (max-width: 1024px) {
-            .editor-container { height: 400px; }
-            #consoleOutput { height: 180px; }
-        }
-        
-        /* Plein écran */
-        .fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 1000;
-            background: var(--background);
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        
-        /* Console */
-        #consoleOutput {
-            height: 200px;
-            overflow-y: auto;
-            font-family: 'Fira Code', monospace;
-        }
-        #consoleOutput::-webkit-scrollbar {
-            width: 8px;
-        }
-        #consoleOutput::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        #consoleOutput::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 4px;
-        }
-        
-        /* Éditeur */
-        .editor-container {
-            height: 500px;
-            width: 100%;
-        }
-        .fullscreen .editor-container {
-            height: calc(100vh - 100px);
-        }
-        
-        /* Variables CSS */
         :root {
-            --background: #030B20;
-            --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
-            --card-hover: #1E293B;
-            --border: #1E293B;
+            /* Couleurs de base du thème */
+            --background: #0A0F1C;
+            --background-secondary: #0D1225;
+            --card-bg: linear-gradient(135deg, #1A1F2B 0%, #141925 100%);
+            --primary: #2563EB;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
             --text: #FFFFFF;
             --text-secondary: #94A3B8;
-            --blue: #3B82F6;
-            --blue-opac: #2564eb25;
-            --primary: #3B82F6;
-            --primary-hover: #2563EB;
-            --green: #22C55E;
-            --yellow: #EAB308;
-            --red: #EF4444;
+            --border: #2D3441;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
-        
+
         body {
-            background-color: var(--background);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: radial-gradient(ellipse at top, rgba(37, 99, 235, 0.1) 0%, transparent 70%),
+                        linear-gradient(180deg, var(--background) 0%, var(--background-secondary) 100%);
             color: var(--text);
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .highlighted {
-            background-color: var(--yellow);
-            color: var(--background);
-            padding: 0 4px;
-            border-radius: 2px;
-        }
-        .comment { color: var(--green); }
-        .keyword { color: #C678DD; }
-        .string { color: #E5C07B; }
-        .danger-indicator {
-            background-color: rgba(239, 68, 68, 0.2);
-            border-left: 4px solid var(--red);
-        }
-
-
-        /* Pour la div des instructions */
-        #objectif-regles, .objectif-regles {
-            min-height: 320px;
-            height: 350px; /* ou la taille souhaitée */
-            max-height: 400px;
-            overflow-y: auto;
-            transition: height 0.3s;
-        }
-
-        /* Grille principale prend toute la hauteur */
-        .main-grid {
             min-height: 100vh;
-            height: 100vh;
+            line-height: 1.6;
         }
 
-        /* Colonne gauche en flex pour coller la console en bas */
-        .main-grid > .flex.flex-col.gap-4 {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        #objectif-regles {
-            flex: 1 1 auto;
-            min-height: 0;
-        }
-        #consoleSection {
-            flex-shrink: 0;
+        .glass-effect {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Console réduite : seule la hauteur change, reste dans le flux */
-        body.console-collapsed #consoleOutput {
-            min-height: 40px !important;
-            max-height: 60px !important;
-            height: 40px !important;
-            font-size: 0.95em;
-            padding: 8px 16px;
-        }
-        body.console-collapsed #consoleSection .flex.items-center.justify-between.mb-4 {
-            margin-bottom: 0;
-            padding: 4px 16px;
-        }
-        body.console-collapsed #consoleSection h2 {
-            font-size: 0.95em;
-        }
-        body.console-collapsed #consoleSection {
-            font-size: 0.95em;
-        }
-        body.console-collapsed #consoleSection {
-            min-height: 40px !important;
-        }
-        body.console-collapsed #consoleSection {
-            margin-bottom: 0 !important;
-        }
-        body.console-collapsed #consoleSection .font-mono {
-            font-size: 0.95em;
-        }
-        /* S'assure que la section d'infos prend tout l'espace restant */
-        body.console-collapsed #objectif-regles {
-            height: auto !important;
-            max-height: none !important;
-            flex: 1 1 0;
-        }
-        body.console-collapsed .main-grid > .flex.flex-col.gap-4 {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        body.console-collapsed #consoleSection {
-            flex-shrink: 0;
+        .glass-effect:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
         }
 
-        /* Pour l'éditeur */
-        .editor-container {
-            height: 260px !important; /* ou h-64 en Tailwind */
-            min-height: 200px;
-            max-height: 300px;
+        .cyber-glow {
+            box-shadow: 0 0 30px rgba(37, 99, 235, 0.3);
         }
 
-        /* Console réduite */
-        body.console-collapsed #consoleSection {
-            position: fixed;
-            left: 0;
-            bottom: 0;
-            width: 100vw;
-            z-index: 1001;
-            box-shadow: 0 -2px 16px rgba(0,0,0,0.15);
-            border-radius: 0;
-            margin: 0;
-            padding: 0;
-        }
-        body.console-collapsed #consoleOutput {
-            min-height: 40px !important;
-            max-height: 60px !important;
-            height: 40px !important;
-            font-size: 0.95em;
-            padding: 8px 16px;
-        }
-        body.console-collapsed #consoleSection .flex.items-center.justify-between.mb-4 {
-            margin-bottom: 0;
-            padding: 4px 16px;
-        }
-        body.console-collapsed #consoleSection h2 {
-            font-size: 0.95em;
-        }
-        body.console-collapsed #consoleSection {
-            background: #10101a;
-            border-top: 1px solid #232e39;
-        }
-        body.console-collapsed #consoleSection {
-            font-size: 0.95em;
-        }
-        body.console-collapsed #consoleSection .rounded {
-            border-radius: 0 !important;
-        }
-        body.console-collapsed #consoleSection {
-            min-height: 40px !important;
-        }
-        body.console-collapsed #consoleSection {
-            margin-bottom: 0 !important;
-        }
-        body.console-collapsed #consoleSection {
-            font-size: 0.95em;
-        }
-        body.console-collapsed #objectif-regles {
-            height: calc(100vh - 60px) !important;
-            max-height: none !important;
+        .loading-shimmer {
+            background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.2), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
         }
 
-        .challenge-info {
-  background: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
-  border-radius: 16px;
-  border: 1px solid #1E293B;
-  padding: 24px 20px;
-  min-height: 320px;
-  max-width: 500px;
-  margin: auto;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
-}
-.challenge-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.difficulty-badge {
-  background: #22C55E;
-  color: #fff;
-  padding: 0.25em 1em;
-  border-radius: 999px;
-  font-size: 0.85em;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(34,197,94,0.15);
-}
-.objectif-section, .regles-section {
-  margin-bottom: 1.5em;
-}
-
-.card {
-  background: #10101a;
-  border: 1px solid #232e39;
-  border-radius: 16px;
-  padding: 1.25rem;
-  margin-bottom: 1rem;
-}
-.challenge-info {
-  max-width: 420px;
-  margin: auto;
-}
-.difficulty-badge {
-  background: #22C55E;
-  color: #fff;
-  padding: 0.25em 1em;
-  border-radius: 999px;
-  font-size: 0.85em;
-  font-weight: 600;
-  box-shadow: 0 2px 8px rgba(34,197,94,0.15);
-}
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
     </style>
 </head>
-<body class="min-h-screen">
-    <!-- Header -->
+
+<body class="min-h-screen text-slate-100 overflow-x-hidden">
     <?php require_once '../includes/user/header.php'; ?>
     
-    <?php
-    $challengeTemplates = [];
+    <!-- Fond animé -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+        <div class="absolute inset-10 bg-gradient-to-r from-primary/10 via-cyan-400/5 to-primary/10 animate-pulse"></div>
+        <div class="absolute inset-0 bg-grid-pattern opacity-5"></div>
+    </div>
 
-    // Templates de code par défaut
-    // $challengeTemplates = [
-    //     "bash" => "#!/bin/bash\n# Votre code Bash ici\necho \"Hello World\"",
-    //     "python" => "# Votre code Python ici\nprint(\"Hello World\")",
-    //     "java" => "// Votre code Java ici\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello World\");\n    }\n}",
-    //     "javascript" => "// Votre code JavaScript ici\nconsole.log(\"Hello World\");",
-    //     "c" => "// Votre code C ici\n#include <stdio.h>\n\nint main() {\n    printf(\"Hello World\");\n    return 0;\n}",
-    //     "cpp" => "// Votre code C++ ici\n#include <iostream>\n\nint main() {\n    std::cout << \"Hello World\";\n    return 0;\n}",
-    //     "php" => "<?php\n// Votre code PHP ici\necho \"Hello World\";",
-    //     "ruby" => "# Votre code Ruby ici\nputs \"Hello World\"",
-    //     "typescript" => "// Votre code TypeScript ici\nconsole.log(\"Hello World\");",
-    //     "pascal" => "// Votre code Pascal ici\nprogram HelloWorld;\nbegin\n  writeln('Hello World');\nend.",
-    //     "golang" => "// Votre code Go ici\npackage main\n\nimport \"fmt\"\n\nfunc main() {\n    fmt.Println(\"Hello World\")\n}"
-    // ];
-    ?>
-    <script>
-        window.challengeTemplates = <?php echo json_encode($challengeTemplates, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
-    </script>
+    <main class="relative z-10 container mx-auto px-4 sm:px-6 py-8 max-w-7xl">
+        <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 min-h-[calc(100vh-140px)]">
 
-    <div class="main-grid grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <!-- Colonne gauche -->
-        <div class="flex flex-col gap-4">
-            <!-- Objectif & Règles -->
-            <div id="objectif-regles" class="bg-gradient-to-br from-[#030B20] to-[#030F2A] rounded p-4 border border-[#1E293B] min-h-[320px] h-[350px] max-h-[400px] overflow-y-auto">
-                <!-- Titre + badge -->
-                <div class="flex items-center justify-between mb-2">
-                    <h1 id="challenge-title" class="text-2xl font-bold text-[#3B82F6]"></h1>
-                    <span id="challenge-difficulty" class="difficulty-badge bg-[#22C55E] text-white px-3 py-1 rounded-full text-xs font-semibold"></span>
-                </div>
-                <!-- Meta infos -->
-                <div class="flex items-center text-xs text-[#94A3B8] mb-2 gap-3">
-                    <span><i class="ri-time-line"></i> <span id="challenge-time">1s</span></span>
-                    <span><i class="ri-database-2-line"></i> <span id="challenge-memory">256MB</span></span>
-                </div>
-                <!-- Carte Objectif -->
-                <div class="objectif-card bg-[#10101a] border border-[#232e39] rounded-xl p-4 mb-4">
-                    <div class="flex items-center mb-2">
-                        <i class="ri-target-line text-[#3B82F6] text-lg mr-2"></i>
-                        <span class="font-semibold text-white">Objectif</span>
-                    </div>
-                    <div id="challenge-description" class="text-white text-sm pl-7"></div>
-                </div>
-                <!-- Carte Règles -->
-                <div class="regles-card bg-[#10101a] border border-[#232e39] rounded-xl p-4">
-                    <div class="flex items-center mb-2">
-                        <i class="ri-check-line text-[#22C55E] text-lg mr-2"></i>
-                        <span class="font-semibold text-white">Règles</span>
-                    </div>
-                    <ul id="challenge-instructions" class="list-disc pl-10 text-[#22C55E] text-sm space-y-1"></ul>
-                </div>
-            </div>
-            <!-- Console de Sortie -->
-            <div id="consoleSection" class="bg-[#030B20] rounded p-4 border border-[#1E293B] relative mt-4 lg:col-span-2 order-last lg:order-none">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center gap-4">
-                        <h2 class="text-sm font-medium text-white">Sortie console</h2>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button id="toggleConsole" class="text-[#94A3B8] hover:text-white text-xl" title="Réduire/agrandir la console">
-                            <i id="toggleConsoleIcon" class="ri-subtract-line"></i>
-                        </button>
-                    </div>
-                </div>
-                <div id="consoleOutput" class="font-mono text-sm space-y-4 bg-[#10101a] rounded p-2 min-h-[150px]">
-                    <div class="text-[#94A3B8]">Prêt à exécuter du code...</div>
-                </div>
-                
-            </div>
-        </div>
-        <!-- Colonne droite -->
-        <div class="flex flex-col gap-4">
-            <!-- Éditeur de Code -->
-            <div class="bg-[#030B20] rounded p-4 border border-[#1E293B]">
-                <div class="flex justify-between items-center mb-4">
-                    <div class="relative">
-                        <button id="languageSelector" class="bg-[#1E293B] rounded px-3 py-1.5 flex items-center min-w-[120px] hover:bg-[#2D3B4E] transition-colors">
-                            <span class="text-[#3B82F6] text-sm">Bash</span>
-                            <i class="ri-arrow-down-s-line ml-2"></i>
-                        </button>
-                        <div id="languageDropdown" class="hidden absolute top-full left-0 mt-1 w-48 bg-[#1E293B] rounded shadow-lg border border-[#2D3B4E] z-10">
-                            <div class="py-1" id="languageDropdownOptions">
-                                <!-- Les boutons seront injectés en JS -->
+            <!-- Colonne gauche - Informations du défi -->
+            <div class="xl:col-span-1 space-y-6">
+
+                <!-- Carte d'informations du défi -->
+                <div class="glass-effect rounded-2xl p-6 animate-fade-in">
+                    <!-- En-tête du défi -->
+                    <div class="pb-6 border-b border-royal-800/50 mb-6">
+                        <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1">
+                                <h2 id="challenge-title" class="text-2xl font-bold bg-gradient-to-r from-cyber-400 to-royal-400 bg-clip-text mb-3">
+                                    Chargement du défi...
+                                </h2>
+                                <div class="flex flex-wrap items-center gap-4 text-sm">
+                                    <div class="flex items-center gap-2 px-3 py-1.5 bg-royal-800/30 rounded-lg">
+                                        <i data-lucide="clock" class="w-4 h-4 text-cyber-400"></i>
+                                        <span id="challenge-time" class="text-slate-300">1s</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 px-3 py-1.5 bg-royal-800/30 rounded-lg">
+                                        <i data-lucide="cpu" class="w-4 h-4 text-cyber-400"></i>
+                                        <span id="challenge-memory" class="text-slate-300">256MB</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse-glow">
+                                <i data-lucide="zap" class="w-4 h-4 inline mr-1"></i>
+                                Facile
                             </div>
                         </div>
                     </div>
-                    <div class="flex space-x-2">
-                        <button id="runCode" class="w-8 h-8 rounded flex items-center justify-center border border-[#22C55E] bg-[#22C55E] text-white hover:bg-[#1EA34A] transition-colors">
-                            <i class="ri-play-fill"></i>
-                        </button>
-                        <button id="resetCode" class="w-8 h-8 rounded flex items-center justify-center border border-[#1E293B] hover:bg-[#2D3B4E] transition-colors">
-                            <i class="ri-refresh-line"></i>
-                        </button>
-                        
+
+                    <!-- Contenu scrollable -->
+                    <div class="space-y-6 max-h-96 overflow-y-auto custom-scrollbar">
+                        <!-- Objectif -->
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyber-400/20 to-royal-500/20 flex items-center justify-center border border-cyber-400/30">
+                                    <i data-lucide="target" class="w-4 h-4 text-cyber-400"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-slate-200 group-hover:text-cyber-400 transition-colors">
+                                    Objectif
+                                </h3>
+                            </div>
+                            <div id="challenge-description" class="text-slate-300 text-sm leading-relaxed space-y-2">
+                                <div class="h-4 bg-slate-700/50 rounded loading-shimmer"></div>
+                                <div class="h-4 bg-slate-700/50 rounded loading-shimmer w-5/6" style="animation-delay: 0.2s;"></div>
+                                <div class="h-4 bg-slate-700/50 rounded loading-shimmer w-3/4" style="animation-delay: 0.4s;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Contraintes -->
+                        <div class="group">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400/20 to-red-500/20 flex items-center justify-center border border-orange-400/30">
+                                    <i data-lucide="shield-alert" class="w-4 h-4 text-orange-400"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-slate-200 group-hover:text-orange-400 transition-colors">
+                                    Contraintes
+                                </h3>
+                            </div>
+                            <ul class="space-y-3">
+                                <li class="flex items-start gap-3 text-slate-300 text-sm">
+                                    <div class="w-2 h-2 rounded-full bg-gradient-to-r from-cyber-400 to-royal-400 mt-2 flex-shrink-0"></div>
+                                    <span>Respecter les limites de temps et mémoire imposées</span>
+                                </li>
+                                <li class="flex items-start gap-3 text-slate-300 text-sm">
+                                    <div class="w-2 h-2 rounded-full bg-gradient-to-r from-cyber-400 to-royal-400 mt-2 flex-shrink-0"></div>
+                                    <span>Gérer correctement tous les cas de test</span>
+                                </li>
+                                <li class="flex items-start gap-3 text-slate-300 text-sm">
+                                    <div class="w-2 h-2 rounded-full bg-gradient-to-r from-cyber-400 to-royal-400 mt-2 flex-shrink-0"></div>
+                                    <span>Écrire un code propre et optimisé</span>
+                                </li>
+                                <li class="flex items-start gap-3 text-slate-300 text-sm">
+                                    <div class="w-2 h-2 rounded-full bg-gradient-to-r from-cyber-400 to-royal-400 mt-2 flex-shrink-0"></div>
+                                    <span>Respecter les spécifications techniques</span>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
-                <div id="monaco-editor" class="editor-container h-[260px] min-h-[200px] max-h-[300px]"></div>
-            </div>
-            <div class="flex gap-4">
-  <!-- Jeu de tests -->
-  <div class="flex-1 bg-[#232e39] rounded border border-[#2d3b4e] p-4 min-w-[300px]">
-    <h2 class="text-base font-semibold text-[#94a3b8] mb-4">Jeu de tests</h2>
-    <div id="testResults" class="space-y-3">
-      <!-- Les résultats des tests apparaîtront ici -->
-      <div class="text-center text-[#94a3b8] py-8">
-        <i class="ri-flask-line text-3xl mb-2"></i>
-        <p>Lancez les tests pour voir les résultats</p>
-      </div>
-    </div>
-  </div>
-  <!-- Actions -->
-  <div class="w-64 bg-[#232e39] rounded border border-[#2d3b4e] p-4 flex flex-col gap-4">
-    <h2 class="text-base font-semibold text-[#94a3b8] mb-4">Actions</h2>
-    <button id="runAllTests" class="w-full bg-[#2d3b4e] text-[#3b82f6] px-4 py-3 rounded whitespace-nowrap flex items-center justify-center font-medium mb-2 hover:bg-[#3b4b5c] transition-colors">
-      <i class="ri-play-fill mr-2"></i>TOUS LES TESTS
-    </button>
-    <button id="submitChallenge" class="w-full bg-[#3b4b5c] text-[#eab308] px-4 py-3 rounded whitespace-nowrap flex items-center justify-center font-medium hover:bg-[#4b5b6c] transition-colors">
-      <i class="ri-check-line mr-2 text-[#eab308]"></i>SOUMETTRE
-    </button>
-    <div class="mt-4 pt-4 border-t border-[#3b4b5c]">
-      <h3 class="text-sm font-medium text-[#94a3b8] mb-2">Informations</h3>
-      <div class="space-y-2 text-xs text-[#6b7280]">
-        <div class="flex justify-between">
-          <span>Langage:</span>
-          <span id="currentLanguage" class="text-[#3b82f6]">-</span>
-        </div>
-        <div class="flex justify-between">
-          <span>Dernière exec:</span>
-          <span id="lastExecution" class="text-[#eab308]">-</span>
-        </div>
-        <div class="flex justify-between">
-          <span>Meilleur score:</span>
-          <span id="bestScore" class="text-[#22c55e]">-</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-        </div>
-    </div>
 
-    <!-- Script Principal -->
+                <!-- Console -->
+                <div id="consoleSection" class="glass-effect rounded-2xl overflow-hidden animate-slide-up" style="animation-delay: 0.4s;">
+                    <div class="bg-royal-900/50 px-6 py-4 flex items-center justify-between border-b border-royal-800/50">
+                        <div class="flex items-center gap-3">
+                            <div class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></div>
+                            <span class="text-sm font-semibold text-slate-200">Console</span>
+                        </div>
+                        <button id="toggleConsole" class="p-2 hover:bg-royal-800/50 rounded-lg transition-colors" aria-label="Réduire/agrandir la console">
+                            <i id="toggleConsoleIcon" data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                        </button>
+                    </div>
+                    <div id="consoleOutput" class="p-6 code-font text-sm min-h-32 max-h-48 overflow-y-auto custom-scrollbar">
+                        <div class="h-full flex flex-col items-center justify-center text-center text-slate-500">
+                            <div class="w-12 h-12 rounded-xl bg-royal-800/30 flex items-center justify-center mb-3">
+                                <i data-lucide="terminal" class="w-6 h-6"></i>
+                            </div>
+                            <span>Console prête pour l'exécution...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colonne droite - Éditeur et tests -->
+            <div class="xl:col-span-3 space-y-6">
+
+                <!-- Éditeur de code -->
+                <div class="glass-effect rounded-2xl overflow-hidden animate-fade-in" style="animation-delay: 0.1s;">
+                    <div class="bg-royal-900/50 px-6 py-4 flex items-center justify-between border-b border-royal-800/50">
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400/20 to-cyan-500/20 flex items-center justify-center border border-blue-400/30">
+                                    <i data-lucide="code-2" class="w-4 h-4 text-blue-400"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-slate-200">Éditeur de code</h3>
+                            </div>
+
+                            <!-- Sélecteur de langage -->
+                            <div class="relative">
+                                <button id="languageSelector" class="flex items-center gap-3 px-4 py-2 bg-royal-800/50 hover:bg-royal-700/50 border border-royal-700/50 rounded-xl transition-all duration-300 group">
+                                    <div class="w-5 h-5 rounded bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+                                        <i data-lucide="code" class="w-3 h-3 text-white"></i>
+                                    </div>
+                                    <span id="languageName" class="text-sm font-medium text-slate-200">Langage</span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 group-hover:text-slate-200 transition-colors"></i>
+                                </button>
+                                <div id="languageDropdown" class="hidden absolute z-20 mt-2 w-48 glass-effect rounded-xl border border-royal-700/50 shadow-2xl">
+                                    <div class="p-2 z-100 relative" id="languageDropdownOptions">
+                                        <!-- Options injectées par JS -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions de l'éditeur -->
+                        <div class="flex items-center gap-2">
+                            <button id="runCode" class="group px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl transition-all duration-300 shadow-lg hover:shadow-emerald-500/25 flex flex-row items-center justify-between gap-2" title="Exécuter le code">
+                                <i data-lucide="play" class="w-4 h-4 text-white"></i>
+                                <span class="text-sm font-medium text-white hidden sm:inline">Exécuter</span>
+                            </button>
+                            <button id="resetCode" class="p-2 bg-royal-800/50 hover:bg-royal-700/50 rounded-xl transition-all duration-300 border border-royal-700/50" title="Réinitialiser l'éditeur">
+                                <i data-lucide="refresh-cw" class="w-4 h-4 text-orange-400"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Éditeur Monaco -->
+                    <div id="monaco-editor" class="h-96 bg-royal-950/50"></div>
+                </div>
+
+                <!-- Panneau de tests et résultats -->
+                <div class="glass-effect rounded-2xl overflow-hidden animate-slide-up" style="animation-delay: 0.3s;">
+                    <div class="bg-royal-900/50 px-6 py-4 flex items-center justify-between border-b border-royal-800/50">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-400/20 to-pink-500/20 flex items-center justify-center border border-purple-400/30">
+                                <i data-lucide="flask-conical" class="w-4 h-4 text-purple-400"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold text-slate-200">Tests & Validation</h3>
+                        </div>
+                        <div class="flex items-center gap-2 text-sm text-slate-400">
+                            <div class="w-2 h-2 rounded-full bg-slate-600"></div>
+                            <span>En attente</span>
+                        </div>
+                    </div>
+
+                    <!-- Contenu des tests -->
+                    <div id="testResults" class="p-6 min-h-64 max-h-96 overflow-y-auto custom-scrollbar">
+                        <div class="h-full flex flex-col items-center justify-center text-center text-slate-500">
+                            <div class="w-16 h-16 rounded-2xl bg-royal-800/30 flex items-center justify-center mb-4">
+                                <i data-lucide="flask-conical" class="w-8 h-8"></i>
+                            </div>
+                            <h4 class="text-lg font-semibold text-slate-300 mb-2">Prêt pour les tests</h4>
+                            <p class="text-sm">Lancez l'exécution pour voir les résultats de validation</p>
+                        </div>
+                    </div>
+
+                    <!-- Boutons d'action -->
+                    <div class="p-6 border-t border-royal-800/50 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button id="runAllTests" class="group relative overflow-hidden px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/25">
+                            <div class="flex items-center justify-center gap-3 relative z-10">
+                                <i data-lucide="play-circle" class="w-5 h-5 text-white"></i>
+                                <div class="text-left">
+                                    <div class="text-sm font-semibold text-white">Tester la solution</div>
+                                    <div class="text-xs text-blue-100">Validation rapide</div>
+                                </div>
+                            </div>
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                        </button>
+
+                        <button id="submitChallenge" class="group relative overflow-hidden px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl transition-all duration-300 shadow-lg hover:shadow-emerald-500/25">
+                            <div class="flex items-center justify-center gap-3 relative z-10">
+                                <i data-lucide="send" class="w-5 h-5 text-white"></i>
+                                <div class="text-left">
+                                    <div class="text-sm font-semibold text-white">Soumettre</div>
+                                    <div class="text-xs text-emerald-100">Validation finale</div>
+                                </div>
+                            </div>
+                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Custom scrollbar styles -->
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.3);
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.7);
+        }
+    </style>
+
+    <!-- Scripts -->
+    <script>
+        // Ajouter les animations au scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-fade-in');
+                }
+            });
+        }, observerOptions);
+
+        // Observer tous les éléments avec animation
+        document.querySelectorAll('.glass-effect').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+
+    <!-- Script principal -->
     <script src="/js/user/interfacechallenge.js" defer></script>
 </body>
+
 </html>

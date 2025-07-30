@@ -10,8 +10,7 @@
     
     <!-- CSS personnalisé -->
     <link rel="stylesheet" href="/css/styles/user/leaderboard.css">
-    <link rel="stylesheet" href="/css/styles/user/header.css">
-    <link rel="stylesheet" href="/css/dist/output.css">
+    <?php require_once '../includes/user/head.php'; ?>
     
     <!-- JavaScript personnalisé -->
     <script defer src="/js/user/leaderboard.js"></script>
@@ -23,70 +22,77 @@
     <!-- Container principal -->
     <div class="leaderboard-container max-w-7xl mx-auto p-4 md:p-6 lg:p-8" data-refresh="30s">
         
-        <!-- Header avec titre et info contextuelles -->
-        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
-            <div>
-                <h1 class="text-3xl md:text-4xl font-bold text-white mb-2 flex items-center gap-3">
-                    <span class="text-4xl animate-glow rounded-lg p-2 bg-blue-900/20"><i data-lucide="trophy" class="text-yellow-400"></i></span>
-                    Classement en direct
-                </h1>
-                <p class="text-gray-400 text-sm md:text-base">Suivez les performances des équipes en temps réel</p>
-            </div>
-            
-            <!-- Encart d'information -->
-            <div class="card-bg rounded-xl p-4 shadow-lg min-w-[280px]">
-                <div class="text-sm text-gray-300 space-y-2">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i>
-                        <span class="font-medium">Événement:</span>
-                        <span id="current-event" class="text-white">Sélectionner un hackathon</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="clock" class="w-4 h-4 text-green-400"></i>
-                        <span class="font-medium">Phase:</span>
-                        <span id="current-phase" class="text-white">Aucune phase</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="timer" class="w-4 h-4 text-yellow-400"></i>
-                        <span class="font-medium">Temps restant:</span>
-                        <span id="countdown" class="text-white font-mono">--:--:--</span>
+        <!-- En-tête -->
+        <div class="mb-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <!-- Titre principal -->
+                <div class="space-y-1">
+                    <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+                        <i data-lucide="trophy" class="w-8 h-8 text-yellow-400"></i>
+                        <span>Classement en direct</span>
+                    </h1>
+                    <p class="text-blue-200/80 text-sm pl-11">Suivez les performances des équipes en temps réel</p>
+                </div>
+                
+                <!-- Informations -->
+                <div class="bg-blue-950/50 rounded-lg p-3 border border-blue-800/50">
+                    <div class="grid grid-cols-1 gap-2 text-sm">
+                        <div class="flex items-center gap-2 text-blue-100">
+                            <i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i>
+                            <span>Événement: <span id="current-event" class="font-medium">Sélectionner un hackathon</span></span>
+                        </div>
+                        <div class="flex items-center gap-2 text-blue-100">
+                            <i data-lucide="layers" class="w-4 h-4 text-purple-400"></i>
+                            <span>Phase: <span id="current-phase" class="font-medium">Aucune phase</span></span>
+                        </div>
+                        <div class="flex items-center gap-2 text-blue-100">
+                            <i data-lucide="clock" class="w-4 h-4 text-yellow-400"></i>
+                            <span>Temps restant: <span id="countdown" class="font-mono font-medium">--:--:--</span></span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
         
         <!-- Sélecteurs -->
-        <div class="card-bg rounded-xl p-6 shadow-lg mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-blue-950/40 rounded-xl p-5 border border-blue-800/30 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <!-- Sélecteur d'événement -->
-                <div class="space-y-2">
-                    <label for="event-select" class="text-sm font-medium text-gray-300 flex items-center gap-2">
-                        <i data-lucide="trophy" class="w-4 h-4 text-yellow-400"></i>
-                        Hackathon
+                <div>
+                    <label for="event-select" class="block text-sm font-medium text-blue-200 mb-1.5">
+                        Sélectionnez un hackathon
                     </label>
-                    <select id="event-select" class="w-full px-4 py-3 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-800 text-white transition-all duration-200 hover:border-blue-500">
-                        <option value="" disabled selected class="bg-gray-800">Choisir un hackathon</option>
-                        <option value="1" class="bg-gray-800"><i data-lucide="lock"></i>HackSec CTF</option>
-                        <option value="2" class="bg-gray-800"><i data-lucide="laptop"></i>HackDev</option>
-                    </select>
+                    <div class="relative">
+                        <select id="event-select" class="w-full px-4 py-2.5 pr-10 text-sm border border-blue-800/50 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 bg-blue-900/30 text-white transition-all duration-150 appearance-none cursor-pointer">
+                            <option value="" disabled selected class="bg-blue-950 text-blue-300">Choisir un hackathon</option>
+                            <option value="1" class="bg-blue-950 text-white hover:bg-blue-800 transition-all duration-150">HackSec CTF</option>
+                            <option value="2" class="bg-blue-950 text-white hover:bg-blue-800 transition-all duration-150">HackDev</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-blue-400"></i>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Sélecteur de phase -->
-                <div class="space-y-2">
-                    <label for="phase-select" class="text-sm font-medium text-gray-300 flex items-center gap-2">
-                        <i data-lucide="layers" class="w-4 h-4 text-purple-400"></i>
-                        Phase
+                <div>
+                    <label for="phase-select" class="block text-sm font-medium text-blue-200 mb-1.5">
+                        Sélectionnez une phase
                     </label>
-                    <select id="phase-select" class="w-full px-4 py-3 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-800 text-white transition-all duration-200 hover:border-blue-500" disabled>
-                        <option disabled selected class="bg-gray-800">Choisir une phase</option>
-                        <option value="1" class="bg-gray-800"><i data-lucide="lock"></i>Phase 1</option>
-                    </select>
+                    <div class="relative">
+                        <select id="phase-select" class="w-full px-4 py-2.5 pr-10 text-sm border border-blue-800/50 rounded-lg focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500 bg-blue-900/30 text-white transition-all duration-150 appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed" disabled>
+                            <option value="" disabled selected class="bg-blue-950 text-blue-300 hover:bg-blue-800 transition-all duration-150">Choisir une phase</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-blue-400"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
             
-            <!-- Indicateur de chargement pour les sélecteurs -->
+            <!-- Indicateur de chargement -->
             <div id="selector-loading" class="hidden mt-4 flex items-center gap-2 text-sm text-blue-300">
-                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400"></div>
+                <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-400"></div>
                 <span>Chargement des phases...</span>
             </div>
         </div>

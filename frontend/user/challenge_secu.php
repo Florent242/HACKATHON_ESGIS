@@ -9,8 +9,7 @@
     <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token']; ?>">
     <title>EsgisHub - Challenges</title>
     <link rel="stylesheet" href="/css/styles/user/challenge_secu.css">
-    <link rel="stylesheet" href="/css/styles/user/header.css">
-    <link rel="stylesheet" href="/css/dist/output.css">
+    <?php require_once '../includes/user/head.php'; ?>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script defer type="module" src="/js/user/challenge_secu.js"></script>
 </head>

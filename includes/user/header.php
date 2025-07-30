@@ -7,17 +7,7 @@ if (!isset($_SESSION['csrf_token'])) {
 }
 
 ?>
-<head>
-    <link rel="stylesheet" href="/css/styles/user/header.css">
-    <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token']; ?>">
-    <link rel="shortcut icon" href="/assets/20ans-gold.png" type="image/x-icon">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<script>
-    // Rendre le token CSRF disponible globalement pour JavaScript
-    window.csrfToken = '<?php echo $_SESSION['csrf_token']; ?>';
-</script>
-<script defer type="module" src="/js/user/header.js"></script>
+
 <!-- Modal -->
 <div id="fenetre_modal" class="mymodal">
     <div class="modal_content">

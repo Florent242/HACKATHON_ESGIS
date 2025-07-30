@@ -8,6 +8,7 @@ const CONFIG = {
     hacksec_id: 1,
     hackdev_id: 2,
     REFRESH_INTERVAL: 15000, // 15 secondes
+    STORAGE_KEY: 'leaderboard_preferences',
     ENDPOINTS: {
         PHASES: '/scores/',
         LEADERBOARD: `/scores/`
@@ -46,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setupEventListeners();
     updateTimestamp();
     startAutoRefresh();
-
+    applySavedPreferences();
     console.log('Leaderboard application initialized successfully');
 });
 
@@ -97,6 +98,49 @@ function setupEventListeners() {
 }
 
 /**
+ * Sauvegarde les préférences dans le localStorage
+ */
+function savePreferences() {
+    const preferences = {
+        eventId: AppState.currentEvent,
+        phaseId: AppState.currentPhase
+    };
+    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(preferences));
+}
+
+/**
+ * Charge les préférences depuis le localStorage
+ * @returns {Object|null} Les préférences sauvegardées ou null si non trouvées
+ */
+function loadPreferences() {
+    const saved = localStorage.getItem(CONFIG.STORAGE_KEY);
+    return saved ? JSON.parse(saved) : null;
+}
+
+/**
+ * Applique les préférences sauvegardées
+ */
+function applySavedPreferences() {
+    const prefs = loadPreferences();
+    if (prefs && prefs.eventId) {
+        // On sélectionne l'événement sauvegardé
+        DOM.eventSelect.value = prefs.eventId;
+        // On déclenche le changement d'événement
+        const event = new Event('change');
+        DOM.eventSelect.dispatchEvent(event);
+        
+        // Une fois que les phases sont chargées, on sélectionne la phase sauvegardée
+        setTimeout(() => {
+            if (prefs.phaseId) {
+                DOM.phaseSelect.value = prefs.phaseId;
+                const phaseEvent = new Event('change');
+                DOM.phaseSelect.dispatchEvent(phaseEvent);
+            }
+        }, 500);
+    }
+}
+
+/**
  * Gère le changement d'événement
  */
 async function handleEventChange(event) {
@@ -109,6 +153,7 @@ async function handleEventChange(event) {
     }
 
     AppState.currentEvent = eventId;
+    savePreferences();
     updateCurrentEventDisplay();
 
     try {
@@ -136,6 +181,7 @@ async function handlePhaseChange(event) {
     }
 
     AppState.currentPhase = phaseId;
+    savePreferences();
     updateCurrentPhaseDisplay();
 
     try {
@@ -217,10 +263,10 @@ function populatePhaseSelector(phases) {
     if (!DOM.phaseSelect) {console.error('Phase select element not found'); return;}
 
     // Vider le sélecteur
-    DOM.phaseSelect.innerHTML = '<option disabled selected>Choisir une phase</option>';
+    DOM.phaseSelect.innerHTML = '<option disabled selected class="bg-blue-950 text-white hover:bg-blue-800 transition-all duration-150">Choisir une phase</option>';
 
     if (phases.length === 0) {
-        DOM.phaseSelect.innerHTML = '<option disabled>Aucune phase disponible</option>';
+        DOM.phaseSelect.innerHTML = '<option disabled class="bg-blue-950 text-white hover:bg-blue-800 transition-all duration-150">Aucune phase disponible</option>';
         DOM.phaseSelect.disabled = true;
         return;
     }
@@ -230,6 +276,7 @@ function populatePhaseSelector(phases) {
         const option = document.createElement('option');
         option.value = phase.id;
         option.textContent = phase.name;
+        option.className = 'bg-blue-950 text-white hover:bg-blue-800 transition-all duration-150';
         DOM.phaseSelect.appendChild(option);
     });
 
@@ -291,12 +338,12 @@ function createLeaderboardRow(team, rank) {
     teamCell.innerHTML = `
         <div class="flex items-center">
             <div class="flex-shrink-0 h-10 w-10">
-                <div class="h-10 w-10 rounded-full bg-gradient-to-r from-pink-500 to-violet-500 bg-clip flex items-center justify-center">
+                <div class="h-10 w-10 rounded-full bg-gradient-to-r from-pink-500/90 to-violet-500/90 bg-clip flex items-center justify-center">
                     <i data-lucide="users" class="w-5 h-5 text-white"></i>
                 </div>
             </div>
             <div class="ml-4">
-                <div class="text-base font-medium ${rank === 1 ? 'bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent' : 'text-white'}">${team.name}</div>
+                <div class="text-base ${rank === 1 ? 'bg-gradient-to-r from-blue-500 to-violet-500 bg-clip-text text-transparent font-extrabold' : 'text-white font-normal'}">${team.name}</div>
                 <div class="text-sm text-gray-400">${team.members ? team.members + ' membres' : ''}</div>
             </div>
         </div>
@@ -690,9 +737,9 @@ function debugState() {
 }
 
 // Exposition des fonctions utiles pour le développement
-window.LeaderboardApp = {
-    debugState,
-    showNotification,
-    loadLeaderboard: (eventId, phaseId) => loadLeaderboard(eventId, phaseId),
-    updateTimestamp
-};
+// window.LeaderboardApp = {
+//     debugState,
+//     showNotification,
+//     loadLeaderboard: (eventId, phaseId) => loadLeaderboard(eventId, phaseId),
+//     updateTimestamp
+// };

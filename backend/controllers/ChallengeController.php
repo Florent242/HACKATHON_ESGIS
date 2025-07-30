@@ -95,6 +95,16 @@ class ChallengeController extends Controller
                 throw new Exception('user_id et flag_value sont requis');
             }
 
+            // Vérifier si la phase est active
+            if ($phase_id !== null && !$this->challenge->isPhaseActive($input['hackathon_id'], $phase_id)) {
+                throw new Exception("Cette phase n'est pas active actuellement !");
+            }
+
+            // Vérifier si la période du hackathon est active
+            if (!$this->challenge->isChallengeLaunchPeriod($input['hackathon_id'])) {
+                throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
+            }
+
             // Appel à la méthode qui gère toute la logique (valide ou non, dynamique, etc)
             $result = $this->challenge->submitChallengeCTF($user_id, $input, $phase_id);
 
@@ -119,7 +129,7 @@ class ChallengeController extends Controller
         }
     }
 
-    public function getChallengeAlgo($hackathon_id, $user_id, $phase_id = null)
+    public function getChallengeAlgo($hackathon_id, $user_id, $phase_id)
     {
 
         try {
@@ -308,5 +318,288 @@ class ChallengeController extends Controller
                 'error' => $e->getMessage()
             ], 400);
         }
+    }
+
+    /**
+     * MÉTHODES POUR LES DÉFIS ALGORITHMIQUES
+     */
+
+    /**
+     * Récupère un défi algorithmique avec ses cas de test publics
+     * GET /api/challenges/algorithmic/{id}
+     */
+    public function getAlgorithmic($challengeId)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            // Vérifier l'authentification (token Bearer ou session)
+            $userId = $this->tokenManager->getCurrentUserId();
+            
+            // Si pas de token valide, essayer l'authentification par session
+            if (!$userId) {
+                if (session_status() === PHP_SESSION_NONE) {
+                    session_start();
+                }
+                
+                if (!isset($_SESSION['user_id'])) {
+                    throw new Exception('Authentification requise', 401);
+                }
+                
+                $userId = $_SESSION['user_id'];
+            }
+
+            // Récupérer le défi avec les cas de test publics seulement
+            $challenge = $this->challenge->findAlgorithmic($challengeId, false);
+            if (!$challenge) {
+                throw new Exception('Défi algorithmique non trouvé', 404);
+            }
+
+            // Récupérer la meilleure soumission de l'utilisateur s'il y en a une
+            $bestSubmission = $this->challenge->getBestSubmission($challengeId, $userId);
+            
+            // Récupérer l'historique des soumissions
+            $history = $this->challenge->getSubmissionHistory($challengeId, $userId, 5);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => [
+                    'challenge' => $challenge,
+                    'best_submission' => $bestSubmission,
+                    'submission_history' => $history,
+                    'user_id' => $userId
+                ]
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * Soumet une solution pour un défi algorithmique
+     * POST /api/challenges/algorithmic/{id}/submit
+     */
+    public function submitAlgorithmic($challengeId)
+    {
+        try {
+            $this->validateMethod('POST');
+
+            // Authentification JWT pure
+            $token = $this->getBearerToken();
+            if (!$token) {
+                throw new Exception('Token JWT requis dans le header Authorization', 401);
+            }
+
+           // TODO: retirer et mettre pluto une autre methode de recuperation de l'utilisateur
+           
+
+            // Récupérer les données de la soumission
+            $input = $this->getJsonInput();
+            
+            
+            if (!isset($input['code']) || !isset($input['hackathon_id'])) {
+                throw new Exception('source manque', 400);
+            }
+            if (!isset($input['language']) || !isset($input['code']) || !isset($input['hackathon_id'])) {
+                throw new Exception('Données de soumission incomplètes', 400);
+            }
+
+            $language = trim($input['language']);
+            $sourceCode = trim($input['code']);
+            $hackathonId = (int)$input['hackathon_id'];
+            $userId=(int)$input['user_id'];
+            // Validation basique du code
+            if (empty($sourceCode)) {
+                throw new Exception('Le code source ne peut pas être vide', 400);
+            }
+
+            if (strlen($sourceCode) > 50000) { // Limite de 50KB
+                throw new Exception('Le code source est trop volumineux (max 50KB)', 400);
+            }
+
+            // Créer la soumission
+            $submissionId = $this->challenge->createSubmission(
+                $challengeId, 
+                $userId, 
+                $hackathonId, 
+                $language, 
+                $sourceCode 
+            );
+
+            // Démarrer l'évaluation en arrière-plan
+            $this->startEvaluation($submissionId);
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Code soumis avec succès ! Évaluation en cours...',
+                'data' => [
+                    'submission_id' => $submissionId,
+                    'status' => 'pending'
+                ]
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * Récupère les résultats d'une soumission
+     * GET /api/challenges/submissions/{submissionId}/{user_id}
+     */
+    public function getSubmissionResults($submissionId, $userId)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            // Vérifier l'authentification
+            $token = $this->getBearerToken();
+            if (!$token) {
+                throw new Exception('Token manquant', 401);
+            }
+
+            // Récupérer les détails de la soumission
+            $submission = $this->challenge->getSubmissionDetails($submissionId, $userId);
+            if (!$submission) {
+                throw new Exception('Soumission non trouvée', 404);
+            }
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $submission
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * Récupère le classement d'un défi algorithmique
+     * GET /api/challenges/algorithmic/{id}/leaderboard
+     */
+    public function getAlgorithmicLeaderboard($challengeId)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            $leaderboard = $this->challenge->getLeaderboard($challengeId, 50);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $leaderboard
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * Démarre l'évaluation d'une soumission
+     * @param int $submissionId
+     */
+    private function startEvaluation($submissionId)
+    {
+        try {
+            // Charger le service de validation
+            require_once __DIR__ . '/../services/ChallengeValidationService.php';
+            $validationService = new \Auth\Service\ChallengeValidationService($this->db, $this->challenge);
+
+            // Marquer la soumission comme en cours d'évaluation
+            $this->challenge->updateSubmissionResults($submissionId, 'running');
+
+            // Lancer l'évaluation
+            $results = $validationService->validateSubmission($submissionId);
+
+            return $results;
+        } catch (Exception $e) {
+            // En cas d'erreur, marquer la soumission comme échouée
+            $this->challenge->updateSubmissionResults(
+                $submissionId, 
+                'error', 
+                0, 
+                null, 
+                null, 
+                0, 
+                0, 
+                'Erreur interne: ' . $e->getMessage()
+            );
+            throw $e;
+        }
+    }
+
+    /**
+     * Validation rapide du code (tests publics seulement)
+     * POST /api/challenges/algorithmic/{id}/validate
+     */
+    public function validateCode($challengeId)
+    {
+        try {
+            $this->validateMethod('POST');
+
+            // Authentification JWT pure
+            $token = $this->getBearerToken();
+            if (!$token) {
+                throw new Exception('Token JWT requis dans le header Authorization', 401);
+            }
+
+         
+            // Récupérer les données
+            $input = $this->getJsonInput();
+            
+            if (!isset($input['language']) || !isset($input['code'])) {
+                throw new Exception('Langage et code requis', 400);
+            }
+
+            $language = trim($input['language']);
+            $code = trim($input['code']);
+
+            if (empty($code)) {
+                throw new Exception('Le code ne peut pas être vide', 400);
+            }
+
+            // Charger le service de validation
+            require_once __DIR__ . '/../services/ChallengeValidationService.php';
+            $validationService = new \Auth\Service\ChallengeValidationService($this->db, $this->challenge);
+
+            // Valider contre les tests publics
+            $results = $validationService->validateCode($challengeId, $code, $language);
+
+            $this->jsonResponse([
+                'success' => $results['success'],
+                'data' => $results
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 400);
+        }
+    }
+
+    /**
+     * Récupère les données JSON de la requête
+     */
+    private function getJsonInput()
+    {
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            // Si ce n'est pas du JSON valide, essayer $_POST
+            return $_POST;
+        }
+        
+        return $data ?: [];
     }
 }
