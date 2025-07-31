@@ -1,682 +1,543 @@
-console.log('interfacechallenge.js loaded');
-document.addEventListener('DOMContentLoaded', async function() {
-    const challenge_id = window.location.pathname.split('/').pop();
-
-    // Charger le défi
-    try {
-        console.log('Chargement du défi ID:', challenge_id);
-        
-        // D'abord essayer de charger comme défi classique
-        const response = await apiRequest(`/challenges/${challenge_id}`, {
-            method: "GET",
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-            }
-        });
-        
-        console.log('Réponse défi:', response);
-        
-        if (response && (response.data || response.challenge)) {
-            const challengeData = response.data || response.challenge;
-            
-            // Vérifier si c'est un défi algorithmique (type=dev, category=algo)
-            if (challengeData.type === 'dev' && challengeData.category === 'algo') {
-                // Pour les défis algorithmiques, on a besoin de données supplémentaires
-                await loadAlgorithmicChallengeData(challenge_id, challengeData);
-            } else {
-                initializeClassicInterface(response);
-            }
-        } else {
-            throw new Error('Aucune donnée de défi reçue');
+document.addEventListener('DOMContentLoaded', async function () {
+    // ===== ÉTAT GLOBAL DE L'APPLICATION =====
+    const AppState = {
+        challenge: null,
+        editor: null,
+        currentLanguage: 'python',
+        isConsoleExpanded: true,
+        isLoading: false,
+        challengeTemplates: {},
+        userData: {
+            id: null,
+            csrf_token: null
         }
+    };
+
+    // ===== INITIALISATION PRINCIPALE =====
+    try {
+        await initializeApplication();
     } catch (error) {
-        console.error('Erreur lors du chargement du défi:', error);
-        showError('Impossible de charger le défi: ' + error.message);
+        console.error('Erreur lors de l\'initialisation de l\'application:', error);
+        showError('Erreur lors du chargement de l\'interface');
+    }
+
+    // ===== FONCTIONS D'INITIALISATION =====
+    async function initializeApplication() {
+        console.log('Initialisation de l\'application...');
         
-        // Essayer une dernière fois avec une approche plus simple
+        // Récupérer les données utilisateur et CSRF token
+        await initializeUserData();
+        
+        // Initialiser l'interface utilisateur
+        initializeUIComponents();
+        
+        // Charger les données du challenge
+        const challengeId = extractChallengeId();
+        await loadChallengeData(challengeId);
+        
+        // Initialiser Monaco Editor
+        await initializeMonacoEditor();
+        
+        // Configurer les gestionnaires d'événements
+        setupEventListeners();
+        
+        console.log('Application initialisée avec succès');
+    }
+
+    async function initializeUserData() {
         try {
-            console.log('Tentative de récupération simple...');
-            const simpleResponse = await fetch(`/api/challenges/${challenge_id}`, {
-                method: 'GET',
+            AppState.userData.id = await getUserId();
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            AppState.userData.csrf_token = csrfMeta ? csrfMeta.getAttribute('content') : null;
+            console.log('Données utilisateur initialisées:', AppState.userData);
+        } catch (error) {
+            console.error('Erreur lors de la récupération des données utilisateur:', error);
+        }
+    }
+
+    function extractChallengeId() {
+        return window.location.pathname.split('/').pop();
+    }
+
+    function initializeUIComponents() {
+        // Initialiser les tooltips
+        initializeTooltips();
+        
+        // Configurer le panneau console
+        setupConsolePanel();
+        
+        // Configurer les états initiaux
+        updateLoadingState(false);
+    }
+
+    function initializeTooltips() {
+        const tooltipElements = document.querySelectorAll('[data-tooltip]');
+        tooltipElements.forEach(el => {
+            el.addEventListener('mouseenter', showTooltip);
+            el.addEventListener('mouseleave', hideTooltip);
+        });
+    }
+
+    function setupConsolePanel() {
+        const toggleConsole = document.getElementById('toggleConsole');
+        const consoleOutput = document.getElementById('consoleOutput');
+
+        if (toggleConsole && consoleOutput) {
+            toggleConsole.addEventListener('click', () => {
+                AppState.isConsoleExpanded = !AppState.isConsoleExpanded;
+                consoleOutput.style.display = AppState.isConsoleExpanded ? 'block' : 'none';
+                toggleConsole.classList.toggle('rotate');
+                lucide.createIcons();
+            });
+        }
+    }
+
+    // ===== CHARGEMENT DES DONNÉES DU CHALLENGE =====
+    async function loadChallengeData(challengeId) {
+        if (!challengeId) {
+            throw new Error('ID de challenge manquant');
+        }
+
+        updateLoadingState(true, 'Chargement du défi...');
+        
+        try {
+            console.log('Chargement du défi ID:', challengeId);
+            
+            const response = await apiRequest(`/challenges/${challengeId}`, {
+                method: "GET",
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                 }
             });
-            
-            if (simpleResponse.ok) {
-                const data = await simpleResponse.json();
-                console.log('Réponse simple:', data);
-                if (data && data.data) {
-                    initializeClassicInterface(data);
-                }
-            } else {
-                console.error('Erreur HTTP:', simpleResponse.status, simpleResponse.statusText);
+
+            if (!response || (!response.data && !response.challenge)) {
+                throw new Error('Aucune donnée de défi reçue');
             }
-        } catch (fallbackError) {
-            console.error('Erreur fallback:', fallbackError);
-        }
-    }
 
-    /**
-     * Charge les données supplémentaires pour un défi algorithmique
-     */
-    async function loadAlgorithmicChallengeData(challengeId, challengeData) {
-        try {
-            // Ici on pourrait charger des données supplémentaires comme les cas de test,
-            // l'historique des soumissions, etc. via des routes spécifiques
-            
-            // Pour l'instant, initialisons avec les données de base
-            const algorithmicData = {
-                challenge: challengeData,
-                best_submission: null,
-                submission_history: [],
-                test_cases: [] // Les cas de test pourraient être dans le challenge lui-même
-            };
-            
-            initializeAlgorithmicInterface(algorithmicData);
+            const challengeData = response.data || response.challenge;
+            AppState.challenge = challengeData;
+
+            // Initialiser l'interface selon le type de challenge
+            if (challengeData.type === 'dev' && challengeData.category === 'algo') {
+                await initializeAlgorithmicInterface(challengeData);
+            } else {
+                await initializeClassicInterface(challengeData);
+            }
+
         } catch (error) {
-            // console.error('Erreur lors du chargement des données algorithmiques:', error);
-            // Fallback vers l'interface classique
-            initializeClassicInterface({ data: challengeData });
+            console.error('Erreur lors du chargement du défi:', error);
+            
+            // Essayer une approche de fallback
+            try {
+                const fallbackResponse = await fetch(`/api/challenges/${challengeId}`, {
+                    method: 'GET',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                if (fallbackResponse.ok) {
+                    const data = await fallbackResponse.json();
+                    if (data && data.data) {
+                        AppState.challenge = data.data;
+                        await initializeClassicInterface(data.data);
+                        return;
+                    }
+                }
+            } catch (fallbackError) {
+                console.error('Erreur fallback:', fallbackError);
+            }
+            
+            throw error;
+        } finally {
+            updateLoadingState(false);
         }
     }
 
-    /**
-     * Initialise l'interface pour les défis algorithmiques
-     */
-    function initializeAlgorithmicInterface(data) {
-        const challenge = data.challenge;
-        const bestSubmission = data.best_submission;
-        const history = data.submission_history;
-
+    async function initializeAlgorithmicInterface(challengeData) {
+        console.log('Initialisation interface algorithmique');
+        
         // Afficher les informations du défi
-        document.getElementById('challenge-title').textContent = challenge.title;
-        document.getElementById('challenge-difficulty').textContent = challenge.difficulty.toUpperCase();
-        document.getElementById('challenge-time').textContent = (challenge.time_limit / 1000) + 's';
-        document.getElementById('challenge-memory').textContent = challenge.memory_limit + 'MB';
-        document.getElementById('challenge-description').innerHTML = challenge.instructions || challenge.description;
-
-        // Configurer les langages autorisés
-        setupLanguageSelector(challenge.allowed_languages.split(','));
-
-        // Afficher les cas de test publics
-        displayPublicTestCases(challenge.test_cases);
-
-        // Afficher l'historique si disponible
-        if (history && history.length > 0) {
-            displaySubmissionHistory(history);
+        updateChallengeDisplay(challengeData);
+        
+        // Configurer les langages et templates
+        if (challengeData.snippets && challengeData.snippets.length > 0) {
+            setupLanguageConfiguration(challengeData.snippets[0]);
+        } else {
+            setupDefaultLanguages();
         }
-
-        // Afficher le meilleur score si disponible
-        if (bestSubmission) {
-            displayBestSubmission(bestSubmission);
-        }
-
+        
         // Configurer les boutons spécifiques aux défis algorithmiques
         setupAlgorithmicButtons();
     }
 
-    /**
-     * Initialise l'interface classique (non algorithmique)
-     */
-    function initializeClassicInterface(response) {
-        console.log('Initialisation interface classique:', response);
-        const challenge = response.data || response;
+    async function initializeClassicInterface(challengeData) {
+        console.log('Initialisation interface classique');
         
         // Afficher les informations du défi
-        if (challenge.title) {
-            const titleElement = document.getElementById('challenge-title');
-            if (titleElement) titleElement.textContent = challenge.title;
+        updateChallengeDisplay(challengeData);
+        
+        // Configurer les snippets pour l'interface classique
+        if (challengeData.snippets && challengeData.snippets.length > 0) {
+            setupLanguageConfiguration(challengeData.snippets[0]);
+        } else {
+            setupDefaultLanguages();
         }
-        
-        if (challenge.difficulty) {
-            const difficultyElement = document.getElementById('challenge-difficulty');
-            if (difficultyElement) difficultyElement.textContent = challenge.difficulty.toUpperCase();
-        }
-        
-        if (challenge.description) {
-            const descElement = document.getElementById('challenge-description');
-            if (descElement) descElement.innerHTML = challenge.description;
-        }
-        
-        // Gestion des snippets pour l'interface classique
-        setupClassicSnippets(challenge);
-    }
-    
-    /**
-     * Configure les snippets pour l'interface classique
-     */
-    function setupClassicSnippets(challenge) {
-        console.log('Configuration des snippets:', challenge);
-        
-        // Attendre que Monaco soit initialisé
-        setTimeout(() => {
-            // Vérifier s'il y a des snippets
-            if (challenge && challenge.snippets && challenge.snippets.length > 0) {
-                const snippet = challenge.snippets[0];
-                const availableLangs = Object.keys(snippet).filter(lang =>
-                    ['bash','java','js','python','c','cpp','csharp','php','ruby','typescript','pascal','golang'].includes(lang)
-                    && snippet[lang] && snippet[lang].trim() !== ''
-                );
-
-                console.log('Langages disponibles:', availableLangs);
-
-                // Génère les boutons dans le menu déroulant
-                const dropdownOptions = document.getElementById('languageDropdownOptions') || document.getElementById('languageDropdown');
-                if (dropdownOptions) {
-                    dropdownOptions.innerHTML = availableLangs.map(lang =>
-                        `<button class="w-full px-4 py-2 text-sm text-white hover:bg-[#2D3B4E] flex items-center" data-language="${lang}">
-                            <i class="ri-code-line mr-2"></i>${lang.toUpperCase()}
-                        </button>`
-                    ).join('');
-                }
-
-                // Met à jour le mapping des templates pour Monaco
-                const templates = {};
-                availableLangs.forEach(lang => {
-                    // Remap 'js' en 'javascript' pour Monaco si besoin
-                    if (lang === 'js') {
-                        templates['javascript'] = snippet[lang];
-                    } else {
-                        templates[lang] = snippet[lang];
-                    }
-                });
-                window.challengeTemplates = templates;
-
-                // Met à jour le label du sélecteur avec le premier langage dispo
-                const selectorLabel = document.querySelector('#languageSelector span');
-                if (selectorLabel && availableLangs.length > 0) {
-                    selectorLabel.textContent = availableLangs[0].toUpperCase();
-                    // Initialise Monaco avec ce template
-                    if (window.initMonaco) {
-                        const monacoLang = getMonacoLanguage(availableLangs[0]);
-                        window.initMonaco(monacoLang, templates[availableLangs[0]] || '');
-                    }
-                }
-
-                // Ajoute les listeners sur les nouveaux boutons
-                setupLanguageOptions(templates);
-            } else {
-                console.log('Aucun snippet trouvé, utilisation des langages par défaut');
-                // Utiliser une configuration par défaut
-                setupDefaultLanguages();
-            }
-        }, 100);
     }
 
-    /**
-     * Configure le sélecteur de langage pour les défis algorithmiques
-     */
-    function setupLanguageSelector(allowedLanguages) {
-        const selector = document.getElementById('languageSelector');
-        const dropdown = document.getElementById('languageDropdown');
+    // ===== AFFICHAGE DES DONNÉES DU CHALLENGE =====
+    function updateChallengeDisplay(challengeData) {
+        // Mise à jour du titre
+        const titleElement = document.getElementById('challenge-title');
+        if (titleElement && challengeData.title) {
+            titleElement.textContent = challengeData.title;
+        }
+
+        // Mise à jour de la difficulté
+        const difficultyElement = document.getElementById('challenge-difficulty');
+        if (difficultyElement && challengeData.difficulty) {
+            difficultyElement.innerHTML = `
+                <i data-lucide="zap" class="w-3 h-3"></i>
+                <span>${challengeData.difficulty.charAt(0).toUpperCase() + challengeData.difficulty.slice(1)}</span>
+            `;
+            lucide.createIcons();
+        }
+
+        // Mise à jour des contraintes de temps et mémoire
+        updateConstraintsDisplay(challengeData);
+
+        // Mise à jour de la description
+        const descElement = document.getElementById('challenge-description');
+        if (descElement && challengeData.description) {
+            descElement.innerHTML = challengeData.description;
+        }
+
+        // Mise à jour des instructions
+        const instructionsElement = document.getElementById('challenge-instructions');
+        if (instructionsElement && challengeData.instructions) {
+            const instructions = Array.isArray(challengeData.instructions) 
+                ? challengeData.instructions.join('\n') 
+                : challengeData.instructions;
+            instructionsElement.innerHTML = instructions || 'Aucune instruction fournie';
+        }
+    }
+
+    function updateConstraintsDisplay(challengeData) {
+        // Temps limite
+        const timeElement = document.getElementById('challenge-time');
+        if (timeElement) {
+            const timeLimit = challengeData.time_limit 
+                ? (challengeData.time_limit / 1000) + 's' 
+                : '1s';
+            timeElement.querySelector('span').textContent = timeLimit;
+        }
+
+        // Limite mémoire
+        const memoryElement = document.getElementById('challenge-memory');
+        if (memoryElement) {
+            const memoryLimit = challengeData.memory_limit 
+                ? challengeData.memory_limit + 'MB' 
+                : '1MB';
+            memoryElement.querySelector('span').textContent = memoryLimit;
+        }
+    }
+
+    // ===== CONFIGURATION DES LANGAGES =====
+    function setupLanguageConfiguration(snippetData) {
+        const availableLanguages = extractAvailableLanguages(snippetData);
         
-        if (!selector || !dropdown) {
-            // Créer le sélecteur s'il n'existe pas
-            createLanguageSelector(allowedLanguages);
+        if (availableLanguages.length === 0) {
+            console.warn('Aucun langage disponible, utilisation des langages par défaut');
+            setupDefaultLanguages();
             return;
         }
 
-        // Nettoyer les options existantes
-        dropdown.innerHTML = '';
+        // Créer les templates
+        AppState.challengeTemplates = createLanguageTemplates(snippetData, availableLanguages);
+        
+        // Configurer le sélecteur de langage
+        setupLanguageSelector(availableLanguages);
+        
+        console.log('Langages configurés:', availableLanguages);
+    }
 
-        // Ajouter les langages autorisés
-        allowedLanguages.forEach(lang => {
-            const option = document.createElement('button');
-            option.className = 'w-full px-4 py-2 z-10 text-sm text-white hover:bg-[#2D3B4E] flex items-center';
-            option.setAttribute('data-language', lang.trim());
-            option.innerHTML = `<i class="ri-code-line mr-2"></i>${lang.trim().toUpperCase()}`;
-            
-            option.addEventListener('click', function() {
-                selectLanguage(lang.trim());
-                dropdown.classList.add('hidden');
-            });
-            
-            dropdown.appendChild(option);
+    function extractAvailableLanguages(snippetData) {
+        const supportedLanguages = ['bash', 'java', 'js', 'python', 'c', 'cpp', 'csharp', 'php', 'ruby', 'typescript', 'pascal', 'golang'];
+        
+        return supportedLanguages.filter(lang => 
+            snippetData[lang] && snippetData[lang].trim() !== ''
+        );
+    }
+
+    function createLanguageTemplates(snippetData, availableLanguages) {
+        const templates = {};
+        
+        availableLanguages.forEach(lang => {
+            templates[lang] = snippetData[lang];
+            // Mapping spécial pour JavaScript
+            if (lang === 'js') {
+                templates['javascript'] = snippetData[lang];
+            }
+        });
+        
+        return templates;
+    }
+
+    function setupDefaultLanguages() {
+        const defaultLangs = ['python', 'javascript', 'java', 'cpp', 'bash', 'php', 'ruby', 'go', 'c', 'csharp', 'typescript', 'pascal'];
+        const templates = {};
+
+        defaultLangs.forEach(lang => {
+            templates[lang] = getDefaultTemplate(lang);
         });
 
-        // Sélectionner le premier langage par défaut
-        if (allowedLanguages.length > 0) {
-            selectLanguage(allowedLanguages[0].trim());
+        AppState.challengeTemplates = templates;
+        setupLanguageSelector(defaultLangs);
+    }
+
+    function setupLanguageSelector(availableLanguages) {
+        const dropdown = document.getElementById('languageDropdown');
+        if (!dropdown) {
+            console.warn('Dropdown de langages non trouvé');
+            return;
         }
 
-        // Gérer le toggle du dropdown
-        selector.addEventListener('click', function(e) {
+        // Nettoyer et remplir le dropdown
+        dropdown.innerHTML = availableLanguages.map(lang => `
+            <button class="w-full px-4 py-2 text-sm text-white hover:bg-slate-700/50 rounded-lg flex items-center gap-2 transition-colors" 
+                    data-language="${lang}">
+                <i data-lucide="code" class="w-4 h-4"></i>
+                <span>${lang.toUpperCase()}</span>
+            </button>
+        `).join('');
+
+        // Configurer les événements
+        setupLanguageDropdownEvents();
+        
+        // Sélectionner le premier langage par défaut
+        if (availableLanguages.length > 0) {
+            selectLanguage(availableLanguages[0]);
+        }
+        
+        // Rafraîchir les icônes
+        lucide.createIcons();
+    }
+
+    function setupLanguageDropdownEvents() {
+        const selector = document.getElementById('languageSelector');
+        const dropdown = document.getElementById('languageDropdown');
+
+        if (!selector || !dropdown) return;
+
+        // Toggle dropdown
+        selector.addEventListener('click', (e) => {
             e.stopPropagation();
             dropdown.classList.toggle('hidden');
         });
 
-        document.addEventListener('click', function() {
+        // Fermer en cliquant ailleurs
+        document.addEventListener('click', () => {
             dropdown.classList.add('hidden');
         });
-    }
 
-    /**
-     * Crée le sélecteur de langage s'il n'existe pas
-     */
-    function createLanguageSelector(allowedLanguages) {
-        // Logique pour créer le sélecteur dynamiquement
-        const editorContainer = document.querySelector('.bg-\\[\\#030B20\\].rounded.p-4.border.border-\\[\\#1E293B\\]');
-        if (!editorContainer) return;
-
-        const selectorHtml = `
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-semibold text-white">Éditeur de Code</h2>
-                <div class="relative">
-                    <button id="languageSelector" class="bg-[#2D3B4E] text-white px-4 py-2 rounded flex items-center space-x-2 hover:bg-[#3B4B5C] transition-colors">
-                        <i class="ri-code-line"></i>
-                        <span>${allowedLanguages[0]?.toUpperCase() || 'PYTHON'}</span>
-                        <i class="ri-arrow-down-s-line"></i>
-                    </button>
-                    <div id="languageDropdown" class="absolute right-0 mt-2 w-48 bg-[#2D3B4E] border border-[#3B4B5C] rounded-lg shadow-lg z-10 hidden">
-                        ${allowedLanguages.map(lang => `
-                            <button class="w-full px-4 py-2 text-sm text-white hover:bg-[#3B4B5C] flex items-center" data-language="${lang.trim()}">
-                                <i class="ri-code-line mr-2"></i>${lang.trim().toUpperCase()}
-                            </button>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const existingHeader = editorContainer.querySelector('.flex.justify-between.items-center.mb-4');
-        if (existingHeader) {
-            existingHeader.outerHTML = selectorHtml;
-        } else {
-            editorContainer.insertAdjacentHTML('afterbegin', selectorHtml);
-        }
-
-        // Reconfigurer les événements
-        setupLanguageSelector(allowedLanguages);
-    }
-
-    /**
-     * Sélectionne un langage de programmation
-     */
-    function selectLanguage(language) {
-        const label = document.querySelector('#languageSelector span');
-        if (label) {
-            label.textContent = language.toUpperCase();
-        }
-
-        // Initialiser Monaco avec le bon langage
-        const monacoLang = getMonacoLanguage(language);
-        const template = getLanguageTemplate(language);
-        window.initMonaco(monacoLang, template);
-    }
-
-    /**
-     * Retourne le langage Monaco correspondant
-     */
-    function getMonacoLanguage(language) {
-        const langMap = getMonacoLanguageMap();
-        return langMap[language] || 'plaintext';
-    }
-
-    /**
-     * Retourne un template par défaut pour un langage
-     */
-    function getLanguageTemplate(language) {
-        const templates = {
-            python: '# Votre code Python ici\nprint("Hello World")',
-            javascript: '// Votre code JavaScript ici\nconsole.log("Hello World");',
-            java: 'public class Solution {\n    public static void main(String[] args) {\n        System.out.println("Hello World");\n    }\n}',
-            cpp: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World" << endl;\n    return 0;\n}',
-            bash: '#!/bin/bash\n# Votre script bash ici\necho "Hello World"'
-        };
-        return templates[language] || '// Template non disponible pour ce langage';
-    }
-    
-    /**
-     * Configuration par défaut des langages
-     */
-    function setupDefaultLanguages() {
-        const defaultLangs = ['python', 'javascript', 'java', 'cpp', 'bash'];
-        const templates = {};
-        
-        defaultLangs.forEach(lang => {
-            templates[lang] = getLanguageTemplate(lang);
+        // Sélection de langage
+        dropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const button = e.target.closest('[data-language]');
+            if (button) {
+                const language = button.getAttribute('data-language');
+                selectLanguage(language);
+                dropdown.classList.add('hidden');
+            }
         });
-        
-        window.challengeTemplates = templates;
-        setupLanguageOptions(templates);
     }
-    
-    /**
-     * Configure les options de langage dans le dropdown
-     */
-    function setupLanguageOptions(templates) {
-        const options = document.querySelectorAll('#languageDropdownOptions button[data-language], #languageDropdown button[data-language]');
-        const label = document.querySelector('#languageSelector span');
+
+    function selectLanguage(language) {
+        if (!language) return;
+
+        AppState.currentLanguage = language;
         
-        options.forEach(option => {
-            option.addEventListener('click', function () {
-                const langKey = this.getAttribute('data-language');
-                const monacoLang = getMonacoLanguage(langKey);
-                const template = templates[langKey] || getLanguageTemplate(langKey);
-                if (label) {
-                    label.textContent = langKey.toUpperCase();
+        // Mettre à jour l'affichage du sélecteur
+        const languageLabel = document.querySelector('#languageSelector span');
+        if (languageLabel) {
+            languageLabel.textContent = language.toUpperCase();
+        }
+
+        // Mettre à jour l'éditeur si il existe déjà
+        if (AppState.editor) {
+            const monacoLang = getMonacoLanguage(language);
+            const template = AppState.challengeTemplates[language] || getDefaultTemplate(language);
+            createMonacoEditor(monacoLang, template);
+        }
+
+        console.log('Langage sélectionné:', language);
+    }
+
+    // ===== INITIALISATION DE MONACO EDITOR =====
+    async function initializeMonacoEditor() {
+        return new Promise((resolve, reject) => {
+            require.config({ 
+                paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } 
+            });
+
+            require(['vs/editor/editor.main'], function () {
+                try {
+                    // Créer l'éditeur initial
+                    const initialLanguage = AppState.currentLanguage;
+                    const initialTemplate = AppState.challengeTemplates[initialLanguage] || getDefaultTemplate(initialLanguage);
+                    
+                    createMonacoEditor(getMonacoLanguage(initialLanguage), initialTemplate);
+                    console.log('Monaco Editor initialisé');
+                    resolve();
+                } catch (error) {
+                    console.error('Erreur lors de l\'initialisation de Monaco:', error);
+                    reject(error);
                 }
-                if (window.initMonaco) {
-                    window.initMonaco(monacoLang, template);
-                }
-                document.getElementById('languageDropdown')?.classList.add('hidden');
             });
         });
     }
-    
-    /**
-     * Retourne le mapping Monaco Editor
-     */
-    function getMonacoLanguageMap() {
-        return {
-            bash: 'shell',
-            java: 'java',
-            js: 'javascript',
-            javascript: 'javascript',
-            python: 'python',
-            c: 'c',
-            cpp: 'cpp',
-            csharp: 'csharp',
-            php: 'php',
-            ruby: 'ruby',
-            typescript: 'typescript',
-            pascal: 'pascal',
-            golang: 'go'
-        };
+
+    function createMonacoEditor(language, value) {
+        const container = document.getElementById('monaco-editor');
+        if (!container) {
+            console.error('Container Monaco Editor non trouvé');
+            return;
+        }
+
+        // Nettoyer l'éditeur existant
+        if (AppState.editor) {
+            AppState.editor.dispose();
+        }
+
+        // Créer le nouvel éditeur
+        AppState.editor = monaco.editor.create(container, {
+            value: value || '',
+            language: language,
+            theme: 'vs-dark',
+            automaticLayout: true,
+            fontSize: 16,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            wordWrap: 'on',
+            lineNumbers: 'on',
+            folding: true,
+            renderWhitespace: 'selection'
+        });
     }
 
-    /**
-     * Récupère le langage actuellement sélectionné
-     */
-    function getCurrentLanguage() {
-        const langElement = document.getElementById('languageSelector')?.querySelector('span');
-        return langElement ? langElement.textContent.trim().toLowerCase() : 'python';
+    // ===== GESTIONNAIRES D'ÉVÉNEMENTS =====
+    function setupEventListeners() {
+        // Bouton d'exécution du code
+        const runCodeBtn = document.getElementById('runCode');
+        if (runCodeBtn) {
+            runCodeBtn.addEventListener('click', handleCodeExecution);
+        }
+
+        // Bouton de réinitialisation
+        const resetBtn = document.getElementById('resetCode');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', handleCodeReset);
+        }
+
+        // Boutons de test et soumission
+        setupTestButtons();
     }
 
-    /**
-     * Récupère les données du challenge depuis l'interface
-     */
-    function getCurrentChallenge() {
-        const challengeId = window.location.pathname.split('/').pop();
-        const title = document.getElementById('challenge-title')?.textContent || '';
-        const difficulty = document.getElementById('challenge-difficulty')?.textContent || '';
-        
-        return {
-            id: challengeId,
-            title: title,
-            difficulty: difficulty.toLowerCase(),
-            hackathon_id: 2 // Valeur par défaut, pourrait être récupérée autrement
-        };
+    function setupTestButtons() {
+        const runTestsBtn = document.getElementById('runAllTests');
+        const submitBtn = document.getElementById('submitChallenge');
+
+        if (runTestsBtn) {
+            runTestsBtn.addEventListener('click', handleTestExecution);
+        }
+
+        if (submitBtn) {
+            submitBtn.addEventListener('click', handleSubmission);
+        }
     }
 
-    /**
-     * Vérifie si le challenge actuel est algorithmique
-     */
-    function isAlgorithmicChallenge() {
-        // On peut détecter cela via l'interface ou l'URL
-        const hasAlgoElements = document.getElementById('runAllTests') !== null;
-        return hasAlgoElements;
-    }
-    function displayPublicTestCases(testCases) {
-        const publicTests = testCases.filter(tc => tc.is_public == 1);
-        if (publicTests.length === 0) return;
-
-        // Trouver le container des informations
-        const infoContainer = document.getElementById('objectif-regles');
-        if (!infoContainer) return;
-
-        // Ajouter une section pour les exemples
-        const examplesHtml = `
-            <div class="examples-card bg-[#10101a] border border-[#232e39] rounded-xl p-4 mt-4">
-                <h3 class="text-lg font-semibold text-[#3B82F6] mb-3">
-                    <i class="ri-code-box-line mr-2"></i>Exemples
-                </h3>
-                <div class="space-y-4">
-                    ${publicTests.map((test, index) => `
-                        <div class="example bg-[#030B20] rounded-lg p-3 border border-[#1E293B]">
-                            <h4 class="text-sm font-medium text-[#94A3B8] mb-2">Exemple ${index + 1}${test.description ? ': ' + test.description : ''}</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div>
-                                    <span class="text-xs text-[#94A3B8] font-medium">Entrée:</span>
-                                    <pre class="mt-1 p-2 bg-[#0f172a] rounded text-[#e2e8f0] text-xs font-mono overflow-x-auto">${escapeHtml(test.input_data)}</pre>
-                                </div>
-                                <div>
-                                    <span class="text-xs text-[#94A3B8] font-medium">Sortie attendue:</span>
-                                    <pre class="mt-1 p-2 bg-[#0f172a] rounded text-[#e2e8f0] text-xs font-mono overflow-x-auto">${escapeHtml(test.expected_output)}</pre>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-
-        infoContainer.insertAdjacentHTML('beforeend', examplesHtml);
-    }
-
-    /**
-     * Configure les boutons pour les défis algorithmiques
-     */
     function setupAlgorithmicButtons() {
-        // Bouton "Tous les tests" - validation rapide
+        // Configuration spécifique pour les défis algorithmiques
         const runTestsBtn = document.getElementById('runAllTests');
         if (runTestsBtn) {
-            runTestsBtn.addEventListener('click', async () => {
-                await runQuickValidation();
-            });
+            runTestsBtn.innerHTML = `
+                <i data-lucide="play-circle" class="w-4 h-4"></i>
+                <span>Valider (tests publics)</span>
+            `;
         }
 
-        // Bouton "Soumettre" - soumission finale
         const submitBtn = document.getElementById('submitChallenge');
         if (submitBtn) {
-            submitBtn.addEventListener('click', async () => {
-                await submitFinalSolution();
-            });
-        }
-    }
-
-    // Initialisation de Monaco Editor
-    let editor;
-    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
-
-    window.initMonaco = function(language = 'shell', value = '') {
-        require(['vs/editor/editor.main'], function () {
-            if (editor) {
-                editor.dispose();
-            }
-            editor = monaco.editor.create(document.getElementById('monaco-editor'), {
-                value: value || '',
-                language: language,
-                theme: 'vs-dark',
-                automaticLayout: true,
-                fontSize: 16,
-                minimap: { enabled: false }
-            });
-        });
-    };
-
-    // Initialisation par défaut (shell/bash)
-    setTimeout(() => {
-        const templates = window.challengeTemplates || {};
-        window.initMonaco('shell', templates['bash'] || '#!/bin/bash\n# Votre script bash ici\necho "Hello World"');
-    }, 100);
-
-    // Gestionnaires des événements pour les boutons
-    const runCodeBtn = document.getElementById('runCode');
-    if (runCodeBtn) {
-        runCodeBtn.addEventListener('click', async () => {
-            const code = editor.getValue();
-            const langKey = getCurrentLanguage();
-
-            const result = await apiRequest('/piston', {
-                method: 'POST',
-                body: JSON.stringify({
-                    language: langKey,
-                    code: code
-                })
-            });
-
-            console.log(result);
-            document.getElementById('consoleOutput').innerHTML = `
-                <pre>${result.output || result.error || 'Aucune sortie'}</pre>
+            submitBtn.innerHTML = `
+                <i data-lucide="send" class="w-4 h-4"></i>
+                <span>Soumettre (tous les tests)</span>
             `;
-        });
+        }
+
+        lucide.createIcons();
     }
 
-    /**
-     * Exécute tous les tests du challenge
-     */
-    async function runAllTests() {
-        if (!editor) {
+    // ===== GESTIONNAIRES D'ACTIONS =====
+    async function handleCodeExecution() {
+        if (!AppState.editor) {
             showError('Éditeur non initialisé');
-            console.log('Éditeur non initialisé');
             return;
         }
 
-        const challenge = getCurrentChallenge();
-        
-        const code = editor.getValue();
-        if (!code.trim()) {
-            showError('Veuillez saisir du code avant de lancer les tests');
+        const code = AppState.editor.getValue();
+        if (!code?.trim()) {
+            showError('Veuillez saisir du code avant de lancer l\'exécution');
             return;
         }
 
-        const langKey = getCurrentLanguage();
-        if (!langKey) {
-            showError('Veuillez sélectionner un langage');
-            return;
-        }
-
-        // Désactiver les boutons pendant l'exécution
-        setButtonsDisabled(true);
-        showProgress('Exécution des tests en cours...');
+        updateLoadingState(true, 'Exécution en cours...');
 
         try {
-            // Utiliser la route appropriée selon le type de défi
-            if (isAlgorithmicChallenge()) {
-                console.log('Exécution de la validation rapide pour le défi:', challenge.id);
-                await runQuickValidation();
-            } else {
-                const response = await apiRequest(`/challenges/dev/${challenge.id}/1`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        code: code,
-                        language: langKey,
-                        hackathon_id: challenge.hackathon_id || 1
-                    })
-                });
-
-                if (response.success) {
-                    displayTestResults(response);
-                    showSuccess(`Tests terminés ! Score: ${response.score}/${response.max_score}`);
-                } else {
-                    showError(response.error || 'Erreur lors de l\'exécution des tests');
-                }
-            }
-
+            const result = await executeCode(code, AppState.currentLanguage);
+            displayExecutionResult(result);
         } catch (error) {
             console.error('Erreur lors de l\'exécution:', error);
-            showError('Erreur de communication avec le serveur');
+            showError('Erreur lors de l\'exécution du code');
         } finally {
-            setButtonsDisabled(false);
-            hideProgress();
+            updateLoadingState(false);
         }
     }
 
-    /**
-     * Soumet le challenge selon son type
-     */
-    async function submitChallenge() {
-        if (isAlgorithmicChallenge()) {
-            await submitFinalSolution();
-            console.log('Soumission du défi algorithmique');
-        } else {
-            await runAllTests();
-        }
-    }
-
-    /**
-     * Exécute une validation rapide (tests publics seulement)
-     */
-    async function runQuickValidation() {
-        if (!editor) {
+    async function handleTestExecution() {
+        if (!AppState.editor) {
             showError('Éditeur non initialisé');
             return;
         }
 
-        const challenge = getCurrentChallenge();
-        const code = editor.getValue();
-        if (!code.trim()) {
+        const code = AppState.editor.getValue();
+        if (!code?.trim()) {
             showError('Veuillez saisir du code avant de lancer les tests');
             return;
         }
 
-        setButtonsDisabled(true);
-        showProgress('Validation en cours...');
+        updateLoadingState(true, 'Tests en cours...');
 
         try {
-            console.log('Exécution de la validation rapide pour le défi:', challenge.id);
-            const user_id= await getUserId();
-            console.log('ID utilisateur:', user_id);
-            const response = await apiRequest(`/challenges/dev/${challenge.hackathon_id || 2}/${user_id}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    
-                    challenge_id: challenge.id,
-                    code: code,
-                    language: getCurrentLanguage(),
-                    action: 'validate',
-                    csrf_token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                })
-            });
-
-            console.log('Réponse de validation reçue:', response);
-
-            if (response && response.success) {
-                if (response.data && response.data.success) {
-                    displayValidationResults(response.data);
-                } else {
-                    // Gérer le cas où response.data pourrait être null
-                    const errorMessage = (response.data && response.data.error) || response.error || 'Erreur lors de la validation';
-                    showError(errorMessage);
-                }
+            if (isAlgorithmicChallenge()) {
+                await runQuickValidation();
             } else {
-                // Gérer le cas où response pourrait être null ou success false
-                const errorMessage = (response && response.error) || 'Erreur lors de la validation';
-                showError(errorMessage);
+                await runClassicTests();
             }
-
         } catch (error) {
-            console.error('Erreur lors de la validation:', error);
-            showError('Erreur de communication avec le serveur');
+            console.error('Erreur lors des tests:', error);
+            showError('Erreur lors de l\'exécution des tests');
         } finally {
-            setButtonsDisabled(false);
+            updateLoadingState(false);
         }
     }
 
-    /**
-     * Soumet la solution finale
-     */
-    async function submitFinalSolution() {
-        user_id = await getUserId();
-        if (!editor) {
+    async function handleSubmission() {
+        if (!AppState.editor) {
             showError('Éditeur non initialisé');
             return;
         }
 
-        const challenge = getCurrentChallenge();
-        const code = editor.getValue();
-        if (!code.trim()) {
+        const code = AppState.editor.getValue();
+        if (!code?.trim()) {
             showError('Veuillez saisir du code avant de soumettre');
             return;
         }
@@ -686,31 +547,222 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        setButtonsDisabled(true);
-        showProgress('Soumission en cours...');
-        console.log(code);
+        updateLoadingState(true, 'Soumission en cours...');
 
         try {
-            const response = await apiRequest(`/challenges/dev/${challenge.hackathon_id || 2}/1`, {
+            await submitFinalSolution();
+        } catch (error) {
+            console.error('Erreur lors de la soumission:', error);
+            showError('Erreur lors de la soumission');
+        } finally {
+            updateLoadingState(false);
+        }
+    }
+
+    function handleCodeReset() {
+        if (!AppState.editor) return;
+
+        const currentTemplate = AppState.challengeTemplates[AppState.currentLanguage] || getDefaultTemplate(AppState.currentLanguage);
+        AppState.editor.setValue(currentTemplate);
+        showSuccess('Code réinitialisé');
+    }
+
+    // ===== EXÉCUTION DU CODE =====
+    async function executeCode(code, language) {
+        const response = await apiRequest('/piston', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                language: language,
+                code: code
+            })
+        });
+
+        return response;
+    }
+
+    function displayExecutionResult(result) {
+        const consoleOutput = document.getElementById('consoleOutput');
+        if (!consoleOutput) return;
+
+        console.log('Résultat d\'exécution:', result);
+
+        if (result.success) {
+            // Exécution réussie
+            consoleOutput.innerHTML = `
+                <div class="p-4 space-y-2">
+                    <div class="flex items-center text-green-400">
+                        <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i>
+                        <span class="font-medium">Exécution réussie (${result.language})</span>
+                    </div>
+                    ${result.output ? `
+                        <div class="mt-2">
+                            <div class="text-xs text-slate-400 mb-1">Sortie :</div>
+                            <pre class="bg-slate-800/50 p-3 rounded-lg overflow-auto">${escapeHtml(result.output)}</pre>
+                        </div>
+                    ` : ''}
+                    ${result.run_info?.stderr ? `
+                        <div class="mt-2">
+                            <div class="text-xs text-amber-400 mb-1">Avertissements :</div>
+                            <pre class="bg-slate-800/50 p-3 rounded-lg overflow-auto text-amber-300">${escapeHtml(result.run_info.stderr)}</pre>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        } else {
+            // Échec d'exécution - structure améliorée pour gérer tous les cas
+            let errorDetails = '';
+            
+            // Gestion des différents types d'erreurs
+            if (result.is_timeout) {
+                errorDetails += `
+                    <div class="text-amber-300 mt-2 flex flex-row items-center gap-2">
+                        <i data-lucide="clock" class="w-3.5 h-3.5"></i> 
+                        Délai d'exécution dépassé
+                    </div>
+                `;
+            }
+            
+            if (result.is_memory_limit) {
+                errorDetails += `
+                    <div class="text-amber-300 mt-2 flex flex-row items-center gap-2">
+                        <i data-lucide="cpu" class="w-3.5 h-3.5"></i> 
+                        Limite de mémoire dépassée
+                    </div>
+                `;
+            }
+
+            // Affichage de l'erreur principale
+            const mainError = result.error || 
+                            (result.run_info?.stderr) || 
+                            (result.compile_info?.stderr) ||
+                            'Erreur d\'exécution inconnue';
+
+            errorDetails += `
+                <div class="mt-2">
+                    <div class="text-xs text-red-400 mb-1">Détails de l'erreur :</div>
+                    <pre class="bg-slate-800/50 p-3 rounded-lg overflow-auto text-red-300">${escapeHtml(mainError)}</pre>
+                </div>
+            `;
+
+            // Si il y a une sortie malgré l'erreur
+            if (result.output) {
+                errorDetails += `
+                    <div class="mt-2">
+                        <div class="text-xs text-slate-400 mb-1">Sortie partielle :</div>
+                        <pre class="bg-slate-800/50 p-3 rounded-lg overflow-auto">${escapeHtml(result.output)}</pre>
+                    </div>
+                `;
+            }
+
+            consoleOutput.innerHTML = `
+                <div class="p-4 space-y-2">
+                    <div class="flex items-center text-red-400">
+                        <i data-lucide="circle-x" class="w-5 h-5 mr-2"></i>
+                        <span class="font-medium">Erreur d'exécution (${result.language || 'Inconnu'})</span>
+                        ${result.exit_code ? `<span class="ml-2 text-xs bg-red-500/20 px-2 py-1 rounded">Code: ${result.exit_code}</span>` : ''}
+                    </div>
+                    ${errorDetails}
+                </div>
+            `;
+        }
+
+        lucide.createIcons();
+    }
+
+    // ===== VALIDATION ET SOUMISSION DES DÉFIS ALGORITHMIQUES =====
+    async function runQuickValidation() {
+        if (!AppState.editor) {
+            showError('Éditeur non initialisé');
+            return;
+        }
+
+        const code = AppState.editor.getValue();
+        if (!code.trim()) {
+            showError('Veuillez saisir du code avant de lancer les tests');
+            return;
+        }
+
+        showProgress('Validation en cours...');
+
+        try {
+            console.log('Exécution de la validation rapide pour le défi:', AppState.challenge.id);
+            
+            const response = await apiRequest(`/challenges/dev/${AppState.challenge.hackathon_id || 2}/${AppState.userData.id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({
-                    user_id: user_id,
-                    hackathon_id: challenge.hackathon_id || 2,
-                    challenge_id: challenge.id,
+                    challenge_id: AppState.challenge.id,
                     code: code,
-                    language: getCurrentLanguage(),
+                    language: AppState.currentLanguage,
+                    action: 'validate',
+                    csrf_token: AppState.userData.csrf_token
+                })
+            });
+
+            console.log('Réponse de validation reçue:', response);
+
+            if (response && response.success) {
+                if (response.data && response.data.success) {
+                    displayValidationResults(response.data);
+                } else {
+                    const errorMessage = (response.data && response.data.error) || response.error || 'Erreur lors de la validation';
+                    showError(errorMessage);
+                }
+            } else {
+                const errorMessage = (response && response.error) || 'Erreur lors de la validation';
+                showError(errorMessage);
+            }
+
+        } catch (error) {
+            console.error('Erreur lors de la validation:', error);
+            showError('Erreur de communication avec le serveur');
+        } finally {
+            updateLoadingState(false);
+        }
+    }
+
+    async function submitFinalSolution() {
+        if (!AppState.editor) {
+            showError('Éditeur non initialisé');
+            return;
+        }
+
+        const code = AppState.editor.getValue();
+        if (!code.trim()) {
+            showError('Veuillez saisir du code avant de soumettre');
+            return;
+        }
+
+        showProgress('Soumission en cours...');
+
+        try {
+            const response = await apiRequest(`/challenges/dev/${AppState.challenge.hackathon_id || 2}/1`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    user_id: AppState.userData.id,
+                    hackathon_id: AppState.challenge.hackathon_id || 2,
+                    challenge_id: AppState.challenge.id,
+                    code: code,
+                    language: AppState.currentLanguage,
                     action: 'submit',
-                    csrf_token: document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    csrf_token: AppState.userData.csrf_token
                 })
             });
 
             if (response && response.success) {
                 showSuccess('Solution soumise avec succès !');
-                
+
                 // Attendre un peu puis récupérer les résultats si disponible
                 if (response.data && response.data.submission_id) {
                     setTimeout(async () => {
@@ -725,17 +777,34 @@ document.addEventListener('DOMContentLoaded', async function() {
         } catch (error) {
             console.error('Erreur lors de la soumission:', error);
             showError('Erreur de communication avec le serveur');
-        } finally {
-            setButtonsDisabled(false);
         }
     }
 
-    /**
-     * Vérifie les résultats d'une soumission
-     */
+    async function runClassicTests() {
+        const response = await apiRequest(`/challenges/dev/${AppState.challenge.id}/1`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                code: AppState.editor.getValue(),
+                language: AppState.currentLanguage,
+                hackathon_id: AppState.challenge.hackathon_id || 1
+            })
+        });
+
+        if (response.success) {
+            displayTestResults(response);
+            showSuccess(`Tests terminés ! Score: ${response.score}/${response.max_score}`);
+        } else {
+            showError(response.error || 'Erreur lors de l\'exécution des tests');
+        }
+    }
+
     async function checkSubmissionResults(submissionId) {
         try {
-            const response = await apiRequest(`/challenges/submissions/${submissionId}/${await getUserId()}`, {
+            const response = await apiRequest(`/challenges/submissions/${submissionId}/${AppState.userData.id}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -753,9 +822,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    /**
-     * Affiche les résultats de validation rapide
-     */
+    // ===== AFFICHAGE DES RÉSULTATS =====
     function displayValidationResults(data) {
         const testContainer = document.getElementById('testResults');
         if (!testContainer) return;
@@ -764,17 +831,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         const summary = data.summary || {};
 
         testContainer.innerHTML = `
-            <div class="validation-header mb-4 p-3 bg-[#1e293b] rounded-lg">
+            <div class="validation-header mb-4 p-3 bg-slate-800/50 rounded-lg">
                 <div class="flex justify-between items-center">
                     <h3 class="text-lg font-semibold text-white">Validation rapide</h3>
-                    <div class="text-sm text-[#94a3b8]">
-                        Score: <span class="text-[#3b82f6] font-bold">${data.score || 0} pts</span>
-                        ${data.max_score ? `<span class="text-[#64748b]">/ ${data.max_score} pts</span>` : ''} |
-                        Tests: <span class="text-[#22c55e] font-bold">${data.passed_tests || 0}/${data.total_tests || 0}</span>
+                    <div class="text-sm text-slate-400">
+                        Score: <span class="text-blue-400 font-bold">${data.score || 0} pts</span>
+                        ${data.max_score ? `<span class="text-slate-500">/ ${data.max_score} pts</span>` : ''} |
+                        Tests: <span class="text-green-400 font-bold">${data.passed_tests || 0}/${data.total_tests || 0}</span>
                     </div>
                 </div>
-                <p class="text-sm text-[#94a3b8] mt-2">
-                    <i class="ri-information-line mr-1"></i>
+                <p class="text-sm text-slate-400 mt-2">
+                    <i data-lucide="info" class="w-4 h-4 mr-1 inline"></i>
                     Ces résultats concernent uniquement les cas de test publics.
                 </p>
             </div>
@@ -787,24 +854,22 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
 
         testContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        lucide.createIcons();
     }
 
-    /**
-     * Affiche les résultats complets d'une soumission
-     */
     function displaySubmissionResults(submission) {
         const testContainer = document.getElementById('testResults');
         if (!testContainer) return;
 
         testContainer.innerHTML = `
-            <div class="submission-header mb-4 p-4 bg-[#1e293b] rounded-lg">
+            <div class="submission-header mb-4 p-4 bg-slate-800/50 rounded-lg">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="text-lg font-semibold text-white">Résultats de soumission</h3>
                     <div class="flex items-center gap-2">
                         <span class="px-3 py-1 rounded-full text-xs font-bold ${
-                            submission.status === 'completed' ? 'bg-[#22c55e] text-white' : 
-                            submission.status === 'error' ? 'bg-[#ef4444] text-white' : 
-                            'bg-[#eab308] text-black'
+                            submission.status === 'completed' ? 'bg-green-500 text-white' :
+                            submission.status === 'error' ? 'bg-red-500 text-white' :
+                            'bg-yellow-500 text-black'
                         }">
                             ${submission.status.toUpperCase()}
                         </span>
@@ -812,21 +877,21 @@ document.addEventListener('DOMContentLoaded', async function() {
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                        <span class="text-[#94a3b8]">Score:</span>
-                        <div class="text-[#3b82f6] font-bold text-lg">${submission.total_score || 0} pts</div>
-                        <div class="text-[#64748b] text-xs">sur ${submission.max_score || 0} pts</div>
+                        <span class="text-slate-400">Score:</span>
+                        <div class="text-blue-400 font-bold text-lg">${submission.total_score || 0} pts</div>
+                        <div class="text-slate-500 text-xs">sur ${submission.max_score || 0} pts</div>
                     </div>
                     <div>
-                        <span class="text-[#94a3b8]">Tests réussis:</span>
-                        <div class="text-[#22c55e] font-bold">${submission.tests_passed || 0}/${submission.total_tests || 0}</div>
+                        <span class="text-slate-400">Tests réussis:</span>
+                        <div class="text-green-400 font-bold">${submission.tests_passed || 0}/${submission.total_tests || 0}</div>
                     </div>
                     <div>
-                        <span class="text-[#94a3b8]">Temps total:</span>
-                        <div class="text-[#eab308] font-bold">${submission.execution_time_ms || 0}ms</div>
+                        <span class="text-slate-400">Temps total:</span>
+                        <div class="text-yellow-400 font-bold">${submission.execution_time_ms || 0}ms</div>
                     </div>
                     <div>
-                        <span class="text-[#94a3b8]">Mémoire max:</span>
-                        <div class="text-[#a855f7] font-bold">${submission.memory_used_bytes ? Math.round(submission.memory_used_bytes / 1024) : 0}KB</div>
+                        <span class="text-slate-400">Mémoire max:</span>
+                        <div class="text-purple-400 font-bold">${submission.memory_used_bytes ? Math.round(submission.memory_used_bytes / 1024) : 0}KB</div>
                     </div>
                 </div>
             </div>
@@ -841,80 +906,77 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         testContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        lucide.createIcons();
     }
 
-    /**
-     * Crée un élément de résultat pour la validation rapide
-     */
     function createValidationTestElement(result, testNumber) {
-        const passed = result.passed;
+        const statusIcon = result.passed 
+            ? `<i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>`
+            : `<i data-lucide="circle-x" class="w-4 h-4 text-red-500"></i>`;
+        
+        const statusText = result.passed ? "Réussi" : "Échoué";
+        const bgColor = result.passed 
+            ? 'bg-green-500/10 border-green-500/30 hover:border-green-500/50' 
+            : 'bg-red-500/10 border-red-500/30 hover:border-red-500/50';
+    
         const element = document.createElement('div');
-        element.className = `test-result mb-3 p-3 rounded-lg border ${
-            passed ? 'bg-[#22c55e]/10 border-[#22c55e]/30' : 'bg-[#ef4444]/10 border-[#ef4444]/30'
-        }`;
-
-        const statusIcon = passed ? 
-            '<i class="ri-check-line text-[#22c55e]"></i>' : 
-            '<i class="ri-close-line text-[#ef4444]"></i>';
-
-        const statusText = passed ? 'RÉUSSI' : 'ÉCHOUÉ';
-        const statusColor = passed ? 'text-[#22c55e]' : 'text-[#ef4444]';
-
+        element.className = `p-3 mb-3 rounded-lg border transition-all ${bgColor}`;
+        
         element.innerHTML = `
-            <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center gap-3">
-                    ${statusIcon}
-                    <span class="font-medium text-white">Test public ${testNumber}</span>
-                    <span class="text-sm ${statusColor} font-semibold">${statusText}</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        ${statusIcon}
+                        <span class="font-medium text-white">Test ${testNumber}</span>
+                        <span class="text-sm font-semibold ${result.passed ? 'text-green-400' : 'text-red-400'}">
+                            ${statusText}
+                        </span>
+                    </div>
+                    ${result.description ? `
+                        <p class="text-sm text-slate-300">${result.description}</p>
+                    ` : ''}
                 </div>
-                <div class="text-sm text-[#94a3b8]">
-                    ${result.execution_time_ms}ms
+                
+                <div class="space-y-2">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-sm text-slate-400 whitespace-nowrap">Temps d'exécution:</span>
+                        <span class="text-sm font-mono">${result.execution_time_ms || 'N/A'}ms</span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-sm text-slate-400">Résultat:</span>
+                        <code class="text-sm font-mono px-2 py-1 rounded bg-slate-900/50">
+                            ${escapeHtml(result.actual_output || 'Aucune sortie')}
+                        </code>
+                    </div>
                 </div>
             </div>
-            ${result.description ? `<p class="text-sm text-[#94a3b8] mb-2">${result.description}</p>` : ''}
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                <div>
-                    <span class="font-medium text-[#94a3b8]">Entrée:</span>
-                    <pre class="mt-1 p-2 bg-[#0f172a] rounded text-[#e2e8f0] text-xs overflow-x-auto">${escapeHtml(result.input || '')}</pre>
-                </div>
-                <div>
-                    <span class="font-medium text-[#94a3b8]">Sortie attendue:</span>
-                    <pre class="mt-1 p-2 bg-[#0f172a] rounded text-[#e2e8f0] text-xs overflow-x-auto">${escapeHtml(result.expected_output || '')}</pre>
-                </div>
-                <div class="md:col-span-2">
-                    <span class="font-medium text-[#94a3b8]">Votre sortie:</span>
-                    <pre class="mt-1 p-2 bg-[#0f172a] rounded text-[#e2e8f0] text-xs overflow-x-auto">${escapeHtml(result.actual_output || '')}</pre>
-                </div>
-            </div>
-            ${result.error ? `
-                <div class="mt-2 p-2 bg-[#ef4444]/20 rounded text-[#ef4444] text-sm">
-                    <i class="ri-error-warning-line mr-1"></i>
-                    ${escapeHtml(result.error)}
+            
+            ${!result.passed ? `
+                <div class="mt-3 p-2 bg-red-500/20 rounded text-red-300 text-sm flex items-start gap-2">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+                    <span>${escapeHtml(result.error || 'Erreur inconnue')}</span>
                 </div>
             ` : ''}
         `;
-
+    
         return element;
     }
 
-    /**
-     * Crée un élément de résultat pour une soumission complète
-     */
     function createSubmissionTestElement(result, testNumber) {
         const passed = result.status === 'passed';
         const isPublic = result.is_public;
 
         const element = document.createElement('div');
         element.className = `test-result mb-3 p-3 rounded-lg border ${
-            passed ? 'bg-[#22c55e]/10 border-[#22c55e]/30' : 'bg-[#ef4444]/10 border-[#ef4444]/30'
+            passed ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'
         }`;
 
-        const statusIcon = passed ? 
-            '<i class="ri-check-line text-[#22c55e]"></i>' : 
-            '<i class="ri-close-line text-[#ef4444]"></i>';
+        const statusIcon = passed ?
+            '<i data-lucide="check" class="w-4 h-4 text-green-400"></i>' :
+            '<i data-lucide="x" class="w-4 h-4 text-red-400"></i>';
 
         const statusText = passed ? 'RÉUSSI' : 'ÉCHOUÉ';
-        const statusColor = passed ? 'text-[#22c55e]' : 'text-[#ef4444]';
+        const statusColor = passed ? 'text-green-400' : 'text-red-400';
         const testType = isPublic ? 'Public' : 'Privé';
 
         element.innerHTML = `
@@ -924,31 +986,31 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <span class="font-medium text-white">Test ${testNumber} (${testType})</span>
                     <span class="text-sm ${statusColor} font-semibold">${statusText}</span>
                 </div>
-                <div class="text-sm text-[#94a3b8]">
-                    ${result.execution_time}ms | ${Math.round((result.memory_used || 0) / 1024)}KB
+                <div class="text-sm text-slate-400">
+                    ${result.execution_time || 0}ms | ${Math.round((result.memory_used || 0) / 1024)}KB
                 </div>
             </div>
-            ${result.description ? `<p class="text-sm text-[#94a3b8] mt-2">${result.description}</p>` : ''}
+            ${result.description ? `<p class="text-sm text-slate-400 mt-2">${result.description}</p>` : ''}
             ${isPublic && result.actual_output ? `
                 <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                     <div>
-                        <span class="font-medium text-[#94a3b8]">Sortie attendue:</span>
-                        <pre class="mt-1 p-2 bg-[#0f172a] rounded text-[#e2e8f0] text-xs overflow-x-auto">${escapeHtml(result.expected_output || '')}</pre>
+                        <span class="font-medium text-slate-400">Sortie attendue:</span>
+                        <pre class="mt-1 p-2 bg-slate-900/50 rounded text-slate-200 text-xs overflow-x-auto">${escapeHtml(result.expected_output || '')}</pre>
                     </div>
                     <div>
-                        <span class="font-medium text-[#94a3b8]">Votre sortie:</span>
-                        <pre class="mt-1 p-2 bg-[#0f172a] rounded text-[#e2e8f0] text-xs overflow-x-auto">${escapeHtml(result.actual_output || '')}</pre>
+                        <span class="font-medium text-slate-400">Votre sortie:</span>
+                        <pre class="mt-1 p-2 bg-slate-900/50 rounded text-slate-200 text-xs overflow-x-auto">${escapeHtml(result.actual_output || '')}</pre>
                     </div>
                 </div>
             ` : !isPublic ? `
-                <p class="mt-2 text-sm text-[#94a3b8]">
-                    <i class="ri-lock-line mr-1"></i>
+                <p class="mt-2 text-sm text-slate-400">
+                    <i data-lucide="lock" class="w-4 h-4 mr-1 inline"></i>
                     Les détails des tests privés ne sont pas affichés.
                 </p>
             ` : ''}
             ${result.error_message ? `
-                <div class="mt-2 p-2 bg-[#ef4444]/20 rounded text-[#ef4444] text-sm">
-                    <i class="ri-error-warning-line mr-1"></i>
+                <div class="mt-2 p-2 bg-red-500/20 rounded text-red-400 text-sm">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 mr-1 inline"></i>
                     ${escapeHtml(result.error_message)}
                 </div>
             ` : ''}
@@ -957,98 +1019,74 @@ document.addEventListener('DOMContentLoaded', async function() {
         return element;
     }
 
-    /**
-     * Affiche l'historique des soumissions
-     */
-    function displaySubmissionHistory(history) {
-        const historyContainer = document.getElementById('submissionHistory');
-        if (!historyContainer || !history || history.length === 0) return;
+    function displayTestResults(response) {
+        const testContainer = document.getElementById('testResults');
+        if (!testContainer) return;
 
-        const historyHtml = `
-            <div class="history-card bg-[#10101a] border border-[#232e39] rounded-xl p-4 mt-4">
-                <h3 class="text-lg font-semibold text-[#3B82F6] mb-3">
-                    <i class="ri-history-line mr-2"></i>Historique des soumissions
-                </h3>
-                <div class="space-y-3">
-                    ${history.map(submission => `
-                        <div class="submission bg-[#030B20] rounded-lg p-3 border border-[#1E293B]">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <span class="text-sm text-[#94A3B8]">
-                                        ${new Date(submission.created_at).toLocaleString()}
-                                    </span>
-                                    <span class="ml-2 text-xs px-2 py-1 rounded ${
-                                        submission.status === 'completed' ? 'bg-[#22c55e] text-white' : 
-                                        submission.status === 'error' ? 'bg-[#ef4444] text-white' : 
-                                        'bg-[#eab308] text-black'
-                                    }">
-                                        ${submission.status.toUpperCase()}
-                                    </span>
-                                </div>
-                                <div class="text-[#3B82F6] font-bold">
-                                    ${submission.total_score || 0}%
-                                </div>
-                            </div>
-                            <div class="mt-2 text-xs text-[#94A3B8]">
-                                Langage: ${submission.language} | 
-                                Tests: ${submission.tests_passed}/${submission.total_tests} | 
-                                Temps: ${submission.execution_time_ms}ms
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-
-        const infoContainer = document.getElementById('objectif-regles');
-        if (infoContainer) {
-            infoContainer.insertAdjacentHTML('beforeend', historyHtml);
-        }
-    }
-
-    /**
-     * Affiche le meilleur score
-     */
-    function displayBestSubmission(bestSubmission) {
-        const scoreContainer = document.getElementById('bestScore');
-        if (!scoreContainer || !bestSubmission) return;
-
-        const scoreHtml = `
-            <div class="best-score-card bg-[#10101a] border border-[#232e39] rounded-xl p-4 mt-4">
-                <h3 class="text-lg font-semibold text-[#22c55e] mb-3">
-                    <i class="ri-trophy-line mr-2"></i>Meilleur score
-                </h3>
-                <div class="bg-[#030B20] rounded-lg p-3 border border-[#1E293B]">
-                    <div class="flex justify-between items-center mb-2">
-                        <div class="text-2xl font-bold text-[#22c55e]">
-                            ${bestSubmission.total_score || 0}%
-                        </div>
-                        <div class="text-sm text-[#94A3B8]">
-                            ${new Date(bestSubmission.created_at).toLocaleString()}
-                        </div>
-                    </div>
-                    <div class="text-sm text-[#94A3B8]">
-                        Langage: ${bestSubmission.language} | 
-                        Tests: ${bestSubmission.tests_passed}/${bestSubmission.total_tests} | 
-                        Temps: ${bestSubmission.execution_time_ms}ms
+        testContainer.innerHTML = `
+            <div class="test-header mb-4 p-3 bg-slate-800/50 rounded-lg">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-white">Résultats des tests</h3>
+                    <div class="text-sm text-slate-400">
+                        Score: <span class="text-blue-400 font-bold">${response.score || 0}/${response.max_score || 0}</span>
                     </div>
                 </div>
             </div>
         `;
 
-        const infoContainer = document.getElementById('objectif-regles');
-        if (infoContainer) {
-            infoContainer.insertAdjacentHTML('beforeend', scoreHtml);
+        // Afficher les résultats si disponibles
+        if (response.results && response.results.length > 0) {
+            response.results.forEach((result, index) => {
+                const testElement = createValidationTestElement(result, index + 1);
+                testContainer.appendChild(testElement);
+            });
         }
+
+        testContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        lucide.createIcons();
     }
 
-    /**
-     * Fonctions utilitaires
-     */
+    // ===== FONCTIONS UTILITAIRES =====
+    function updateLoadingState(isLoading, message = '') {
+        AppState.isLoading = isLoading;
+        
+        // Mettre à jour les boutons
+        const buttons = ['runCode', 'runAllTests', 'submitChallenge', 'resetCode'];
+        buttons.forEach(id => {
+            const button = document.getElementById(id);
+            if (button) {
+                button.disabled = isLoading;
+                button.classList.toggle('opacity-50', isLoading);
+                
+                if (id === 'runCode' && isLoading) {
+                    button.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin mr-2"></i>Exécution...';
+                } else if (id === 'runCode' && !isLoading) {
+                    button.innerHTML = '<i data-lucide="play" class="w-4 h-4"></i><span class="hidden sm:inline">Exécuter</span>';
+                }
+            }
+        });
+
+        // Afficher le message dans la console si fourni
+        if (message && isLoading) {
+            showProgress(message);
+        } else if (!isLoading) {
+            showProgress('');
+        }
+        
+        lucide.createIcons();
+    }
+
+    function isAlgorithmicChallenge() {
+        return AppState.challenge && 
+               AppState.challenge.type === 'dev' && 
+               AppState.challenge.category === 'algo';
+    }
+
     function getMonacoLanguage(language) {
         const mapping = {
             'python': 'python',
             'javascript': 'javascript',
+            'js': 'javascript',
             'java': 'java',
             'cpp': 'cpp',
             'c': 'c',
@@ -1056,124 +1094,110 @@ document.addEventListener('DOMContentLoaded', async function() {
             'php': 'php',
             'ruby': 'ruby',
             'go': 'go',
-            'bash': 'shell'
+            'golang': 'go',
+            'bash': 'shell',
+            'typescript': 'typescript',
+            'pascal': 'pascal'
         };
         return mapping[language] || 'plaintext';
     }
 
-    function getLanguageTemplate(language) {
+    function getDefaultTemplate(language) {
         const templates = {
             'python': '# Votre solution Python ici\n\n',
             'javascript': '// Votre solution JavaScript ici\n\n',
             'java': 'public class Solution {\n    public static void main(String[] args) {\n        // Votre solution Java ici\n    }\n}',
             'cpp': '#include <iostream>\nusing namespace std;\n\nint main() {\n    // Votre solution C++ ici\n    return 0;\n}',
             'c': '#include <stdio.h>\n\nint main() {\n    // Votre solution C ici\n    return 0;\n}',
-            'go': 'package main\n\nimport "fmt"\n\nfunc main() {\n    // Votre solution Go ici\n}',
-            'bash': '#!/bin/bash\n# Votre solution Bash ici\n'
+            'csharp': 'using System;\n\nclass Program {\n    static void Main() {\n        // Votre solution C# ici\n        Console.WriteLine("Hello World");\n    }\n}',
+            'php': '<?php\n// Votre solution PHP ici\necho "Hello World";\n?>',
+            'ruby': '# Votre solution Ruby ici\nputs "Hello World"',
+            'go': 'package main\n\nimport "fmt"\n\nfunc main() {\n    // Votre solution Go ici\n    fmt.Println("Hello World")\n}',
+            'golang': 'package main\n\nimport "fmt"\n\nfunc main() {\n    // Votre solution Go ici\n    fmt.Println("Hello World")\n}',
+            'bash': '#!/bin/bash\n# Votre solution Bash ici\necho "Hello World"',
+            'typescript': '// Votre solution TypeScript ici\nconsole.log("Hello World");',
+            'pascal': 'program Hello;\n\nbegin\n    WriteLn(\'Hello World\');\nend.'
         };
         return templates[language] || '// Votre code ici\n';
     }
 
-    /**
-     * Échappe le HTML pour éviter les injections XSS
-     */
+    function showProgress(message) {
+        const consoleOutput = document.getElementById('consoleOutput');
+        if (consoleOutput) {
+            consoleOutput.innerHTML = `
+                <div class="flex items-center justify-center p-4 text-blue-400">
+                    <i data-lucide="loader" class="w-5 h-5 mr-2 animate-spin"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+    }
+
+    function showError(message) {
+        const consoleOutput = document.getElementById('consoleOutput');
+        if (consoleOutput) {
+            consoleOutput.innerHTML = `
+                <div class="p-4 text-red-400 flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    <span>${escapeHtml(message)}</span>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+    }
+
+    function showSuccess(message) {
+        const consoleOutput = document.getElementById('consoleOutput');
+        if (consoleOutput) {
+            consoleOutput.innerHTML = `
+                <div class="p-4 text-green-400 flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    <span>${escapeHtml(message)}</span>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+    }
+
     function escapeHtml(text) {
+        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
-    /**
-     * Active/désactive les boutons d'action
-     */
-    function setButtonsDisabled(disabled) {
-        const buttons = ['runAllTests', 'submitChallenge', 'runCode'];
-        buttons.forEach(id => {
-            const button = document.getElementById(id);
-            if (button) {
-                button.disabled = disabled;
-                button.classList.toggle('opacity-50', disabled);
-                button.classList.toggle('cursor-not-allowed', disabled);
-            }
-        });
+    function showTooltip(e) {
+        const tooltip = this.getAttribute('data-tooltip');
+        if (!tooltip) return;
+
+        const tooltipEl = document.createElement('div');
+        tooltipEl.className = 'tooltip';
+        tooltipEl.textContent = tooltip;
+
+        // Positionnement
+        const rect = this.getBoundingClientRect();
+        tooltipEl.style.position = 'fixed';
+        tooltipEl.style.left = `${rect.left + (rect.width / 2)}px`;
+        tooltipEl.style.top = `${rect.top - 40}px`;
+        tooltipEl.style.transform = 'translateX(-50%)';
+        tooltipEl.style.zIndex = '1000';
+        tooltipEl.style.pointerEvents = 'none';
+        tooltipEl.classList.add('bg-slate-800', 'text-white', 'text-xs', 'px-2', 'py-1', 'rounded', 'shadow-lg', 'border', 'border-slate-700');
+
+        document.body.appendChild(tooltipEl);
+        this._tooltip = tooltipEl;
     }
 
-    /**
-     * Affiche un indicateur de progression
-     */
-    function showProgress(message) {
-        const consoleOutput = document.getElementById('consoleOutput');
-        if (consoleOutput) {
-            consoleOutput.innerHTML = `
-                <div class="flex items-center gap-3 text-[#3b82f6]">
-                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-[#3b82f6]"></div>
-                    <span>${message}</span>
-                </div>
-            `;
+    function hideTooltip() {
+        if (this._tooltip) {
+            this._tooltip.remove();
+            this._tooltip = null;
         }
     }
 
-    /**
-     * Masque l'indicateur de progression
-     */
-    function hideProgress() {
-        // La fonction displayTestResults ou showError s'occupera de remplacer le contenu
-    }
+    window.initMonaco = createMonacoEditor;
+    window.challengeTemplates = AppState.challengeTemplates;
 
-    /**
-     * Affiche un message d'erreur
-     */
-    function showError(message) {
-        const consoleOutput = document.getElementById('consoleOutput');
-        if (consoleOutput) {
-            consoleOutput.innerHTML = `
-                <div class="text-[#ef4444] flex items-center gap-2">
-                    <i class="ri-error-warning-line"></i>
-                    <span>${escapeHtml(message)}</span>
-                </div>
-            `;
-        }
-    }
-
-    /**
-     * Affiche un message de succès
-     */
-    function showSuccess(message) {
-        const consoleOutput = document.getElementById('consoleOutput');
-        if (consoleOutput) {
-            consoleOutput.innerHTML = `
-                <div class="text-[#22c55e] flex items-center gap-2">
-                    <i class="ri-check-line"></i>
-                    <span>${escapeHtml(message)}</span>
-                </div>
-            `;
-        }
-    }
-
-    // Gestionnaires d'événements pour les boutons d'action
-    document.getElementById('runAllTests')?.addEventListener('click', async () => {
-        await runAllTests();
-    });
-
-    document.getElementById('submitChallenge')?.addEventListener('click', async () => {
-        await submitChallenge();
-    });
-
-    // Configuration initiale du sélecteur de langage s'il existe
-    const selector = document.getElementById('languageSelector');
-    const dropdown = document.getElementById('languageDropdown');
-    
-    if (selector && dropdown) {
-        // Toggle dropdown
-        selector.addEventListener('click', function (e) {
-            e.stopPropagation();
-            dropdown.classList.toggle('hidden');
-        });
-
-        // Fermer si clic en dehors
-        document.addEventListener('click', function () {
-            dropdown.classList.add('hidden');
-        });
-    }
-
+    console.log('Interface de challenge initialisée avec succès');
 });

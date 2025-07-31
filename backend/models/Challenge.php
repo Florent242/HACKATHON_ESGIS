@@ -56,6 +56,10 @@ class Challenge
             $stmtSnippets->execute([':challenge_id' => $id]);
             $snippets = $stmtSnippets->fetchAll(PDO::FETCH_ASSOC);
 
+            foreach ($snippets as &$snippet) {
+                unset($snippet['id'], $snippet['challenge_id'], $snippet['created_at'], $snippet['updated_at']);
+            }
+            unset($snippet); // Détruire la référence
             $challenge['snippets'] = $snippets;
 
             return $challenge;
@@ -793,7 +797,7 @@ class Challenge
                 " . ($includePrivateTests ? "" : "AND is_public = 1") . "
                 ORDER BY is_public DESC, test_order ASC, id ASC
             ";
-            
+
             $stmt = $this->db->prepare($testCasesQuery);
             $stmt->execute([':challenge_id' => $challengeId]);
             $testCases = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -862,7 +866,6 @@ class Challenge
             $this->db->commit();
 
             return $submissionId;
-            
         } catch (PDOException $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();

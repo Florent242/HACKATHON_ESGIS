@@ -8,6 +8,7 @@
 
     <?php require_once '../includes/user/head.php'; ?>
 
+    <title>Défi de développement | ESGIS HACKATHON</title>
     <link rel="stylesheet" href="/css/styles/user/header.css">
     <link rel="stylesheet" href="/css/dist/output.css">
     <link rel="stylesheet" href="/css/styles/user/interfacechallenge.css">
@@ -15,178 +16,125 @@
     <!-- Fonts et Icônes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.js" defer></script>
-
-    <style>
-        :root {
-            /* Couleurs de base du thème */
-            --background: #0A0F1C;
-            --background-secondary: #0D1225;
-            --card-bg: linear-gradient(135deg, #1A1F2B 0%, #141925 100%);
-            --primary: #2563EB;
-            --primary-dark: #1d4ed8;
-            --primary-light: #3b82f6;
-            --text: #FFFFFF;
-            --text-secondary: #94A3B8;
-            --border: #2D3441;
-            --success: #10B981;
-            --warning: #F59E0B;
-            --danger: #EF4444;
-            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.2);
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: radial-gradient(ellipse at top, rgba(37, 99, 235, 0.1) 0%, transparent 70%),
-                        linear-gradient(180deg, var(--background) 0%, var(--background-secondary) 100%);
-            color: var(--text);
-            min-height: 100vh;
-            line-height: 1.6;
-        }
-
-        .glass-effect {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            box-shadow: var(--shadow-lg);
-            backdrop-filter: blur(10px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .glass-effect:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        .cyber-glow {
-            box-shadow: 0 0 30px rgba(37, 99, 235, 0.3);
-        }
-
-        .loading-shimmer {
-            background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.2), transparent);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
-    </style>
 </head>
 
 <body class="min-h-screen text-slate-100 overflow-x-hidden">
     <?php require_once '../includes/user/header.php'; ?>
-    
+
     <!-- Fond animé -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div class="absolute inset-10 bg-gradient-to-r from-primary/10 via-cyan-400/5 to-primary/10 animate-pulse"></div>
         <div class="absolute inset-0 bg-grid-pattern opacity-5"></div>
     </div>
 
     <main class="relative z-10 container mx-auto px-4 sm:px-6 py-8 max-w-7xl">
-        <div class="grid grid-cols-1 xl:grid-cols-4 gap-6 min-h-[calc(100vh-140px)]">
-
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 min-h-[calc(100vh-140px)]">
             <!-- Colonne gauche - Informations du défi -->
             <div class="xl:col-span-1 space-y-6">
-
                 <!-- Carte d'informations du défi -->
-                <div class="glass-effect rounded-2xl p-6 animate-fade-in">
-                    <!-- En-tête du défi -->
-                    <div class="pb-6 border-b border-royal-800/50 mb-6">
-                        <div class="flex items-start justify-between mb-4">
-                            <div class="flex-1">
-                                <h2 id="challenge-title" class="text-2xl font-bold bg-gradient-to-r from-cyber-400 to-royal-400 bg-clip-text mb-3">
-                                    Chargement du défi...
-                                </h2>
-                                <div class="flex flex-wrap items-center gap-4 text-sm">
-                                    <div class="flex items-center gap-2 px-3 py-1.5 bg-royal-800/30 rounded-lg">
-                                        <i data-lucide="clock" class="w-4 h-4 text-cyber-400"></i>
-                                        <span id="challenge-time" class="text-slate-300">1s</span>
-                                    </div>
-                                    <div class="flex items-center gap-2 px-3 py-1.5 bg-royal-800/30 rounded-lg">
-                                        <i data-lucide="cpu" class="w-4 h-4 text-cyber-400"></i>
-                                        <span id="challenge-memory" class="text-slate-300">256MB</span>
-                                    </div>
-                                </div>
+                <div class="relative rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-900/70 backdrop-blur-lg border border-slate-700/50 shadow-2xl shadow-slate-900/30 overflow-hidden transition-all duration-300 hover:shadow-blue-900/20 hover:border-blue-500/30">
+                    <!-- Effet de bordure animée -->
+                    <div class="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-cyan-500/5 rounded-2xl -z-10"></div>
+                    
+                    <!-- En-tête de la carte -->
+                    <div class="relative p-5 border-b border-slate-700/50 bg-gradient-to-r from-slate-800/80 to-slate-800/60">
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/20 shadow-lg shadow-blue-500/10">
+                                <i data-lucide="terminal" class="w-5 h-5 text-blue-400"></i>
                             </div>
-                            <div class="px-4 py-2 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse-glow">
-                                <i data-lucide="zap" class="w-4 h-4 inline mr-1"></i>
-                                Facile
+                            <div>
+                                <h2 class="text-md font-bold text-slate-100">Détails du défi</h2>
+                                <span class="text-xs text-slate-400">Informations essentielles</span>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Contenu scrollable -->
-                    <div class="space-y-6 max-h-96 overflow-y-auto custom-scrollbar">
-                        <!-- Objectif -->
-                        <div class="group">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-cyber-400/20 to-royal-500/20 flex items-center justify-center border border-cyber-400/30">
-                                    <i data-lucide="target" class="w-4 h-4 text-cyber-400"></i>
+                    
+                    <!-- Corps de la carte -->
+                    <div class="p-5 space-y-5">
+                        <!-- En-tête avec titre et difficulté -->
+                        <div class="relative group">
+                            <div class="absolute -inset-1 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-xl blur opacity-0 group-hover:opacity-100 transition duration-300"></div>
+                            <div class="relative p-4 bg-slate-800/50 rounded-xl border border-slate-700/50 transition-all duration-300 group-hover:border-blue-500/30">
+                                <div class="flex items-start justify-between">
+                                    <div class="space-y-1">
+                                        <h1 id="challenge-title" class="text-md font-semibold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                                            Chargement...
+                                        </h1>
+                                        <div class="flex flex-wrap items-center gap-2 pt-1">
+                                            <span id="challenge-time" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full bg-slate-700/50 text-blue-300 border border-slate-600/50 hover:bg-slate-700/80 transition-colors" data-tooltip="Temps limite">
+                                                <i data-lucide="clock" class="w-3 h-3"></i>
+                                                <span>1s</span>
+                                            </span>
+                                            <span id="challenge-memory" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full bg-slate-700/50 text-cyan-300 border border-slate-600/50 hover:bg-slate-700/80 transition-colors" data-tooltip="Mémoire maximale">
+                                                <i data-lucide="cpu" class="w-3 h-3"></i>
+                                                <span>1MB</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <span id="challenge-difficulty" class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 border border-blue-500/20 shadow-md shadow-blue-500/5">
+                                        <i data-lucide="zap" class="w-3 h-3"></i>
+                                        <span>Facile</span>
+                                    </span>
                                 </div>
-                                <h3 class="text-lg font-semibold text-slate-200 group-hover:text-cyber-400 transition-colors">
-                                    Objectif
-                                </h3>
-                            </div>
-                            <div id="challenge-description" class="text-slate-300 text-sm leading-relaxed space-y-2">
-                                <div class="h-4 bg-slate-700/50 rounded loading-shimmer"></div>
-                                <div class="h-4 bg-slate-700/50 rounded loading-shimmer w-5/6" style="animation-delay: 0.2s;"></div>
-                                <div class="h-4 bg-slate-700/50 rounded loading-shimmer w-3/4" style="animation-delay: 0.4s;"></div>
                             </div>
                         </div>
 
-                        <!-- Contraintes -->
-                        <div class="group">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400/20 to-red-500/20 flex items-center justify-center border border-orange-400/30">
-                                    <i data-lucide="shield-alert" class="w-4 h-4 text-orange-400"></i>
+                        <!-- Contenu déroulant -->
+                        <div class="space-y-5">
+                            <!-- Description -->
+                            <div class="group">
+                                <div class="flex items-center justify-between mb-2 cursor-pointer">
+                                    <h3 class="flex items-center gap-2 text-sm font-semibold text-blue-400/90 uppercase tracking-wider">
+                                        <i data-lucide="align-left" class="w-4 h-4"></i>
+                                        Description
+                                    </h3>
                                 </div>
-                                <h3 class="text-lg font-semibold text-slate-200 group-hover:text-orange-400 transition-colors">
-                                    Contraintes
-                                </h3>
+                                <div id="challenge-description" class="prose prose-invert prose-sm max-w-none text-slate-300 leading-relaxed transition-all duration-300 ease-in-out">
+                                    <div class="space-y-2">
+                                        <div class="h-3 bg-slate-700/50 rounded-full loading-shimmer"></div>
+                                        <div class="h-3 bg-slate-700/50 rounded-full loading-shimmer w-5/6"></div>
+                                        <div class="h-3 bg-slate-700/50 rounded-full loading-shimmer w-4/6"></div>
+                                    </div>
+                                </div>
                             </div>
-                            <ul class="space-y-3">
-                                <li class="flex items-start gap-3 text-slate-300 text-sm">
-                                    <div class="w-2 h-2 rounded-full bg-gradient-to-r from-cyber-400 to-royal-400 mt-2 flex-shrink-0"></div>
-                                    <span>Respecter les limites de temps et mémoire imposées</span>
-                                </li>
-                                <li class="flex items-start gap-3 text-slate-300 text-sm">
-                                    <div class="w-2 h-2 rounded-full bg-gradient-to-r from-cyber-400 to-royal-400 mt-2 flex-shrink-0"></div>
-                                    <span>Gérer correctement tous les cas de test</span>
-                                </li>
-                                <li class="flex items-start gap-3 text-slate-300 text-sm">
-                                    <div class="w-2 h-2 rounded-full bg-gradient-to-r from-cyber-400 to-royal-400 mt-2 flex-shrink-0"></div>
-                                    <span>Écrire un code propre et optimisé</span>
-                                </li>
-                                <li class="flex items-start gap-3 text-slate-300 text-sm">
-                                    <div class="w-2 h-2 rounded-full bg-gradient-to-r from-cyber-400 to-royal-400 mt-2 flex-shrink-0"></div>
-                                    <span>Respecter les spécifications techniques</span>
-                                </li>
-                            </ul>
+
+                            <!-- Instructions -->
+                            <div class="group">
+                                <div class="flex items-center justify-between mb-2 cursor-pointer">
+                                    <h3 class="flex items-center gap-2 text-sm font-semibold text-amber-400/90 uppercase tracking-wider">
+                                        <i data-lucide="info" class="w-4 h-4"></i>
+                                        Instructions
+                                    </h3>
+                                </div>
+                                <div id="challenge-instructions" class="prose prose-invert prose-sm max-w-none text-slate-300 leading-relaxed transition-all duration-300 ease-in-out">
+                                    <div class="space-y-2">
+                                        <div class="h-3 bg-slate-700/50 rounded-full loading-shimmer"></div>
+                                        <div class="h-3 bg-slate-700/50 rounded-full loading-shimmer w-5/6"></div>
+                                        <div class="h-3 bg-slate-700/50 rounded-full loading-shimmer w-4/6"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Console -->
-                <div id="consoleSection" class="glass-effect rounded-2xl overflow-hidden animate-slide-up" style="animation-delay: 0.4s;">
-                    <div class="bg-royal-900/50 px-6 py-4 flex items-center justify-between border-b border-royal-800/50">
-                        <div class="flex items-center gap-3">
-                            <div class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></div>
-                            <span class="text-sm font-semibold text-slate-200">Console</span>
+                <div class="glass-effect">
+                    <div class="card-header">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                            <h3 class="card-title">Console</h3>
                         </div>
-                        <button id="toggleConsole" class="p-2 hover:bg-royal-800/50 rounded-lg transition-colors" aria-label="Réduire/agrandir la console">
+                        <button id="toggleConsole" class="p-1.5 hover:bg-slate-700/50 rounded-lg transition-colors" aria-label="Réduire/agrandir la console">
                             <i id="toggleConsoleIcon" data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                         </button>
                     </div>
-                    <div id="consoleOutput" class="p-6 code-font text-sm min-h-32 max-h-48 overflow-y-auto custom-scrollbar">
-                        <div class="h-full flex flex-col items-center justify-center text-center text-slate-500">
-                            <div class="w-12 h-12 rounded-xl bg-royal-800/30 flex items-center justify-center mb-3">
-                                <i data-lucide="terminal" class="w-6 h-6"></i>
-                            </div>
+                    <div id="consoleOutput" class="p-4 font-mono text-sm bg-slate-900/50 min-h-[120px] max-h-60 overflow-y-auto">
+                        <div class="h-full flex flex-col items-center justify-center text-center text-slate-500 text-sm">
+                            <i data-lucide="terminal" class="w-6 h-6 mb-2"></i>
                             <span>Console prête pour l'exécution...</span>
                         </div>
                     </div>
@@ -194,100 +142,70 @@
             </div>
 
             <!-- Colonne droite - Éditeur et tests -->
-            <div class="xl:col-span-3 space-y-6">
-
+            <div class="xl:col-span-2 space-y-6">
                 <!-- Éditeur de code -->
-                <div class="glass-effect rounded-2xl overflow-hidden animate-fade-in" style="animation-delay: 0.1s;">
-                    <div class="bg-royal-900/50 px-6 py-4 flex items-center justify-between border-b border-royal-800/50">
-                        <div class="flex items-center gap-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-400/20 to-cyan-500/20 flex items-center justify-center border border-blue-400/30">
-                                    <i data-lucide="code-2" class="w-4 h-4 text-blue-400"></i>
-                                </div>
-                                <h3 class="text-lg font-semibold text-slate-200">Éditeur de code</h3>
+                <div class="glass-effect" id="editorContainer">
+                    <div class="card-header">
+                        <div class="flex items-center gap-3">
+                            <div class="header-icon">
+                                <i data-lucide="code" class="w-5 h-5"></i>
                             </div>
-
+                            <h3 class="card-title">Éditeur de code</h3>
+                        </div>
+                        <div class="flex items-center gap-2">
                             <!-- Sélecteur de langage -->
                             <div class="relative">
-                                <button id="languageSelector" class="flex items-center gap-3 px-4 py-2 bg-royal-800/50 hover:bg-royal-700/50 border border-royal-700/50 rounded-xl transition-all duration-300 group">
-                                    <div class="w-5 h-5 rounded bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
-                                        <i data-lucide="code" class="w-3 h-3 text-white"></i>
-                                    </div>
-                                    <span id="languageName" class="text-sm font-medium text-slate-200">Langage</span>
-                                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 group-hover:text-slate-200 transition-colors"></i>
+                                <button id="languageSelector" class="flex items-center gap-2 px-3 py-1.5 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 rounded-lg transition-colors text-sm font-medium">
+                                    <span id="languageName">Langage</span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
                                 </button>
-                                <div id="languageDropdown" class="hidden absolute z-20 mt-2 w-48 glass-effect rounded-xl border border-royal-700/50 shadow-2xl">
-                                    <div class="p-2 z-100 relative" id="languageDropdownOptions">
+                                <div id="languageDropdown" class="hidden absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-xl shadow-xl z-20 max-h-[300px] overflow-y-auto">
+                                    <div class="p-1.5 space-y-1" id="languageDropdownOptions">
                                         <!-- Options injectées par JS -->
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Actions de l'éditeur -->
-                        <div class="flex items-center gap-2">
-                            <button id="runCode" class="group px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-xl transition-all duration-300 shadow-lg hover:shadow-emerald-500/25 flex flex-row items-center justify-between gap-2" title="Exécuter le code">
-                                <i data-lucide="play" class="w-4 h-4 text-white"></i>
-                                <span class="text-sm font-medium text-white hidden sm:inline">Exécuter</span>
+                            <button id="runCode" class="btn btn-primary" title="Exécuter le code">
+                                <i data-lucide="play" class="w-4 h-4"></i>
+                                <span class="hidden sm:inline">Exécuter</span>
                             </button>
-                            <button id="resetCode" class="p-2 bg-royal-800/50 hover:bg-royal-700/50 rounded-xl transition-all duration-300 border border-royal-700/50" title="Réinitialiser l'éditeur">
-                                <i data-lucide="refresh-cw" class="w-4 h-4 text-orange-400"></i>
+                            <button id="resetCode" class="btn btn-secondary" title="Réinitialiser l'éditeur">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
-
-                    <!-- Éditeur Monaco -->
-                    <div id="monaco-editor" class="h-96 bg-royal-950/50"></div>
+                    <div id="monaco-editor" class="h-[400px]"></div>
                 </div>
 
-                <!-- Panneau de tests et résultats -->
-                <div class="glass-effect rounded-2xl overflow-hidden animate-slide-up" style="animation-delay: 0.3s;">
-                    <div class="bg-royal-900/50 px-6 py-4 flex items-center justify-between border-b border-royal-800/50">
+                <!-- Panneau de tests -->
+                <div class="glass-effect">
+                    <div class="card-header">
                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-400/20 to-pink-500/20 flex items-center justify-center border border-purple-400/30">
-                                <i data-lucide="flask-conical" class="w-4 h-4 text-purple-400"></i>
+                            <div class="header-icon bg-purple-500/10 border-purple-500/20 text-purple-400">
+                                <i data-lucide="flask-conical" class="w-5 h-5"></i>
                             </div>
-                            <h3 class="text-lg font-semibold text-slate-200">Tests & Validation</h3>
+                            <h3 class="card-title">Tests & Validation</h3>
                         </div>
-                        <div class="flex items-center gap-2 text-sm text-slate-400">
-                            <div class="w-2 h-2 rounded-full bg-slate-600"></div>
-                            <span>En attente</span>
-                        </div>
-                    </div>
-
-                    <!-- Contenu des tests -->
-                    <div id="testResults" class="p-6 min-h-64 max-h-96 overflow-y-auto custom-scrollbar">
-                        <div class="h-full flex flex-col items-center justify-center text-center text-slate-500">
-                            <div class="w-16 h-16 rounded-2xl bg-royal-800/30 flex items-center justify-center mb-4">
-                                <i data-lucide="flask-conical" class="w-8 h-8"></i>
-                            </div>
-                            <h4 class="text-lg font-semibold text-slate-300 mb-2">Prêt pour les tests</h4>
-                            <p class="text-sm">Lancez l'exécution pour voir les résultats de validation</p>
+                        <div class="flex items-center gap-2 text-sm">
+                            <span id="testStatus" class="text-slate-400">En attente</span>
+                            <span id="testProgress" class="text-slate-500">0/0</span>
                         </div>
                     </div>
-
-                    <!-- Boutons d'action -->
-                    <div class="p-6 border-t border-royal-800/50 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <button id="runAllTests" class="group relative overflow-hidden px-6 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/25">
-                            <div class="flex items-center justify-center gap-3 relative z-10">
-                                <i data-lucide="play-circle" class="w-5 h-5 text-white"></i>
-                                <div class="text-left">
-                                    <div class="text-sm font-semibold text-white">Tester la solution</div>
-                                    <div class="text-xs text-blue-100">Validation rapide</div>
-                                </div>
-                            </div>
-                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                    <div id="testResults" class="p-4 space-y-3 max-h-64 overflow-y-auto">
+                        <div class="h-40 flex flex-col items-center justify-center text-center text-slate-500">
+                            <i data-lucide="flask-conical" class="w-8 h-8 mb-3"></i>
+                            <h4 class="font-medium text-slate-300 mb-1">Prêt pour les tests</h4>
+                            <p class="text-sm">Exécutez votre code pour voir les résultats</p>
+                        </div>
+                    </div>
+                    <div class="p-4 border-t border-slate-800/50 flex flex-col sm:flex-row gap-3">
+                        <button id="runAllTests" class="btn btn-primary flex-1">
+                            <i data-lucide="play-circle" class="w-4 h-4"></i>
+                            <span>Tester la solution</span>
                         </button>
-
-                        <button id="submitChallenge" class="group relative overflow-hidden px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 rounded-xl transition-all duration-300 shadow-lg hover:shadow-emerald-500/25">
-                            <div class="flex items-center justify-center gap-3 relative z-10">
-                                <i data-lucide="send" class="w-5 h-5 text-white"></i>
-                                <div class="text-left">
-                                    <div class="text-sm font-semibold text-white">Soumettre</div>
-                                    <div class="text-xs text-emerald-100">Validation finale</div>
-                                </div>
-                            </div>
-                            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                        <button id="submitChallenge" class="btn bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white flex-1">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                            <span>Soumettre</span>
                         </button>
                     </div>
                 </div>
@@ -295,47 +213,38 @@
         </div>
     </main>
 
-    <!-- Custom scrollbar styles -->
-    <style>
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(30, 41, 59, 0.3);
-            border-radius: 3px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(59, 130, 246, 0.5);
-            border-radius: 3px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(59, 130, 246, 0.7);
-        }
-    </style>
-
     <!-- Scripts -->
     <script>
-        // Ajouter les animations au scroll
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
+        function showTooltip(e) {
+            const tooltip = this.getAttribute('data-tooltip');
+            if (!tooltip) return;
 
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate-fade-in');
-                }
-            });
-        }, observerOptions);
+            const tooltipEl = document.createElement('div');
+            tooltipEl.className = 'tooltip';
+            tooltipEl.textContent = tooltip;
 
-        // Observer tous les éléments avec animation
-        document.querySelectorAll('.glass-effect').forEach(el => {
-            observer.observe(el);
-        });
+            // Positionnement
+            const rect = this.getBoundingClientRect();
+            tooltipEl.style.position = 'fixed';
+            tooltipEl.style.left = `${rect.left + (rect.width / 2)}px`;
+            tooltipEl.style.top = `${rect.top - 40}px`;
+            tooltipEl.style.transform = 'translateX(-50%)';
+            tooltipEl.style.zIndex = '1000';
+            tooltipEl.style.pointerEvents = 'none';
+            tooltipEl.classList.add('bg-slate-800', 'text-white', 'text-xs', 'px-2', 'py-1', 'rounded', 'shadow-lg', 'border', 'border-slate-700');
+
+            document.body.appendChild(tooltipEl);
+
+            // Stocker la référence pour pouvoir la supprimer
+            this._tooltip = tooltipEl;
+        }
+
+        function hideTooltip() {
+            if (this._tooltip) {
+                this._tooltip.remove();
+                this._tooltip = null;
+            }
+        }
     </script>
 
     <!-- Script principal -->
