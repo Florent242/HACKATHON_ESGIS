@@ -1,34 +1,42 @@
 <?php
 
-namespace Piston;
+namespace Judge0;
 
 /**
- * Classe pour représenter une réponse de l'API Piston
+ * Classe pour représenter une réponse de l'API Judge0
  */
-class PistonResponse
+class Judge0Response
 {
-    private $language;
-    private $version;
-    private $compile;
-    private $run;
+    private $stdout;
+    private $time;
+    private $memory;
+    private $stderr;
+    private $token;
+    private $compile_output;
+    private $message;
+    private $status;
+    private $allData;
     private $success;
     private $executionTime;
     private $memoryUsed;
-    private $allData;
     private $other;
 
     public function __construct($data)
     {
-        $this->language = $data['language'] ?? '';
-        $this->version = $data['version'] ?? '';
-        $this->compile = $data['compile'] ?? null;
-        $this->run = $data['run'] ?? null;
+        $this->stdout = $data['stdout'] ?? '';
+        $this->time = $data['time'] ?? '0.000';
+        $this->memory = $data['memory'] ?? 0;
+        $this->stderr = $data['stderr'] ?? null;
+        $this->token = $data['token'] ?? '';
+        $this->compile_output = $data['compile_output'] ?? null;
+        $this->message = $data['message'] ?? null;
+        $this->status = $data['status'] ?? ['id' => 0, 'description' => 'Unknown'];
         $this->allData = $data;
         $this->other = $data['other'] ?? null;
-        
+
         // Déterminer le succès
         $this->success = $this->determineSuccess();
-        
+
         // Extraire les métriques de performance
         $this->extractMetrics();
     }
@@ -39,12 +47,12 @@ class PistonResponse
     private function determineSuccess()
     {
         // Échec de compilation
-        if ($this->compile && $this->compile['code'] !== 0) {
+        if ($this->compile_output && $this->compile_output !== '') {
             return false;
         }
 
         // Échec d'exécution
-        if ($this->run && $this->run['code'] !== 0) {
+        if ($this->stderr && $this->stderr !== '') {
             return false;
         }
 
@@ -56,13 +64,11 @@ class PistonResponse
      */
     private function extractMetrics()
     {
-        if ($this->run && isset($this->run['memory'])) {
-            $this->memoryUsed = $this->run['memory'];
-        }
+        $this->memoryUsed = $this->memory;
 
-        if ($this->run && isset($this->run['cpu_time'])) {
+        if ($this->time) {
             // Convertir en millisecondes
-            $this->executionTime = round($this->run['cpu_time'] * 1000);
+            $this->executionTime = round(floatval($this->time) * 1000);
         }
     }
 
@@ -71,11 +77,7 @@ class PistonResponse
      */
     public function getOutput()
     {
-        if (!$this->run) {
-            return '';
-        }
-
-        return trim($this->run['stdout'] ?? '');
+        return trim($this->stdout ?? '');
     }
 
     /**
@@ -86,13 +88,13 @@ class PistonResponse
         $errors = [];
 
         // Erreurs de compilation
-        if ($this->compile && !empty($this->compile['stderr'])) {
-            $errors[] = "Erreur de compilation:\n" . $this->compile['stderr'];
+        if ($this->compile_output && !empty($this->compile_output)) {
+            $errors[] = "Erreur de compilation:\n" . $this->compile_output;
         }
 
         // Erreurs d'exécution
-        if ($this->run && !empty($this->run['stderr'])) {
-            $errors[] = "Erreur d'exécution:\n" . $this->run['stderr'];
+        if ($this->stderr && !empty($this->stderr)) {
+            $errors[] = "Erreur d'exécution:\n" . $this->stderr;
         }
 
         return implode("\n\n", $errors);
@@ -103,12 +105,8 @@ class PistonResponse
      */
     public function getExitCode()
     {
-        if ($this->compile && $this->compile['code'] !== 0) {
-            return $this->compile['code'];
-        }
-
-        if ($this->run) {
-            return $this->run['code'];
+        if ($this->status && $this->status['id'] !== 0) {
+            return $this->status['id'];
         }
 
         return 0;
@@ -119,16 +117,11 @@ class PistonResponse
      */
     public function isTimeout()
     {
-        // Vérifier le signal (SIGTERM = 15, SIGKILL = 9)
-        if ($this->run && isset($this->run['signal'])) {
-            return in_array($this->run['signal'], [9, 15]);
-        }
-
         // Vérifier les messages d'erreur typiques de timeout
         $error = $this->getError();
-        return stripos($error, 'timeout') !== false || 
-               stripos($error, 'time limit') !== false ||
-               stripos($error, 'killed') !== false;
+        return stripos($error, 'timeout') !== false ||
+            stripos($error, 'time limit') !== false ||
+            stripos($error, 'killed') !== false;
     }
 
     /**
@@ -138,8 +131,8 @@ class PistonResponse
     {
         $error = $this->getError();
         return stripos($error, 'memory') !== false ||
-               stripos($error, 'out of memory') !== false ||
-               stripos($error, 'segmentation fault') !== false;
+            stripos($error, 'out of memory') !== false ||
+            stripos($error, 'segmentation fault') !== false;
     }
 
     /**
@@ -148,7 +141,7 @@ class PistonResponse
     public function compareOutput($expectedOutput, $strict = true)
     {
         $actualOutput = $this->getOutput();
-        
+
         if ($strict) {
             return trim($actualOutput) === trim($expectedOutput);
         } else {
@@ -165,8 +158,14 @@ class PistonResponse
     public function toArray()
     {
         return [
-            'language' => $this->language,
-            'version' => $this->version,
+            'stdout' => $this->stdout,
+            'time' => $this->time,
+            'memory' => $this->memory,
+            'stderr' => $this->stderr,
+            'token' => $this->token,
+            'compile_output' => $this->compile_output,
+            'message' => $this->message,
+            'status' => $this->status,
             'success' => $this->success,
             'output' => $this->getOutput(),
             'error' => $this->getError(),
@@ -175,9 +174,6 @@ class PistonResponse
             'memory_used_bytes' => $this->memoryUsed,
             'is_timeout' => $this->isTimeout(),
             'is_memory_limit' => $this->isMemoryLimit(),
-            'compile_info' => $this->compile,
-            'run_info' => $this->run,
-            // 'other' => $this->other
         ];
     }
 
@@ -201,7 +197,7 @@ class PistonResponse
         if (!$this->success) {
             $result['error'] = $this->getError();
             $result['exit_code'] = $this->getExitCode();
-            
+
             if ($this->isTimeout()) {
                 $result['error_type'] = 'timeout';
             } elseif ($this->isMemoryLimit()) {
@@ -215,10 +211,16 @@ class PistonResponse
     }
 
     // Getters
-    public function isSuccess() { return $this->success; }
-    public function getExecutionTime() { return $this->executionTime; }
-    public function getMemoryUsed() { return $this->memoryUsed; }
-    public function getLanguage() { return $this->language; }
-    public function getVersion() { return $this->version; }
-    public function getOther() { return $this->other; }
+    public function isSuccess()
+    {
+        return $this->success;
+    }
+    public function getExecutionTime()
+    {
+        return $this->executionTime;
+    }
+    public function getMemoryUsed()
+    {
+        return $this->memoryUsed;
+    }
 }

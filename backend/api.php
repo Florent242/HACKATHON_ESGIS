@@ -780,7 +780,7 @@ try {
                     throw new Exception('Méthode non autorisée ou paramètres invalides', 400);
                 }
             } elseif ($id === 'dev') {
-                // GET /api/challenges/dev/{hackathon_id}/{user_id}
+                // GET /api/challenges/dev/{hackathon_id}/{user_id}/{phase_id}
                 if ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3]) && isset($request[4]) && is_numeric($request[4])) {
                     $controller->getChallengesDev($request[2], $request[3], $request[4]);
                 }
@@ -791,7 +791,7 @@ try {
                     $challengeId = $input['challenge_id'] ?? null;
 
                     if ($action === 'validate' && $challengeId) {
-                        $controller->validateCode($challengeId);
+                        $controller->validateCode($challengeId, $request[3]);
                     } elseif ($action === 'submit' && $challengeId) {
                         $controller->submitAlgorithmic($challengeId);
                     } else {
@@ -843,10 +843,13 @@ try {
                         throw new Exception('Méthode non autorisée', 405);
                     }
                 }
-            } elseif ($id === 'hackathon' && is_numeric($action)) {
-                // GET /api/challenges/hackathon/{id}
-                $controller->getByHackathon($action);
-            } else {
+            } 
+            // TODO: insruction non valide pour l'instant
+            // elseif ($id === 'hackathon' && is_numeric($action)) {
+            //     // GET /api/challenges/hackathon/{id}
+            //     $controller->getByHackathon($action);
+            // } 
+            else {
                 throw new Exception('ID non valide pour /challenges', 400);
             }
             break;

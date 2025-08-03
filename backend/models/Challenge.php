@@ -16,7 +16,12 @@ class Challenge
         $this->db = $db;
     }
 
-    public function find($id)
+    /**
+     * Récupère un challenge par son ID
+     * @param int $id
+     * @return array|null
+     */
+    public function find($id, $user_id)
     {
         try {
             $sql = "SELECT c.id,
@@ -35,6 +40,7 @@ class Challenge
             c.updated_at,
             c.created_by,
             c.hackathon_id,
+            c.phase_id,
             u.username as created_by_username,
                     h.name as hackathon_titre
                     FROM {$this->table} c
@@ -47,20 +53,39 @@ class Challenge
             $stmt->execute([':id' => $id]);
             $challenge = $stmt->fetch(PDO::FETCH_ASSOC);
 
+
             if (!$challenge) {
                 return null;
             }
 
-            $sqlSnippets = "SELECT * FROM snippets WHERE challenge_id = :challenge_id";
-            $stmtSnippets = $this->db->prepare($sqlSnippets);
-            $stmtSnippets->execute([':challenge_id' => $id]);
-            $snippets = $stmtSnippets->fetchAll(PDO::FETCH_ASSOC);
-
-            foreach ($snippets as &$snippet) {
-                unset($snippet['id'], $snippet['challenge_id'], $snippet['created_at'], $snippet['updated_at']);
+            // verifier si la phase est active
+            if ($challenge['phase_id'] !== null && !$this->isPhaseActive($challenge['hackathon_id'], $challenge['phase_id'])) {
+                throw new Exception("La phase du challenge n'est pas active actuellement !");
             }
-            unset($snippet); // Détruire la référence
-            $challenge['snippets'] = $snippets;
+
+            // Obtenir les snippets
+            if ($challenge['type'] === 'dev' && $challenge['category'] === 'algo') {
+                $sqlSnippets = "SELECT * FROM snippets WHERE challenge_id = :challenge_id";
+                $stmtSnippets = $this->db->prepare($sqlSnippets);
+                $stmtSnippets->execute([':challenge_id' => $id]);
+                $snippets = $stmtSnippets->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach ($snippets as &$snippet) {
+                    unset($snippet['id'], $snippet['challenge_id'], $snippet['created_at'], $snippet['updated_at']);
+                }
+                unset($snippet); // Détruire la référence
+                $challenge['snippets'] = $snippets;
+            }
+
+            // Verifier si le challenge est actif
+            if (!$challenge['is_active']) {
+                throw new Exception("Le challenge n'est pas actif !");
+            }
+
+            // Verifier si l'utilisateur est inscrit au hackathon
+            if (!$this->isRegistered($user_id, $challenge['hackathon_id'])) {
+                throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
+            }
 
             return $challenge;
         } catch (PDOException $e) {
@@ -91,6 +116,7 @@ class Challenge
             c.updated_at,
             c.created_by,
             c.hackathon_id,
+            c.phase_id,
             u.username as created_by_name,
                     h.name as hackathon_titre,
                     COUNT(DISTINCT p.id) as nombre_projects
@@ -103,7 +129,14 @@ class Challenge
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $challenges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach ($challenges as $key => $challenge) {
+                if ($challenge['phase_id'] !== null && !$this->isPhaseActive($challenge['hackathon_id'], $challenge['phase_id'])) {
+                    unset($challenges[$key]);
+                }
+            }
+            return $challenges;
         } catch (PDOException $e) {
             throw new Exception("Erreur lors de la récupération de tous les challenges : " . $e->getMessage());
         }
@@ -148,12 +181,9 @@ class Challenge
             }
 
             // Récupérer l’équipe du joueur
-            $teamStmt = $this->db->prepare("SELECT team_id FROM team_members WHERE user_id = :user_id LIMIT 1");
-            $teamStmt->execute([':user_id' => $user_id]);
-            $team_id = $teamStmt->fetchColumn();
+            $team_id = $this->getTeam($user_id);
 
             if (!$team_id) {
-                if ($this->db->inTransaction()) $this->db->rollBack();
                 return [
                     'success' => false,
                     'message' => "Vous n'appartenez à aucune équipe.",
@@ -397,8 +427,21 @@ class Challenge
         }
     }
 
-    public function getchallengeAlgo($hackathon_id, $user_id, $phase_id)
+    /**
+     * Récupère les défis algorithmiques sans leur snippets
+     *
+     * @param int $hackathon_id L'ID du hackathon.
+     * @param int $user_id L'ID de l'utilisateur.
+     * @param int $phase_id L'ID de la phase.
+     * @return array Les défis algorithmiques.
+     * @throws Exception Si une erreur de base de données survient.
+     */
+    public function getChallengeAlgo($hackathon_id, $user_id, $phase_id)
     {
+        // Verifier si l'utiisateur est inscrit au hackathon
+        if (!$this->isRegistered($user_id, $hackathon_id)) {
+            throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
+        }
         try {
             $sql = "SELECT 
             c.id,
@@ -470,9 +513,9 @@ class Challenge
     {
         try {
             // Verifier si l'utiisateur est inscrit au hackathon
-            // if (!$this->isRegistered($user_id, $hackathon_id)) {
-            //     throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
-            // }
+            if (!$this->isRegistered($user_id, $hackathon_id)) {
+                throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
+            }
             $sql = "SELECT 
                 c.id,
                 c.title,
@@ -708,6 +751,30 @@ class Challenge
         }
     }
 
+    /**
+     * Recuperer l'equipe de l'utilisateur
+     * @param int $user_id
+     * @return int|null Team ID
+     */
+    public function getTeam($user_id)
+    {
+        try {
+            $teamStmt = $this->db->prepare("SELECT team_id FROM team_members WHERE user_id = :user_id LIMIT 1");
+            $teamStmt->execute([':user_id' => $user_id]);
+            $team_id = $teamStmt->fetchColumn();
+
+            if (!$team_id) {
+                return null;
+            }
+            return $team_id;
+        } catch (Exception $e) {
+            throw new Exception(
+                "Erreur lors de la récupération de l'équipe de l'utilisateur !"
+                // pour debug
+                // . $e->getMessage()
+            );
+        }
+    }
 
     /**
      * Verifier si le challenge est ouvert
@@ -780,11 +847,11 @@ class Challenge
      * @param bool $includePrivateTests Inclure les tests privés (pour l'évaluation)
      * @return array|null
      */
-    public function findAlgorithmic($challengeId, $includePrivateTests = false)
+    public function findAlgorithmic($challengeId, $user_id, $includePrivateTests = false)
     {
         try {
             // Récupérer le défi de base
-            $challenge = $this->find($challengeId);
+            $challenge = $this->find($challengeId, $user_id);
             if (!$challenge || $challenge['category'] !== 'algo') {
                 return null;
             }
@@ -826,7 +893,7 @@ class Challenge
      * @param string $sourceCode
      * @return int ID de la soumission
      */
-    public function createSubmission($challengeId, $userId, $hackathonId, $language, $sourceCode)
+    public function createSubmission($challengeId, $userId, $hackathonId, $language, $sourceCode, $teamId)
     {
         try {
             // Vérifier que l'utilisateur est inscrit au hackathon
@@ -835,9 +902,19 @@ class Challenge
             }
 
             // Vérifier que le défi existe et est algorithmique
-            $challenge = $this->findAlgorithmic($challengeId);
+            $challenge = $this->findAlgorithmic($challengeId, $userId);
             if (!$challenge) {
                 throw new Exception("Défi algorithmique non trouvé !");
+            }
+
+            // Verifier si le challenge est ouvert
+            if (!$this->isChallengeOpen($challengeId)) {
+                throw new Exception("Le défi n'est pas ouvert !");
+            }
+
+            // Verifier si la phase est active
+            if (!$this->isPhaseActive($hackathonId, $challenge['phase_id'])) {
+                throw new Exception("La phase n'est pas active !");
             }
 
             // Vérifier que le langage est autorisé
@@ -850,13 +927,14 @@ class Challenge
 
             $stmt = $this->db->prepare("
                 INSERT INTO challenge_submissions 
-                (challenge_id, user_id, hackathon_id, language, code, status, submitted_at)
-                VALUES (:challenge_id, :user_id, :hackathon_id, :language, :source_code, 'pending', NOW())
+                (challenge_id, user_id, team_id, hackathon_id, language, code, status, submitted_at)
+                VALUES (:challenge_id, :user_id, :team_id, :hackathon_id, :language, :source_code, 'pending', NOW())
             ");
 
             $stmt->execute([
                 ':challenge_id' => $challengeId,
                 ':user_id' => $userId,
+                ':team_id' => $teamId,
                 ':hackathon_id' => $hackathonId,
                 ':language' => $language,
                 ':source_code' => $sourceCode

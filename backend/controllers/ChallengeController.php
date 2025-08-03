@@ -134,12 +134,23 @@ class ChallengeController extends Controller
 
         try {
             $this->validateMethod('GET');
-            $challenges = $this->challenge->getchallengeAlgo($hackathon_id, $user_id, $phase_id);
 
             // Verifier si l'utiisateur est inscrit au hackathon
             if (!$this->isRegistered($user_id, $hackathon_id)) {
                 throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
             }
+
+            // Vérifier si la phase est active
+            if ($phase_id !== null && !$this->challenge->isPhaseActive($hackathon_id, $phase_id)) {
+                throw new Exception("Cette phase n'est pas active actuellement !");
+            }
+
+            // Vérifier si la période du hackathon est active
+            if (!$this->challenge->isChallengeLaunchPeriod($hackathon_id)) {
+                throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
+            }
+
+            $challenges = $this->challenge->getChallengeAlgo($hackathon_id, $user_id, $phase_id);
 
             $this->jsonResponse([
                 'success' => true,
@@ -246,7 +257,9 @@ class ChallengeController extends Controller
         try {
             $this->validateMethod('GET');
 
-            $challenge = $this->challenge->find($id);
+            $userId = $this->tokenManager->getCurrentUserId();
+
+            $challenge = $this->challenge->find($id, $userId);
             if (!$challenge) {
                 throw new Exception('Challenge non trouvé');
             }
@@ -335,29 +348,29 @@ class ChallengeController extends Controller
 
             // Vérifier l'authentification (token Bearer ou session)
             $userId = $this->tokenManager->getCurrentUserId();
-            
+
             // Si pas de token valide, essayer l'authentification par session
             if (!$userId) {
                 if (session_status() === PHP_SESSION_NONE) {
                     session_start();
                 }
-                
+
                 if (!isset($_SESSION['user_id'])) {
                     throw new Exception('Authentification requise', 401);
                 }
-                
+
                 $userId = $_SESSION['user_id'];
             }
 
             // Récupérer le défi avec les cas de test publics seulement
-            $challenge = $this->challenge->findAlgorithmic($challengeId, false);
+            $challenge = $this->challenge->findAlgorithmic($challengeId, $userId, false);
             if (!$challenge) {
                 throw new Exception('Défi algorithmique non trouvé', 404);
             }
 
             // Récupérer la meilleure soumission de l'utilisateur s'il y en a une
             $bestSubmission = $this->challenge->getBestSubmission($challengeId, $userId);
-            
+
             // Récupérer l'historique des soumissions
             $history = $this->challenge->getSubmissionHistory($challengeId, $userId, 5);
 
@@ -390,18 +403,17 @@ class ChallengeController extends Controller
             // Authentification JWT pure
             $token = $this->getBearerToken();
             if (!$token) {
-                throw new Exception('Token JWT requis dans le header Authorization', 401);
+                throw new Exception('Token manquant', 401);
             }
 
-           // TODO: retirer et mettre pluto une autre methode de recuperation de l'utilisateur
-           
+            // TODO: retirer et mettre plutot une autre methode de recuperation de l'utilisateur
 
             // Récupérer les données de la soumission
             $input = $this->getJsonInput();
-            
-            
+
+
             if (!isset($input['code']) || !isset($input['hackathon_id'])) {
-                throw new Exception('source manque', 400);
+                throw new Exception('Code source manquant', 400);
             }
             if (!isset($input['language']) || !isset($input['code']) || !isset($input['hackathon_id'])) {
                 throw new Exception('Données de soumission incomplètes', 400);
@@ -410,7 +422,7 @@ class ChallengeController extends Controller
             $language = trim($input['language']);
             $sourceCode = trim($input['code']);
             $hackathonId = (int)$input['hackathon_id'];
-            $userId=(int)$input['user_id'];
+            $userId = (int)$input['user_id'];
             // Validation basique du code
             if (empty($sourceCode)) {
                 throw new Exception('Le code source ne peut pas être vide', 400);
@@ -420,13 +432,38 @@ class ChallengeController extends Controller
                 throw new Exception('Le code source est trop volumineux (max 50KB)', 400);
             }
 
+            // Recuperer l'equipe de l'utilisateur
+            $teamId = $this->challenge->getTeam($userId);
+            if (!$teamId) {
+                throw new Exception("Vous n'appartenez à aucune équipe.", 404);
+            }
+
+            // Verifier si un membre de l'équipe a déjà validé ce challenge
+            $checkQuery = "
+                SELECT cs.id
+                FROM challenge_submissions cs
+                WHERE cs.challenge_id = :challenge_id
+                AND cs.team_id = :team_id
+                AND cs.status = 'completed'
+            ";
+            $stmt = $this->db->prepare($checkQuery);
+            $stmt->execute([
+                ':challenge_id' => $challengeId,
+                ':team_id' => $teamId
+            ]);
+            $result = $stmt->fetch();
+            if ($result) {
+                throw new Exception('Un membre de votre équipe a déjà validé ce challenge.', 400);
+            }
+
             // Créer la soumission
             $submissionId = $this->challenge->createSubmission(
-                $challengeId, 
-                $userId, 
-                $hackathonId, 
-                $language, 
-                $sourceCode 
+                $challengeId,
+                $userId,
+                $hackathonId,
+                $language,
+                $sourceCode,
+                $teamId
             );
 
             // Démarrer l'évaluation en arrière-plan
@@ -525,13 +562,13 @@ class ChallengeController extends Controller
         } catch (Exception $e) {
             // En cas d'erreur, marquer la soumission comme échouée
             $this->challenge->updateSubmissionResults(
-                $submissionId, 
-                'error', 
-                0, 
-                null, 
-                null, 
-                0, 
-                0, 
+                $submissionId,
+                'error',
+                0,
+                null,
+                null,
+                0,
+                0,
                 'Erreur interne: ' . $e->getMessage()
             );
             throw $e;
@@ -542,7 +579,7 @@ class ChallengeController extends Controller
      * Validation rapide du code (tests publics seulement)
      * POST /api/challenges/algorithmic/{id}/validate
      */
-    public function validateCode($challengeId)
+    public function validateCode($challengeId, $userId)
     {
         try {
             $this->validateMethod('POST');
@@ -553,10 +590,10 @@ class ChallengeController extends Controller
                 throw new Exception('Token JWT requis dans le header Authorization', 401);
             }
 
-         
+
             // Récupérer les données
             $input = $this->getJsonInput();
-            
+
             if (!isset($input['language']) || !isset($input['code'])) {
                 throw new Exception('Langage et code requis', 400);
             }
@@ -573,7 +610,7 @@ class ChallengeController extends Controller
             $validationService = new \Auth\Service\ChallengeValidationService($this->db, $this->challenge);
 
             // Valider contre les tests publics
-            $results = $validationService->validateCode($challengeId, $code, $language);
+            $results = $validationService->validateCode($challengeId, $code, $language, $userId);
 
             $this->jsonResponse([
                 'success' => $results['success'],
@@ -594,12 +631,12 @@ class ChallengeController extends Controller
     {
         $input = file_get_contents('php://input');
         $data = json_decode($input, true);
-        
+
         if (json_last_error() !== JSON_ERROR_NONE) {
             // Si ce n'est pas du JSON valide, essayer $_POST
             return $_POST;
         }
-        
+
         return $data ?: [];
     }
 }

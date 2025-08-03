@@ -29,7 +29,7 @@ class PistonExecutor
         // Validation de sécurité
         try {
             $request->validateSecurity();
-        } catch (SecurityException $e) {
+        } catch (\InvalidArgumentException $e) { // Changer SecurityException en InvalidArgumentException
             throw new \Exception('Code non autorisé: ' . $e->getMessage());
         }
 
@@ -39,6 +39,7 @@ class PistonExecutor
         while ($attempts < $this->retryAttempts) {
             try {
                 $response = $this->makeRequest($request);
+                $response['other'] = $request->toArray();
                 return new PistonResponse($response);
             } catch (\Exception $e) {
                 $lastError = $e;
@@ -71,6 +72,7 @@ class PistonExecutor
             'error' => $response->getError(),
             'is_timeout' => $response->isTimeout(),
             'is_memory_limit' => $response->isMemoryLimit()
+            //, 'other' => $response->getOther(),
         ];
     }
 

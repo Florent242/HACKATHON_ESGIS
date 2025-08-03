@@ -39,7 +39,60 @@ body {
     margin: 0;
     padding: 0;
 }
+.interface-error-overlay {
+    position: fixed;
+    z-index: 99;
+    inset: 0;
+    background: rgba(10,15,28,0.75);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s;
+}
 
+.interface-error-modal {
+    background: var(--card-bg, linear-gradient(135deg, #1A1F2B 0%, #141925 100%));
+    border-radius: 1rem;
+    box-shadow: var(--shadow-lg, 0 10px 25px rgba(0,0,0,0.2));
+    border: 1.5px solid var(--border, #2D3441);
+    padding: 2.5rem 2rem 2rem 2rem;
+    min-width: 320px;
+    max-width: 90vw;
+    text-align: center;
+    color: var(--text, #fff);
+    position: relative;
+    animation: modalSlideIn 0.3s cubic-bezier(0.4,0,0.2,1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.interface-error-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    animation: pulse 3s linear infinite alternate;
+}
+
+.interface-error-message {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+@media (max-width: 480px) {
+    .interface-error-modal {
+        min-width: 0;
+        padding: 1.25rem 0.5rem;
+        font-size: 1rem;
+    }
+}
 /* Effet de verre moderne */
 .glass-effect {
     background: rgba(26, 31, 43, 0.7);
@@ -220,14 +273,6 @@ body {
 @keyframes pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.5; }
-}
-
-.animate-fade-in {
-    animation: fadeIn 0.5s ease-out forwards;
-}
-
-.animate-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* Scrollbar personnalisée */
@@ -475,6 +520,17 @@ p {
 @keyframes shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .loading-shimmer {

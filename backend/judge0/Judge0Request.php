@@ -1,36 +1,38 @@
 <?php
 
-namespace Piston;
+namespace Judge0;
 
 /**
- * Classe pour représenter une requête vers l'API Piston
+ * Classe pour représenter une requête vers l'API Judge0
  */
-class PistonRequest
+class Judge0Request
 {
-    private $language;
-    private $version;
-    private $files;
+    private $languageId;
+    private $source_code;
     private $stdin;
     private $args;
-    private $compile_timeout;
-    private $run_timeout;
-    private $compile_memory_limit;
-    private $run_memory_limit;
+    private $cpu_time_limit;
+    private $real_time_limit;
+    private $memory_limit;
+    private $expected_output;
 
-    // Mapping des langages pour Piston
-    private static $languageMap = [
-        'python' => ['language' => 'python', 'version' => '3.10.0'],
-        'javascript' => ['language' => 'javascript', 'version' => '18.15.0'],
-        'typescript' => ['language' => 'typescript', 'version' => '5.0.3'],
-        'java' => ['language' => 'java', 'version' => '15.0.2'],
-        'cpp' => ['language' => 'cpp', 'version' => '10.2.0'],
-        'c' => ['language' => 'c', 'version' => '10.2.0'],
-        'csharp' => ['language' => 'csharp', 'version' => '6.12.0'],
-        'php' => ['language' => 'php', 'version' => '8.2.3'],
-        'ruby' => ['language' => 'ruby', 'version' => '3.0.1'],
-        'go' => ['language' => 'go', 'version' => '1.16.2'],
-        'bash' => ['language' => 'bash', 'version' => '5.2.0']
+    // Mapping des langages pour Judge0
+    private static $languageIdMap = [
+        'bash'        => 46,   // Bash (5.0.0)
+        'c'           => 50,   // C (Clang 9.2.0)
+        'cpp'         => 54,   // C++ (Clang 9.2.0)
+        'java'        => 26,  // Java (OpenJDK 9 with Eclipse OpenJ9)
+        'javascript'  => 63,  // Node.js (JavaScript 12.14.0)
+        'python'      => 71,  // Python (3.8.1)
+        'php'         => 68,  // PHP (7.4.1)
+        'ruby'        => 72,  // Ruby (2.7.0)
+        'go'          => 22,  // Go (1.9)
+        'csharp'      => 51,   // C# (Mono 6.6.0.161)
+        'typescript'  => 74,  // TypeScript (3.7.4)
+        'rust'        => 73,  // Rust (1.40.0)
+        'pascal'      => 67,  // Pascal (FPC 3.0.4)
     ];
+    
 
     public function __construct($language, $sourceCode, $stdin = '', $args = [])
     {
@@ -38,21 +40,14 @@ class PistonRequest
         $language = strtolower(trim($language));
         
         // Mapper le langage si nécessaire
-        if (!isset(self::$languageMap[$language])) {
+        if (!isset(self::$languageIdMap[$language])) {
             throw new \InvalidArgumentException("Langage non supporté: $language");
         }
 
-        $langConfig = self::$languageMap[$language];
-        $this->language = $langConfig['language'];
-        $this->version = $langConfig['version'];
+        $this->languageId = self::$languageIdMap[$language];
         
         // Configurer le fichier source
-        $this->files = [
-            [
-                'name' => $this->getFileName($language),
-                'content' => $sourceCode
-            ]
-        ];
+        $this->source_code = $sourceCode;
         
         // Traiter les nouvelles lignes échappées dans stdin
         $stdin = str_replace('\\n', "\n", $stdin);
@@ -60,10 +55,9 @@ class PistonRequest
         $this->args = $args;
         
         // Limites par défaut pour les défis algorithmiques
-        $this->compile_timeout = 10000; // 10 secondes
-        $this->run_timeout = 15000;      // 5 secondes
-        $this->compile_memory_limit = 2056000000; // 128MB
-        $this->run_memory_limit = 2056000000;     // 128MB
+        $this->cpu_time_limit = 2.0;      // 5 secondes
+        $this->real_time_limit = 128000; // 128MB
+        $this->memory_limit = 128000;     // 128MB
     }
 
     /**
@@ -90,12 +84,10 @@ class PistonRequest
     /**
      * Configure les limites d'exécution personnalisées
      */
-    public function setLimits($compileTimeout = null, $runTimeout = null, $compileMemory = null, $runMemory = null)
+    public function setLimits($runTimeout = null, $runMemory = null)
     {
-        if ($compileTimeout !== null) $this->compile_timeout = $compileTimeout;
-        if ($runTimeout !== null) $this->run_timeout = $runTimeout;
-        if ($compileMemory !== null) $this->compile_memory_limit = $compileMemory;
-        if ($runMemory !== null) $this->run_memory_limit = $runMemory;
+        if ($runTimeout !== null) $this->cpu_time_limit = $runTimeout;
+        if ($runMemory !== null) $this->memory_limit = $runMemory;
     }
 
     /**
@@ -124,15 +116,12 @@ class PistonRequest
     public function toArray()
     {
         return [
-            'language' => $this->language,
-            'version' => $this->version,
-            'files' => $this->files,
+            'language_id' => $this->languageId,
+            'source_code' => $this->source_code,
             'stdin' => $this->stdin,
             'args' => $this->args,
-            'compile_timeout' => $this->compile_timeout,
-            'run_timeout' => $this->run_timeout,
-            'compile_memory_limit' => $this->compile_memory_limit,
-            'run_memory_limit' => $this->run_memory_limit
+            'cpu_time_limit' => $this->cpu_time_limit,
+            'memory_limit' => $this->memory_limit
         ];
     }
 
@@ -141,7 +130,7 @@ class PistonRequest
      */
     public function validateSecurity()
     {
-        $sourceCode = $this->files[0]['content'];
+        $sourceCode = $this->source_code;
         
         // Patterns dangereux par langage
         $dangerousPatterns = [
@@ -194,7 +183,7 @@ class PistonRequest
             ]
         ];
 
-        $patterns = $dangerousPatterns[$this->language] ?? [];
+        $patterns = $dangerousPatterns[$this->languageId] ?? [];
         
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $sourceCode)) {
@@ -206,10 +195,10 @@ class PistonRequest
     }
 
     // Getters
-    public function getLanguage() { return $this->language; }
-    public function getVersion() { return $this->version; }
-    public function getSourceCode() { return $this->files[0]['content']; }
+    public function getLanguage() { return $this->languageId; }
+    public function getSourceCode() { return $this->source_code; }
     public function getStdin() { return $this->stdin; }
+    public function setStdin($input) { $this->stdin = $input; return $this; }
 }
 
 /**

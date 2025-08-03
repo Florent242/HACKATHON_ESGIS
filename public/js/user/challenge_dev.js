@@ -159,9 +159,11 @@ async function loadChallenges(hackathonId) {
         if (!response.success) {
             if (
                 response.status === "phase_inactive" ||
-                response.message?.includes("période de l'événement")
+                response.status >= 400 ||
+                response.message?.includes("période de l'événement") ||
+                response.message?.includes("phase")
             ) {
-                showPhaseInactiveState(response.message);
+                showPhaseInactiveState(response.message || "Les challenges ne sont pas disponibles pour le moment.");
             } else {
                 handleError("Erreur lors de la récupération des challenges", response.message);
             }
@@ -176,6 +178,8 @@ async function loadChallenges(hackathonId) {
     } catch (error) {
         console.error('Erreur lors du chargement des challenges:', error);
         showErrorState(error.message);
+    } finally {
+        hideLoadingState();
     }
 }
 
@@ -446,7 +450,8 @@ function showLoadingState() {
     const grid = document.getElementById('challenges-grid');
     if (!grid) return;
 
-    grid.innerHTML = `
+    const loading = document.createElement('div');
+    loading.innerHTML = `
         <div class="loading-state">
             <div class="loading-spinner">
                 <i data-lucide="loader-2" class="w-8 h-8 animate-spin"></i>
@@ -454,12 +459,23 @@ function showLoadingState() {
             <p class="loading-text">Chargement des challenges...</p>
         </div>
     `;
+    
+    grid.appendChild(loading);
 
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
 }
 
+function hideLoadingState() {
+    const grid = document.getElementById('challenges-grid');
+    if (!grid) return;
+
+    const loadingState = grid.querySelector('.loading-state');
+    if (loadingState) {
+        loadingState.remove();
+    }
+}
 /**
  * Affiche l'état vide
  */

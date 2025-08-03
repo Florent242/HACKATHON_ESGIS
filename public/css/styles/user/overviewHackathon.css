@@ -136,7 +136,6 @@ main {
     width: 100%;
     padding: 10px;
     border-radius: 10px;
-    background: var(--blue);
     font-size: 1.2rem;
     font-weight: bold;
     cursor: pointer;

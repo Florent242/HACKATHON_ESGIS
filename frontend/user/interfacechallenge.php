@@ -45,8 +45,8 @@
                             <div class="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/20 shadow-lg shadow-blue-500/10">
                                 <i data-lucide="terminal" class="w-5 h-5 text-blue-400"></i>
                             </div>
-                            <div>
-                                <h2 class="text-md font-bold text-slate-100">Détails du défi</h2>
+                            <div class="flex flex-col">
+                                <span class="text-md font-bold text-slate-100">Détails du défi</span>
                                 <span class="text-xs text-slate-400">Informations essentielles</span>
                             </div>
                         </div>
@@ -60,10 +60,10 @@
                             <div class="relative p-4 bg-slate-800/50 rounded-xl border border-slate-700/50 transition-all duration-300 group-hover:border-blue-500/30">
                                 <div class="flex items-start justify-between">
                                     <div class="space-y-1">
-                                        <h1 id="challenge-title" class="text-md font-semibold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                                        <span id="challenge-title" class="text-2xl font-semibold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
                                             Chargement...
-                                        </h1>
-                                        <div class="flex flex-wrap items-center gap-2 pt-1">
+                                        </span>
+                                        <!-- <div class="flex flex-wrap items-center gap-2 pt-1">
                                             <span id="challenge-time" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full bg-slate-700/50 text-blue-300 border border-slate-600/50 hover:bg-slate-700/80 transition-colors" data-tooltip="Temps limite">
                                                 <i data-lucide="clock" class="w-3 h-3"></i>
                                                 <span>1s</span>
@@ -72,7 +72,7 @@
                                                 <i data-lucide="cpu" class="w-3 h-3"></i>
                                                 <span>1MB</span>
                                             </span>
-                                        </div>
+                                        </div> -->
                                     </div>
                                     <span id="challenge-difficulty" class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 border border-blue-500/20 shadow-md shadow-blue-500/5">
                                         <i data-lucide="zap" class="w-3 h-3"></i>
@@ -87,12 +87,12 @@
                             <!-- Description -->
                             <div class="group">
                                 <div class="flex items-center justify-between mb-2 cursor-pointer">
-                                    <h3 class="flex items-center gap-2 text-sm font-semibold text-blue-400/90 uppercase tracking-wider">
+                                    <span class="flex items-center gap-2 text-sm font-semibold text-blue-400/90 uppercase tracking-wider">
                                         <i data-lucide="align-left" class="w-4 h-4"></i>
                                         Description
-                                    </h3>
+                                    </span>
                                 </div>
-                                <div id="challenge-description" class="prose prose-invert prose-sm max-w-none text-slate-300 leading-relaxed transition-all duration-300 ease-in-out">
+                                <div id="challenge-description" class="prose prose-invert prose-sm text-sm max-w-none text-slate-300 leading-relaxed transition-all duration-300 ease-in-out">
                                     <div class="space-y-2">
                                         <div class="h-3 bg-slate-700/50 rounded-full loading-shimmer"></div>
                                         <div class="h-3 bg-slate-700/50 rounded-full loading-shimmer w-5/6"></div>
@@ -104,12 +104,12 @@
                             <!-- Instructions -->
                             <div class="group">
                                 <div class="flex items-center justify-between mb-2 cursor-pointer">
-                                    <h3 class="flex items-center gap-2 text-sm font-semibold text-amber-400/90 uppercase tracking-wider">
+                                    <span class="flex items-center gap-2 text-sm font-semibold text-amber-400/90 uppercase tracking-wider">
                                         <i data-lucide="info" class="w-4 h-4"></i>
                                         Instructions
-                                    </h3>
+                                    </span>
                                 </div>
-                                <div id="challenge-instructions" class="prose prose-invert prose-sm max-w-none text-slate-300 leading-relaxed transition-all duration-300 ease-in-out">
+                                <div id="challenge-instructions" class="prose prose-invert prose-sm text-sm max-w-none text-slate-300 leading-relaxed transition-all duration-300 ease-in-out">
                                     <div class="space-y-2">
                                         <div class="h-3 bg-slate-700/50 rounded-full loading-shimmer"></div>
                                         <div class="h-3 bg-slate-700/50 rounded-full loading-shimmer w-5/6"></div>
@@ -126,7 +126,7 @@
                     <div class="card-header">
                         <div class="flex items-center gap-2">
                             <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-                            <h3 class="card-title">Console</h3>
+                            <span class="card-title">Console</span>
                         </div>
                         <button id="toggleConsole" class="p-1.5 hover:bg-slate-700/50 rounded-lg transition-colors" aria-label="Réduire/agrandir la console">
                             <i id="toggleConsoleIcon" data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
@@ -150,7 +150,7 @@
                             <div class="header-icon">
                                 <i data-lucide="code" class="w-5 h-5"></i>
                             </div>
-                            <h3 class="card-title">Éditeur de code</h3>
+                            <span class="card-title">Éditeur de code</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <!-- Sélecteur de langage -->
@@ -184,17 +184,13 @@
                             <div class="header-icon bg-purple-500/10 border-purple-500/20 text-purple-400">
                                 <i data-lucide="flask-conical" class="w-5 h-5"></i>
                             </div>
-                            <h3 class="card-title">Tests & Validation</h3>
-                        </div>
-                        <div class="flex items-center gap-2 text-sm">
-                            <span id="testStatus" class="text-slate-400">En attente</span>
-                            <span id="testProgress" class="text-slate-500">0/0</span>
+                            <span class="card-title">Tests & Validation</span>
                         </div>
                     </div>
                     <div id="testResults" class="p-4 space-y-3 max-h-64 overflow-y-auto">
                         <div class="h-40 flex flex-col items-center justify-center text-center text-slate-500">
                             <i data-lucide="flask-conical" class="w-8 h-8 mb-3"></i>
-                            <h4 class="font-medium text-slate-300 mb-1">Prêt pour les tests</h4>
+                            <span class="font-medium text-slate-300 mb-1">Prêt pour les tests</span>
                             <p class="text-sm">Exécutez votre code pour voir les résultats</p>
                         </div>
                     </div>

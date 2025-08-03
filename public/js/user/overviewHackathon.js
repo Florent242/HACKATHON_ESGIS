@@ -408,7 +408,7 @@ const createMain = () => {
          
        <hr style="margin: 30px 0 20px; border: 0.1px solid var(--text); opacity: 0.1;">
 
-       <button id="registerForHackathon" class="btn flexDiv">
+       <button id="registerForHackathon" class="btn btn-primary btn-neon">
             <i data-lucide="users" stroke="#fff"></i>
             <strong style="color:var(--text);">Inscrire mon équipe</strong>
        </button>
@@ -643,7 +643,7 @@ const showRegistrationModal = async () => {
             ">
                 <div style="display: flex; align-items: center; gap: 0.3rem; margin: 0; color: #92400e; font-size: 14px;">
                     <i data-lucide="info" style="width: 2rem; height: 2rem; display: inline; margin-right: 0.3rem;"></i>
-                    <p><strong>Attention !</strong> Une fois inscrit, vous ne pourrez plus vous desinscrire ou vous inscrire a un autre evenement pour cette edition .</p>
+                    <p><strong>Attention !</strong> Une fois inscrit, vous ne pourrez plus vous désinscrire ou vous inscrire à un autre événement de cette édition.</p>
                 </div>
             </div>
                 
@@ -677,24 +677,9 @@ const showRegistrationModal = async () => {
             </div>
             
             <div class="modal-actions" style="display: flex; gap: 15px; justify-content: flex-end;">
-                <button class="btn-cancel" style="
-                    padding: 12px 24px;
-                    border: 1px solid var(--border);
-                    background: transparent;
-                    color: var(--text);
-                    border-radius: 6px;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                ">Annuler</button>
+                <button class="btn-cancel btn-primary btn-standard">Annuler</button>
                 
-                <button class="btn-confirm" style="
-                    padding: 12px 24px;
-                    background: var(--blue);
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
+                <button class="btn-confirm btn-primary btn-cyber"
                 ">Confirmer</button>
             </div>
         `;

@@ -40,7 +40,7 @@ class ChallengeValidationService
             }
 
             // Récupérer le défi avec tous les cas de test (publics et privés)
-            $challenge = $this->challenge->findAlgorithmic($submission['challenge_id'], true);
+            $challenge = $this->challenge->findAlgorithmic($submission['challenge_id'], $submission['user_id'], true);
             if (!$challenge) {
                 throw new Exception("Défi algorithmique non trouvé");
             }
@@ -118,11 +118,11 @@ class ChallengeValidationService
      * @param string $language
      * @return array
      */
-    public function validateCode($challengeId, $code, $language)
+    public function validateCode($challengeId, $code, $language, $userId)
     {
         try {
             // Récupérer le défi avec les cas de test publics seulement
-            $challenge = $this->challenge->findAlgorithmic($challengeId, false);
+            $challenge = $this->challenge->findAlgorithmic($challengeId, $userId, false);
             if (!$challenge) {
                 throw new Exception("Défi algorithmique non trouvé");
             }

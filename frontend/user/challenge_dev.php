@@ -143,7 +143,7 @@
             </div>
 
             <!-- Empty state -->
-            <div id="challenges-empty-state" class="w-full py-12 hidden items-center justify-center flex-col animate-fade-in">
+            <div id="challenges-empty-state" class="w-full py-12 hidden items-center justify-center flex-col animate-fade-in absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <div class="relative mx-auto flex items-center justify-center">
                 <div class="absolute inset-0 rounded-full bg-blue-500/10 blur-xl animate-pulse-slow"></div>
                 <div class="relative z-10 flex items-center justify-center h-20 w-20 rounded-2xl bg-gradient-to-br from-blue-600/20 to-blue-800/30 backdrop-blur-sm border border-blue-500/20 shadow-lg shadow-blue-500/10 mb-6 animate-pulse-slow">

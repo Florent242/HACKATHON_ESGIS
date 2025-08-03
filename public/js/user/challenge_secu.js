@@ -107,9 +107,10 @@ function showPhaseInactiveState(message = "Les challenges ne sont pas disponible
 }
 
 function showAccessDeniedModal(message) {
-    const html = `
-    <div class="flex flex-col items-center justify-center min-h-screen w-full bg-gray-900/90 backdrop-blur-lg fixed inset-0 p-6 text-center z-50 ">
-        <div class="bg-gray-800/90 border border-gray-700 rounded-xl p-8 max-w-2xl w-full mx-auto shadow-2xl">
+    const html = document.createElement('div');
+    html.innerHTML = `
+    <div class="flex flex-col items-center justify-center min-h-screen w-full bg-slate/80 backdrop-blur-md fixed inset-0 p-6 text-center z-99 ">
+        <div class="bg-slate-800/90 border border-slate-700 rounded-xl p-8 max-w-2xl w-full mx-auto shadow-2xl">
             <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-6 mx-auto">
                 <i data-lucide="alert-triangle" class="w-10 h-10 text-red-500"></i>
             </div>
@@ -132,7 +133,7 @@ function showAccessDeniedModal(message) {
     </div>`;
 
     const mainContainer = document.querySelector(".main-container");
-    mainContainer.innerHTML = html;
+    mainContainer.appendChild(html);
     lucide.createIcons();
 }
 
