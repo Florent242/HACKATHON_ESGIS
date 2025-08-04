@@ -16,84 +16,24 @@ $url = $_SERVER['REQUEST_URI'] ?? "/";
 // Vérifier l'URL et inclure le fichier correspondant
 switch ($url) {
     case '/':
-        require_once '../frontend/home.php';  // Inclure la page d'accueil
+    case '/admin':
+        require_once '../frontend/admin/login.php';
         break;
-    case '/hackathon':
-        require_once '../frontend/hackathon.php'; // Inclure la page "Hackaton"
+    case '/admin/dashboard':
+        require_once '../frontend/admin/dashboard.php';
         break;
-    case '/resources':
-        require_once '../frontend/resources.php'; // Inclure la page "Ressources"
+    case '/admin/users':
+        require_once '../frontend/admin/users.php';
         break;
-    case '/auth':
-        require_once '../frontend/auth.php'; // Inclure la page "auth"
+    case '/admin/settings':
+        require_once '../frontend/admin/settings.php';
         break;
-    case '/contact':
-        require_once '../frontend/contact.php';// Inclure la page "contact"
+    case '/admin/logout':
+        require_once '../frontend/admin/logout.php';
         break;
-    case '/sponsors':
-        require_once '../frontend/sponsors.php'; // Inclure la page "sponsors"
-        break;
-    case '/error403':
-        require_once '../frontend/error403.php'; // Inclure la page "error403"
-        break;
-    case '/error404':
-        require_once '../frontend/error404.php'; // Inclure la page "error404"
-        break;
-    case '/error500':
-        require_once '../frontend/error500.php'; // Inclure la page "error500"
-        break;
-    case '/buttonUX':
-        require_once '../frontend/buttonUX.php'; // Inclure la page "faq"
-        break;
-    case '/typo':
-        require_once '../frontend/typo.php'; // Inclure la page "typo"
-        break;
-
-    // Page user
-    case '/user':
-        require_once '../frontend/user/dashboard.php'; // Inclure la page "User"
-        break;
-    case '/user/challenge_security':
-        require_once '../frontend/user/challenge_secu.php'; // Inclure la page "user/challenges"
-        break;
-    case '/user/challenge_dev':
-        require_once '../frontend/user/challenge_dev.php'; // Inclure la page "user/challenges"
-        break;
-    case '/user/hackathon':
-        require_once '../frontend/user/hackathon.php'; // Inclure la page "user/hacka"
-        break;
-    case '/user/leaderboard':
-        require_once '../frontend/user/leaderboard.php'; // Inclure la page "Admin"
-        break;
-    case '/user/resources':
-        require_once '../frontend/user/resources.php'; // Inclure la page "Ressources"
-        break;
-    case '/user/faq':
-        require_once '../frontend/user/faq.php'; // Inclure la page "Ressources"
-        break;
-    case '/user/documentation':
-        require_once '../frontend/user/resources.php'; // Inclure la page "Ressources"
-        break;
-    case '/user/profile':
-        require_once '../frontend/user/profile.php'; // Inclure la page "Admin"
-        break;
-    case '/user/interfacechallenge':
-        require_once '../frontend/user/interfacechallenge.php'; // Inclure la page "user/challenge_submission"
-        break;
+    // Ajoute ici d'autres routes admin si besoin
     default:
-        // TODO: ajouter la gestion des urls avec le format CHALL-[A-Za-z0-9]{8,}
-        //  if (preg_match('#^/user/challenge_submission/(CHALL-[A-Za-z0-9]{8,})$#', $url, $matches)) {
-        //     $challenge_id = $matches[1]; // Format: CHALL-XXXXXXXX où X est alphanumérique
-        //     require_once '../frontend/user/challenge_submission.php';
-
-        if (preg_match('#^/user/challenge_submission/(\d+)$#', $url, $matches)) {
-            $_GET['challenge_id'] = $matches[1];
-            require_once '../frontend/user/challenge_submission.php';
-        } else if (strpos($_SERVER['REQUEST_URI'], '/user') !== false) {
-            require_once '../frontend/user/404.php'; // Inclure la page 404 pour les utilisateurs
-        } else {
-            require_once '../frontend/404.php'; // Inclure la page 404 générale si rien ne correspond
-        }
+        require_once '../frontend/admin/error404.php';
         break;
 }
 
