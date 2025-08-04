@@ -9,41 +9,55 @@ define('ROLE_REDIRECTIONS', [
     'guest' => '/auth'
 ]);
 
-// Routes publiques qui ne nécessitent pas d'authentification
-define('PUBLIC_ROUTES', [
-    '/^\/?$/', // Page visiteur
-    '/^\/auth\/?$/', 
-    '/^\/challenges\/?$/', 
-    '/^\/contact\/?$/', 
-    '/^\/hackathon\/?$/', 
-    '/^\/resources\/?$/', 
-    '/^\/leaderboard\/?$/', 
-    '/^\/sponsors\/?$/', 
-    '/^\/auth\/register\/?$/', 
-    '/^\/auth\/forgot-password\/?$/', 
-    '/^\/auth\/reset-password\/?$/', 
-    '/^\/auth\/verify-email\/?$/', 
-    '/^\/auth\/confirm-email\/?$/', 
-    '/^\/auth\/verify-otp\/?$/', 
-    '/^\/auth\/send-otp\/?$/', 
-    '/^\/auth\/logout\/?$/', 
-    '/^\/api\/auth\/?$/', 
-    '/^\/api\/auth\/register\/?$/', 
-    '/^\/api\/auth\/login\/?$/', 
-    '/^\/api\/auth\/forgot-password\/?$/', 
-    '/^\/api\/auth\/reset-password\/?$/', 
-    '/^\/api\/auth\/verify-email\/?$/', 
-    '/^\/api\/auth\/confirm-email\/?$/', 
-    '/^\/api\/auth\/logout\/?$/', 
-    '/^\/api\/auth\/refresh-token\/?$/', 
-    '/^\/api\/auth\/validate-token\/?$/', 
-    '/^\/about\/?$/', 
-    '/^\/privacy\/?$/', 
-    '/^\/terms\/?$/', 
-    '/^\/faq\/?$/', 
-    '/^\/buttonUX\/?$/',
-    '/^\/typo\/?$/',
-    ]);
+// Routes admin qui nécessitent d'authentification
+define('ADMIN_ROUTES', [
+    // Routes principales
+    '/^\/admin\/?$/', // Dashboard
+    '/^\/admin\/dashboard\/?$/',
+    '/^\/admin\/hackathon\/?$/',
+    '/^\/admin\/challenges\/?$/',
+    '/^\/admin\/utilisateurs\/?$/',
+    '/^\/admin\/equipes\/?$/',
+    '/^\/admin\/resources\/?$/',
+    '/^\/admin\/logs\/?$/',
+    '/^\/admin\/soumissions\/?$/',
+
+    // Gestion des utilisateurs
+    '/^\/admin\/utilisateurs\/ajouter\/?$/',
+    '/^\/admin\/utilisateurs\/editer\/\d+\/?$/',
+    '/^\/admin\/utilisateurs\/supprimer\/\d+\/?$/',
+
+    // Gestion des hackathons
+    '/^\/admin\/hackathon\/nouveau\/?$/',
+    '/^\/admin\/hackathon\/editer\/\d+\/?$/',
+    '/^\/admin\/hackathon\/supprimer\/\d+\/?$/',
+
+    // Gestion des challenges
+    '/^\/admin\/challenges\/nouveau\/?$/',
+    '/^\/admin\/challenges\/editer\/\d+\/?$/',
+    '/^\/admin\/challenges\/supprimer\/\d+\/?$/',
+
+    // API Admin
+    '/^\/api\/admin\/users\/?$/',
+    '/^\/api\/admin\/users\/\d+\/?$/',
+    '/^\/api\/admin\/hackathons\/?$/',
+    '/^\/api\/admin\/hackathons\/\d+\/?$/',
+    '/^\/api\/admin\/challenges\/?$/',
+    '/^\/api\/admin\/challenges\/\d+\/?$/',
+    '/^\/api\/admin\/teams\/?$/',
+    '/^\/api\/admin\/teams\/\d+\/?$/',
+    '/^\/api\/admin\/submissions\/?$/',
+    '/^\/api\/admin\/submissions\/\d+\/?$/'
+]);
+
+// Routes d'authentification (sans protection)
+define('PUBLIC_ADMIN_ROUTES', [
+    '/^\/admin\/login\/?$/',
+    '/^\/admin\/forgot-password\/?$/',
+    '/^\/admin\/reset-password\/?$/',
+    '/^\/api\/admin\/auth\/login\/?$/',
+    '/^\/api\/admin\/auth\/refresh-token\/?$/'
+]);
 
 // Durée de vie des sessions (en secondes)
 define('SESSION_LIFETIME', 3600); // 1 heure

@@ -17,23 +17,35 @@ $url = $_SERVER['REQUEST_URI'] ?? "/";
 switch ($url) {
     case '/':
     case '/admin':
-        require_once '../frontend/admin/login.php';
+        require_once '../frontend/admin/home.php';
         break;
-    case '/admin/dashboard':
-        require_once '../frontend/admin/dashboard.php';
+    case '/admin/login':
+        require_once '../frontend/auth_admin.php';
         break;
-    case '/admin/users':
-        require_once '../frontend/admin/users.php';
+    case '/admin/hackathon':
+        require_once '../frontend/admin/hackathon.php';
         break;
-    case '/admin/settings':
-        require_once '../frontend/admin/settings.php';
+    case '/admin/challenges':
+        require_once '../frontend/admin/challenges.php';
         break;
-    case '/admin/logout':
-        require_once '../frontend/admin/logout.php';
+    case '/admin/utilisateurs':
+        require_once '../frontend/admin/utilisateurs.php';
+        break;
+    case '/admin/equipes':
+        require_once '../frontend/admin/equipes.php';
+        break;
+    case '/admin/resources':
+        require_once '../frontend/admin/resources.php';
+        break;
+    case '/admin/logs':
+        require_once '../frontend/admin/logs.php';
+        break;
+    case '/admin/soumissions':
+        require_once '../frontend/admin/soumissions.php';
         break;
     // Ajoute ici d'autres routes admin si besoin
     default:
-        require_once '../frontend/admin/error404.php';
+        require_once '../frontend/admin/404.php';
         break;
 }
 

@@ -12,7 +12,7 @@ function sendResponse($statusCode, $data = [], $headers = []) {
     echo json_encode($data);
     exit;
 }
-
+ 
 // Fonction pour valider une adresse email
 function validateEmail($email) {
     return filter_var($email, FILTER_VALIDATE_EMAIL);

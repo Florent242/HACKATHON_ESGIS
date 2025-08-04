@@ -33,18 +33,21 @@ class AuthMiddleware
             session_start();
         }
 
-        // Vérifier si la route est publique
-        if (!self::isPublicRoute() && !self::isAuthenticated()) {
-            header('Location: /auth');
+        // Si c'est une route publique, on ne fait rien
+        if (self::isPublicAdminRoute()) {
             return;
         }
 
-        if (self::isPublicRoute() && self::isAuthenticated()) {
-            header('Location: /user');
-            return;
+        // Vérifier si l'utilisateur est connecté
+        if (empty($_SESSION['admin']) || !$_SESSION['admin']['logged_in']) {
+            // Si pas de session, vérifier le token JWT
+            if (!self::isAuthenticated()) {
+                self::redirectToLogin();
+                return;
+            }
         }
 
-        // Vérifier la session utilisateur
+        // Vérifier la session admin
         if (!empty($_SESSION['user']) && $_SESSION['user']['logged_in']) {
             // Vérifier l'expiration de la session
             if ($_SESSION['user']['last_activity'] + SESSION_LIFETIME > time()) {
@@ -69,8 +72,7 @@ class AuthMiddleware
                     'longTermExpiry' => 2592000 // 30 jours
                 ]);
                 $user = $tokenManager->validateToken($token);
-                if(!$user['valid'])
-                {
+                if (!$user['valid']) {
                     self::logout();
                 }
                 // Recréer la session à partir du token
@@ -91,16 +93,28 @@ class AuthMiddleware
         // setFlashMessage('error', "Non authentifié");
         // self::redirectToLogin();
     }
-    public static function isPublicRoute(): bool
+    public static function isAdminRoute(): bool
     {
         $currentUri = $_SERVER['REQUEST_URI'] ?? '';
-        foreach (PUBLIC_ROUTES as $route) {
+        foreach (ADMIN_ROUTES as $route) {
             if (preg_match($route, $currentUri)) {
                 return true;
             }
         }
         return false;
     }
+
+    public static function isPublicAdminRoute(): bool
+    {
+        $currentUri = $_SERVER['REQUEST_URI'] ?? '';
+        foreach (PUBLIC_ADMIN_ROUTES as $route) {
+            if (preg_match($route, $currentUri)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static function isAuthenticated(): bool
     {
         if ((isset($_COOKIE['jwt_token']) && !empty($_COOKIE['jwt_token'])) || (isset($_COOKIE['long_term_token']) && !empty($_COOKIE['long_term_token']))) {
@@ -113,8 +127,7 @@ class AuthMiddleware
                     'longTermExpiry' => 2592000 // 30 jours
                 ]);
                 $user = $tokenManager->validateToken($token);
-                if(!$user['valid'])
-                {
+                if (!$user['valid']) {
                     self::logout();
                 }
                 // Recréer la session à partir du token
@@ -149,8 +162,7 @@ class AuthMiddleware
             'longTermExpiry' => 2592000 // 30 jours
         ]);
         $user = $tokenManager->validateToken($token);
-        if(!$user['valid'])
-        {
+        if (!$user['valid']) {
             self::logout();
         }
         // Recréer la session à partir du token
@@ -164,20 +176,7 @@ class AuthMiddleware
     }
     private static function redirectToLogin()
     {
-        $currentUri = $_SERVER['REQUEST_URI'] ?? '';
-
-        if (strpos($currentUri, '/admin') !== false) {
-            header('Location: /auth_admin');
-        } else {
-            header('Location: /auth');
-        }
-        exit;
-    }
-
-    public static function redirectBasedOnRole($role)
-    {
-        $redirectUrl = ROLE_REDIRECTIONS[$role] ?? ROLE_REDIRECTIONS['guest'];
-        header("Location: $redirectUrl");
+        header('Location: /admin/login');
         exit;
     }
 }

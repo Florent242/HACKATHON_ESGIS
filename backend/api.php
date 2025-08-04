@@ -71,6 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+
 // Récupération de la méthode HTTP et de l'URL
 $method = $_SERVER['REQUEST_METHOD'];
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -199,6 +200,7 @@ try {
             // Routage des endpoints administrateur
             $adminAction = $request[1] ?? null;
 
+            
             // Gestion des routes admin directes
             switch ($adminAction) {
                 case 'stats':
