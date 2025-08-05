@@ -24,7 +24,7 @@ class Score
                 t.name,
                 s.total_points AS points,
                 (SELECT COUNT(*) FROM team_members WHERE team_id = t.id) AS members,
-                MAX(vf.validated_at) AS lastSubmission
+                COALESCE(MAX(vf.validated_at), MAX(cs.submitted_at)) AS lastSubmission
             FROM scores s
             JOIN teams t ON t.id = s.team_id
             LEFT JOIN validated_flags vf 
@@ -32,6 +32,13 @@ class Score
                     SELECT id FROM challenges WHERE hackathon_id = s.hackathon_id AND type = 'ctf'
                 )
                 AND vf.user_id IN (
+                    SELECT user_id FROM team_members WHERE team_id = t.id
+                )
+            LEFT JOIN challenge_submissions cs 
+                ON cs.challenge_id IN (
+                    SELECT id FROM challenges WHERE hackathon_id = s.hackathon_id AND type = 'dev'
+                )
+                AND cs.user_id IN (
                     SELECT user_id FROM team_members WHERE team_id = t.id
                 )
             WHERE s.hackathon_id = :hackathon_id

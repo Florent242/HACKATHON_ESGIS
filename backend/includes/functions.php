@@ -26,6 +26,13 @@ function recalculateCTFScores(PDO $db, int $hackathonId, ?int $phaseId = null): 
         $teamsStmt->execute([':hackathon_id' => $hackathonId]);
         $teams = $teamsStmt->fetchAll(PDO::FETCH_ASSOC);
 
+        if (!$teams) {
+            echo "=== /!\ Operation de mise a jour des CTF de la table score echoue pour le hackathon $hackathonId ! === \n";
+            return;
+        }
+
+        $phaseId ??= 1;
+
         foreach ($teams as $team) {
             $teamId = $team['team_id'];
 
@@ -79,6 +86,13 @@ function recalculateChallengeScores(PDO $db, int $hackathonId, ?int $phaseId = n
         $teamsStmt->execute([':hackathon_id' => $hackathonId]);
         $teams = $teamsStmt->fetchAll(PDO::FETCH_ASSOC);
 
+        if (!$teams) {
+            echo "=== /!\ Operation de mise a jour des challenges de la table score echoue pour le hackathon $hackathonId ! === \n";
+            return;
+        }
+
+        $phaseId ??= 2;
+
         foreach ($teams as $team) {
             $teamId = $team['team_id'];
 
@@ -87,7 +101,7 @@ function recalculateChallengeScores(PDO $db, int $hackathonId, ?int $phaseId = n
                 SELECT SUM(cs.total_score) AS total_points
                 FROM challenge_submissions cs
                 JOIN team_members tm ON tm.user_id = cs.user_id
-                WHERE tm.team_id = :team_id
+                WHERE tm.team_id = :team_id AND cs.status = 'completed'
             ");
             $scoreStmt->execute([':team_id' => $teamId]);
             $result = $scoreStmt->fetch(PDO::FETCH_ASSOC);
@@ -189,8 +203,11 @@ function recalculateAllHackathonScores(PDO $db): void
 
     updateFlagSolves($db);
 
-    // Hackathon 2 = Challenge
-    // recalculateChallengeScores($db, 2, 1);
+    // Hackathon 2 = Challenge Dev
+    recalculateChallengeScores($db, 2, 2);
+
+    // Désactivation des scores orphelins
+    deactivateOrphanScores($db, 2, 2);
 }
 
 // Fonction pour valider une adresse email
@@ -499,5 +516,43 @@ function logActivity($action, $description, $data = [], $userId = null, $level =
 
 function logSecurity($action, $description, $data = [], $userId = null, $level = 'info')
 {
-    // TODO: Implementer le log de sécurité
+    global $db;
+    
+    try {
+        // Récupérer l'adresse IP du client
+        $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        
+        // Récupérer le user-agent du navigateur
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+        
+        // Convertir les données en JSON pour le stockage
+        $dataJson = !empty($data) ? json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
+        
+        // Préparer et exécuter la requête d'insertion
+        $query = "INSERT INTO security_logs 
+                 (user_id, event_type, ip_address, user_agent, details) 
+                 VALUES (:user_id, :event_type, :ip_address, :user_agent, :details)";
+
+        $stmt = $db->prepare($query);
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindParam(':event_type', $action);
+        $stmt->bindParam(':ip_address', $ipAddress);
+        $stmt->bindParam(':user_agent', $userAgent);
+        $stmt->bindParam(':details', $description);
+
+        $result = $stmt->execute();
+
+        // Également, enregistrer dans le fichier de log système
+        $logMessage = date('Y-m-d H:i:s') . " [SECURITY][$level] - $action - $description - " .
+            "User: " . ($userId ?? 'guest') . " - IP: $ipAddress";
+        if (!empty($data)) {
+            $logMessage .= " - Data: " . json_encode($data);
+        }
+        error_log($logMessage);
+
+        return $result;
+    } catch (Exception $e) {
+        error_log("Erreur lors de l'enregistrement du log de sécurité: " . $e->getMessage());
+        return false;
+    }
 }

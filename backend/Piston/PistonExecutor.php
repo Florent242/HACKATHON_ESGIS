@@ -79,7 +79,7 @@ class PistonExecutor
     /**
      * Exécute du code contre plusieurs cas de test
      */
-    public function executeAllTestCases($language, $sourceCode, $testCases)
+    public function executeAllTestCases($language, $sourceCode, $testCases, $challengeMaxScore)
     {
         $results = [];
         $totalPassed = 0;
@@ -146,7 +146,10 @@ class PistonExecutor
                 'passed_tests' => $totalPassed,
                 'score' => round($score, 2),
                 'total_execution_time_ms' => $totalTime,
-                'max_memory_used_bytes' => $maxMemory
+                'max_memory_used_bytes' => $maxMemory,
+                'total_weight' => $totalWeight,
+                'earned_weight' => $earnedWeight,
+                'challenge_max_score' => $challengeMaxScore
             ]
         ];
     }

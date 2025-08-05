@@ -950,8 +950,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 <div class="flex justify-between items-center">
                     <h3 class="text-lg font-semibold text-white">Validation rapide</h3>
                     <div class="text-sm text-slate-400">
-                        Score: <span class="text-blue-400 font-bold">${score} pts</span>
-                        ${maxScore ? `<span class="text-slate-500">/ ${maxScore} pts</span>` : ''}
+                        Score: <span class="text-blue-400 font-bold">${score} %</span>
+                        ${maxScore ? `<span class="text-slate-500">/ ${maxScore} %</span>` : ''}
                         &nbsp;|&nbsp;
                         Tests: <span class="text-green-400 font-bold">${passed}/${total}</span>
                     </div>

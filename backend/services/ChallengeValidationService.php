@@ -57,14 +57,38 @@ class ChallengeValidationService
             $results = $this->pistonExecutor->executeAllTestCases(
                 $submission['language'],
                 $submission['code'],
-                $challenge['test_cases']
+                $challenge['test_cases'],
+                $challenge['points']
             );
-
+ 
             // Sauvegarder les résultats détaillés
             $this->saveTestCaseResults($submissionId, $results['results']);
 
             // Calculer le score basé sur les points des tests réussis
             $scoreData = $this->challenge->calculateSubmissionScore($submissionId);
+
+            // Après avoir obtenu $scoreData
+            if (!$scoreData['is_successful']) {
+                $testType = $scoreData['public_success_rate'] < 80 ? 'publics' : 
+                         ($scoreData['success_rate'] < 60 ? 'globaux' : '');
+                $errorMessage = "Nombre insuffisant de tests $testType réussis pour valider le challenge";
+                
+                $this->challenge->updateSubmissionResults(
+                    $submissionId, 
+                    'rejected', 
+                    $scoreData['total_score'],
+                    null,
+                    null,
+                    $scoreData['passed_tests'],
+                    $scoreData['total_tests'],
+                    $errorMessage
+                );
+                
+                return [
+                    'success' => false,
+                    'error' => $errorMessage
+                ];
+            }
 
             // Mettre à jour la soumission avec le score calculé
             $this->challenge->updateSubmissionResults(
@@ -89,7 +113,6 @@ class ChallengeValidationService
                 'status' => 'completed',
                 'results' => $results['results']
             ];
-
         } catch (Exception $e) {
             // Marquer comme échoué en cas d'erreur
             $this->challenge->updateSubmissionResults(
@@ -133,7 +156,7 @@ class ChallengeValidationService
             }
 
             // Exécuter contre les cas de test publics
-            $publicTests = array_filter($challenge['test_cases'], function($tc) {
+            $publicTests = array_filter($challenge['test_cases'], function ($tc) {
                 return $tc['is_public'] == 1;
             });
 
@@ -141,14 +164,13 @@ class ChallengeValidationService
                 throw new Exception("Aucun cas de test public disponible");
             }
 
-            $results = $this->pistonExecutor->executeAllTestCases($language, $code, $publicTests);
+            $results = $this->pistonExecutor->executeAllTestCases($language, $code, $publicTests, $challenge['points']);
 
             return [
                 'success' => true,
                 'results' => $results['results'],
                 'summary' => $results['summary']
             ];
-
         } catch (Exception $e) {
             return [
                 'success' => false,
@@ -233,7 +255,7 @@ class ChallengeValidationService
         try {
             foreach ($results as $result) {
                 $status = $result['passed'] ? 'passed' : 'failed';
-                
+
                 if ($result['is_timeout']) {
                     $status = 'timeout';
                 } elseif ($result['is_memory_limit']) {

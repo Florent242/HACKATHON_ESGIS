@@ -1002,7 +1002,7 @@ class Team
                     $query .= "LEFT JOIN validated_flags vf ON u.id = vf.user_id ";
                     break;
                 case 2:
-                    $query .= "LEFT JOIN challenge_submissions cs ON u.id = cs.user_id ";
+                    $query .= "LEFT JOIN challenge_submissions cs ON u.id = cs.user_id AND cs.status = 'completed' ";
                     break;
             }
 

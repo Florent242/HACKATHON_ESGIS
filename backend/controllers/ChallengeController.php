@@ -467,7 +467,49 @@ class ChallengeController extends Controller
             );
 
             // Démarrer l'évaluation en arrière-plan
-            $this->startEvaluation($submissionId);
+            $results = $this->startEvaluation($submissionId);
+
+            if ($results['success']) {
+                //recuperer l'equipe
+                $team_id = $this->challenge->getTeam($userId);
+                // Vérifier si une ligne existe déjà
+                $stmt = $this->db->prepare("
+                    SELECT id FROM scores 
+                    WHERE team_id = :team_id AND hackathon_id = :hackathon_id AND phase_id = :phase_id
+                ");
+                $stmt->execute([
+                    ':team_id' => $team_id,
+                    ':hackathon_id' => $input['hackathon_id'] ?? 2,
+                    ':phase_id' => $phase_id ?? 2
+                ]);
+
+                $scoreId = $stmt->fetchColumn();
+
+                if ($scoreId) {
+                    // Update
+                    $stmt = $this->db->prepare("
+                        UPDATE scores 
+                        SET total_points = total_points + :points , last_update = NOW() 
+                        WHERE id = :id
+                    ");
+                    $stmt->execute([
+                        ':points' => $results['score'],
+                        ':id' => $scoreId
+                    ]);
+                } else {
+                    // Insert
+                    $stmt = $this->db->prepare("
+                        INSERT INTO scores (team_id, hackathon_id, phase_id, total_points)
+                        VALUES (:team_id, :hackathon_id, :phase_id, :points)
+                    ");
+                    $stmt->execute([
+                        ':team_id' => $team_id,
+                        ':hackathon_id' => $input['hackathon_id'] ?? 2,
+                        ':phase_id' => $phase_id ?? 2,
+                        ':points' => $results['score']
+                    ]);
+                }
+            }
 
             $this->jsonResponse([
                 'success' => true,

@@ -858,7 +858,7 @@ class Challenge
 
             // Récupérer les cas de test
             $testCasesQuery = "
-                SELECT id, input_data, expected_output, is_public, points, timeout_seconds, memory_limit_mb
+                SELECT id, input_data, expected_output, is_public, weight, timeout_seconds, memory_limit_mb
                 FROM challenge_algo_tests 
                 WHERE challenge_id = :challenge_id
                 " . ($includePrivateTests ? "" : "AND is_public = 1") . "
@@ -1031,35 +1031,100 @@ class Challenge
     }
 
     /**
-     * Calcule le score total d'une soumission basé sur les tests réussis
+     * Calcule le score total d'une soumission basé sur les poids des tests réussis
      * @param int $submissionId
      * @return array Score et statistiques
      */
     public function calculateSubmissionScore($submissionId)
     {
         try {
+            // Récupérer le score maximal du challenge (100 par défaut)
+            $challengeStmt = $this->db->prepare("
+                SELECT COALESCE(points, 100) as max_score 
+                FROM challenges 
+                WHERE id = (SELECT challenge_id FROM challenge_submissions WHERE id = :submission_id)
+            ");
+            
+            $challengeStmt->execute([':submission_id' => $submissionId]);
+            $maxScore = (int)$challengeStmt->fetchColumn();
+
+            // Récupérer les poids et résultats des tests
             $stmt = $this->db->prepare("
                 SELECT 
+                    -- Poids totaux
+                    SUM(cat.weight) as total_weight,
+                    SUM(CASE WHEN tcr.status = 'passed' THEN cat.weight ELSE 0 END) as passed_weight,
+                    SUM(CASE WHEN cat.is_public = 1 THEN cat.weight ELSE 0 END) as total_public_weight,
+                    SUM(CASE WHEN cat.is_public = 1 AND tcr.status = 'passed' THEN cat.weight ELSE 0 END) as passed_public_weight,
+                    
+                    -- Compteurs de tests (pour rétrocompatibilité)
                     COUNT(*) as total_tests,
                     COUNT(CASE WHEN tcr.status = 'passed' THEN 1 END) as passed_tests,
-                    COALESCE(SUM(CASE WHEN tcr.status = 'passed' THEN cat.points ELSE 0 END), 0) as total_score,
-                    COALESCE(SUM(cat.points), 0) as max_possible_score,
-                    COALESCE(SUM(tcr.execution_time_ms), 0) as total_execution_time
+                    COUNT(CASE WHEN cat.is_public = 1 THEN 1 END) as total_public_tests,
+                    COUNT(CASE WHEN cat.is_public = 1 AND tcr.status = 'passed' THEN 1 END) as passed_public_tests,
+                    
+                    -- Métriques d'exécution
+                    SUM(tcr.execution_time_ms) as total_execution_time
                 FROM test_case_results tcr
                 JOIN challenge_algo_tests cat ON tcr.test_case_id = cat.id
                 WHERE tcr.submission_id = :submission_id
             ");
-
+            
             $stmt->execute([':submission_id' => $submissionId]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
+            // Calcul des ratios de réussite (basés sur les poids)
+            $publicRatio = $result['total_public_weight'] > 0 
+                ? $result['passed_public_weight'] / $result['total_public_weight'] 
+                : 1.0;
+
+            $overallRatio = $result['total_weight'] > 0
+                ? $result['passed_weight'] / $result['total_weight']
+                : 0;
+
+            // Calcul du score normalisé
+            $score = $result['total_weight'] > 0
+                ? (int)round(($result['passed_weight'] / $result['total_weight']) * $maxScore)
+                : 0;
+
+            // Validation
+            $isPublicPassed = $publicRatio >= 0.8;    // 80% des tests publics
+            $isOverallPassed = $overallRatio >= 0.6;  // 60% de l'ensemble
+            $isSuccessful = $isPublicPassed && $isOverallPassed;
+
             return [
-                'total_score' => (int)$result['total_score'],
-                'max_possible_score' => (int)$result['max_possible_score'],
+                // Nouveaux champs basés sur les poids
+                'score' => $score,
+                'max_score' => $maxScore,
+                'passed_weight' => (int)$result['passed_weight'],
+                'total_weight' => (int)$result['total_weight'],
+                'passed_public_weight' => (int)$result['passed_public_weight'],
+                'total_public_weight' => (int)$result['total_public_weight'],
+                
+                // Anciens champs (rétrocompatibilité)
+                'total_score' => $score,
+                'max_possible_score' => $maxScore,
+                'public_score' => round(($result['passed_public_weight'] / $result['total_weight']) * $maxScore),
+                'max_public_score' => (int)$result['total_public_weight'],
+                
+                // Métriques
                 'passed_tests' => (int)$result['passed_tests'],
                 'total_tests' => (int)$result['total_tests'],
-                'total_execution_time_ms' => (int)$result['total_execution_time'],
-                'max_memory_used_mb' => 0 // Pas de données de mémoire pour l'instant
+                'passed_public_tests' => (int)$result['passed_public_tests'],
+                'total_public_tests' => (int)$result['total_public_tests'],
+                'success_rate' => round($overallRatio * 100, 2),
+                'public_success_rate' => round($publicRatio * 100, 2),
+                'is_successful' => $isSuccessful,
+                'total_execution_time_ms' => (int)($result['total_execution_time'] ?? 0),
+                'max_memory_used_mb' => 0,
+                
+                // Métriques de validation
+                'validation_metrics' => [
+                    'min_public_ratio' => 80,
+                    'min_overall_ratio' => 60,
+                    'is_public_passed' => $isPublicPassed,
+                    'is_overall_passed' => $isOverallPassed
+                ]
             ];
         } catch (PDOException $e) {
             throw new Exception("Erreur lors du calcul du score : " . $e->getMessage());
@@ -1161,7 +1226,10 @@ class Challenge
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération du classement : " . $e->getMessage());
+            throw new Exception("Erreur lors de la récupération du classement."
+            // pour le debug
+            // . $e->getMessage()
+            );
         }
     }
 
@@ -1194,7 +1262,7 @@ class Challenge
 
             // Récupérer les résultats des tests
             $stmt = $this->db->prepare("
-                SELECT tcr.*, tc.points, tc.is_public
+                SELECT tcr.*, tc.weight, tc.is_public
                 FROM test_case_results tcr
                 JOIN challenge_algo_tests tc ON tcr.test_case_id = tc.id
                 WHERE tcr.submission_id = :submission_id
@@ -1207,7 +1275,10 @@ class Challenge
             $submission['test_results'] = $testResults;
             return $submission;
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des détails de la soumission : " . $e->getMessage());
+            throw new Exception("Erreur lors de la récupération des détails de la soumission."
+            // pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 }

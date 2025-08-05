@@ -61,7 +61,7 @@
               </div>
               <div class="rule-text">
                 <div class="rule-title">Langages autorisés</div>
-                <div class="rule-desc">Python, Java, C++, JavaScript</div>
+                <div class="rule-desc">Python | Java | C++ | JavaScript | PHP | Bash | Ruby | Go | Rust | C# | TypeScript</div>
               </div>
             </div>
             <div class="rule-item">
@@ -71,6 +71,24 @@
               <div class="rule-text">
                 <div class="rule-title">Temps d'exécution max</div>
                 <div class="rule-desc">2 secondes par test</div>
+              </div>
+            </div>
+            <div class="rule-item">
+              <div class="rule-icon">
+                <i data-lucide="file-code" class="w-4 h-4"></i>
+              </div>
+              <div class="rule-text">
+                <div class="rule-title">Taile maximal du code</div>
+                <div class="rule-desc">50KB, soit 50 000 caractères</div>
+              </div>
+            </div>
+            <div class="rule-item">
+              <div class="rule-icon">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+              </div>
+              <div class="rule-text">
+                <div class="rule-title">Validation du challenge</div>
+                <div class="rule-desc">Au moins 50% des tests publics doivent être réussis</div>
               </div>
             </div>
           </div>
