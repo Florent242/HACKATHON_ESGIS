@@ -7,7 +7,6 @@ if (!isset($_SESSION['csrf_token'])) {
 }
 
 ?>
-<script defer src="/js/lucide.js"></script>
 <script defer src="/js/admin/header.js"></script>
 <script defer src="/js/admin/main.js"></script>
 

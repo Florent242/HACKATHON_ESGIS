@@ -295,3 +295,38 @@ function logActivity($action, $description, $data = [], $userId = null, $level =
         return false;
     }
 }
+
+/**
+ * Valide si une chaîne est un JSON valide
+ */
+function isValidJSON($string) {
+    if (empty($string)) {
+        return false;
+    }
+    
+    json_decode($string);
+    return json_last_error() === JSON_ERROR_NONE;
+}
+
+/**
+ * Valide les champs requis dans un tableau
+ */
+function validateRequiredFields($data, $requiredFields) {
+    $missingFields = [];
+    
+    foreach ($requiredFields as $field) {
+        if (!isset($data[$field]) || empty($data[$field])) {
+            $missingFields[] = $field;
+        }
+    }
+    
+    if (!empty($missingFields)) {
+        throw new Exception('Champs manquants: ' . implode(', ', $missingFields));
+    }
+    
+    return true;
+}
+
+/**
+ * Vérifie si l'utilisateur a un rôle spécifique
+ */

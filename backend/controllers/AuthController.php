@@ -339,7 +339,7 @@ class AuthController
                     'refresh_token' => $longTermToken,
                     'user' => $user,
                     'message' => 'Connexion reussie',
-                    'redirect' => "/user"
+                    'redirect' => "/admin"
                 ]);
                 exit();
             } else {

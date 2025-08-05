@@ -99,6 +99,62 @@ class TokenManager
         }
     }
 
+    public function getCurrentUserId(): ?int
+    {
+        try {
+            $token = $this->getBearerToken();
+            if (!$token) {
+                throw new Exception('Token manquant', 401);
+            }
+            $tokenValidation = $this->validateToken($token);
+            if (!$tokenValidation['valid']) {
+                throw new Exception('Token invalide: ' . ($tokenValidation['error'] ?? 'Aucun détail'), 401);
+            }
+            return (int) $tokenValidation['user_id'];
+        } catch (Exception $e) {
+            error_log("Erreur dans getCurrentUserId: " . $e->getMessage() . " (Code: " . $e->getCode() . ")");
+            throw $e;
+        }
+    }
+
+    
+    protected function getBearerToken(): ?string
+    {
+        $headers = $this->getAuthorizationHeader();
+        if (!empty($headers) && preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
+            return $matches[1];
+        }
+        if (isset($_COOKIE['long_term_token'])) {
+            return $_COOKIE['long_term_token'];
+        }
+        if (isset($_COOKIE['jwt_token'])) {
+            return $_COOKIE['jwt_token'];
+        }
+        return null;
+    }
+
+    /**
+     * Récupère le header Authorization
+     */
+    public function getAuthorizationHeader(): ?string
+    {
+        $headers = null;
+        if (isset($_SERVER['Authorization'])) {
+            $headers = trim($_SERVER['Authorization']);
+        } elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $headers = trim($_SERVER['HTTP_AUTHORIZATION']);
+        } elseif (function_exists('apache_request_headers')) {
+            $requestHeaders = apache_request_headers();
+            $requestHeaders = array_combine(
+                array_map('ucwords', array_keys($requestHeaders)),
+                array_values($requestHeaders)
+            );
+            if (isset($requestHeaders['Authorization'])) {
+                $headers = trim($requestHeaders['Authorization']);
+            }
+        }
+        return $headers;
+    }
 
     public function verifyToken(string $token): bool
     {

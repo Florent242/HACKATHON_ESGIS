@@ -1,3 +1,11 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -6,10 +14,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Esgis Admin</title>
     <link rel="stylesheet" href="/css/styles/auth_admin.css">
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.280.0/dist/umd/lucide.min.js"></script>
+    <link rel="stylesheet" href="/css/styles/header.css">
+    <link rel="stylesheet" href="/css/dist/output.css">
+    <script defer src="/js/auth_admin.js"></script>
+
 </head>
 
 <body>
+    <div id="notification-data" data-notification='<?= htmlspecialchars(json_encode($_SESSION['notification'] ?? null)) ?>'></div>
+
     <div class="ad-container">
         <div class="auth-form" id="loginForm">
             <h1>Espace Administrateur</h1> <br>

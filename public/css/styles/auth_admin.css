@@ -1,20 +1,17 @@
-:root{
+:root {
     --background: #030B20;
-    --card-bg: linear-gradient(135deg, #030B20 0%, #030F2A 100%);
+    --background-hover: #151821;
     --card-hover: #1E293B;
     --blue: #3B82F6;
+    --primary: #3B82F6;
+    --primary-hover: #2563EB;
+    --border: #1E293B;
     --text: #FFFFFF;
     --text-secondary: #94A3B8;
-    --border: #1E293B;
-
-} 
-    
+}
 
 * {
-    margin: 0;
-    padding: 0;
     box-sizing: border-box;
-    font-family: 'Inter', sans-serif;
 }
 
 body {
@@ -23,8 +20,8 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    padding: 10px;
+    flex-direction: column;
+    margin: 0 auto;
 }
 
 p{

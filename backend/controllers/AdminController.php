@@ -31,11 +31,13 @@ class AdminController extends Controller
     private $db;
     private $AdminUser;
     private $user;
+    private $TokenManager;
     private $key = 'your-secret-key';
 
     public function __construct($db, $tokenManager)
     {
         parent::__construct($tokenManager);
+        $this->TokenManager = $tokenManager;
         $this->db = $db;
     }
 
@@ -494,7 +496,8 @@ class AdminController extends Controller
             $challengesCount = $stmt->fetchColumn();
             
             // Nombre de soumissions
-            $submissionsQuery = "SELECT COUNT(*) FROM challenge_submissions cs
+            $submissionsQuery = "SELECT COUNT(*) 
+                              FROM challenge_submissions cs
                               JOIN challenges c ON cs.challenge_id = c.id
                               WHERE c.hackathon_id = :id";
             $stmt = $this->db->prepare($submissionsQuery);
@@ -685,9 +688,9 @@ class AdminController extends Controller
             $query = "SELECT t.*,
                     h.name as hackathon_title,
                     (SELECT COUNT(*) FROM team_members tm WHERE tm.team_id = t.id) as members_count,
-                    (SELECT SUM(points) FROM challenge_submissions cs
+                    (SELECT SUM(total_score) FROM challenge_submissions cs
                      JOIN team_members tm ON cs.user_id = tm.user_id
-                     WHERE tm.team_id = t.id AND cs.status = 'accepted') as total_points
+                     WHERE tm.team_id = t.id AND cs.status = 'completed') as total_points
                     FROM teams t
                     JOIN hackathons h ON t.hackathon_id = h.id
                     ORDER BY t.created_at DESC";
@@ -939,6 +942,690 @@ class AdminController extends Controller
 
         echo json_encode($data);
         exit;
+    }
+
+    /**
+     * Gestion des challenges - Liste avec filtres et pagination
+     */
+    public function getChallenges() {
+        try {
+            $this->validateMethod('GET');
+            
+            // Paramètres de filtrage et pagination
+            $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+            $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 100;
+            $search = isset($_GET['search']) ? $_GET['search'] : '';
+            $type = isset($_GET['type']) ? $_GET['type'] : '';
+            $difficulty = isset($_GET['difficulty']) ? $_GET['difficulty'] : '';
+            $status = isset($_GET['status']) ? $_GET['status'] : '';
+            
+            $offset = ($page - 1) * $limit;
+            
+            // Construire la requête avec filtres
+            $sql = "SELECT c.*, 
+                           u.username as created_by_name,
+                           h.name as hackathon_name,
+                           COUNT(DISTINCT p.id) as participants_count
+                    FROM challenges c
+                    LEFT JOIN users u ON c.created_by = u.id
+                    LEFT JOIN hackathons h ON c.hackathon_id = h.id
+                    LEFT JOIN projects p ON c.id = p.challenge_id";
+            
+            $whereConditions = [];
+            $params = [];
+            
+            if ($search) {
+                $whereConditions[] = "(c.title LIKE :search OR c.description LIKE :search OR c.category LIKE :search)";
+                $params[':search'] = "%$search%";
+            }
+            
+            if ($type) {
+                $whereConditions[] = "c.type = :type";
+                $params[':type'] = $type;
+            }
+            
+            if ($difficulty) {
+                $whereConditions[] = "c.difficulty = :difficulty";
+                $params[':difficulty'] = $difficulty;
+            }
+            
+            if ($status !== '') {
+                $whereConditions[] = "c.is_active = :status";
+                $params[':status'] = $status;
+            }
+            
+            if (!empty($whereConditions)) {
+                $sql .= " WHERE " . implode(' AND ', $whereConditions);
+            }
+            
+            $sql .= " GROUP BY c.id ORDER BY c.created_at DESC LIMIT :limit OFFSET :offset";
+            $params[':limit'] = $limit;
+            $params[':offset'] = $offset;
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            $challenges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Compter le total pour la pagination
+            $countSql = "SELECT COUNT(DISTINCT c.id) as total FROM challenges c";
+            if (!empty($whereConditions)) {
+                $countSql .= " WHERE " . implode(' AND ', $whereConditions);
+            }
+            
+            $countStmt = $this->db->prepare($countSql);
+            $countParams = array_diff_key($params, [':limit' => '', ':offset' => '']);
+            $countStmt->execute($countParams);
+            $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $challenges,
+                'pagination' => [
+                    'current_page' => $page,
+                    'total_pages' => ceil($total / $limit),
+                    'total_items' => $total,
+                    'per_page' => $limit
+                ]
+            ]);
+            
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Statistiques des challenges
+     */
+    public function getChallengesStats() {
+        try {
+            $this->validateMethod('GET');
+            
+            // Statistiques générales
+            $statsSql = "SELECT 
+                            COUNT(*) as total,
+                            SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active,
+                            SUM(points) as total_points,
+                            COUNT(DISTINCT created_by) as creators
+                         FROM challenges";
+            
+            $stmt = $this->db->prepare($statsSql);
+            $stmt->execute();
+            $stats = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Compter les participants
+            $participantsSql = "SELECT COUNT(DISTINCT p.team_id) as team_participants
+                               FROM projects p
+                               INNER JOIN challenges c ON p.challenge_id = c.id";
+            
+            $stmt = $this->db->prepare($participantsSql);
+            $stmt->execute();
+            $participants = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            $stats['team_participants'] = $participants['team_participants'] ?? 0;
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $stats
+            ]);
+            
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Créer un nouveau challenge
+     */
+    public function createChallenge() {
+        try {
+            $this->validateMethod('POST');
+            
+            if (!hasRole('organisateur')) {
+                throw new Exception('Non autorisé');
+            }
+            
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            // Validation des champs requis
+            $requiredFields = ['title', 'type', 'difficulty', 'hackathon_id', 'points', 'description'];
+            foreach ($requiredFields as $field) {
+                if (empty($input[$field])) {
+                    throw new Exception("Le champ '$field' est requis");
+                }
+            }
+            
+            // Validation des points
+            if (!is_numeric($input['points']) || $input['points'] < 1 || $input['points'] > 1000) {
+                throw new Exception('Les points doivent être entre 1 et 1000');
+            }
+            
+            // Validation du hackathon
+            $hackathonStmt = $this->db->prepare("SELECT id FROM hackathons WHERE id = ?");
+            $hackathonStmt->execute([$input['hackathon_id']]);
+            if (!$hackathonStmt->fetch()) {
+                throw new Exception('Hackathon invalide');
+            }
+            
+            // Validation JSON pour hint et algo_config
+            if (!empty($input['hint'])) {
+                if (!isValidJSON($input['hint'])) {
+                    throw new Exception('Format JSON invalide pour les indices');
+                }
+            }
+            
+            if (!empty($input['algo_config'])) {
+                if (!isValidJSON($input['algo_config'])) {
+                    throw new Exception('Format JSON invalide pour la configuration algo');
+                }
+            }
+            
+            // Insérer le challenge
+            $sql = "INSERT INTO challenges (
+                        title, type, category, description, hint, difficulty,
+                        url_path, resource_link, instructions, points, is_active,
+                        is_dynamic, created_by, hackathon_id, phase_id, algo_config
+                    ) VALUES (
+                        :title, :type, :category, :description, :hint, :difficulty,
+                        :url_path, :resource_link, :instructions, :points, :is_active,
+                        :is_dynamic, :created_by, :hackathon_id, :phase_id, :algo_config
+                    )";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':title' => $input['title'],
+                ':type' => $input['type'],
+                ':category' => $input['category'] ?? null,
+                ':description' => $input['description'],
+                ':hint' => $input['hint'] ?? null,
+                ':difficulty' => $input['difficulty'],
+                ':url_path' => $input['url_path'] ?? null,
+                ':resource_link' => $input['resource_link'] ?? null,
+                ':instructions' => $input['instructions'] ?? null,
+                ':points' => $input['points'],
+                ':is_active' => $input['is_active'] ?? 1,
+                ':is_dynamic' => $input['is_dynamic'] ?? 0,
+                ':created_by' => $_SESSION['user_id'],
+                ':hackathon_id' => $input['hackathon_id'],
+                ':phase_id' => $input['phase_id'] ?? null,
+                ':algo_config' => $input['algo_config'] ?? null
+            ]);
+            
+            $challengeId = $this->db->lastInsertId();
+            
+            // Traiter les flags (CTF)
+            if (!empty($input['flags']) && is_array($input['flags'])) {
+                $this->createFlags($challengeId, $input['flags']);
+            }
+            
+            // Traiter les snippets (Algo)
+            if (!empty($input['snippets']) && is_array($input['snippets'])) {
+                $this->createSnippets($challengeId, $input['snippets']);
+            }
+            
+            // Traiter les tests (Algo)
+            if (!empty($input['tests']) && is_array($input['tests'])) {
+                $this->createTests($challengeId, $input['tests']);
+            }
+            
+            // Traiter les technologies (Dev)
+            if (!empty($input['technologies']) && is_array($input['technologies'])) {
+                $this->createTechnologies($challengeId, $input['technologies']);
+            }
+            
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Challenge créé avec succès',
+                'data' => ['id' => $challengeId]
+            ]);
+            
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Récupérer un challenge par ID
+     */
+    public function getChallenge($id) {
+        try {
+            $this->validateMethod('GET');
+            
+            $sql = "SELECT c.*, 
+                           u.username as created_by_name,
+                           h.name as hackathon_name,
+                           p.name as phase_name
+                    FROM challenges c
+                    LEFT JOIN users u ON c.created_by = u.id
+                    LEFT JOIN hackathons h ON c.hackathon_id = h.id
+                    LEFT JOIN phases p ON c.phase_id = p.id
+                    WHERE c.id = ?";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$id]);
+            $challenge = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if (!$challenge) {
+                throw new Exception('Challenge non trouvé');
+            }
+            
+            // Charger les données liées
+            $challenge['flags'] = $this->getFlags($id);
+            $challenge['snippets'] = $this->getSnippets($id);
+            $challenge['tests'] = $this->getTests($id);
+            $challenge['technologies'] = $this->getTechnologies($id);
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $challenge
+            ]);
+            
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Mettre à jour un challenge
+     */
+    public function updateChallenge($id) {
+        try {
+            $this->validateMethod('PUT');
+            
+            if (!hasRole('organisateur')) {
+                throw new Exception('Non autorisé');
+            }
+            
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            // Vérifier que le challenge existe
+            $checkStmt = $this->db->prepare("SELECT id FROM challenges WHERE id = ?");
+            $checkStmt->execute([$id]);
+            if (!$checkStmt->fetch()) {
+                throw new Exception('Challenge non trouvé');
+            }
+            
+            // Validation des champs requis
+            $requiredFields = ['title', 'type', 'difficulty', 'hackathon_id', 'points', 'description'];
+            foreach ($requiredFields as $field) {
+                if (empty($input[$field])) {
+                    throw new Exception("Le champ '$field' est requis");
+                }
+            }
+            
+            // Validation des points
+            if (!is_numeric($input['points']) || $input['points'] < 1 || $input['points'] > 1000) {
+                throw new Exception('Les points doivent être entre 1 et 1000');
+            }
+            
+            // Validation JSON
+            if (!empty($input['hint']) && !isValidJSON($input['hint'])) {
+                throw new Exception('Format JSON invalide pour les indices');
+            }
+            
+            if (!empty($input['algo_config']) && !isValidJSON($input['algo_config'])) {
+                throw new Exception('Format JSON invalide pour la configuration algo');
+            }
+            
+            // Mettre à jour le challenge
+            $sql = "UPDATE challenges SET 
+                        title = :title, type = :type, category = :category,
+                        description = :description, hint = :hint, difficulty = :difficulty,
+                        url_path = :url_path, resource_link = :resource_link,
+                        instructions = :instructions, points = :points, is_active = :is_active,
+                        is_dynamic = :is_dynamic, hackathon_id = :hackathon_id,
+                        phase_id = :phase_id, algo_config = :algo_config,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = :id";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':id' => $id,
+                ':title' => $input['title'],
+                ':type' => $input['type'],
+                ':category' => $input['category'] ?? null,
+                ':description' => $input['description'],
+                ':hint' => $input['hint'] ?? null,
+                ':difficulty' => $input['difficulty'],
+                ':url_path' => $input['url_path'] ?? null,
+                ':resource_link' => $input['resource_link'] ?? null,
+                ':instructions' => $input['instructions'] ?? null,
+                ':points' => $input['points'],
+                ':is_active' => $input['is_active'] ?? 1,
+                ':is_dynamic' => $input['is_dynamic'] ?? 0,
+                ':hackathon_id' => $input['hackathon_id'],
+                ':phase_id' => $input['phase_id'] ?? null,
+                ':algo_config' => $input['algo_config'] ?? null
+            ]);
+            
+            // Supprimer les anciennes données liées
+            $this->deleteFlags($id);
+            $this->deleteSnippets($id);
+            $this->deleteTests($id);
+            $this->deleteTechnologies($id);
+            
+            // Recréer les nouvelles données liées
+            if (!empty($input['flags']) && is_array($input['flags'])) {
+                $this->createFlags($id, $input['flags']);
+            }
+            
+            if (!empty($input['snippets']) && is_array($input['snippets'])) {
+                $this->createSnippets($id, $input['snippets']);
+            }
+            
+            if (!empty($input['tests']) && is_array($input['tests'])) {
+                $this->createTests($id, $input['tests']);
+            }
+            
+            if (!empty($input['technologies']) && is_array($input['technologies'])) {
+                $this->createTechnologies($id, $input['technologies']);
+            }
+            
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Challenge mis à jour avec succès'
+            ]);
+            
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Supprimer un challenge
+     */
+    public function deleteChallenge($id) {
+        try {
+            $this->validateMethod('DELETE');
+            
+            $user_id = $this->TokenManager->getCurrentUserId();
+            if (!$this->isAdmin($user_id)) {
+                throw new Exception('Non autorisé '. $user_id);
+            }
+            
+            // Démarrer la transaction
+            $this->db->beginTransaction();
+            
+            try {
+                // Vérifier que le challenge existe
+                $checkStmt = $this->db->prepare("SELECT id FROM challenges WHERE id = ?");
+                $checkStmt->execute([$id]);
+                if (!$checkStmt->fetch()) {
+                    throw new Exception('Challenge non trouvé');
+                }
+                
+                // Vérifier s'il y a des soumissions
+                $submissionsStmt = $this->db->prepare("SELECT COUNT(*) as count FROM projects WHERE challenge_id = ?");
+                $submissionsStmt->execute([$id]);
+                $submissions = $submissionsStmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($submissions['count'] > 0) {
+                    throw new Exception('Impossible de supprimer ce challenge car il a des soumissions associées');
+                }
+                
+                // Désactiver temporairement la vérification des clés étrangères
+                $this->db->exec('SET FOREIGN_KEY_CHECKS=0');
+                
+                // Supprimer les données liées
+                $this->deleteFlags($id);
+                $this->deleteSnippets($id);
+                $this->deleteTests($id);
+                $this->deleteTechnologies($id);
+                
+                // Supprimer les flags liés à ce challenge
+                $deleteFlagsStmt = $this->db->prepare("DELETE FROM flags WHERE challenge_id = ?");
+                $deleteFlagsStmt->execute([$id]);
+                
+                // Supprimer le challenge
+                $stmt = $this->db->prepare("DELETE FROM challenges WHERE id = ?");
+                $stmt->execute([$id]);
+                
+                // Réactiver la vérification des clés étrangères
+                $this->db->exec('SET FOREIGN_KEY_CHECKS=1');
+                
+                // Valider la transaction
+                $this->db->commit();
+                
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => 'Challenge supprimé avec succès'
+                ]);
+                
+            } catch (Exception $e) {
+                // Annuler la transaction en cas d'erreur
+                if ($this->db->inTransaction()) {
+                    $this->db->rollBack();
+                }
+                // Réactiver la vérification des clés étrangères en cas d'erreur
+                $this->db->exec('SET FOREIGN_KEY_CHECKS=1');
+                
+                throw $e; // Relancer l'exception pour le catch externe
+            }
+            
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Créer les flags pour un challenge
+     */
+    private function createFlags($challengeId, $flags) {
+        $sql = "INSERT INTO flags (challenge_id, name, value, points, initial_points, min_points, decay, is_dynamic)
+                VALUES (:challenge_id, :name, :value, :points, :initial_points, :min_points, :decay, :is_dynamic)";
+        
+        $stmt = $this->db->prepare($sql);
+        
+        foreach ($flags as $flag) {
+            $stmt->execute([
+                ':challenge_id' => $challengeId,
+                ':name' => $flag['name'] ?? null,
+                ':value' => $flag['value'],
+                ':points' => $flag['points'] ?? 100,
+                ':initial_points' => $flag['points'] ?? 100,
+                ':min_points' => $flag['min_points'] ?? 50,
+                ':decay' => $flag['decay'] ?? 10,
+                ':is_dynamic' => $flag['is_dynamic'] ?? 0
+            ]);
+        }
+    }
+
+    /**
+     * Créer les snippets pour un challenge
+     */
+    private function createSnippets($challengeId, $snippets) {
+        $sql = "INSERT INTO snippets (challenge_id, python, java, javascript, cpp, c)
+                VALUES (:challenge_id, :python, :java, :javascript, :cpp, :c)";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':challenge_id' => $challengeId,
+            ':python' => $snippets['python'] ?? null,
+            ':java' => $snippets['java'] ?? null,
+            ':javascript' => $snippets['javascript'] ?? null,
+            ':cpp' => $snippets['cpp'] ?? null,
+            ':c' => $snippets['c'] ?? null
+        ]);
+    }
+
+    /**
+     * Créer les tests pour un challenge
+     */
+    private function createTests($challengeId, $tests) {
+        $sql = "INSERT INTO challenge_algo_tests (challenge_id, input_data, expected_output, is_public, points, timeout_seconds, memory_limit_mb, test_order)
+                VALUES (:challenge_id, :input_data, :expected_output, :is_public, :points, :timeout_seconds, :memory_limit_mb, :test_order)";
+        
+        $stmt = $this->db->prepare($sql);
+        
+        foreach ($tests as $index => $test) {
+            $stmt->execute([
+                ':challenge_id' => $challengeId,
+                ':input_data' => $test['input_data'],
+                ':expected_output' => $test['expected_output'],
+                ':is_public' => $test['is_public'] ?? 1,
+                ':points' => $test['points'] ?? 10,
+                ':timeout_seconds' => $test['timeout_seconds'] ?? 2,
+                ':memory_limit_mb' => $test['memory_limit_mb'] ?? 128,
+                ':test_order' => $index + 1
+            ]);
+        }
+    }
+
+    /**
+     * Créer les technologies pour un challenge
+     */
+    private function createTechnologies($challengeId, $technologies) {
+        $sql = "INSERT INTO challenge_technologies (challenge_id, technology_id) VALUES (:challenge_id, :technology_id)";
+        $stmt = $this->db->prepare($sql);
+        
+        foreach ($technologies as $technologyId) {
+            $stmt->execute([
+                ':challenge_id' => $challengeId,
+                ':technology_id' => $technologyId
+            ]);
+        }
+    }
+
+    /**
+     * Récupérer les flags d'un challenge
+     */
+    private function getFlags($challengeId) {
+        $sql = "SELECT * FROM flags WHERE challenge_id = ? ORDER BY id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$challengeId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Récupérer les snippets d'un challenge
+     */
+    private function getSnippets($challengeId) {
+        $sql = "SELECT * FROM snippets WHERE challenge_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$challengeId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Récupérer les tests d'un challenge
+     */
+    private function getTests($challengeId) {
+        $sql = "SELECT * FROM challenge_algo_tests WHERE challenge_id = ? ORDER BY test_order";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$challengeId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Récupérer les technologies d'un challenge
+     */
+    private function getTechnologies($challengeId) {
+        $sql = "SELECT t.* FROM technologies t
+                INNER JOIN challenge_technologies ct ON t.id = ct.technology_id
+                WHERE ct.challenge_id = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$challengeId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Supprimer les flags d'un challenge
+     */
+    private function deleteFlags($challengeId) {
+        $stmt = $this->db->prepare("DELETE FROM flags WHERE challenge_id = ?");
+        $stmt->execute([$challengeId]);
+        
+    }
+
+    /**
+     * Supprimer les snippets d'un challenge
+     */
+    private function deleteSnippets($challengeId) {
+        $stmt = $this->db->prepare("DELETE FROM snippets WHERE challenge_id = ?");
+        $stmt->execute([$challengeId]);
+    }
+
+    /**
+     * Supprimer les tests d'un challenge
+     */
+    private function deleteTests($challengeId) {
+        $stmt = $this->db->prepare("DELETE FROM challenge_algo_tests WHERE challenge_id = ?");
+        $stmt->execute([$challengeId]);
+    }
+
+    /**
+     * Supprimer les technologies d'un challenge
+     */
+    private function deleteTechnologies($challengeId) {
+        $stmt = $this->db->prepare("DELETE FROM challenge_technologies WHERE challenge_id = ?");
+        $stmt->execute([$challengeId]);
+    }
+
+    /**
+     * Récupérer la liste des technologies
+     */
+    public function getAllTechnologies() {
+        try {
+            $this->validateMethod('GET');
+            
+            $sql = "SELECT * FROM technologies ORDER BY name";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute();
+            $technologies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $technologies
+            ]);
+            
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Récupérer les phases d'un hackathon
+     */
+    public function getHackathonPhases($hackathonId) {
+        try {
+            $this->validateMethod('GET');
+            
+            $sql = "SELECT * FROM phases WHERE hackathon_id = ? ORDER BY start_date";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([$hackathonId]);
+            $phases = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $phases
+            ]);
+            
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
     }
 
 }

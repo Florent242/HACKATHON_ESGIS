@@ -228,26 +228,80 @@ try {
                     $controllerAdmin->getAllHackathons();
                     break;
                 case 'challenges':
-                    $controllerAdmin->getAllChallenges();
+                    // GET /api/admin/challenges
+                    if ($method === 'GET') {
+                        if (isset($request[2]) && $request[2] === 'stats') {
+                            // GET /api/admin/challenges/stats
+                            $controllerAdmin->getChallengesStats();
+                        } else {
+                            // GET /api/admin/challenges
+                            $controllerAdmin->getChallenges();
+                        }
+                    } elseif ($method === 'POST' && $request[2] === 'create') {
+                        // POST /api/admin/challenges/create
+                        $controllerAdmin->createChallenge();
+                    } elseif (isset($request[2]) && is_numeric($request[2])) {
+                        $challengeId = $request[2];
+                        switch ($method) {
+                            case 'GET':
+                                // GET /api/admin/challenges/{id}
+                                $controllerAdmin->getChallenge($challengeId);
+                                break;
+                            case 'PUT':
+                                // PUT /api/admin/challenges/{id}
+                                $controllerAdmin->updateChallenge($challengeId);
+                                break;
+                            case 'DELETE':
+                                // DELETE /api/admin/challenges/{id}
+                                $controllerAdmin->deleteChallenge($challengeId);
+                                break;
+                            default:
+                                throw new Exception('Méthode non autorisée', 405);
+                        }
+                    } else {
+                        throw new Exception('Méthode non autorisée', 405);
+                    }
+                    break;
+                case 'technologies':
+                    if ($method === 'GET') {
+                        // GET /api/admin/technologies
+                        $controllerAdmin->getAllTechnologies();
+                    } else {
+                        throw new Exception('Méthode non autorisée', 405);
+                    }
+                    break;
+                case 'hackathon-phases':
+                    // GET /api/admin/hackathon-phases/{id}
+                    if ($method === 'GET' && isset($request[2]) && is_numeric($request[2])) {
+                        $hackathonId = $request[2];
+                        $controllerAdmin->getHackathonPhases($hackathonId);
+                    } else {
+                        throw new Exception('ID de hackathon requis', 400);
+                    }
                     break;
                 case 'submissions':
+                    // GET /api/admin/submissions
                     $controllerAdmin->getAllSubmissions();
                     break;
                 case 'submission-stats':
+                    // GET /api/admin/submission-stats
                     $controllerAdmin->getSubmissionStats();
                     break;
                 case 'team-stats':
+                    // GET /api/admin/team-stats
                     $controllerAdmin->getTeamStats();
                     break;
                 case 'dashboard-stats':
+                    // GET /api/admin/dashboard-stats
                     $controllerAdmin->getDashboardStats();
                     break;
                 case 'me':
-                    // Récupérer les données de l'admin connecté
+                    // GET /api/admin/me
                     $controllerAdmin->getAdmin($AdminUserId);
                     break;
                 default:
                     // Si ce n'est pas une route directe, vérifier si c'est un ID utilisateur
+                    // GET /api/admin/{id}
                     if (is_numeric($adminAction)) {
                         $id = $adminAction;
                         $action = $request[2] ?? null;
@@ -280,9 +334,11 @@ try {
                             }
                         }
                     } else if ($adminAction === 'hackathon-stats' && isset($_GET['id'])) {
+                        // GET /api/admin/hackathon-stats/{id}
                         $hackathonId = $_GET['id'];
                         $controllerAdmin->getHackathonStats($hackathonId);
                     } else if ($adminAction === 'challenge-stats' && isset($_GET['id'])) {
+                        // GET /api/admin/challenge-stats/{id}
                         $challengeId = $_GET['id'];
                         $controllerAdmin->getChallengeStats($challengeId);
                     } else {
@@ -876,7 +932,7 @@ try {
     if (isAjaxRequest()) {
         header('Content-Type: application/json');
         $statusCode = $e->getCode() ?: 500;
-        jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
+        jsonResponse(['success' => false, 'error' => $e->getMessage()], $statusCode);
         echo json_encode([
             'debug' => print_r($request, true)
         ]);

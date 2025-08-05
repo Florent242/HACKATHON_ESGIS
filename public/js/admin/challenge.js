@@ -46,7 +46,15 @@ async function initializeChallengePage() {
  */
 async function loadChallenges() {
   try {
-    const response = await apiRequest("/admin/challenges")
+    const response = await apiRequest("/admin/challenges", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      credentials: "include"
+    })
 
     if (response.success && response.data) {
       updateChallengesTable(response.data)
@@ -161,7 +169,15 @@ function updateChallengesTable(challenges) {
  */
 async function loadChallengeStats() {
   try {
-    const response = await apiRequest("/admin/challenge-stats")
+    const response = await apiRequest("/admin/challenges/stats", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      credentials: "include"
+    })
 
     if (response.success && response.data) {
       updateChallengeStats(response.data)
@@ -193,7 +209,15 @@ function updateChallengeStats(stats) {
  */
 async function loadChallengePoints() {
   try {
-    const response = await apiRequest("/admin/submission-stats")
+    const response = await apiRequest("/admin/submission-stats", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      credentials: "include"
+    })
 
     if (response.success && response.data) {
       updateChallengePointsTable(response.data)

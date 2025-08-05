@@ -25,8 +25,17 @@ switch ($url) {
     case '/admin/hackathon':
         require_once '../frontend/admin/hackathon.php';
         break;
+    case '/admin/challenge':
+        require_once '../frontend/admin/challenge.php';
+        break;
     case '/admin/challenges':
         require_once '../frontend/admin/challenges.php';
+        break;
+    case '/admin/challenges/create':
+        require_once '../frontend/admin/challenges_create.php';
+        break;
+    case '/admin/challenges/view':
+        require_once '../frontend/admin/challenges_view.php';
         break;
     case '/admin/utilisateurs':
         require_once '../frontend/admin/utilisateurs.php';
@@ -45,6 +54,17 @@ switch ($url) {
         break;
     // Ajoute ici d'autres routes admin si besoin
     default:
+        // Gestion des routes dynamiques pour l'édition des challenges
+        if (preg_match('#^/admin/challenges/edit/(\d+)$#', $url, $matches)) {
+            $_GET['challenge_id'] = $matches[1];
+            require_once '../frontend/admin/challenges_edit.php';
+            break;
+        }
+        if (preg_match('#^/admin/challenges/view/(\d+)$#', $url, $matches)) {
+            $_GET['challenge_id'] = $matches[1];
+            require_once '../frontend/admin/challenges_view.php';
+            break;
+        }
         require_once '../frontend/admin/404.php';
         break;
 }

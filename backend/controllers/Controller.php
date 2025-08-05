@@ -123,12 +123,10 @@ class Controller
         }
 
         // Pour les requêtes PUT, récupérer le token du corps de la requête
-        if ($_SERVER['REQUEST_METHOD'] === 'PUT' || $_SERVER['REQUEST_METHOD'] === 'POST') {
-            $rawData = file_get_contents('php://input');
-            $data = json_decode($rawData, true);
-            $token = $data['csrf_token'] ?? '';
-        } else {
-            // Pour les autres méthodes (POST), utiliser $_POST ou l'en-tête
+        $rawData = file_get_contents('php://input');
+        $data = json_decode($rawData, true);
+        $token = $data['csrf_token'] ?? '';
+        if (!$token) {
             $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
         }
 
@@ -174,14 +172,14 @@ class Controller
     }
 
     /**
- * Valide les méthodes HTTP autorisées
- */
-protected function validateMethod(string $method, string $method2 = ''): void
-{
-    if ($_SERVER['REQUEST_METHOD'] !== strtoupper($method) && $_SERVER['REQUEST_METHOD'] !== strtoupper($method2)) {
-        throw new Exception("Méthode {$_SERVER['REQUEST_METHOD']} non autorisée");
+     * Valide les méthodes HTTP autorisées
+     */
+    protected function validateMethod(string $method, string $method2 = ''): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== strtoupper($method) && $_SERVER['REQUEST_METHOD'] !== strtoupper($method2)) {
+            throw new Exception("Méthode {$_SERVER['REQUEST_METHOD']} non autorisée");
+        }
     }
-}
 
     /**
      * Récupère les données de la requête
