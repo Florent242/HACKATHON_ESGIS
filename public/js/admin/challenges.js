@@ -66,6 +66,9 @@ const ELEMENTS = {
         algo_config: "#algo_config"
     },
     tabs: {
+        general: "#generalTab",
+        content: "#contentTab",
+        configuration: "#configurationTab",
         flags: "#flagsTab",
         code: "#codeTab",
         technologies: "#technologiesTab"
@@ -381,8 +384,8 @@ function setupFormValidation() {
     
     // Validation en temps réel
     form.querySelectorAll('input[required], select[required], textarea[required]').forEach(field => {
-        field.addEventListener('blur', validateField);
-        field.addEventListener('input', clearFieldError);
+        field.addEventListener('blur', () => validateField(field));
+        field.addEventListener('input', () => clearFieldError(field));
     });
 }
 
@@ -390,25 +393,71 @@ function setupFormValidation() {
  * Initialise les éditeurs de code
  */
 function initializeCodeEditors() {
-    const languages = ['python', 'java', 'javascript', 'cpp', 'c'];
+    if (!appState.codeEditors) {
+        appState.codeEditors = {};
+    }
     
-    languages.forEach(lang => {
-        const textarea = document.querySelector(`#${lang}_snippet`);
-        if (textarea) {
-            const editor = CodeMirror.fromTextArea(textarea, {
-                mode: getCodeMirrorMode(lang),
+    // Configuration des éditeurs par langage
+    const editorsConfig = [
+        { lang: 'python', mode: 'python' },
+        { lang: 'bash', mode: 'shell' },
+        { lang: 'javascript', mode: 'javascript' },
+        { lang: 'cpp', mode: 'text/x-c++src' },
+        { lang: 'c', mode: 'text/x-csrc' },
+        { lang: 'csharp', mode: 'text/x-csharp' },
+        { lang: 'php', mode: 'php', options: { htmlMode: true } },
+        { lang: 'ruby', mode: 'ruby' },
+        { lang: 'pascal', mode: 'text/x-pascal' },
+        { lang: 'typescript', mode: 'text/typescript' }
+    ];
+
+    editorsConfig.forEach(config => {
+        const textarea = document.querySelector(`#${config.lang}_snippet`);
+        if (textarea && !appState.codeEditors[config.lang]) {
+            const editorOptions = {
+                mode: config.mode,
                 theme: 'monokai',
                 lineNumbers: true,
                 autoCloseBrackets: true,
                 matchBrackets: true,
                 indentUnit: 4,
                 tabSize: 4,
-                lineWrapping: true
-            });
-            
-            appState.codeEditors[lang] = editor;
+                lineWrapping: true,
+                readOnly: false,
+                viewportMargin: Infinity,
+                ...(config.options || {}) // Options spécifiques au langage
+            };
+
+            try {
+                const editor = CodeMirror.fromTextArea(textarea, editorOptions);
+                appState.codeEditors[config.lang] = editor;
+                
+                // Rafraîchir l'éditeur après un court délai
+                setTimeout(() => {
+                    if (editor.refresh) editor.refresh();
+                }, 100);
+            } catch (error) {
+                console.error(`Erreur lors de l'initialisation de l'éditeur ${config.lang}:`, error);
+            }
         }
     });
+}
+
+// Mise à jour de la fonction getCodeMirrorMode
+function getCodeMirrorMode(language) {
+    const modes = {
+        'python': 'python',
+        'bash': 'shell',
+        'javascript': 'javascript',
+        'cpp': 'text/x-c++src',
+        'c': 'text/x-csrc',
+        'csharp': 'text/x-csharp',
+        'php': 'php',
+        'ruby': 'ruby',
+        'pascal': 'pascal',
+        'typescript': 'text/typescript'
+    };
+    return modes[language] || 'text/plain';
 }
 
 /**
@@ -533,7 +582,7 @@ async function handleFormSubmit(e) {
             await loadChallenges();
             await loadStats();
         } else {
-            throw new Error(response.error || 'Erreur lors de la sauvegarde');
+            throw new Error(response.message || response.error || 'Erreur lors de la sauvegarde');
         }
         
     } catch (error) {
@@ -548,25 +597,26 @@ async function handleFormSubmit(e) {
  */
 function handleTypeChange(e) {
     const type = e.target.value;
-    const flagsTab = document.querySelector(ELEMENTS.tabs.flags);
-    const codeTab = document.querySelector(ELEMENTS.tabs.code);
-    const technologiesTab = document.querySelector(ELEMENTS.tabs.technologies);
-    
-    // Masquer tous les onglets spéciaux
-    flagsTab.style.display = 'none';
-    codeTab.style.display = 'none';
-    technologiesTab.style.display = 'none';
-    
+
+    // Tabs
+    const flagsButton = document.querySelector('.tab-button[data-tab="flags"]');
+    const codeButton = document.querySelector('.tab-button[data-tab="code"]');
+    const technologiesButton = document.querySelector('.tab-button[data-tab="technologies"]');
+
+    flagsButton.style.display = 'none';
+    codeButton.style.display = 'none';
+    technologiesButton.style.display = 'none';
+
     // Afficher les onglets selon le type
     switch (type) {
         case 'ctf':
-            flagsTab.style.display = 'block';
+            flagsButton.style.display = 'block';
             break;
         case 'dev':
             if (document.querySelector(ELEMENTS.form.category).value === 'algo') {
-                codeTab.style.display = 'block';
+                codeButton.style.display = 'block';
             } else {
-                technologiesTab.style.display = 'block';
+                technologiesButton.style.display = 'block';
             }
             break;
     }
@@ -585,8 +635,7 @@ async function handleHackathonChange(e) {
     }
     
     try {
-        const response = await apiRequest(`/admin/hackathons/${hackathonId}/phases`);
-        
+        const response = await apiRequest(`/admin/hackathon-phases/${hackathonId}`);
         if (response.success && response.data) {
             phaseSelect.innerHTML = '<option value="">Sélectionner une phase</option>';
             response.data.forEach(phase => {
@@ -627,7 +676,9 @@ function addFlag() {
 function updateFlagNumbers() {
     const flags = document.querySelectorAll('.flag-item');
     flags.forEach((flag, index) => {
-        flag.querySelector('.flag-number').textContent = index + 1;
+        if (flag.querySelector('.flag-number')) {
+            flag.querySelector('.flag-number').textContent = index + 1;
+        }
     });
 }
 
@@ -657,7 +708,11 @@ function addTest() {
 function updateTestNumbers() {
     const tests = document.querySelectorAll('.test-item');
     tests.forEach((test, index) => {
-        test.querySelector('.test-number').textContent = index + 1;
+        if (test.querySelector('.test-number')) {
+            const testNumber = index + 1;
+            const testNumberElement = test.querySelector('.test-number');
+            testNumberElement.textContent = testNumber;
+        }
     });
 }
 
@@ -696,7 +751,9 @@ function addTechnology() {
 function updateTechnologyNumbers() {
     const technologies = document.querySelectorAll('.technology-item');
     technologies.forEach((tech, index) => {
-        tech.querySelector('.technology-number').textContent = index + 1;
+        if (tech.querySelector('.technology-number')) {
+            tech.querySelector('.technology-number').textContent = index + 1;
+        }
     });
 }
 
@@ -768,7 +825,6 @@ function getTechnologiesData() {
 async function editChallenge(id) {
     try {
         showLoading();
-        
         const response = await apiRequest(`/admin/challenges/${id}`);
         
         if (response.success && response.data) {
@@ -890,19 +946,19 @@ function populateForm(challenge) {
     handleHackathonChange({ target: { value: challenge.hackathon_id } });
     
     // Charger les données liées
-    if (challenge.flags) {
+    if (challenge.flags && Array.isArray(challenge.flags) && challenge.flags.length > 0) {
         loadFlags(challenge.flags);
     }
     
-    if (challenge.snippets) {
+    if (challenge.snippets && Object.keys(challenge.snippets).length > 0) {
         loadSnippets(challenge.snippets);
     }
     
-    if (challenge.tests) {
+    if (challenge.tests && Array.isArray(challenge.tests) && challenge.tests.length > 0) {
         loadTests(challenge.tests);
     }
     
-    if (challenge.technologies) {
+    if (challenge.technologies && Array.isArray(challenge.technologies) && challenge.technologies.length > 0) {
         loadTechnologies(challenge.technologies);
     }
 }
@@ -1001,6 +1057,7 @@ function showFieldError(field, message) {
  * Efface l'erreur d'un champ
  */
 function clearFieldError(field) {
+    if (!field) return;
     const errorDiv = field.parentNode.querySelector('.field-error');
     if (errorDiv) {
         errorDiv.remove();
@@ -1132,17 +1189,6 @@ function setupModalEventListeners() {
     });
 }
 
-// function openModal(modalId) {
-//     document.querySelector(modalId).classList.add(show)
-// }
-
-// function closeModal(modal) {
-//     if (typeof modal === 'string') {
-//         modal = document.querySelector(modal);
-//     }
-//     modal.classList.remove(show)
-// }
-
 /**
  * Gestion des onglets
  */
@@ -1178,26 +1224,40 @@ function switchTab(tabName) {
     });
     
     // Activer l'onglet sélectionné
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-    document.querySelector(`#${tabName}Tab`).classList.add('active');
+    const tabButton = document.querySelector(`[data-tab="${tabName}"]`)
+    tabButton.classList.add('active');
+    const tabContent = document.querySelector(`#${tabName}Tab`)
+    tabContent.classList.add('active');
 }
 
 function switchSnippetTab(language) {
+    if (!language) return;
+
     // Désactiver tous les onglets de snippets
     document.querySelectorAll('.snippet-tab').forEach(button => {
         button.classList.remove('active');
     });
-    document.querySelectorAll('.code-editor').forEach(editor => {
+    
+    // Masquer tous les éditeurs
+    document.querySelectorAll('.CodeMirror').forEach(editor => {
         editor.style.display = 'none';
     });
-    
+
     // Activer l'onglet sélectionné
-    document.querySelector(`[data-language="${language}"]`).classList.add('active');
-    document.querySelector(`#${language}_snippet`).style.display = 'block';
+    const tabButton = document.querySelector(`.snippet-tab[data-language="${language}"]`);
+    const editorWrapper = document.querySelector(`#${language}_snippet`).nextSibling;
     
-    // Rafraîchir l'éditeur CodeMirror
-    if (appState.codeEditors[language]) {
-        appState.codeEditors[language].refresh();
+    if (tabButton) {
+        tabButton.classList.add('active');
+    }
+    
+    if (editorWrapper && editorWrapper.CodeMirror) {
+        editorWrapper.style.display = 'block';
+        
+        // Rafraîchir l'éditeur après un court délai
+        setTimeout(() => {
+            editorWrapper.CodeMirror.refresh();
+        }, 50);
     }
 }
 
@@ -1281,6 +1341,239 @@ async function apiRequest(endpoint, options = {}) {
             data: null
         };
     }
+}
+
+/**
+ * Charge les flags dans le formulaire
+ * @param {Array} flags - Tableau d'objets contenant les données des flags
+ */
+function loadFlags(flags) {
+    const flagsContainer = document.querySelector(ELEMENTS.containers.flags);
+    const flagTemplate = document.querySelector('#flagTemplate');
+    
+    // Vider les flags existants
+    flagsContainer.innerHTML = '';
+    
+    if (!flags || !Array.isArray(flags)) return;
+    
+    flags.forEach((flag, index) => {
+        // Cloner le template
+        const flagElement = flagTemplate.content.cloneNode(true);
+        const flagItem = flagElement.querySelector('.flag-item');
+        
+        // Mettre à jour les champs avec les données du flag
+        flagItem.querySelector('.flag-number').textContent = index + 1;
+        
+        // Mettre à jour les champs du formulaire
+        const nameInput = flagItem.querySelector('input[name$="[name]"]');
+        const valueInput = flagItem.querySelector('input[name$="[value]"]');
+        const pointsInput = flagItem.querySelector('input[name$="[points]"]');
+        const minPointsInput = flagItem.querySelector('input[name$="[min_points]"]');
+        const decayInput = flagItem.querySelector('input[name$="[decay]"]');
+        const isDynamicCheckbox = flagItem.querySelector('input[name$="[is_dynamic]"]');
+        
+        if (nameInput) nameInput.value = flag.name || '';
+        if (valueInput) valueInput.value = flag.value || '';
+        if (pointsInput) pointsInput.value = flag.points || flag.initial_points || '100';
+        if (minPointsInput) minPointsInput.value = flag.min_points || '50';
+        if (decayInput) decayInput.value = flag.decay || '10';
+        if (isDynamicCheckbox) isDynamicCheckbox.checked = flag.is_dynamic === 1 || flag.is_dynamic === '1';
+        
+        // Mettre à jour les noms des champs pour maintenir la structure du tableau
+        const updateNames = (element, property, value) => {
+            const regex = new RegExp(`(\[flags\]\[\]\[${property}\])`);
+            element.name = element.name.replace(regex, `[flags][${index}][${property}]`);
+        };
+        
+        const inputs = flagItem.querySelectorAll('input');
+        inputs.forEach(input => {
+            const match = input.name.match(/\[flags\]\[\]\[(\w+)\]/);
+            if (match && match[1]) {
+                input.name = input.name.replace('[flags][]', `[flags][${index}]`);
+            }
+        });
+        
+        // Gestionnaire pour supprimer le flag
+        flagItem.querySelector('.remove-flag').addEventListener('click', function() {
+            this.closest('.flag-item').remove();
+            updateFlagNumbers();
+        });
+        
+        // Ajouter le flag au conteneur
+        flagsContainer.appendChild(flagItem);
+    });
+    
+    // Mettre à jour les numéros des flags
+    updateFlagNumbers();
+}
+
+/**
+ * Charge les snippets de code dans les éditeurs
+ * @param {Object} snippets - Objet contenant les snippets par langage
+ */
+function loadSnippets(snippets) {
+    // Vérifier si snippets est valide
+    if (!snippets || typeof snippets !== 'object' || Object.keys(snippets).length === 0) {
+        if (appState.codeEditors && appState.codeEditors.python) {
+            switchSnippetTab('python');
+        }
+        return;
+    }
+
+    // Parcourir tous les snippets
+    for (const language in snippets) {
+        if (snippets.hasOwnProperty(language) && 
+            appState.codeEditors && 
+            appState.codeEditors[language] && 
+            snippets[language] !== null) {
+            
+            // Convertir en chaîne et nettoyer
+            const content = String(snippets[language] || '');
+            
+            // Définir la valeur du snippet dans l'éditeur
+            try {
+                appState.codeEditors[language].setValue(content);
+                
+                // Rafraîchir l'éditeur
+                setTimeout(() => {
+                    if (appState.codeEditors[language]) {
+                        appState.codeEditors[language].refresh();
+                    }
+                }, 100);
+            } catch (error) {
+                console.error(`Erreur lors du chargement du snippet pour ${language}:`, error);
+            }
+        }
+    }
+
+    // Basculer vers le premier onglet avec du contenu
+    let firstLangWithContent = null;
+    
+    for (const language in snippets) {
+        if (snippets.hasOwnProperty(language) && 
+            snippets[language] !== null && 
+            String(snippets[language]).trim() !== '') {
+            firstLangWithContent = language;
+            break;
+        }
+    }
+    
+    if (firstLangWithContent && appState.codeEditors[firstLangWithContent]) {
+        switchSnippetTab(firstLangWithContent);
+    } else if (appState.codeEditors.python) {
+        switchSnippetTab('python');
+    }
+}
+
+/**
+ * Charge les tests dans le formulaire
+ * @param {Array} tests - Tableau d'objets contenant les données des tests
+ */
+function loadTests(tests) {
+    const testsContainer = document.querySelector(ELEMENTS.containers.tests);
+    const testTemplate = document.querySelector('#testTemplate');
+    
+    // Vider les tests existants
+    testsContainer.innerHTML = '';
+    
+    if (!tests || !Array.isArray(tests)) return;
+    
+    tests.forEach((test, index) => {
+        // Cloner le template
+        const testElement = testTemplate.content.cloneNode(true);
+        const testItem = testElement.querySelector('.test-item');
+        
+        // Mettre à jour le numéro du test
+        testItem.querySelector('.test-number').textContent = index + 1;
+        
+        // Mettre à jour les champs du formulaire
+        const inputData = testItem.querySelector('textarea[name$="[input_data]"]');
+        const expectedOutput = testItem.querySelector('textarea[name$="[expected_output]"]');
+        const points = testItem.querySelector('input[name$="[points]"]');
+        const timeout = testItem.querySelector('input[name$="[timeout_seconds]"]');
+        const memory = testItem.querySelector('input[name$="[memory_limit_mb]"]');
+        const isPublic = testItem.querySelector('input[name$="[is_public]"]');
+        
+        if (inputData) inputData.value = test.input_data || '';
+        if (expectedOutput) expectedOutput.value = test.expected_output || '';
+        if (points) points.value = test.weight || test.points || '10';
+        if (timeout) timeout.value = test.timeout_seconds || '2';
+        if (memory) memory.value = test.memory_limit_mb || '128';
+        if (isPublic) isPublic.checked = test.is_public === 1 || test.is_public === '1' || test.is_public === true;
+        
+        // Mettre à jour les noms des champs pour maintenir la structure du tableau
+        const inputs = testItem.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+            const match = input.name.match(/\[tests\]\[\]\[(\w+)\]/);
+            if (match && match[1]) {
+                input.name = input.name.replace('[tests][]', `[tests][${index}]`);
+            }
+        });
+        
+        // Gestionnaire pour supprimer le test
+        testItem.querySelector('.remove-test').addEventListener('click', function() {
+            this.closest('.test-item').remove();
+            updateTestNumbers();
+        });
+        
+        // Ajouter le test au conteneur
+        testsContainer.appendChild(testItem);
+    });
+    
+    // Mettre à jour les numéros des tests
+    updateTestNumbers();
+}
+
+/**
+ * Charge les technologies dans le formulaire
+ * @param {Array} technologies - Tableau d'objets contenant les données des technologies
+ */
+function loadTechnologies(technologies) {
+    const techContainer = document.querySelector(ELEMENTS.containers.technologies);
+    const techTemplate = document.querySelector('#technologyTemplate');
+    
+    // Vider les technologies existantes
+    techContainer.innerHTML = '';
+    
+    if (!technologies || !Array.isArray(technologies)) return;
+    
+    technologies.forEach((tech, index) => {
+        // Cloner le template
+        const techElement = techTemplate.content.cloneNode(true);
+        const techItem = techElement.querySelector('.technology-item');
+        
+        // Mettre à jour le numéro de la technologie
+        techItem.querySelector('.technology-number').textContent = index + 1;
+        
+        // Mettre à jour le sélecteur de technologie
+        const techSelect = techItem.querySelector('select[name="technologies[]"]');
+        
+        if (techSelect) {
+            // Sélectionner la technologie correspondante
+            const optionToSelect = Array.from(techSelect.options).find(
+                option => option.value === tech.id || option.value === tech.technology_id
+            );
+            
+            if (optionToSelect) {
+                optionToSelect.selected = true;
+            }
+            
+            // Mettre à jour le nom du champ pour maintenir la structure du tableau
+            techSelect.name = `technologies[${index}]`;
+        }
+        
+        // Gestionnaire pour supprimer la technologie
+        techItem.querySelector('.remove-technology').addEventListener('click', function() {
+            this.closest('.technology-item').remove();
+            updateTechnologyNumbers();
+        });
+        
+        // Ajouter la technologie au conteneur
+        techContainer.appendChild(techItem);
+    });
+    
+    // Mettre à jour les numéros des technologies
+    updateTechnologyNumbers();
 }
 
 // Initialisation de la page

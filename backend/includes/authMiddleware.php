@@ -129,18 +129,18 @@ class AuthMiddleware
                 $user = $tokenManager->validateToken($token);
                 if (!$user['valid']) {
                     self::logout();
+                    return false;
                 }
                 // Recréer la session à partir du token
-                $_SESSION['user'] = [
-                    'id' => $user['user_id'],
-                    'logged_in' => true,
-                    'last_activity' => time()
-                ];
+                $_SESSION['user']['id'] = $user['user_id'];
+                $_SESSION['user']['logged_in'] = true;
+                $_SESSION['user']['last_activity'] = time();
 
                 return $user['valid'];
             } catch (Exception $e) {
                 setFlashMessage('error', 'Token invalide', $e->getMessage());
                 self::logout();
+                return false;
             }
         }
         return false;
@@ -166,11 +166,9 @@ class AuthMiddleware
             self::logout();
         }
         // Recréer la session à partir du token
-        $_SESSION['user'] = [
-            'id' => $user['user_id'],
-            'logged_in' => true,
-            'last_activity' => time()
-        ];
+        $_SESSION['user']['id'] = $user['user_id'];
+        $_SESSION['user']['logged_in'] = true;
+        $_SESSION['user']['last_activity'] = time();
 
         return $user['valid'];
     }

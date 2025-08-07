@@ -296,6 +296,42 @@ function logActivity($action, $description, $data = [], $userId = null, $level =
     }
 }
 
+function logSecurity(int $userId, string $eventType, array $details = [])
+{
+    global $db;
+
+    // Si aucune connexion à la base de données n'est disponible, essayer d'en créer une
+    if (!isset($db)) {
+        try {
+            require_once __DIR__ . '/../models/Database.php';
+            $database = \Auth\Model\Database::getInstance();
+                $db = $database->getConnection();
+            } catch (Exception $e) {
+                error_log("Erreur de connexion à la base de données pour logActivity: " . $e->getMessage());
+                return false;
+            }
+        }
+    
+    try {
+        $stmt = $db->prepare(
+            "INSERT INTO security_logs 
+        (user_id, event_type, ip_address, user_agent, details, created_at) 
+        VALUES (:user_id, :event_type, :ip, :ua, :details, NOW())"
+        );
+
+        $stmt->execute([
+            ':user_id' => $userId,
+            ':event_type' => $eventType,
+            ':ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+            ':ua' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+            ':details' => json_encode($details)
+        ]);
+    } catch (Exception $e) {
+        error_log('Failed to log security event: ' . $e->getMessage());
+    }
+}
+
+
 /**
  * Valide si une chaîne est un JSON valide
  */

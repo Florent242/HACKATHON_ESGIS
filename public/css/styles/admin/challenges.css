@@ -642,6 +642,12 @@
 
 .snippets-tabs {
     display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
     gap: 0.5rem;
     margin-bottom: 1rem;
     border-bottom: 1px solid var(--border);

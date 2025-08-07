@@ -225,18 +225,16 @@ try {
                     $controllerAdmin->getAllUsers();
                     break;
                 case 'hackathons':
+                    // GET /api/admin/hackathons
                     $controllerAdmin->getAllHackathons();
                     break;
                 case 'challenges':
                     // GET /api/admin/challenges
-                    if ($method === 'GET') {
-                        if (isset($request[2]) && $request[2] === 'stats') {
-                            // GET /api/admin/challenges/stats
-                            $controllerAdmin->getChallengesStats();
-                        } else {
-                            // GET /api/admin/challenges
-                            $controllerAdmin->getChallenges();
-                        }
+                    if ($method === 'GET' && !isset($request[2])) {
+                        $controllerAdmin->getChallenges();
+                    } elseif ($method === 'GET' && isset($request[2]) && $request[2] === 'stats') {
+                        // GET /api/admin/challenges/stats
+                        $controllerAdmin->getChallengesStats();
                     } elseif ($method === 'POST' && $request[2] === 'create') {
                         // POST /api/admin/challenges/create
                         $controllerAdmin->createChallenge();

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token']; ?>">
@@ -10,13 +11,20 @@
     <link rel="stylesheet" href="/css/dist/output.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/paraiso-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/php/php.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/ruby/ruby.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/shell/shell.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/pascal/pascal.min.js"></script>
+
     <script defer src="/js/admin/challenges.js"></script>
 </head>
+
 <body>
     <!-- Header -->
     <?php require_once '../includes/admin/header.php'; ?>
@@ -177,7 +185,8 @@
             <div class="modal-body">
                 <form id="challengeForm" class="challenge-form">
                     <input type="hidden" id="challengeId" name="id">
-                    
+                    <input type="hidden" id="csrfToken" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+
                     <!-- Onglets -->
                     <div class="form-tabs">
                         <button type="button" class="tab-button active" data-tab="general">
@@ -192,15 +201,15 @@
                             <i class="fas fa-cogs"></i>
                             Configuration
                         </button>
-                        <button type="button" class="tab-button" data-tab="flags" id="flagsTab" style="display: none;">
+                        <button type="button" class="tab-button" data-tab="flags" style="display: none;">
                             <i class="fas fa-flag"></i>
                             Flags
                         </button>
-                        <button type="button" class="tab-button" data-tab="code" id="codeTab" style="display: none;">
+                        <button type="button" class="tab-button" data-tab="code" style="display: none;">
                             <i class="fas fa-code"></i>
                             Code & Tests
                         </button>
-                        <button type="button" class="tab-button" data-tab="technologies" id="technologiesTab" style="display: none;">
+                        <button type="button" class="tab-button" data-tab="technologies" style="display: none;">
                             <i class="fas fa-tools"></i>
                             Technologies
                         </button>
@@ -345,17 +354,27 @@
                                 <h4>Templates de Code</h4>
                                 <div class="snippets-tabs">
                                     <button type="button" class="snippet-tab active" data-language="python">Python</button>
-                                    <button type="button" class="snippet-tab" data-language="java">Java</button>
+                                    <button type="button" class="snippet-tab" data-language="bash">Bash</button>
                                     <button type="button" class="snippet-tab" data-language="javascript">JavaScript</button>
                                     <button type="button" class="snippet-tab" data-language="cpp">C++</button>
                                     <button type="button" class="snippet-tab" data-language="c">C</button>
+                                    <button type="button" class="snippet-tab" data-language="csharp">C#</button>
+                                    <button type="button" class="snippet-tab" data-language="php">PHP</button>
+                                    <button type="button" class="snippet-tab" data-language="ruby">Ruby</button>
+                                    <button type="button" class="snippet-tab" data-language="pascal">Pascal</button>
+                                    <button type="button" class="snippet-tab" data-language="typescript">TypeScript</button>
                                 </div>
                                 <div class="snippets-content">
                                     <textarea id="python_snippet" name="snippets[python]" class="code-editor" data-language="python"></textarea>
-                                    <textarea id="java_snippet" name="snippets[java]" class="code-editor" data-language="java" style="display: none;"></textarea>
+                                    <textarea id="bash_snippet" name="snippets[bash]" class="code-editor" data-language="bash" style="display: none;"></textarea>
                                     <textarea id="javascript_snippet" name="snippets[javascript]" class="code-editor" data-language="javascript" style="display: none;"></textarea>
                                     <textarea id="cpp_snippet" name="snippets[cpp]" class="code-editor" data-language="cpp" style="display: none;"></textarea>
                                     <textarea id="c_snippet" name="snippets[c]" class="code-editor" data-language="c" style="display: none;"></textarea>
+                                    <textarea id="csharp_snippet" name="snippets[csharp]" class="code-editor" data-language="csharp" style="display: none;"></textarea>
+                                    <textarea id="php_snippet" name="snippets[php]" class="code-editor" data-language="php" style="display: none;"></textarea>
+                                    <textarea id="ruby_snippet" name="snippets[ruby]" class="code-editor" data-language="ruby" style="display: none;"></textarea>
+                                    <textarea id="pascal_snippet" name="snippets[pascal]" class="code-editor" data-language="pascal" style="display: none;"></textarea>
+                                    <textarea id="typescript_snippet" name="snippets[typescript]" class="code-editor" data-language="typescript" style="display: none;"></textarea>
                                 </div>
                             </div>
                             <div class="tests-section">
@@ -483,8 +502,8 @@
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label>Points</label>
-                    <input type="number" name="tests[][points]" class="form-control" min="1" value="10">
+                    <label>Poids</label>
+                    <input type="number" name="tests[][weight]" class="form-control" min="1" value="1">
                 </div>
                 <div class="form-group">
                     <label>Timeout (secondes)</label>
@@ -522,4 +541,5 @@
         </div>
     </template>
 </body>
-</html> 
+
+</html>
