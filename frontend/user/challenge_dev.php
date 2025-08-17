@@ -153,13 +153,6 @@
 
         <div class="challenges-section">
           <div id="challenges-grid" class="challenges-grid">
-            <div class="loading-state">
-              <div class="loading-spinner">
-                <i data-lucide="loader-2" class="w-8 h-8 animate-spin"></i>
-              </div>
-              <p class="loading-text">Chargement des challenges...</p>
-            </div>
-
             <!-- Empty state -->
             <div id="challenges-empty-state" class="w-full py-12 hidden items-center justify-center flex-col animate-fade-in absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <div class="relative mx-auto flex items-center justify-center">

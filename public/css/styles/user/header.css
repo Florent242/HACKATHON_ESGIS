@@ -50,7 +50,7 @@ html {
     }
 }
 
-@-webkit-keyframes scroll {
+@keyframes scroll {
     from {
         scrollbar-color: var(--background) var(--blue-opac)!important; /* Chrome, Edge et Firefox */
     }

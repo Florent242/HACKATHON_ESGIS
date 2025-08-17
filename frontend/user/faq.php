@@ -6,12 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Foire aux Questions</title>
     <!-- Preload critical CSS -->
-    <link rel="preload" href="/css/styles/user/faq.css" as="style">
+    <link rel="stylesheet" href="/css/styles/user/faq.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <?php require_once '../includes/user/head.php'; ?>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <script defer src="/js/user/faq.js"></script>
     <meta name="description" content="Trouvez les réponses à vos questions sur les hackathons et la plateforme EsgisHub.">
 </head>

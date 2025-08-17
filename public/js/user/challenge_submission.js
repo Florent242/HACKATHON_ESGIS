@@ -50,10 +50,11 @@ class ChallengeSubmission {
             this.challengeData = data.data;
 
             if (this.challengeData) {
+                // TODO: gerer le userRegistered
+                this.userRegistered = true;
                 this.populateChallengeInfo();
                 this.handleUserRegistrationStatus();
             }
-            this.userRegistered = data.data.userRegistered;
 
             // Deja gerer dans handleUserRegistrationStatus mais a ajouter si besoin
             // if (!this.userRegistered) {
@@ -481,11 +482,6 @@ class ChallengeSubmission {
 
     // Handle form submission
     async handleSubmission() {
-        // if (!this.userRegistered) {
-        //     this.showAlert('Vous devez vous inscrire à ce défi pour soumettre une solution.', 'error');
-        //     return;
-        // }
-
         // Validate form
         if (!this.validateForm()) {
             return;

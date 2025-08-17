@@ -195,6 +195,21 @@ try {
                 $controller->registerTeam((int)$id, $input);
             }
             break;
+        
+        case 'phases':
+            $controller = new HackathonController($db, $tokenManager);
+            if ($method !== 'POST') {
+                throw new Exception('Méthode non autorisée', 405);
+            }
+            $controller->getPhases($id);
+            break;
+        case 'check-qualification':
+            $controller = new HackathonController($db, $tokenManager);
+            if ($method !== 'POST') {
+                throw new Exception('Méthode non autorisée', 405);
+            }
+            // $controller->checkQualification($id);
+            break;
         case 'check-participation':
             // Route /api/check-participation
             $controller = new HackathonController($db, $tokenManager);
@@ -843,7 +858,7 @@ try {
                         throw new Exception('Méthode non autorisée', 405);
                     }
                 }
-            } 
+            }
             // TODO: insruction non valide pour l'instant
             // elseif ($id === 'hackathon' && is_numeric($action)) {
             //     // GET /api/challenges/hackathon/{id}

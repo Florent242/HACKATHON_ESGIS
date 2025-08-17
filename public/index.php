@@ -88,6 +88,9 @@ switch ($url) {
     case '/user/challenge_dev':
         require_once '../frontend/user/challenge_dev.php'; // Inclure la page "user/challenges"
         break;
+    case '/user/challenge_dev2':
+        require_once '../frontend/user/challenge_project.php'; // Inclure la page "user/challenges"
+        break;
     case '/user/hackathon':
         require_once '../frontend/user/hackathon.php'; // Inclure la page "user/hacka"
         break;
@@ -108,11 +111,11 @@ switch ($url) {
         break;
     default:
         // TODO: ajouter la gestion des urls avec le format CHALL-[A-Za-z0-9]{8,}
-        //  if (preg_match('#^/user/challenge_submission/(CHALL-[A-Za-z0-9]{8,})$#', $url, $matches)) {
-        //     $challenge_id = $matches[1]; // Format: CHALL-XXXXXXXX où X est alphanumérique
-        //     require_once '../frontend/user/challenge_submission.php';
-
-        if (preg_match('#^/user/challenge_submission/(\d+)$#', $url, $matches)) {
+         if (preg_match('#^/user/challenge_submission/(CHALL-[A-Za-z0-9]{8,})$#', $url, $matches)) {
+            $challenge_id = $matches[1]; // Format: CHALL-XXXXXXXX où X est alphanumérique
+            require_once '../frontend/user/challenge_submission.php';
+            $_GET['challenge_id'] = $challenge_id;
+        } else if (preg_match('#^/user/challenge_submission/(\d+)$#', $url, $matches)) {
             $_GET['challenge_id'] = $matches[1];
             require_once '../frontend/user/challenge_submission.php';
         } else if (preg_match('#^/user/interfacechallenges/(\d+)$#', $url, $matches)) {
