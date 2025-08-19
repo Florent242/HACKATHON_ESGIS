@@ -88,7 +88,7 @@
               </div>
               <div class="rule-text">
                 <div class="rule-title">Validation du challenge</div>
-                <div class="rule-desc">Au moins 50% des tests publics doivent être réussis</div>
+                <div class="rule-desc">Au moins 80% des tests publics et 60% des tests en général doivent être réussis</div>
               </div>
             </div>
           </div>

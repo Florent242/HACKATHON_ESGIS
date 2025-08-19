@@ -82,7 +82,7 @@ class ParticipantController extends Controller
 
             // Vérifier le token CSRF
             if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                throw new Exception('Token CSRF invalide');
+                throw new Exception('Token de session invalide');
             }
 
             // Enregistrer le participant
@@ -188,7 +188,7 @@ class ParticipantController extends Controller
 
             // Vérifier le token CSRF
             if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                throw new Exception('Token CSRF invalide');
+                throw new Exception('Token de session invalide');
             }
 
             // Récupérer l'inscription
@@ -239,7 +239,7 @@ class ParticipantController extends Controller
 
             // Vérifier le token CSRF
             if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                throw new Exception('Token CSRF invalide');
+                throw new Exception('Token de session invalide');
             }
 
             // Récupérer l'inscription
@@ -295,7 +295,7 @@ class ParticipantController extends Controller
 
             // Vérifier le token CSRF
             if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                throw new Exception('Token CSRF invalide');
+                throw new Exception('Token de session invalide');
             }
 
             // Récupérer l'inscription

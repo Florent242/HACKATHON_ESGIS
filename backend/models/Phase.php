@@ -50,4 +50,32 @@ class Phase {
             );
         }
     }
+
+    public function getAllForHackathon($hackathonId) {
+        try {
+            $sql = "SELECT * FROM {$this->table} WHERE hackathon_id = :hid";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(['hid' => $hackathonId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            throw new Exception("Erreur lors de la récupération de toutes les phases !"
+            // pour debug
+            . $e->getMessage()
+            );
+        }
+    }
+
+    public function get($id) {
+        try {
+            $sql = "SELECT * FROM {$this->table} WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute(['id' => $id]);
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            throw new Exception("Erreur lors de la récupération de la phase !"
+            // pour debug
+            . $e->getMessage()
+            );
+        }
+    }
 }

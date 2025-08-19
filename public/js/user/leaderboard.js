@@ -19,7 +19,9 @@ const CONFIG = {
 let AppState = {
     currentEvent: null,
     currentPhase: null,
+    currentPhaseData: null, // Pour stocker les données complètes de la phase courante
     refreshTimer: null,
+    countdownTimer: null, // Timer pour le compte à rebours
     isLoading: false,
     lastUpdate: null
 };
@@ -48,7 +50,6 @@ document.addEventListener('DOMContentLoaded', function () {
     updateTimestamp();
     startAutoRefresh();
     applySavedPreferences();
-    console.log('Leaderboard application initialized successfully');
 });
 
 /**
@@ -184,6 +185,13 @@ async function handlePhaseChange(event) {
     savePreferences();
     updateCurrentPhaseDisplay();
 
+    // Récupérer les données complètes de la phase sélectionnée
+    const selectedOption = event.target.options[event.target.selectedIndex];
+    if (selectedOption && selectedOption.dataset.phaseData) {
+        AppState.currentPhaseData = JSON.parse(selectedOption.dataset.phaseData);
+        updateCountdown(); // Mettre à jour le compte à rebours
+    }
+
     try {
         await loadLeaderboard(AppState.currentEvent, phaseId);
         hideError();
@@ -271,12 +279,16 @@ function populatePhaseSelector(phases) {
         return;
     }
 
+    // Trier les phases par date de début (les plus récentes en premier)
+    phases.sort((a, b) => new Date(b.start) - new Date(a.start));
+
     // Ajouter les phases
     phases.forEach(phase => {
         const option = document.createElement('option');
         option.value = phase.id;
         option.textContent = phase.name;
         option.className = 'bg-blue-950 text-white hover:bg-blue-800 transition-all duration-150';
+        option.dataset.phaseData = JSON.stringify(phase); // Stocker les données complètes de la phase
         DOM.phaseSelect.appendChild(option);
     });
 
@@ -558,6 +570,94 @@ function updateCurrentPhaseDisplay() {
         DOM.currentPhase.textContent = selectedOption.textContent;
     } else {
         DOM.currentPhase.textContent = 'Aucune phase';
+    }
+}
+
+/**
+ * Met à jour le compte à rebours
+ */
+function updateCountdown() {
+    if (!AppState.currentPhaseData || !DOM.countdown) return;
+
+    // Arrêter le timer précédent s'il existe
+    if (AppState.countdownTimer) {
+        clearInterval(AppState.countdownTimer);
+    }
+
+    const startDate = new Date(AppState.currentPhaseData.start);
+    const endDate = new Date(AppState.currentPhaseData.end);
+    const now = new Date();
+
+    // Fonction pour formater le temps restant
+    const updateDisplay = () => {
+        const now = new Date();
+        let targetDate, message, isActive = false;
+
+        if (now < startDate) {
+            // La phase n'a pas encore commencé
+            targetDate = startDate;
+            message = 'Début dans ';
+        } else if (now < endDate) {
+            // La phase est en cours
+            targetDate = endDate;
+            message = 'Fin dans ';
+            isActive = true;
+        } else {
+            // La phase est terminée
+            DOM.countdown.innerHTML = `
+                <div class="flex items-center text-sm">
+                    <i data-lucide="flag" class="w-4 h-4 mr-2 text-red-500"></i>
+                    <span class="text-red-400">Terminé</span>
+                </div>
+            `;
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            return;
+        }
+
+        // Calculer la différence
+        const diff = targetDate - now;
+        
+        // Calculer les unités de temps
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        // Formater l'affichage
+        let displayText = '';
+        if (days > 0) {
+            displayText = `${days}j ${hours}h`;
+        } else if (hours > 0) {
+            displayText = `${hours}h ${minutes}m`;
+        } else {
+            displayText = `${minutes}m ${seconds}s`;
+        }
+
+        // Mettre à jour l'affichage
+        DOM.countdown.innerHTML = `
+            <div class="flex items-center text-sm">
+                <i data-lucide="${isActive ? 'clock' : 'alarm-clock'}" class="w-4 h-4 mr-2 ${isActive ? 'text-green-500' : 'text-yellow-500'}"></i>
+                <span class="${isActive ? 'text-green-400' : 'text-yellow-400'}">${message}${displayText}</span>
+            </div>
+        `;
+
+        // Mettre à jour les icônes Lucide
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    };
+
+    // Mettre à jour immédiatement
+    updateDisplay();
+
+    // Mettre à jour toutes les secondes
+    AppState.countdownTimer = setInterval(updateDisplay, 1000);
+
+    // Stoper le timer si la phase est terminée
+    if (now >= endDate) {
+        clearInterval(AppState.countdownTimer);
     }
 }
 

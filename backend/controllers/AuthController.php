@@ -172,7 +172,7 @@ class AuthController
 
         // Vérifier si le token est présent dans la requête
         if (empty($requestToken)) {
-            throw new Exception('Token CSRF manquant', 400);
+            throw new Exception('Token de session manquant', 400);
         }
 
         // Récupérer le token CSRF de la session
@@ -185,7 +185,7 @@ class AuthController
 
         // Comparer les tokens avec hash_equals pour éviter les attaques de timing
         if (!hash_equals($sessionToken, $requestToken)) {
-            throw new Exception('Token CSRF invalide', 403);
+            throw new Exception('Token de session invalide', 403);
         }
 
         // Optionnel : régénérer le token CSRF après utilisation

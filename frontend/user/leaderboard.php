@@ -28,7 +28,7 @@
                 <!-- Titre principal -->
                 <div class="space-y-1">
                     <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
-                        <i data-lucide="trophy" class="w-8 h-8 text-yellow-400"></i>
+                        <i data-lucide="trophy" class="flex items-center justify-center stroke-current p-2 bg-[rgba(37,99,235,0.1)] border border-blue-800/50 rounded-xl w-14 h-14 text-blue-600"></i>
                         <span>Classement en direct</span>
                     </h1>
                     <p class="text-blue-200/80 text-sm pl-11">Suivez les performances des équipes en temps réel</p>
@@ -39,15 +39,15 @@
                     <div class="grid grid-cols-1 gap-2 text-sm">
                         <div class="flex items-center gap-2 text-blue-100">
                             <i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i>
-                            <span>Événement: <span id="current-event" class="font-medium">Sélectionner un hackathon</span></span>
+                            <span class="font-medium flex items-center gap-2">Événement: <span id="current-event" class="font-medium">Sélectionner un hackathon</span></span>
                         </div>
                         <div class="flex items-center gap-2 text-blue-100">
                             <i data-lucide="layers" class="w-4 h-4 text-purple-400"></i>
-                            <span>Phase: <span id="current-phase" class="font-medium">Aucune phase</span></span>
+                            <span class="font-medium flex items-center gap-2">Phase: <span id="current-phase" class="font-medium">Aucune phase</span></span>
                         </div>
                         <div class="flex items-center gap-2 text-blue-100">
                             <i data-lucide="clock" class="w-4 h-4 text-yellow-400"></i>
-                            <span>Temps restant: <span id="countdown" class="font-mono font-medium">--:--:--</span></span>
+                            <span class="font-medium flex items-center gap-2">Période: <span id="countdown" class="font-mono font-medium">--:--:--</span></span>
                         </div>
                     </div>
                 </div>

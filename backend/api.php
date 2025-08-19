@@ -28,6 +28,7 @@ use Piston\PistonRequest;
 use Piston\PistonExecutor;
 use Auth\Controller\ParticipantController;
 use Auth\Controller\ScoreController;
+use Auth\Controller\PhaseController;
 
 try {
 
@@ -68,6 +69,7 @@ try {
         'PistonRequest' => '/services/PistonRequest.php',
         'PistonExecutor' => '/services/PistonExecutor.php',
         'PistonResponse' => '/services/PistonResponse.php',
+        'PhaseController' => '/controllers/PhaseController.php'
     ];
 
     foreach ($files as $class => $path) {
@@ -197,17 +199,28 @@ try {
             break;
         
         case 'phases':
-            $controller = new HackathonController($db, $tokenManager);
-            if ($method !== 'POST') {
+            $controller = new PhaseController($db, $tokenManager);
+            if ($method !== 'GET') {
                 throw new Exception('Méthode non autorisée', 405);
             }
-            $controller->getPhases($id);
+            
+            if ($id === 'active-phase') {
+                $controller->getActivePhase($id, $userId);
+            } elseif ($id === 'all-phases') {
+                $controller->getAllPhases($id);
+            } elseif (is_numeric($id)) {
+                $controller->get($id);
+            }
             break;
         case 'check-qualification':
             $controller = new HackathonController($db, $tokenManager);
             if ($method !== 'POST') {
                 throw new Exception('Méthode non autorisée', 405);
             }
+            jsonResponse([
+                'success' => false,
+                'message' => 'Qualification vérifiée'
+            ], 200);
             // $controller->checkQualification($id);
             break;
         case 'check-participation':
@@ -795,8 +808,14 @@ try {
                     throw new Exception('Méthode non autorisée ou paramètres invalides', 400);
                 }
             } elseif ($id === 'dev') {
-                // GET /api/challenges/dev/{hackathon_id}/{user_id}/{phase_id}
-                if ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3]) && isset($request[4]) && is_numeric($request[4])) {
+                // GET /api/challenges/dev/{user_id}/{c_id} or code_name
+                if ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && (is_numeric($request[3]) || is_string($request[3]))) {
+                    $controller->findChallengeDev($request[2], $request[3]);
+                }elseif ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3]) && isset($request[4]) && is_numeric($request[4])) {
+                    // GET /api/challenges/dev/{hackathon_id}/{user_id}/{phase_id}
+                    $controller->getChallengesDev($request[2], $request[3], $request[4]);
+                }elseif ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3]) && isset($request[4]) && is_numeric($request[4])) {
+                    // GET /api/challenges/dev/{hackathon_id}/{user_id}/{phase_id}
                     $controller->getChallengesDev($request[2], $request[3], $request[4]);
                 }
                 // POST /api/challenges/dev/{hackathon_id}/{user_id} - pour validation et soumission algorithmique

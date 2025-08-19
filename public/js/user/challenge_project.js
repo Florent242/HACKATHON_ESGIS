@@ -2,7 +2,7 @@
 // CONFIGURATION
 // ==================================================
 const API_BASE_URL = '/api'; // À adapter selon votre environnement
-const CHALLENGE_ID = getChallengeIdFromURL();
+const CHALLENGE_ID = getChallengeIdFromURL(); // getChallengeIdFromURL();
 
 // ==================================================
 // STATE MANAGEMENT
@@ -78,47 +78,42 @@ function formatInstructions(text) {
     return formatted;
 }
 
-async function fetchAPI(endpoint) {
-    try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`);
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error(`Erreur API ${endpoint}:`, error);
-        return null;
-    }
-}
-
 async function loadChallengeData() {
     try {
+        const userId = await getUserId();
         // Chargement du challenge principal
-        challengeData = await apiRequest(`/challenges/dev/${CHALLENGE_ID}`);
-        if (!challengeData) {
+        response = await apiRequest(`/challenges/dev/${userId}/${CHALLENGE_ID}`);
+        if (!response.success) {
             throw new Error('Challenge non trouvé');
         }
 
+        challengeData = response.data;
+
         // Chargement des données de phase
         if (challengeData.phase_id) {
-            phaseData = await fetchAPI(`/phases/${challengeData.phase_id}`);
+            phaseDataResponse = await apiRequest(`/phases/${challengeData.phase_id}`);
+            if (!phaseDataResponse.success) {
+                throw new Error('Phase non trouvée');
+            }
+            phaseData = phaseDataResponse.data;
         }
 
         // Chargement des données hackathon
         if (challengeData.hackathon_id) {
-            hackathonData = await fetchAPI(`/hackathons/${challengeData.hackathon_id}`);
+            hackathonDataResponse = await apiRequest(`/hackathons/${challengeData.hackathon_id}`);
+            if (!hackathonDataResponse.success) {
+                throw new Error('Hackathon non trouvé');
+            }
+            hackathonData = hackathonDataResponse.data;
         }
-
         return true;
     } catch (error) {
         console.error('Erreur d\'initialisation:', error);
         showError('Une erreur est survenue lors du chargement des données. Veuillez réessayer.');
+        return false;
     }
 }
 
-// ==================================================
-// EVENT LISTENERS
-// ==================================================
 document.addEventListener('DOMContentLoaded', init);
 
 // Gestion du redimensionnement pour le responsive
@@ -169,9 +164,6 @@ elements.submitBtn?.addEventListener('click', () => {
     });
 });
 
-// ==================================================
-// ACCESSIBILITY ENHANCEMENTS
-// ==================================================
 function setupAccessibility() {
     // Annonces ARIA pour le countdown
     const countdownElement = document.getElementById('countdown');
@@ -220,8 +212,8 @@ function optimizePerformance() {
     elements.submitBtn?.addEventListener('mouseenter', () => {
         preloadTimer = setTimeout(() => {
             const submissionUrl = challengeData?.code_name ? 
-                `/challenge_submission/${challengeData.code_name}` : 
-                `/challenge_submission/${challengeData.id}`;
+                `/user/challenge_submission/${challengeData.code_name}` : 
+                `/user/challenge_submission/${challengeData.id}`;
             
             const link = document.createElement('link');
             link.rel = 'prefetch';
@@ -259,15 +251,12 @@ async function loadDataWithRetry() {
 }
 
 window.addEventListener('beforeunload', () => {
-    // Nettoyage avant déchargement de la page
     if (countdownInterval) {
         clearInterval(countdownInterval);
     }
 });
 
-// Mock data pour démonstration
 async function loadMockData() {
-    // Simulation d'un délai de chargement
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     challengeData = {
@@ -375,12 +364,12 @@ function updateUI() {
     if (!challengeData) return;
 
     // Header
-    elements.hackathonTitle.textContent = hackathonData?.title || 'Hackathon';
-    elements.phaseTitle.textContent = phaseData?.title || 'Phase en cours';
+    elements.hackathonTitle.textContent = hackathonData?.title || hackathonData?.name || 'Hackathon';
+    elements.phaseTitle.textContent = phaseData?.title || phaseData?.name || 'Phase en cours';
 
     // Hero section
     elements.hackathonTheme.textContent = hackathonData?.theme || 'Thématique non définie';
-    elements.challengeTitle.textContent = challengeData.title || 'Challenge';
+    elements.challengeTitle.textContent = challengeData.title || challengeData.name || 'Titre du Challenge';
 
     // Description et instructions
     elements.challengeDescription.innerHTML = formatDescription(challengeData.description);
@@ -400,8 +389,8 @@ function updateUI() {
 
     // Bouton de soumission
     const submissionUrl = challengeData.code_name ? 
-        `/challenge_submission/${challengeData.code_name}` : 
-        `/challenge_submission/${challengeData.id}`;
+        `/user/challenge_submission/${challengeData.code_name}` : 
+        `/user/challenge_submission/${challengeData.id}`;
     
     elements.submitBtn.onclick = () => {
         window.location.href = submissionUrl;
@@ -429,25 +418,15 @@ function showError(message) {
     lucide.createIcons();
 }
 
-// ==================================================
-// INITIALIZATION
-// ==================================================
 async function init() {
     try {
-        // Initialisation des icônes Lucide
-        lucide.createIcons();
-
-        // Chargement des données (utilise mock pour la démo)
-        const success = await loadMockData(); // Remplacer par loadChallengeData() en production
+        const success = await loadChallengeData();
 
         if (!success) {
             throw new Error('Impossible de charger les données du challenge');
         }
 
-        // Mise à jour de l'interface
         updateUI();
-
-        // Masquer le loading et afficher le contenu
         elements.loading.classList.add('hidden');
         elements.content.classList.remove('hidden');
 

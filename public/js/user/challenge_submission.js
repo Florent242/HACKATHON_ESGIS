@@ -5,61 +5,90 @@ class ChallengeSubmission {
         this.submissionType = 'github'; // Default to github
         this.challengeData = null;
         this.userRegistered = false;
+        this.userId = null;
+        this.phaseData = null;
 
         this.init();
     }
 
-    init() {
+    async init() {
+        this.userId = await getUserId();
         this.setupEventListeners();
-        this.loadChallengeData();
         this.setupDragAndDrop();
         this.addAlertStyles();
+        this.loadChallengeData();
     }
 
     getChallengeIdFromUrl() {
-        const path = window.location.pathname;
-
+        const fullpath = window.location.pathname;
+        let path = fullpath.split('/');
+        path = "/" + path[path.length - 2] + "/" + path[path.length - 1];
         // TODO: ajouter la gestion des urls avec le format CHALL-[A-Za-z0-9]{8,}
-        // const matches = path.match(/challenge_submission\/(CHALL-[A-Za-z0-9]{8,})$/);
+        const matches = path.match(/challenge_submission\/(CHALL-[A-Za-z0-9]{8,})$/);
 
-        const matches = path.match(/challenge_submission\/(\d+)$/);
-        if (!matches) {
-            console.error('No challenge ID found in URL');
-            return null;
+        const matches2 = path.match(/challenge_submission\/(\d+)$/);
+        if (matches) {
+            return matches[1];
+        } else if (matches2) {
+            return matches2[1];
         }
-        return matches[1];
+        return null;
+    }
+
+    async getUserRegistrationStatus() {
+        try {
+            const response = await apiRequest(`/check-participation`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    csrf_token: this.getTokenCsrf(),
+                    user_id: this.userId,
+                    hackathon_id: this.challengeData.hackathon_id
+                })
+            });
+
+            this.userRegistered = response.success;
+        } catch (error) {
+            console.error('Error loading challenge data:', error);
+            this.showAlert('Erreur lors du chargement des données du défi', 'error');
+        }
+    }
+
+    getTokenCsrf() {
+        return document.querySelector('meta[name="csrf-token"]').content;
+    }
+
+    async checkPhase() {
+        try {
+            const response = await apiRequest(`/phases/${this.challengeData.phase_id}`);
+            if (!response.success) {
+                throw new Error('Phase non trouvée');
+            }
+            this.phaseData = response.data;
+        } catch (error) {
+            console.error('Error loading phase data:', error);
+            this.showAlert('Erreur lors du chargement des données de phase', 'error');
+        }
     }
 
     async loadChallengeData() {
         try {
             this.showLoading();
 
-            // Simulate API call - replace with actual endpoint
-            const response = await fetch(`/api/challenges/${this.challengeId}`, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-            if (!response.ok) {
-                throw new Error('Failed to fetch challenge data');
+            const response = await apiRequest(`/challenges/dev/${this.userId}/${this.challengeId}`);
+            if (!response.success) {
+                throw new Error('Challenge non trouvé');
             }
-            const data = await response.json();
+            const data = response.data;
 
-            this.challengeData = data.data;
+            this.challengeData = data;
 
             if (this.challengeData) {
-                // TODO: gerer le userRegistered
-                this.userRegistered = true;
                 this.populateChallengeInfo();
+                await this.getUserRegistrationStatus();
                 this.handleUserRegistrationStatus();
+                await this.checkPhase();
+                this.handlePhaseStatus();
             }
-
-            // Deja gerer dans handleUserRegistrationStatus mais a ajouter si besoin
-            // if (!this.userRegistered) {
-            //     this.showAlert('Vous devez vous inscrire à ce défi avant de pouvoir soumettre une solution', 'warning');
-            // }
 
         } catch (error) {
             console.error('Error loading challenge data:', error);
@@ -78,25 +107,9 @@ class ChallengeSubmission {
 
         const data = this.challengeData;
 
-        console.log(data);
         // Mettre à jour les informations de base
         document.getElementById('challengeTitle').textContent = data.title;
         document.getElementById('challengeDescription').textContent = data.description;
-
-        // Formater la date limite
-        const deadlineDate = new Date(data.end_date);
-        const options = { day: 'numeric', month: 'long', year: 'numeric' };
-        document.getElementById('challengeDeadline').textContent = deadlineDate ? deadlineDate.toLocaleDateString('fr-FR', options) : 'Date limite non disponible';
-
-        // Mettre à jour les technologies
-        document.getElementById('challengeTechnologies').textContent = Array.isArray(data.technologies)
-            ? data.technologies.join(', ')
-            : data.technologies ?? 'Technologies non disponibles';
-
-        // Mettre à jour les ressources si disponibles
-        if (data.resources && data.resources.length > 0) {
-            this.updateResources(data.resources);
-        }
 
         // Ajouter des classes visuelles basées sur le statut et la difficulté
         const challengeInfo = document.querySelector('.challenge-info');
@@ -106,30 +119,83 @@ class ChallengeSubmission {
         }
     }
 
-    updateResources(resources) {
-        const resourcesContainer = document.querySelector('#challengeResources');
-        resourcesContainer.innerHTML = resources.map(resource => `
-            <a href="${resource.url}" target="_blank" class="flex items-center justify-between text-blue-400 hover:text-blue-300 text-sm transition-colors">
-                <div class="flex items-center space-x-2 flex-row">
-                    <i data-lucide="${resource.type === 'doc' ? 'file-text' : 'code-xml'}" class="w-3 h-3 mr-2"></i>
-                    ${resource.name}
-                </div>
-                <i data-lucide="external-link" class="w-3 h-3 ml-2"></i>
-            </a>
-        `).join('');
+    async handlePhaseStatus() {
+        const formContainer = document.getElementById('formContainer');
+        const challengeInfo = document.querySelector('.challenge-info');
 
-        // Réinitialiser les icônes Lucide
-        lucide.createIcons();
+        if (!this.phaseData) {
+            this.showAlert('Phase non trouvée', 'error');
+            formContainer.classList.add('blur-sm');
+            return;
+        }
+
+        const data = this.phaseData;
+
+        if (data.phase_type == 'qualified') {
+            const isQualified = await this.checkQualification();
+            if (!isQualified) {
+
+                this.showAlert('Vous devez être qualifié pour soumettre une solution', 'error');
+
+                formContainer.parentElement.querySelectorAll('button').forEach(button => {
+                    button.disabled = true;
+                });
+
+                challengeInfo.classList.add('opacity-50');
+
+                // Disable form
+                formContainer.style.opacity = '0.5';
+                formContainer.style.pointerEvents = 'none';
+
+                // Add blur effect
+                formContainer.classList.add('blur-sm');
+                return;
+            }
+        }
+
+        const now = new Date();
+        const start = new Date(data.start);
+        const end = new Date(data.end);
+
+        if (start > now) {
+            challengeInfo.classList.add('opacity-50');
+            this.showAlert("Ce défi n'est pas encore ouvert", "error");
+        } else if (end < now) {
+            challengeInfo.classList.add('opacity-50');
+            this.showAlert("Ce défi est déjà terminé", "error");
+        }
+
     }
 
-    handleUserRegistrationStatus() {
+    async checkQualification() {
+        try {
+            const response = await apiRequest(`/check-qualification`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    csrf_token: this.getTokenCsrf(),
+                    user_id: this.userId,
+                    hackathon_id: this.challengeData.hackathon_id,
+                    challenge_id: this.challengeData.id
+                })
+            });
+
+            this.qualificationData = response.data;
+            return response.success;
+        } catch (error) {
+            console.error('Error loading qualification data:', error);
+            this.showAlert('Erreur lors du chargement des données de qualification', 'error');
+            return false;
+        }
+    }
+
+    async handleUserRegistrationStatus() {
         const formContainer = document.getElementById('formContainer');
 
         if (!this.userRegistered) {
             // Show registration required message
             this.showAlert(
                 'Vous devez vous inscrire à ce défi avant de pouvoir soumettre une solution.',
-                'warning',
+                'error',
                 5000
             );
 
@@ -684,7 +750,7 @@ class ChallengeSubmission {
             formContainer.classList.add('blur-sm');
 
             // Compte à rebours et redirection
-            let countdown = 5;
+            let countdown = 6;
             const countdownElement = alertContent.querySelector('.countdown');
             const timer = setInterval(() => {
                 countdown--;
@@ -854,12 +920,10 @@ function goBack(page) {
     }
 }
 
-// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     let challengeSubmission = new ChallengeSubmission();
 });
 
-// Add global styles for smooth transitions
 document.addEventListener('DOMContentLoaded', () => {
     const globalStyles = document.createElement('style');
     globalStyles.textContent = `

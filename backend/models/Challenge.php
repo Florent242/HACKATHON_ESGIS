@@ -25,10 +25,12 @@ class Challenge
     {
         try {
             $sql = "SELECT c.id,
+            c.code_name,
             c.title,
             c.type,
             c.category,
             c.description,
+            c.evaluation_criteria,
             c.difficulty,
             c.url_path,
             c.resource_link,
@@ -46,11 +48,12 @@ class Challenge
                     FROM {$this->table} c
                     LEFT JOIN users u ON c.created_by = u.id
                     LEFT JOIN hackathons h ON c.hackathon_id = h.id
-                    WHERE c.id = :id
+                    WHERE (c.id = :id OR c.code_name = :code_name)
+                    AND c.is_active = 1
                     GROUP BY c.id";
 
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([':id' => $id]);
+            $stmt->execute([':id' => $id, ':code_name' => $id]);
             $challenge = $stmt->fetch(PDO::FETCH_ASSOC);
 
 
@@ -509,7 +512,7 @@ class Challenge
         }
     }
 
-    public function getchallengeDev($hackathon_id, $team_id, $phase_id = null, $user_id = null)
+    public function getChallengeDev($hackathon_id, $team_id, $phase_id = null, $user_id = null)
     {
         try {
             // Verifier si l'utiisateur est inscrit au hackathon
@@ -580,7 +583,7 @@ class Challenge
         }
     }
 
-    public function getchallengeCtf($hackathon_id, $user_id, $phase_id = null)
+    public function getChallengeCtf($hackathon_id, $user_id, $phase_id = null)
     {
         try {
             // Verifier si l'utiisateur est inscrit au hackathon

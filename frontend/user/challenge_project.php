@@ -1,40 +1,18 @@
 <!DOCTYPE html>
 <html lang="fr" class="scroll-smooth">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0A0F1C">
     <meta name="description" content="Participez au défi de développement et démontrez vos compétences techniques">
-    
+
     <title>Challenge Développement | Hackathon ESGIS</title>
-    
-    <!-- Preload des polices et assets critiques -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon/favicon-16x16.png">
-    <link rel="manifest" href="/assets/favicon/site.webmanifest">
-    
-    <!-- Inclusions -->
+
     <?php require_once '../includes/user/head.php'; ?>
-    
-    <!-- Styles -->
+
     <link rel="stylesheet" href="/css/styles/user/challenge_project.css">
-    
-    <!-- Scripts -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="/js/user/challenge_project.js" defer></script>
-    
-    <!-- Meta pour les réseaux sociaux -->
-    <meta property="og:title" content="Challenge Développement | Hackathon ESGIS">
-    <meta property="og:description" content="Participez à notre défi de développement et démontrez votre excellence technique">
-    <meta property="og:image" content="/assets/og-image.jpg">
-    <meta property="og:url" content="<?= (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]"; ?>">
-    <meta name="twitter:card" content="summary_large_image">
+    <script defer src="/js/user/challenge_project.js"></script>
 </head>
 
 <body class="min-h-screen bg-gradient-to-br from-[#0A0F1C] to-[#0D1225] text-white font-sans antialiased leading-relaxed">
@@ -67,46 +45,42 @@
             </div>
         </sectio>
 
-        <!-- Main Content -->
         <main>
-            <!-- Hero Section -->
-            <section class="relative overflow-hidden py-20">
-                <!-- Animated Background Elements -->
+            <section class="relative overflow-hidden py-10">
                 <div class="absolute inset-0">
                     <div class="absolute top-20 left-10 w-20 h-20 bg-blue-500/10 rounded-full floating blur-xl"></div>
                     <div class="absolute top-40 right-20 w-32 h-32 bg-purple-500/10 rounded-full floating blur-xl"></div>
                     <div class="absolute bottom-20 left-1/3 w-24 h-24 bg-cyan-500/10 rounded-full floating blur-xl"></div>
                 </div>
-                
+
                 <div class="relative max-w-7xl mx-auto px-6">
                     <div class="text-center mb-16">
-                        <!-- Theme Badge -->
-                        <div class="inline-flex items-center space-x-3 glass-card px-6 py-3 rounded-full mb-8">
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 flex items-center justify-center">
+                        <div class="inline-flex items-center space-x-3 card-bg px-3 py-2 rounded-full mb-8">
+                            <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-cyan-500 flex items-center justify-center">
                                 <i data-lucide="zap" class="w-4 h-4 text-white"></i>
                             </div>
                             <span id="hackathon-theme" class="text-lg font-semibold text-white">Innovation & Impact Social</span>
                         </div>
-                        
+
                         <!-- Main Title -->
                         <h1 id="challenge-title" class="text-5xl md:text-7xl font-black mb-8 bg-gradient-to-r from-white via-blue-100 to-slate-300 bg-clip-text text-transparent leading-tight">
                             Challenge en cours...
                         </h1>
-                        
+
                         <!-- Subtitle with enhanced styling -->
                         <p class="text-xl md:text-2xl text-slate-300 mb-12 max-w-4xl mx-auto leading-relaxed">
                             Créez une solution innovante qui transforme l'expérience utilisateur et démontre votre excellence technique
                         </p>
-                        
+
                         <!-- Enhanced Countdown Timer -->
-                        <div class="glass-card rounded-3xl p-10 max-w-4xl mx-auto mb-12 border border-white/10">
+                        <div class="card-bg rounded-3xl p-10 max-w-4xl mx-auto mb-12 border border-white/10">
                             <div class="flex items-center justify-center mb-6">
-                                <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mr-4">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center mr-4">
                                     <i data-lucide="timer" class="w-6 h-6 text-white"></i>
                                 </div>
                                 <h2 class="text-2xl font-bold text-white">Temps restant pour soumettre</h2>
                             </div>
-                            
+
                             <div id="countdown" class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                                 <div class="countdown-digit rounded-2xl p-6 text-center">
                                     <div id="days" class="text-4xl md:text-5xl font-black text-blue-400 mb-2">00</div>
@@ -125,7 +99,7 @@
                                     <div class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Secondes</div>
                                 </div>
                             </div>
-                            
+
                             <div id="countdown-status" class="text-center mt-6 hidden">
                                 <span class="bg-red-500/20 border border-red-500/30 text-red-400 px-6 py-3 rounded-full text-lg font-semibold">
                                     <i data-lucide="x-circle" class="w-5 h-5 inline mr-2"></i>
@@ -139,12 +113,12 @@
             </section>
 
             <!-- Challenge Content -->
-            <section class="max-w-7xl mx-auto px-6 py-16">
+            <section class="max-w-7xl mx-auto px-4 py-16">
                 <div class="grid lg:grid-cols-3 gap-8">
                     <!-- Main Content Column -->
                     <div class="lg:col-span-2 space-y-8">
                         <!-- Description -->
-                        <div class="glass-card rounded-3xl p-8">
+                        <div class="card-bg rounded-3xl p-8">
                             <div class="flex items-center mb-8">
                                 <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mr-4">
                                     <i data-lucide="file-text" class="w-5 h-5 text-white icon-enhanced"></i>
@@ -157,9 +131,9 @@
                         </div>
 
                         <!-- Instructions -->
-                        <div class="glass-card rounded-3xl p-8">
+                        <div class="card-bg rounded-3xl p-8">
                             <div class="flex items-center mb-8">
-                                <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-xl flex items-center justify-center mr-4">
+                                <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mr-4">
                                     <i data-lucide="list-checks" class="w-5 h-5 text-white icon-enhanced"></i>
                                 </div>
                                 <h2 class="text-3xl font-bold text-white">Instructions Détaillées</h2>
@@ -170,9 +144,9 @@
                         </div>
 
                         <!-- Criteria Section -->
-                        <div class="glass-card rounded-3xl p-8">
+                        <div class="card-bg rounded-3xl p-8">
                             <div class="flex items-center mb-8">
-                                <div class="w-10 h-10 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mr-4">
+                                <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mr-4">
                                     <i data-lucide="target" class="w-5 h-5 text-white icon-enhanced"></i>
                                 </div>
                                 <h2 class="text-3xl font-bold text-white">Critères d'Évaluation</h2>
@@ -214,7 +188,7 @@
                         </div>
 
                         <!-- Submission Formats -->
-                        <div class="glass-card rounded-3xl p-8">
+                        <div class="card-bg rounded-3xl p-8">
                             <div class="flex items-center mb-8">
                                 <div class="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mr-4">
                                     <i data-lucide="upload" class="w-5 h-5 text-white icon-enhanced"></i>
@@ -275,7 +249,7 @@
                     <!-- Sidebar -->
                     <div class="space-y-6">
                         <!-- Challenge Stats -->
-                        <div class="glass-card rounded-2xl p-6">
+                        <div class="card-bg rounded-2xl p-6">
                             <h3 class="font-bold text-white mb-6 flex items-center">
                                 <i data-lucide="info" class="w-5 h-5 mr-2 text-blue-400 icon-enhanced"></i>
                                 Informations
@@ -294,92 +268,62 @@
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <span class="text-slate-400">Soumissions</span>
-                                    <span class="text-white font-semibold">Illimitées</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-slate-400">Équipe</span>
-                                    <span class="text-white font-semibold">1-4 personnes</span>
+                                    <span class="text-white font-semibold">Leader uniquement</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Submission Button -->
-                        <div class="glass-card rounded-2xl p-6">
+                        <div class="card-bg rounded-2xl p-6">
                             <h3 class="font-bold text-white mb-4 flex items-center">
                                 <i data-lucide="rocket" class="w-5 h-5 mr-2 text-green-400 icon-enhanced"></i>
                                 Action
                             </h3>
-                            <button id="submit-btn" class="w-full btn-premium text-white font-bold py-4 px-6 rounded-2xl transition-all duration-500 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mb-4">
+                            <button id="submit-btn" class="w-full btn-premium text-white font-bold py-4 px-6 rounded-2xl transition-all duration-500 transform disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mb-4 btn-primary btn-startchallenge">
                                 <i data-lucide="send" class="w-5 h-5 inline mr-2"></i>
                                 Soumettre mon projet
                             </button>
                             <p class="text-xs text-slate-400 text-center leading-relaxed">
-                                Vous pouvez soumettre plusieurs versions. Seule la dernière sera évaluée.
+                                Seul le leader peut soumettre le projet.
                             </p>
                         </div>
 
-                        <!-- Resources -->
-                        <div class="glass-card rounded-2xl p-6">
-                            <h3 class="font-bold text-white mb-4 flex items-center">
-                                <i data-lucide="book" class="w-5 h-5 mr-2 text-purple-400 icon-enhanced"></i>
-                                Ressources Utiles
-                            </h3>
-                            <div class="space-y-3">
-                                <a href="#" class="flex items-center p-3 rounded-xl hover:bg-white/5 transition-colors">
-                                    <i data-lucide="external-link" class="w-4 h-4 text-blue-400 mr-3"></i>
-                                    <span class="text-slate-300 hover:text-white">Documentation API</span>
-                                </a>
-                                <a href="#" class="flex items-center p-3 rounded-xl hover:bg-white/5 transition-colors">
-                                    <i data-lucide="palette" class="w-4 h-4 text-purple-400 mr-3"></i>
-                                    <span class="text-slate-300 hover:text-white">Kit de design</span>
-                                </a>
-                                <a href="#" class="flex items-center p-3 rounded-xl hover:bg-white/5 transition-colors">
-                                    <i data-lucide="video" class="w-4 h-4 text-red-400 mr-3"></i>
-                                    <span class="text-slate-300 hover:text-white">Tutoriel vidéo</span>
-                                </a>
-                                <a href="#" class="flex items-center p-3 rounded-xl hover:bg-white/5 transition-colors">
-                                    <i data-lucide="message-circle" class="w-4 h-4 text-green-400 mr-3"></i>
-                                    <span class="text-slate-300 hover:text-white">Support Discord</span>
-                                </a>
-                            </div>
-                        </div>
-
                         <!-- Tips -->
-                        <div class="glass-card rounded-2xl p-6">
+                        <div class="card-bg rounded-2xl p-6">
                             <h3 class="font-bold text-white mb-4 flex items-center">
-                                <i data-lucide="lightbulb" class="w-5 h-5 mr-2 text-yellow-400 icon-enhanced"></i>
-                                Conseils Pro
+                                <i data-lucide="lightbulb" class="w-5 h-5 mr-2 text-green-500 icon-enhanced"></i>
+                                Conseils
                             </h3>
                             <div class="space-y-4">
                                 <div class="flex items-start">
                                     <div class="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
                                         <i data-lucide="check" class="w-3 h-3 text-green-400"></i>
                                     </div>
-                                    <span class="text-sm text-slate-300">Commencez par un MVP fonctionnel</span>
+                                    <span class="text-sm text-slate-300">Utilisez Git pour le versionnement avec des commits atomiques et des messages clairs</span>
                                 </div>
                                 <div class="flex items-start">
-                                    <div class="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                                        <i data-lucide="check" class="w-3 h-3 text-blue-400"></i>
+                                    <div class="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                                        <i data-lucide="check" class="w-3 h-3 text-green-400"></i>
                                     </div>
-                                    <span class="text-sm text-slate-300">Testez votre solution sur mobile</span>
+                                    <span class="text-sm text-slate-300">Documentez votre code pour faciliter l'intégration</span>
                                 </div>
                                 <div class="flex items-start">
-                                    <div class="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                                        <i data-lucide="check" class="w-3 h-3 text-purple-400"></i>
+                                    <div class="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                                        <i data-lucide="check" class="w-3 h-3 text-green-400"></i>
                                     </div>
-                                    <span class="text-sm text-slate-300">Soignez la présentation finale</span>
+                                    <span class="text-sm text-slate-300">Mettez en place des tests unitaires pour les fonctionnalités critiques</span>
                                 </div>
                                 <div class="flex items-start">
-                                    <div class="w-6 h-6 rounded-full bg-orange-500/20 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                                        <i data-lucide="check" class="w-3 h-3 text-orange-400"></i>
+                                    <div class="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                                        <i data-lucide="check" class="w-3 h-3 text-green-400"></i>
                                     </div>
-                                    <span class="text-sm text-slate-300">Documentez vos choix techniques</span>
+                                    <span class="text-sm text-slate-300">Optimisez les performances côté client (lazy loading, code splitting)</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Rules & Constraints -->
-                        <div class="glass-card rounded-2xl p-6">
+                        <div class="card-bg rounded-2xl p-6">
                             <h3 class="font-bold text-white mb-4 flex items-center">
                                 <i data-lucide="shield-check" class="w-5 h-5 mr-2 text-red-400 icon-enhanced"></i>
                                 Règlement
@@ -392,19 +336,19 @@
                                     </div>
                                     <p class="text-slate-300">Aucune soumission acceptée après l'échéance</p>
                                 </div>
-                                <div class="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-                                    <div class="flex items-center mb-2">
-                                        <i data-lucide="users" class="w-4 h-4 text-yellow-400 mr-2"></i>
-                                        <span class="font-semibold text-yellow-400">Équipes</span>
-                                    </div>
-                                    <p class="text-slate-300">Maximum 4 personnes par équipe</p>
-                                </div>
                                 <div class="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
                                     <div class="flex items-center mb-2">
                                         <i data-lucide="download" class="w-4 h-4 text-blue-400 mr-2"></i>
                                         <span class="font-semibold text-blue-400">Formats</span>
                                     </div>
                                     <p class="text-slate-300">GitHub recommandé, ZIP &lt; 50MB accepté</p>
+                                </div>
+                                <div class="p-3 rounded-xl bg-green-500/10 border border-green-500/20">
+                                    <div class="flex items-center mb-2">
+                                        <i data-lucide="download" class="w-4 h-4 text-green-400 mr-2"></i>
+                                        <span class="font-semibold text-green-400">Soumission</span>
+                                    </div>
+                                    <p class="text-slate-300">Seul le leader peut soumettre le projet</p>
                                 </div>
                             </div>
                         </div>

@@ -181,7 +181,13 @@ class ChallengeController extends Controller
             if (!$this->challenge->isChallengeLaunchPeriod($hackathon_id)) {
                 throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
             }
-            $challenges = $this->challenge->getchallengeDev($hackathon_id, $user_id, $phase_id);
+
+            // equipe de l'utilisateur
+            $team = $this->challenge->getTeam($user_id);
+            if (!$team) {
+                throw new Exception("L'utilisateur n'est pas inscrit avec une équipe.");
+            }
+            $challenges = $this->challenge->getChallengeDev($hackathon_id, $team, $phase_id);
             $this->jsonResponse([
                 'success' => true,
                 'data' => $challenges
@@ -194,6 +200,22 @@ class ChallengeController extends Controller
         }
     }
 
+    public function findChallengeDev($user_id, $id)
+    {
+        try {
+            $this->validateMethod('GET');
+            $challenge = $this->challenge->find($id, $user_id);
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $challenge
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
     public function getChallengesCTF($hackathon_id, $user_id, $phase_id = null)
     {
         try {
@@ -213,7 +235,7 @@ class ChallengeController extends Controller
                 throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.(valid: " . ($valid ? 'true' : 'false') . ")");
             }
 
-            $challenges = $this->challenge->getchallengeCTF($hackathon_id, $user_id, $phase_id);
+            $challenges = $this->challenge->getChallengeCTF($hackathon_id, $user_id, $phase_id);
             $this->jsonResponse([
                 'success' => true,
                 'data' => $challenges

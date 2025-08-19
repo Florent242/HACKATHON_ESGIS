@@ -175,7 +175,7 @@ async function createTeamViaAPI() {
 
         const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
         if (!csrfToken) {
-            throw new Error('Token CSRF manquant');
+            throw new Error('Token de session manquant');
         }
         if (formData.get('csrf_token') === null) {
             formData.append('csrf_token', csrfToken);
@@ -506,7 +506,7 @@ function showLoadingState(container, message = 'Chargement...') {
     container.classList.add('relative', 'min-h-[200px]');
 
     container.innerHTML = `
-        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div id="loadingState" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div class="bg-gray-800 p-6 rounded-lg shadow-xl flex flex-col items-center">
                 <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500 mb-4"></div>
                 <p class="text-gray-200">${message}</p>
@@ -515,17 +515,36 @@ function showLoadingState(container, message = 'Chargement...') {
     `;
 }
 
+// Fonction pour cacher le loading state
+function hideLoadingState(container) {
+    container.classList.remove('relative', 'min-h-[200px]');
+    const loadingState = document.getElementById('loadingState');
+    if (loadingState) {
+        loadingState.remove();
+    }
+}
+
 // Fonction pour afficher un état vide
 function showEmptyState(container, message = 'Aucune donnée disponible') {
     container.innerHTML = `
-        <div class="flex flex-col items-center justify-center py-12 text-center">
-            <svg class="h-16 w-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 class="text-lg font-medium text-gray-300 mb-1">${message}</h3>
-            <p class="text-gray-500 text-sm">Essayez de modifier vos critères de recherche</p>
+        <div id="emptyState" class="col-span-full w-full h-full flex items-center justify-center py-12">
+            <div class="text-center">
+                <svg class="h-16 w-16 text-gray-400 mb-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 class="text-lg font-medium text-gray-300 mb-1">${message}</h3>
+                <p class="text-gray-500 text-sm">Essayez de nouveau ou creer une equipe pour qu'elle apparaisse ici.</p>
+            </div>
         </div>
     `;
+}
+
+// Fonction pour cacher un état
+function hideState(container) {
+    const emptyState = document.getElementById('emptyState');
+    if (emptyState) {
+        emptyState.remove();
+    }
 }
 
 // Fonction pour appliquer la recherche
@@ -536,7 +555,7 @@ function applySearch() {
     if (!allTeamsGrid) return;
 
     if (fetchedAllTeamsData.length === 0) {
-        showLoadingState(allTeamsGrid, 'Chargement des équipes...');
+        showEmptyState(allTeamsGrid, 'Aucune équipe disponible.');
         return;
     }
 
@@ -556,6 +575,7 @@ function applySearch() {
             : 'Aucune équipe disponible.';
         showEmptyState(allTeamsGrid, message);
     } else {
+        hideState(allTeamsGrid);
         allTeamsGrid.innerHTML = '';
         filteredTeams.forEach(team => {
             // Pour l'affichage dans "Toutes les équipes", déterminer si l'utilisateur en fait partie
@@ -597,27 +617,21 @@ async function fetchAndDisplayAllTeams() {
             }
         }
 
-        const response = await fetch('/api/teams', {
+        const response = await apiRequest('/teams', {
             method: 'GET',
             credentials: 'include',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         });
-
-        if (!response.ok) {
-            throw new Error(`Erreur HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success && Array.isArray(data.data)) {
+        const data = await response;
+        if (data.success && Array.isArray(data.data) && data.data.length > 0) {
             fetchedAllTeamsData = data.data;
             applySearch();
-        } else {
-            if (allTeamsGrid) {
-                showEmptyState(allTeamsGrid, 'Erreur lors du chargement des équipes.');
-            }
+        }else if(data.success && Array.isArray(data.data) && data.data.length === 0){
+            showEmptyState(allTeamsGrid, 'Aucune équipe disponible.');
+        }else{
+            showEmptyState(allTeamsGrid, 'Erreur lors du chargement des équipes.');
         }
     } catch (error) {
         console.error('Erreur lors du chargement des équipes:', error);

@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<?= $_SESSION['csrf_token'] ?>">
     <title>Soumettre un défi</title>
     <link rel="stylesheet" href="/css/styles/user/challenge_submission.css">
     <?php require_once '../includes/user/head.php'; ?>
@@ -55,40 +56,6 @@
                                     [[Description]]
                                 </p>
                             </div>
-
-                            <div class="space-y-3 mb-6">
-                                <div class="flex items-center text-sm">
-                                    <i data-lucide="pin" class="w-3 h-3 mr-2"></i>
-                                    <span class="text-gray-400">Date limite:</span>
-                                    <span class="ml-2" id="challengeDeadline"></span>
-                                </div>
-                                <div class="flex items-center text-sm">
-                                    <i data-lucide="code-xml" class="w-4 h-4 mr-2"></i>
-                                    <span class="text-gray-400">Technologies:</span>
-                                    <span class="ml-2" id="challengeTechnologies"></span>
-                                </div>
-                            </div>
-
-                            <div>
-                                <h4 class="font-medium mb-3">Ressources</h4>
-                                <div class="space-y-2"id="challengeResources">
-                                    <a href="" class="flex items-center justify-between text-blue-400 hover:text-blue-300 text-sm transition-colors">
-                                        <div class="flex items-center space-x-2 flex-row">
-                                            <i data-lucide="file-text" class="w-3 h-3 mr-2"></i>
-                                            [[Resources]]
-                                        </div>
-                                        <i data-lucide="external-link" class="w-3 h-3 ml-2"></i>
-                                    </a>
-                                    <a href="" class="flex items-center justify-between text-blue-400 hover:text-blue-300 text-sm transition-colors">
-                                        <div class="flex items-center space-x-2 flex-row">
-                                            <i data-lucide="code-xml" class="w-3 h-3 mr-2"></i>
-                                            [[Resources]]
-                                        </div>
-                                        <i data-lucide="external-link" class="w-3 h-3 ml-2"></i>
-                                    </a>
-                                </div>
-                            </div>
-                            
                         </div>
                     </div>
                 </div>
