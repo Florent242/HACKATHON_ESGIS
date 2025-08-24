@@ -171,11 +171,7 @@ glass-card:hover::before {
 /* Header Styles */
 .header-blur {
     background: rgba(10, 15, 28, 0.8);
-    backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 50;
 }
 
 .progress-ring {

@@ -112,14 +112,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         updateLoadingState(false);
     }
 
-    function initializeTooltips() {
-        const tooltipElements = document.querySelectorAll('[data-tooltip]');
-        tooltipElements.forEach(el => {
-            el.addEventListener('mouseenter', showTooltip);
-            el.addEventListener('mouseleave', hideTooltip);
-        });
-    }
-
     function setupConsolePanel() {
         const toggleConsole = document.getElementById('toggleConsole');
         const consoleOutput = document.getElementById('consoleOutput');
@@ -1466,35 +1458,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
-    }
-
-    function showTooltip(e) {
-        const tooltip = this.getAttribute('data-tooltip');
-        if (!tooltip) return;
-
-        const tooltipEl = document.createElement('div');
-        tooltipEl.className = 'tooltip';
-        tooltipEl.textContent = tooltip;
-
-        // Positionnement
-        const rect = this.getBoundingClientRect();
-        tooltipEl.style.position = 'fixed';
-        tooltipEl.style.left = `${rect.left + (rect.width / 2)}px`;
-        tooltipEl.style.top = `${rect.top - 40}px`;
-        tooltipEl.style.transform = 'translateX(-50%)';
-        tooltipEl.style.zIndex = '1000';
-        tooltipEl.style.pointerEvents = 'none';
-        tooltipEl.classList.add('bg-slate-800', 'text-white', 'text-xs', 'px-2', 'py-1', 'rounded', 'shadow-lg', 'border', 'border-slate-700');
-
-        document.body.appendChild(tooltipEl);
-        this._tooltip = tooltipEl;
-    }
-
-    function hideTooltip() {
-        if (this._tooltip) {
-            this._tooltip.remove();
-            this._tooltip = null;
-        }
     }
 
     window.initMonaco = createMonacoEditor;

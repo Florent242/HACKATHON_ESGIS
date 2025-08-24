@@ -1,20 +1,14 @@
-// ==================================================
-// CONFIGURATION
-// ==================================================
-const API_BASE_URL = '/api'; // À adapter selon votre environnement
-const CHALLENGE_ID = getChallengeIdFromURL(); // getChallengeIdFromURL();
 
-// ==================================================
-// STATE MANAGEMENT
-// ==================================================
+const API_BASE_URL = '/api';
+const CHALLENGE_ID = getChallengeIdFromURL();
+let userId = null;
+
+let userTeam = null;
 let challengeData = null;
 let phaseData = null;
 let hackathonData = null;
 let countdownInterval = null;
 
-// ==================================================
-// DOM ELEMENTS
-// ==================================================
 const elements = {
     loading: document.getElementById('loading'),
     content: document.getElementById('content'),
@@ -46,7 +40,7 @@ function formatTime(value) {
 
 function formatDescription(text) {
     if (!text) return 'Aucune description disponible.';
-    
+
     // Conversion simple Markdown vers HTML
     return text
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -59,7 +53,7 @@ function formatDescription(text) {
 
 function formatInstructions(text) {
     if (!text) return 'Aucune instruction disponible.';
-    
+
     // Conversion des listes et formatage
     let formatted = text
         .replace(/^\d+\.\s/gm, '<li>')
@@ -67,33 +61,37 @@ function formatInstructions(text) {
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\n\n/g, '</li></ul><p>')
         .replace(/\n/g, '</li><li>');
-    
+
     // Ajout des balises ul si nécessaire
     if (formatted.includes('<li>')) {
         formatted = '<ul class="list-none space-y-2">' + formatted + '</li></ul>';
     } else {
         formatted = '<p>' + formatted.replace(/<li>/g, '').replace(/<\/li>/g, '<br>') + '</p>';
     }
-    
+
     return formatted;
 }
 
 async function loadChallengeData() {
     try {
-        const userId = await getUserId();
+        userId = await getUserId();
         // Chargement du challenge principal
         response = await apiRequest(`/challenges/dev/${userId}/${CHALLENGE_ID}`);
         if (!response.success) {
-            throw new Error('Challenge non trouvé');
+            throw new Error(response.message || response.error || 'Challenge non trouvé');
         }
 
         challengeData = response.data;
+
+        if (!challengeData || Object.keys(challengeData).length === 0) {
+            throw new Error('Challenge non trouvé');
+        }
 
         // Chargement des données de phase
         if (challengeData.phase_id) {
             phaseDataResponse = await apiRequest(`/phases/${challengeData.phase_id}`);
             if (!phaseDataResponse.success) {
-                throw new Error('Phase non trouvée');
+                throw new Error(phaseDataResponse.message || phaseDataResponse.error || 'Phase non trouvée');
             }
             phaseData = phaseDataResponse.data;
         }
@@ -102,14 +100,26 @@ async function loadChallengeData() {
         if (challengeData.hackathon_id) {
             hackathonDataResponse = await apiRequest(`/hackathons/${challengeData.hackathon_id}`);
             if (!hackathonDataResponse.success) {
-                throw new Error('Hackathon non trouvé');
+                throw new Error(hackathonDataResponse.message || hackathonDataResponse.error || 'Hackathon non trouvé');
             }
             hackathonData = hackathonDataResponse.data;
         }
+
+        // Chargement des données de l'équipe
+        teamDataResponse = await apiRequest(`/teams/user/${userId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        if (!teamDataResponse.success || teamDataResponse.data === null || Array.isArray(teamDataResponse.data) && teamDataResponse.data.length === 0) {
+            throw new Error(teamDataResponse.message || teamDataResponse.error || 'Équipe non trouvée');
+        }
+        userTeam = teamDataResponse.data;
         return true;
     } catch (error) {
         console.error('Erreur d\'initialisation:', error);
-        showError('Une erreur est survenue lors du chargement des données. Veuillez réessayer.');
+        showError(error.message || error.error || 'Une erreur est survenue lors du chargement des données. Veuillez réessayer.');
         return false;
     }
 }
@@ -145,7 +155,7 @@ document.addEventListener('visibilitychange', () => {
 function trackEvent(eventName, properties = {}) {
     // Implémentation du tracking analytics
     console.log(`Event: ${eventName}`, properties);
-    
+
     // Exemple avec Google Analytics 4
     // if (typeof gtag !== 'undefined') {
     //     gtag('event', eventName, properties);
@@ -157,10 +167,10 @@ elements.submitBtn?.addEventListener('click', () => {
     trackEvent('challenge_submission_clicked', {
         challenge_id: challengeData?.id,
         challenge_title: challengeData?.title,
-        time_remaining: elements.countdown.days.textContent + ':' + 
-                       elements.countdown.hours.textContent + ':' + 
-                       elements.countdown.minutes.textContent + ':' + 
-                       elements.countdown.seconds.textContent
+        time_remaining: elements.countdown.days.textContent + ':' +
+            elements.countdown.hours.textContent + ':' +
+            elements.countdown.minutes.textContent + ':' +
+            elements.countdown.seconds.textContent
     });
 });
 
@@ -211,10 +221,10 @@ function optimizePerformance() {
     let preloadTimer;
     elements.submitBtn?.addEventListener('mouseenter', () => {
         preloadTimer = setTimeout(() => {
-            const submissionUrl = challengeData?.code_name ? 
-                `/user/challenge_submission/${challengeData.code_name}` : 
+            const submissionUrl = challengeData?.code_name ?
+                `/user/challenge_submission/${challengeData.code_name}` :
                 `/user/challenge_submission/${challengeData.id}`;
-            
+
             const link = document.createElement('link');
             link.rel = 'prefetch';
             link.href = submissionUrl;
@@ -256,60 +266,6 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
-async function loadMockData() {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    challengeData = {
-        id: '1',
-        code_name: 'CHALL-223D33K2',
-        title: 'Application Web Innovante',
-        description: `Développez une **application web moderne** qui révolutionne l'expérience utilisateur dans le domaine de votre choix.
-
-Votre solution doit démontrer une approche innovante, une excellente **expérience utilisateur** et une architecture technique solide.
-
-*L'originalité et la qualité technique seront particulièrement valorisées.*`,
-        instructions: `**Étapes à suivre :**
-
-1. **Analyse** - Identifiez un problème réel et définissez votre solution
-2. **Conception** - Créez les maquettes et l'architecture technique
-3. **Développement** - Implémentez votre solution avec les technologies de votre choix
-4. **Tests** - Vérifiez le bon fonctionnement et l'accessibilité
-5. **Documentation** - Rédigez un README complet avec guide d'installation
-6. **Déploiement** - Mettez en ligne une version de démonstration
-
-**Critères d'évaluation :**
-- Innovation et originalité (30%)
-- Qualité technique (25%)
-- Expérience utilisateur (25%)
-- Documentation (20%)
-
-**Livrables attendus :**
-- Code source sur GitHub
-- Application déployée
-- Documentation complète
-- Vidéo de présentation (3 min max)`,
-        points: 1500,
-        type: 'dev',
-        phase_id: '2',
-        hackathon_id: '1'
-    };
-
-    phaseData = {
-        id: '2',
-        title: 'Phase 2 – Projet Innovant',
-        end: '2025-08-20T23:59:59',
-        hackathon_id: '1'
-    };
-
-    hackathonData = {
-        id: '1',
-        title: 'HackDev 2024',
-        theme: 'Innovation & Impact Social'
-    };
-
-    return true;
-}
-
 function updateCountdown() {
     if (!phaseData || !phaseData.end) {
         return;
@@ -318,21 +274,22 @@ function updateCountdown() {
     const now = new Date().getTime();
     const endTime = new Date(phaseData.end).getTime();
     const difference = endTime - now;
+    const start = new Date(phaseData.start).getTime();
 
-    if (difference <= 0) {
+    if (difference <= 0 || start > now) {
         // Temps écoulé
         elements.countdown.days.textContent = '00';
         elements.countdown.hours.textContent = '00';
         elements.countdown.minutes.textContent = '00';
         elements.countdown.seconds.textContent = '00';
-        
+
         elements.countdown.status.classList.remove('hidden');
         elements.submitBtn.disabled = true;
         elements.submitBtn.innerHTML = '<i data-lucide="x-circle" class="w-5 h-5 inline mr-2"></i>Soumissions fermées';
-        
+
         // Réinitialiser les icônes
         lucide.createIcons();
-        
+
         if (countdownInterval) {
             clearInterval(countdownInterval);
         }
@@ -357,9 +314,6 @@ function startCountdown() {
     countdownInterval = setInterval(updateCountdown, 1000);
 }
 
-// ==================================================
-// UI UPDATE FUNCTIONS
-// ==================================================
 function updateUI() {
     if (!challengeData) return;
 
@@ -376,9 +330,9 @@ function updateUI() {
     elements.challengeInstructions.innerHTML = formatInstructions(challengeData.instructions);
 
     // Points
-    elements.challengePoints.textContent = challengeData.points ? 
+    elements.challengePoints.textContent = challengeData.points ?
         `${challengeData.points} pts` : 'À déterminer';
-    
+
     // Mise à jour de l'affichage hero
     if (challengeData.points) {
         const heroPoints = document.getElementById('challenge-points-hero');
@@ -387,14 +341,60 @@ function updateUI() {
         }
     }
 
+    // criteria
+    const criteriaContainer = document.getElementById('criteria-container');
+    if (criteriaContainer) {
+        criteriaContainer.innerHTML = '';
+        let criteria = challengeData.evaluation_criteria;
+        // Vérifier si c’est une string JSON → la parser
+        if (typeof criteria === 'string') {
+            try {
+                criteria = JSON.parse(criteria);
+            } catch (error) {
+                console.error("Erreur de parsing des critères :", error);
+                criteriaContainer.innerHTML = '<p class="text-red-500">Impossible de charger les critères d\'évaluation.</p>';
+                return;
+            }
+        }
+        if (!criteria || criteria.length === 0) {
+            criteriaContainer.innerHTML = `
+            <div class="criteria-card rounded-2xl p-6 bg-gradient-to-br from-blue-500 to-blue-600 col-span-full">
+                <p class="text-slate-400">Aucun critère d\'évaluation défini pour ce challenge.</p>
+            </div>`;
+            return;
+        }
+
+        if (Array.isArray(criteria)) {
+            criteria.forEach(criteria => {
+                const criteriaElement = document.createElement('div');
+                criteriaElement.classList.add('criteria-card', 'rounded-2xl', 'p-6');
+                criteriaElement.innerHTML = `
+                    <div class="flex items-center mb-3">
+                        <i data-lucide="${criteria.icon}" class="w-5 h-5 text-blue-400 mr-3"></i>
+                        <h3 class="font-semibold text-white">${criteria.title}</h3>
+                        <span class="ml-auto text-blue-400 font-bold">${criteria.weight}%</span>
+                    </div>
+                    <p class="text-slate-400 text-sm">${criteria.description}</p>
+            `;
+                criteriaContainer.appendChild(criteriaElement);
+            });
+        }
+    }
+
     // Bouton de soumission
-    const submissionUrl = challengeData.code_name ? 
-        `/user/challenge_submission/${challengeData.code_name}` : 
-        `/user/challenge_submission/${challengeData.id}`;
-    
-    elements.submitBtn.onclick = () => {
-        window.location.href = submissionUrl;
-    };
+    if (elements.submitBtn) {
+        if (userTeam?.[0].leader_id !== userId) {
+            elements.submitBtn.disabled = true;
+            elements.submitBtn.innerHTML = '<i data-lucide="x-circle" class="w-5 h-5 inline mr-2"></i>Soumissions fermées';
+        }
+        const submissionUrl = challengeData.code_name ?
+            `/user/challenge_submission/${challengeData.code_name}` :
+            `/user/challenge_submission/${challengeData.id}`;
+
+        elements.submitBtn.onclick = () => {
+            window.location.href = submissionUrl;
+        };
+    }
 
     // Démarrer le countdown
     startCountdown();

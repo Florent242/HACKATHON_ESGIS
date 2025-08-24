@@ -29,7 +29,7 @@
     <!-- Main Content -->
     <div id="content" class="hidden">
         <!-- Header -->
-        <sectio class="header-blur top-0 z-50">
+        <section class="header-blur backdrop-blur-lg sticky top-0 z-100">
             <div class="max-w-7xl mx-auto px-6 py-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-4">
@@ -43,7 +43,7 @@
                     </div>
                 </div>
             </div>
-        </sectio>
+        </section>
 
         <main>
             <section class="relative overflow-hidden py-10">
@@ -59,12 +59,18 @@
                             <div class="w-8 h-8 rounded-full bg-gradient-to-r from-blue-400 to-cyan-500 flex items-center justify-center">
                                 <i data-lucide="zap" class="w-4 h-4 text-white"></i>
                             </div>
-                            <span id="hackathon-theme" class="text-lg font-semibold text-white">Innovation & Impact Social</span>
+                            <span id="hackathon-theme" class="text-lg font-semibold text-white">
+                                <span class="loading-title">
+                                    <div class="loading-skeleton w-full h-12 mb-4"></div>
+                                </span>
+                            </span>
                         </div>
 
                         <!-- Main Title -->
                         <h1 id="challenge-title" class="text-5xl md:text-7xl font-black mb-8 bg-gradient-to-r from-white via-blue-100 to-slate-300 bg-clip-text text-transparent leading-tight">
-                            Challenge en cours...
+                            <span class="loading-title">
+                                <div class="loading-skeleton w-full h-20 mb-4"></div>
+                            </span>
                         </h1>
 
                         <!-- Subtitle with enhanced styling -->
@@ -78,7 +84,7 @@
                                 <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center mr-4">
                                     <i data-lucide="timer" class="w-6 h-6 text-white"></i>
                                 </div>
-                                <h2 class="text-2xl font-bold text-white">Temps restant pour soumettre</h2>
+                                <h2 class="text-2xl font-bold text-white">Temps pour soumettre</h2>
                             </div>
 
                             <div id="countdown" class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
@@ -103,7 +109,7 @@
                             <div id="countdown-status" class="text-center mt-6 hidden">
                                 <span class="bg-red-500/20 border border-red-500/30 text-red-400 px-6 py-3 rounded-full text-lg font-semibold">
                                     <i data-lucide="x-circle" class="w-5 h-5 inline mr-2"></i>
-                                    Soumissions terminées
+                                    Phase fermée
                                 </span>
                             </div>
                         </div>
@@ -126,20 +132,30 @@
                                 <h2 class="text-3xl font-bold text-white">Description du Challenge</h2>
                             </div>
                             <div id="challenge-description" class="text-slate-300 text-lg leading-relaxed space-y-4">
-                                <p>Chargement de la description...</p>
+                                <div class="loading-description">
+                                    <div class="loading-skeleton w-full h-24 mb-4"></div>
+                                    <div class="loading-skeleton w-full h-24 mb-4"></div>
+                                    <div class="loading-skeleton w-full h-24 mb-4"></div>
+                                    <div class="loading-skeleton w-full h-24 mb-4"></div>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Instructions -->
                         <div class="card-bg rounded-3xl p-8">
                             <div class="flex items-center mb-8">
-                                <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mr-4">
+                                <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mr-4">
                                     <i data-lucide="list-checks" class="w-5 h-5 text-white icon-enhanced"></i>
                                 </div>
                                 <h2 class="text-3xl font-bold text-white">Instructions Détaillées</h2>
                             </div>
                             <div id="challenge-instructions" class="text-slate-300 text-lg leading-relaxed space-y-4">
-                                <p>Chargement des instructions...</p>
+                                <div class="loading-instructions">
+                                    <div class="loading-skeleton w-full h-24 mb-4"></div>
+                                    <div class="loading-skeleton w-full h-24 mb-4"></div>
+                                    <div class="loading-skeleton w-full h-24 mb-4"></div>
+                                    <div class="loading-skeleton w-full h-24 mb-4"></div>
+                                </div>
                             </div>
                         </div>
 
@@ -151,38 +167,12 @@
                                 </div>
                                 <h2 class="text-3xl font-bold text-white">Critères d'Évaluation</h2>
                             </div>
-                            <div class="grid md:grid-cols-2 gap-4">
-                                <div class="criteria-card rounded-2xl p-6">
-                                    <div class="flex items-center mb-3">
-                                        <i data-lucide="lightbulb" class="w-5 h-5 text-blue-400 mr-3"></i>
-                                        <h3 class="font-semibold text-white">Innovation</h3>
-                                        <span class="ml-auto text-blue-400 font-bold">30%</span>
-                                    </div>
-                                    <p class="text-slate-400 text-sm">Originalité de l'approche et créativité de la solution</p>
-                                </div>
-                                <div class="criteria-card rounded-2xl p-6">
-                                    <div class="flex items-center mb-3">
-                                        <i data-lucide="code" class="w-5 h-5 text-green-400 mr-3"></i>
-                                        <h3 class="font-semibold text-white">Qualité Technique</h3>
-                                        <span class="ml-auto text-green-400 font-bold">25%</span>
-                                    </div>
-                                    <p class="text-slate-400 text-sm">Architecture, performance et bonnes pratiques</p>
-                                </div>
-                                <div class="criteria-card rounded-2xl p-6">
-                                    <div class="flex items-center mb-3">
-                                        <i data-lucide="heart" class="w-5 h-5 text-purple-400 mr-3"></i>
-                                        <h3 class="font-semibold text-white">UX/UI</h3>
-                                        <span class="ml-auto text-purple-400 font-bold">25%</span>
-                                    </div>
-                                    <p class="text-slate-400 text-sm">Expérience utilisateur et design interface</p>
-                                </div>
-                                <div class="criteria-card rounded-2xl p-6">
-                                    <div class="flex items-center mb-3">
-                                        <i data-lucide="book-open" class="w-5 h-5 text-orange-400 mr-3"></i>
-                                        <h3 class="font-semibold text-white">Documentation</h3>
-                                        <span class="ml-auto text-orange-400 font-bold">20%</span>
-                                    </div>
-                                    <p class="text-slate-400 text-sm">Clarté et complétude de la documentation</p>
+                            <div id="criteria-container" class="grid md:grid-cols-2 gap-4">
+                                <div class="loading-criteria">
+                                    <div class="loading-skeleton w-full h-24 mb-4"></div>
+                                    <div class="loading-skeleton w-full h-24 mb-4"></div>
+                                    <div class="loading-skeleton w-full h-24 mb-4"></div>
+                                    <div class="loading-skeleton w-full h-24 mb-4"></div>
                                 </div>
                             </div>
                         </div>
@@ -279,7 +269,7 @@
                                 <i data-lucide="rocket" class="w-5 h-5 mr-2 text-green-400 icon-enhanced"></i>
                                 Action
                             </h3>
-                            <button id="submit-btn" class="w-full btn-premium text-white font-bold py-4 px-6 rounded-2xl transition-all duration-500 transform disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mb-4 btn-primary btn-startchallenge">
+                            <button id="submit-btn" class="w-full btn-premium text-white font-bold py-4 px-6 rounded-2xl transition-all duration-500 transform disabled:opacity-50 disabled:cursor-not-allowed! disabled:transform-none! mb-4 btn-primary btn-startchallenge">
                                 <i data-lucide="send" class="w-5 h-5 inline mr-2"></i>
                                 Soumettre mon projet
                             </button>

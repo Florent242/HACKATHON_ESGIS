@@ -24,12 +24,6 @@ if (fadeElements) {
     });
 }
 
-// Notification button click handler
-const notificationBtn = document.querySelector('.notification-btn');
-notificationBtn.addEventListener('click', () => {
-    showNotification('Les Notifications sont en cours de développement', '', 'info', 3000);
-});
-
 // Helper function to calculate the total height needed
 function calculateTotalHeight(element) {
     // Get the computed styles of the element
@@ -231,7 +225,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
     // Fermer avec Escape
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && modal.classList.contains('show')) {
             hideModal();
         }
@@ -369,5 +363,510 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialisation des icônes Lucide pour les nouveaux éléments
     if (window.lucide) {
         window.lucide.createIcons();
+    }
+});
+
+// ==================================================
+// NOTIFICATIONS SYSTEM
+// ==================================================
+
+class NotificationManager {
+    constructor() {
+        this.notifications = [];
+        this.unreadCount = 0;
+        this.isDropdownOpen = false;
+        this.refreshInterval = null;
+        this.csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        this.init();
+    }
+
+    async init() {
+        this.userId = await getUserId();
+        this.createNotificationElements();
+        this.bindEvents();
+        this.loadNotifications();
+        this.startRefreshTimer();
+    }
+
+    createNotificationElements() {
+        const container = document.querySelector('.notifications-container');
+        if (!container) return;
+
+        // Créer le dropdown
+        const dropdown = document.createElement('div');
+        dropdown.className = 'notifications-dropdown';
+        dropdown.innerHTML = `
+            <div class="notifications-header">
+                <h3>Notifications</h3>
+                <button class="mark-all-read-btn">Tout marquer comme lu</button>
+            </div>
+            <div class="notifications-list">
+                <div class="notifications-loading">
+                    <div class="loading-spinner"></div>
+                    Chargement...
+                </div>
+            </div>
+            <div class="notifications-footer">
+                <button class="view-all-notifications">
+                    <i data-lucide="eye"></i>
+                    Voir toutes les notifications
+                </button>
+            </div>
+        `;
+
+        container.appendChild(dropdown);
+        this.dropdown = dropdown;
+    }
+
+    bindEvents() {
+        const notificationBtn = document.querySelector('.notification-btn');
+        const markAllReadBtn = this.dropdown.querySelector('.mark-all-read-btn');
+        const viewAllBtn = this.dropdown.querySelector('.view-all-notifications');
+
+        // Toggle dropdown
+        notificationBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleDropdown();
+        });
+
+        // Fermer le dropdown en cliquant ailleurs
+        document.addEventListener('click', (e) => {
+            if (!this.dropdown.contains(e.target) && !notificationBtn.contains(e.target)) {
+                this.closeDropdown();
+            }
+        });
+
+        // Marquer toutes comme lues
+        markAllReadBtn.addEventListener('click', () => {
+            this.markAllAsRead();
+        });
+
+        // Voir toutes les notifications
+        viewAllBtn.addEventListener('click', () => {
+            window.location.href = '/user/notifications';
+        });
+
+        // Fermer avec Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.isDropdownOpen) {
+                this.closeDropdown();
+            }
+        });
+    }
+
+    async loadNotifications() {
+        if (!this.userId) return;
+
+        try {
+            const response = await apiRequest(`/notifications/user/${this.userId}`, {
+                method: 'GET'
+            });
+
+            if (response.success) {
+                this.notifications = response.data.items;
+                this.unreadCount = response.data.unread_count;
+                this.updateUI();
+            } else {
+                this.showError('Erreur lors du chargement des notifications');
+            }
+        } catch (error) {
+            console.error('Erreur notifications:', error);
+            this.showError('Impossible de charger les notifications');
+        }
+    }
+
+    async loadUnreadCount() {
+        if (!this.userId) return;
+
+        try {
+            const response = await apiRequest(`/notifications/unread-count/${this.userId}`, {
+                method: 'GET'
+            });
+
+            if (response.success) {
+                const newCount = response.data.unread_count;
+                if (newCount > this.unreadCount) {
+                    // Nouvelles notifications
+                    this.animateBell();
+                }
+                this.unreadCount = newCount?newCount:this.unreadCount;
+                this.updateBadge();
+            }
+        } catch (error) {
+            console.error('Erreur compteur notifications:', error);
+        }
+    }
+
+    updateUI() {
+        this.updateBadge();
+        this.renderNotifications();
+    }
+
+    updateBadge() {
+        let badge = document.querySelector('.notification-badge');
+        const notificationBtn = document.querySelector('.notification-btn');
+
+        if (this.unreadCount > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'notification-badge';
+                notificationBtn.appendChild(badge);
+            }
+            badge.textContent = this.unreadCount > 99 ? '99+' : this.unreadCount;
+            badge.classList.add('animate');
+            setTimeout(() => badge.classList.remove('animate'), 600);
+        } else if (badge) {
+            badge.remove();
+        }
+    }
+
+    renderNotifications() {
+        const list = this.dropdown.querySelector('.notifications-list');
+
+        if (this.notifications.length === 0) {
+            list.innerHTML = `
+                <div class="notifications-empty">
+                    <i data-lucide="bell-off"></i>
+                    <p>Aucune notification</p>
+                </div>
+            `;
+        } else {
+            list.innerHTML = this.notifications.map(notification =>
+                this.createNotificationHTML(notification)
+            ).join('');
+        }
+
+        // Réinitialiser les icônes Lucide
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+
+        // Binder les événements sur les notifications
+        this.bindNotificationEvents();
+        initializeTooltips();
+    }
+
+    createNotificationHTML(notification) {
+        const isUnread = 
+        notification.read_status?notification.read_status== 0:
+        !notification.lu;
+        const timeAgo = this.formatTimeAgo(notification.created_at);
+        const iconType = this.getNotificationIcon(notification.type);
+
+        return `
+            <div class="notification-item ${isUnread ? 'unread' : ''}" data-id="${notification.id}" data-tooltip="${isUnread ? 'Cliquer pour marquer comme lue' : 'Lu'}">
+                <div class="notification-icon ${notification.type}">
+                    <i data-lucide="${iconType}"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">${this.escapeHtml(notification.title)}</div>
+                    <div class="notification-message">${this.escapeHtml(notification.message)}</div>
+                    <div class="notification-meta">
+                        <span class="notification-time">${timeAgo}</span>
+                        ${notification.action ? this.createActionButton(JSON.parse(notification.action)) : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    createActionButton(action) {
+        if (!action) return '';
+        if (action.type == 'multi') {
+            return `
+                <div class="notification-actions">
+                    ${action.actions.map(action =>
+                        `<button class="notification-action" data-action='${JSON.stringify(action)}'>${action.label || 'Action'}</button>`
+                    ).join('')}
+                </div>
+            `;
+        } else if (action.type == 'none') {
+            return '';
+        }
+        return `<button class="notification-action" data-action='${JSON.stringify(action)}'>${action.label || 'Action'}</button>`;
+    }
+
+    getNotificationIcon(type) {
+        const icons = {
+            info: 'info',
+            success: 'check-circle',
+            warning: 'alert-triangle',
+            error: 'alert-circle'
+        };
+        return icons[type] || 'bell';
+    }
+
+    bindNotificationEvents() {
+        const items = this.dropdown.querySelectorAll('.notification-item');
+
+        items.forEach(item => {
+            // Marquer comme lu au clic
+            item.addEventListener('click', async (e) => {
+                if (!e.target.classList.contains('notification-action')) {
+                    const id = item.dataset.id;
+                    if (item.classList.contains('unread')) {
+                        await this.markAsRead(id);
+                    }
+                }
+            });
+
+            // Gérer les actions
+            const actionBtn = item.querySelector('.notification-action');
+            if (actionBtn) {
+                actionBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const action = JSON.parse(actionBtn.dataset.action);
+                    await this.handleNotificationAction(action, item.dataset.id);
+                });
+            }
+        });
+    }
+
+    async handleNotificationAction(action, notificationId) {
+        try {
+            switch (action.type) {
+                case 'link':
+                    window.location.href = action.url;
+                    break;
+
+                case 'modal':
+                    this.openModal(action.modal_id, action.params || {});
+                    break;
+
+                case 'api':
+                    const response = await apiRequest(action.endpoint, {
+                        method: action.method || 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: action.data ? JSON.stringify({
+                            id: notificationId,
+                            csrf_token: this.csrfToken,
+                            ...action.data
+                        }) : null
+                    });
+
+                    if (response.success) {
+                        await this.markAsRead(notificationId);
+                        this.refreshNotifications();
+                        showNotification('success', 'Action effectuée', response.message || '');
+                    } else {
+                        showNotification('Erreur', response.message || response.error || 'Erreur lors de l\'action', 'error');
+                    }
+                    break;
+            }
+        } catch (error) {
+            console.error('Erreur action notification:', error);
+            showNotification('Erreur', 'Impossible d\'effectuer l\'action', 'error');
+        }
+    }
+
+    openModal(modalId, params) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            // Passer les paramètres au modal si nécessaire
+            if (params) {
+                Object.keys(params).forEach(key => {
+                    modal.dataset[key] = params[key];
+                });
+            }
+            modal.classList.add('show');
+        }
+    }
+
+    async markAsRead(id) {
+        try {
+            const response = await apiRequest(`/notifications/${id}/mark-as-read`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: id,
+                    csrf_token: this.csrfToken
+                })
+            });
+
+            if (response.success) {
+                // Mettre à jour l'UI localement
+                const item = this.dropdown.querySelector(`[data-id="${id}"]`);
+                if (item) {
+                    item.classList.remove('unread');
+                }
+
+                // Mettre à jour le compteur
+                if (this.unreadCount > 0) {
+                    this.unreadCount--;
+                    this.updateBadge();
+                }
+
+                // Mettre à jour les données locales
+                const notification = this.notifications.find(n => n.id == id);
+                if (notification) {
+                    notification.lu = true;
+                }
+            }
+        } catch (error) {
+            console.error('Erreur marquage lu:', error);
+        }
+    }
+
+    async markAllAsRead() {
+        if (!this.userId) return;
+
+        try {
+            const response = await apiRequest(`/notifications/mark-all-read/${this.userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: this.userId,
+                    csrf_token: this.csrfToken
+                })
+            });
+
+            if (response.success) {
+                // Mettre à jour l'UI
+                this.dropdown.querySelectorAll('.notification-item.unread').forEach(item => {
+                    item.classList.remove('unread');
+                });
+
+                this.unreadCount = 0;
+                this.updateBadge();
+
+                // Mettre à jour les données locales
+                this.notifications.forEach(n => n.lu = true);
+
+                showNotification('success', 'Succès', 'Toutes les notifications ont été marquées comme lues');
+            }
+        } catch (error) {
+            console.error('Erreur marquage global:', error);
+            showNotification('error', 'Erreur', 'Impossible de marquer les notifications');
+        }
+    }
+
+    toggleDropdown() {
+        if (this.isDropdownOpen) {
+            this.closeDropdown();
+        } else {
+            this.openDropdown();
+        }
+    }
+
+    openDropdown() {
+        this.dropdown.classList.add('show');
+        this.isDropdownOpen = true;
+
+        // Recharger les notifications à l'ouverture
+        this.loadNotifications();
+    }
+
+    closeDropdown() {
+        this.dropdown.classList.remove('show');
+        this.isDropdownOpen = false;
+    }
+
+    animateBell() {
+        const btn = document.querySelector('.notification-btn');
+        btn.classList.add('notification-bell-ring');
+        setTimeout(() => btn.classList.remove('notification-bell-ring'), 800);
+    }
+
+    startRefreshTimer() {
+        // Vérifier le compteur toutes les 30 secondes
+        this.refreshInterval = setInterval(() => {
+            this.loadUnreadCount();
+        }, 30000);
+    }
+
+    refreshNotifications() {
+        this.loadNotifications();
+    }
+
+    showError(message) {
+        const list = this.dropdown.querySelector('.notifications-list');
+        list.innerHTML = `
+            <div class="notification-error">
+                <i data-lucide="alert-circle"></i>
+                <p>${message}</p>
+                <button class="notification-retry-btn" onclick="notificationManager.loadNotifications()">
+                    Réessayer
+                </button>
+            </div>
+        `;
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    }
+
+    formatTimeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffSecs = Math.floor(diffMs / 1000);
+        const diffMins = Math.floor(diffSecs / 60);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffSecs < 60) return 'À l\'instant';
+        if (diffMins < 60) return `il y a ${diffMins}m`;
+        if (diffHours < 24) return `il y a ${diffHours}h`;
+        if (diffDays < 7) return `il y a ${diffDays}j`;
+
+        return date.toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'short'
+        });
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    destroy() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+        }
+    }
+}
+
+// Fonction pour rafraîchir les notifications (utilisable globalement)
+function refreshNotifications() {
+    if (window.notificationManager) {
+        window.notificationManager.refreshNotifications();
+    }
+}
+
+// Initialisation du gestionnaire de notifications
+document.addEventListener('DOMContentLoaded', () => {
+    // Créer le conteneur de notifications si il n'existe pas
+    const existingBtn = document.querySelector('.notification-btn');
+    if (existingBtn && !document.querySelector('.notifications-container')) {
+        const container = document.createElement('div');
+        container.className = 'notifications-container';
+
+        // Déplacer le bouton dans le conteneur
+        existingBtn.parentNode.insertBefore(container, existingBtn);
+        container.appendChild(existingBtn);
+    }
+
+    // Initialiser le gestionnaire si le conteneur existe
+    if (document.querySelector('.notifications-container')) {
+        window.notificationManager = new NotificationManager();
+        window.notificationManager.updateUI();
+    }
+
+    // Initialiser les tooltips
+    initializeTooltips();
+});
+
+// Nettoyer à la fermeture de la page
+window.addEventListener('beforeunload', () => {
+    if (window.notificationManager) {
+        window.notificationManager.destroy();
     }
 });

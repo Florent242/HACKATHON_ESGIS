@@ -275,7 +275,7 @@ class TokenManager
         }
     }
 
-    private function logSecurityEvent(int $userId, string $eventType, array $details = [])
+    public function logSecurityEvent(int $userId, string $eventType, array $details = [])
     {
         try {
             $stmt = $this->db->prepare(

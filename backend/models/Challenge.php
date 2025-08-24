@@ -21,7 +21,7 @@ class Challenge
      * @param int $id
      * @return array|null
      */
-    public function find($id, $user_id)
+    public function find($id, $user_id = null)
     {
         try {
             $sql = "SELECT c.id,
@@ -56,17 +56,16 @@ class Challenge
             $stmt->execute([':id' => $id, ':code_name' => $id]);
             $challenge = $stmt->fetch(PDO::FETCH_ASSOC);
 
-
             if (!$challenge) {
                 return null;
             }
 
-            // verifier si la phase est active
+            // Vérifier si la phase est active
             if ($challenge['phase_id'] !== null && !$this->isPhaseActive($challenge['hackathon_id'], $challenge['phase_id'])) {
                 throw new Exception("La phase du challenge n'est pas active actuellement !");
             }
 
-            // Obtenir les snippets
+            // Obtenir les snippets pour les défis algorithmiques
             if ($challenge['type'] === 'dev' && $challenge['category'] === 'algo') {
                 $sqlSnippets = "SELECT * FROM snippets WHERE challenge_id = :challenge_id";
                 $stmtSnippets = $this->db->prepare($sqlSnippets);
@@ -80,13 +79,13 @@ class Challenge
                 $challenge['snippets'] = $snippets;
             }
 
-            // Verifier si le challenge est actif
+            // Vérifier si le challenge est actif
             if (!$challenge['is_active']) {
                 throw new Exception("Le challenge n'est pas actif !");
             }
 
-            // Verifier si l'utilisateur est inscrit au hackathon
-            if (!$this->isRegistered($user_id, $challenge['hackathon_id'])) {
+            // Vérifier si l'utilisateur est spécifié et s'il est inscrit au hackathon
+            if ($user_id !== null && !$this->isRegistered($user_id, $challenge['hackathon_id'])) {
                 throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
             }
 
@@ -142,6 +141,133 @@ class Challenge
             return $challenges;
         } catch (PDOException $e) {
             throw new Exception("Erreur lors de la récupération de tous les challenges : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Soumet un projet pour un défi
+     * @param int $user_id
+     * @param array $input Données du formulaire
+     * @param int|null $phase_id
+     * @return array
+     * @throws Exception
+     */
+    public function submitChallengeProject($user_id, $input, $phase_id = null)
+    {
+        try {
+            $this->db->beginTransaction();
+
+            // Vérifier les données requises
+            $requiredFields = ['hackathon_id', 'challenge_id', 'name', 'description'];
+            foreach ($requiredFields as $field) {
+                if (empty($input[$field])) {
+                    throw new Exception("Le champ $field est requis");
+                }
+            }
+
+            $hackathon_id = $input['hackathon_id'];
+            $challenge_id = $input['challenge_id'];
+
+            // Vérifier si l'utilisateur est inscrit au hackathon
+            if (!$this->isRegistered($user_id, $hackathon_id)) {
+                throw new Exception("Vous n'êtes pas inscrit à ce hackathon");
+            }
+
+            // Vérifier si la phase est active si spécifiée
+            if ($phase_id !== null && !$this->isPhaseActive($hackathon_id, $phase_id)) {
+                throw new Exception("La phase de soumission n'est pas active");
+            }
+
+            // Vérifier si le challenge est ouvert
+            if (!$this->isChallengeOpen($challenge_id)) {
+                throw new Exception("Ce challenge n'est plus ouvert aux soumissions");
+            }
+
+            // Récupérer l'équipe de l'utilisateur
+            $team_id = $this->getTeam($user_id);
+            if (!$team_id) {
+                throw new Exception("Vous devez faire partie d'une équipe pour soumettre un projet");
+            }
+
+            // Vérifier si l'équipe a déjà soumis un projet pour ce challenge
+            $stmt = $this->db->prepare("
+                SELECT id FROM projects 
+                WHERE team_id = :team_id 
+                AND challenge_id = :challenge_id
+                AND hackathon_id = :hackathon_id
+                AND status != 'rejected'
+            ");
+
+            $stmt->execute([
+                ':team_id' => $team_id,
+                ':challenge_id' => $challenge_id,
+                ':hackathon_id' => $hackathon_id
+            ]);
+
+            if ($stmt->fetch()) {
+                throw new Exception("Votre équipe a déjà soumis un projet pour ce challenge");
+            }
+
+            // Préparer les données pour l'insertion
+            $projectData = [
+                'name' => $input['name'],
+                'description' => $input['description'],
+                'status' => 'pending',
+                'repository_url' => $input['repository_url'] ?? null,
+                'demo_url' => $input['demo_url'] ?? null,
+                'documentation_url' => $input['documentation_url'] ?? null,
+                'team_id' => $team_id,
+                'hackathon_id' => $hackathon_id,
+                'challenge_id' => $challenge_id,
+                'technologies' => !empty($input['technologies']) ? json_encode($input['technologies']) : null,
+                'version' => $input['version'] ?? '1.0',
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s')
+            ];
+
+            // Insérer le projet
+            $columns = implode(', ', array_keys($projectData));
+            $placeholders = ':' . implode(', :', array_keys($projectData));
+
+            $stmt = $this->db->prepare("INSERT INTO projects ($columns) VALUES ($placeholders)");
+            $stmt->execute($projectData);
+
+            $projectId = $this->db->lastInsertId();
+
+            // Gérer l'upload du fichier ZIP s'il est présent
+            if (!empty($_FILES['project_zip'])) {
+                $uploadDir = __DIR__ . '/../../storage/project_submissions/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+
+                $fileName = 'project_' . $projectId . '_' . time() . '.zip';
+                $targetPath = $uploadDir . $fileName;
+
+                if (move_uploaded_file($_FILES['project_zip']['tmp_name'], $targetPath)) {
+                    // Mettre à jour le projet avec le chemin du fichier
+                    $stmt = $this->db->prepare("UPDATE projects SET zip_path = :zip_path WHERE id = :id");
+                    $stmt->execute([
+                        ':zip_path' => $fileName,
+                        ':id' => $projectId
+                    ]);
+                } else {
+                    throw new Exception("Erreur lors de l'upload du fichier ZIP");
+                }
+            }
+
+            $this->db->commit();
+
+            return [
+                'success' => true,
+                'message' => 'Projet soumis avec succès !',
+                'project_id' => $projectId
+            ];
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw new Exception("Erreur lors de la soumission du projet : " . $e->getMessage());
         }
     }
 
@@ -537,7 +663,7 @@ class Challenge
                 c.created_by,
                 c.hackathon_id,
     
-                -- Soumission de l'équipe
+                -- Soumission de l’équipe
                 cs.id as submission_id,
                 cs.status as submission_status,
                 cs.points as submission_points,
@@ -794,7 +920,9 @@ class Challenge
             WHERE c.id = :challenge_id
             AND h.start_date <= NOW()
             AND h.end_date >= NOW()
-            ";
+            AND c.is_active = 1
+        ";
+
             $stmt = $this->db->prepare($sql);
             $stmt->bindParam(':challenge_id', $challenge_id, PDO::PARAM_INT);
             $stmt->execute();
@@ -1047,7 +1175,7 @@ class Challenge
                 FROM challenges 
                 WHERE id = (SELECT challenge_id FROM challenge_submissions WHERE id = :submission_id)
             ");
-            
+
             $challengeStmt->execute([':submission_id' => $submissionId]);
             $maxScore = (int)$challengeStmt->fetchColumn();
 
@@ -1072,13 +1200,13 @@ class Challenge
                 JOIN challenge_algo_tests cat ON tcr.test_case_id = cat.id
                 WHERE tcr.submission_id = :submission_id
             ");
-            
+
             $stmt->execute([':submission_id' => $submissionId]);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
             // Calcul des ratios de réussite (basés sur les poids)
-            $publicRatio = $result['total_public_weight'] > 0 
-                ? $result['passed_public_weight'] / $result['total_public_weight'] 
+            $publicRatio = $result['total_public_weight'] > 0
+                ? $result['passed_public_weight'] / $result['total_public_weight']
                 : 1.0;
 
             $overallRatio = $result['total_weight'] > 0
@@ -1103,13 +1231,13 @@ class Challenge
                 'total_weight' => (int)$result['total_weight'],
                 'passed_public_weight' => (int)$result['passed_public_weight'],
                 'total_public_weight' => (int)$result['total_public_weight'],
-                
+
                 // Anciens champs (rétrocompatibilité)
                 'total_score' => $score,
                 'max_possible_score' => $maxScore,
                 'public_score' => round(($result['passed_public_weight'] / $result['total_weight']) * $maxScore),
                 'max_public_score' => (int)$result['total_public_weight'],
-                
+
                 // Métriques
                 'passed_tests' => (int)$result['passed_tests'],
                 'total_tests' => (int)$result['total_tests'],
@@ -1120,7 +1248,7 @@ class Challenge
                 'is_successful' => $isSuccessful,
                 'total_execution_time_ms' => (int)($result['total_execution_time'] ?? 0),
                 'max_memory_used_mb' => 0,
-                
+
                 // Métriques de validation
                 'validation_metrics' => [
                     'min_public_ratio' => 80,
@@ -1229,9 +1357,10 @@ class Challenge
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération du classement."
-            // pour le debug
-            // . $e->getMessage()
+            throw new Exception(
+                "Erreur lors de la récupération du classement."
+                // pour le debug
+                // . $e->getMessage()
             );
         }
     }
@@ -1278,10 +1407,11 @@ class Challenge
             $submission['test_results'] = $testResults;
             return $submission;
         } catch (PDOException $e) {
-            throw new Exception("Erreur lors de la récupération des détails de la soumission."
-            // pour le debug
-            // . $e->getMessage()
-        );
+            throw new Exception(
+                "Erreur lors de la récupération des détails de la soumission."
+                // pour le debug
+                // . $e->getMessage()
+            );
         }
     }
 }

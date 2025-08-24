@@ -111,6 +111,10 @@ class ChallengeSubmission {
         document.getElementById('challengeTitle').textContent = data.title;
         document.getElementById('challengeDescription').textContent = data.description;
 
+        // Mettre à jour les informations de la phase
+        document.getElementById('hackathonTitle').textContent = data.hackathon_titre || ' N/A';
+        document.getElementById('challengeCategory').textContent = data.category || ' N/A';
+
         // Ajouter des classes visuelles basées sur le statut et la difficulté
         const challengeInfo = document.querySelector('.challenge-info');
         if (data.status && data.status === 'closed') {
@@ -133,24 +137,24 @@ class ChallengeSubmission {
 
         if (data.phase_type == 'qualified') {
             const isQualified = await this.checkQualification();
-            if (!isQualified) {
+            // if (!isQualified) {
 
-                this.showAlert('Vous devez être qualifié pour soumettre une solution', 'error');
+            //     this.showAlert('Vous devez être qualifié pour soumettre une solution', 'error');
 
-                formContainer.parentElement.querySelectorAll('button').forEach(button => {
-                    button.disabled = true;
-                });
+            //     formContainer.parentElement.querySelectorAll('button').forEach(button => {
+            //         button.disabled = true;
+            //     });
 
-                challengeInfo.classList.add('opacity-50');
+            //     challengeInfo.classList.add('opacity-50');
 
-                // Disable form
-                formContainer.style.opacity = '0.5';
-                formContainer.style.pointerEvents = 'none';
+            //     // Disable form
+            //     formContainer.style.opacity = '0.5';
+            //     formContainer.style.pointerEvents = 'none';
 
-                // Add blur effect
-                formContainer.classList.add('blur-sm');
-                return;
-            }
+            //     // Add blur effect
+            //     formContainer.classList.add('blur-sm');
+            //     return;
+            // }
         }
 
         const now = new Date();
@@ -368,23 +372,23 @@ class ChallengeSubmission {
 
         // Update UI to show selected file
         document.querySelector('#dropZone').classList.add('hidden');
-        const dropZone = document.querySelector('.border-dashed');
+        const dropZone = document.querySelector('#zipDropZone');
         dropZone.classList.remove('hidden');
         const div = document.createElement('div');
         div.className = 'inputSelected flex items-center justify-center space-x-4';
         div.innerHTML = `
-                <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <div>
-                    <p class="text-green-400 font-medium">${file.name}</p>
-                    <p class="text-gray-400 text-sm">${this.formatFileSize(file.size)}</p>
+            <div class="flex items-center justify-center space-x-4">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="cloud-upload" class="self-start w-5 h-5 text-green-400"></i>
+                    <div class="self-start">
+                        <p class="text-green-400 font-medium">${file.name}</p>
+                        <p class="text-gray-400 text-sm">${this.formatFileSize(file.size)}</p>
+                    </div>
                 </div>
-                <button type="button" class="text-red-400 hover:text-red-300" id="clearFileBtn">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+                <button type="button" class="self-start text-red-400 hover:text-red-300" id="clearFileBtn">
+                    <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
+            </div>
         `;
         dropZone.appendChild(div);
         // Add event listener for clear button
@@ -394,7 +398,8 @@ class ChallengeSubmission {
 
         // Add success animation
         dropZone.classList.add('animate-pulse');
-        setTimeout(() => dropZone.classList.remove('animate-pulse'), 3600);
+        setTimeout(() => dropZone.classList.remove('animate-pulse'), 2000);
+        lucide.createIcons();
     }
 
     clearFileSelection() {

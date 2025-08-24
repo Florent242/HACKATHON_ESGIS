@@ -52,24 +52,25 @@ try {
 
     // Inclure les classes seulement si elles n'existent pas déjà
     $files = [
-        'Database'            => '/models/Database.php',
-        'Controller'          => '/controllers/Controller.php',
-        'AuthController'      => '/controllers/AuthController.php',
-        'UserController'      => '/controllers/UserController.php',
-        'HackathonController' => '/controllers/HackathonController.php',
-        'TeamController'      => '/controllers/TeamController.php',
-        'ProjectController'   => '/controllers/ProjectController.php',
-        'ChallengeController' => '/controllers/ChallengeController.php',
-        'EvaluationController' => '/controllers/EvaluationController.php',
         'AdminController'     => '/controllers/AdminController.php',
-        'TokenManager'        => '/models/TokenManager.php',
-        'ParticipantController' => '/controllers/ParticipantController.php',
-        'ScoreController'     => '/controllers/ScoreController.php',
+        'AuthController'      => '/controllers/AuthController.php',
         'Auth\\Service\\ChallengeValidationService' => '/services/ChallengeValidationService.php',
+        'ChallengeController' => '/controllers/ChallengeController.php',
+        'Controller'          => '/controllers/Controller.php',
+        'Database'            => '/models/Database.php',
+        'EvaluationController' => '/controllers/EvaluationController.php',
+        'HackathonController' => '/controllers/HackathonController.php',
+        'NotificationController' => '/controllers/NotificationController.php',
+        'ParticipantController' => '/controllers/ParticipantController.php',
         'PistonRequest' => '/services/PistonRequest.php',
         'PistonExecutor' => '/services/PistonExecutor.php',
         'PistonResponse' => '/services/PistonResponse.php',
-        'PhaseController' => '/controllers/PhaseController.php'
+        'PhaseController' => '/controllers/PhaseController.php',
+        'ProjectController'   => '/controllers/ProjectController.php',
+        'ScoreController'     => '/controllers/ScoreController.php',
+        'TeamController'      => '/controllers/TeamController.php',
+        'TokenManager'        => '/models/TokenManager.php',
+        'UserController'      => '/controllers/UserController.php',
     ];
 
     foreach ($files as $class => $path) {
@@ -103,7 +104,7 @@ try {
     $endpoint = $request[0] ?? '';
     $id = $request[1] ?? null;
     $action = $request[2] ?? null;
-    
+
 
 
     // Lecture des données du corps de la requête
@@ -197,13 +198,13 @@ try {
                 $controller->registerTeam((int)$id, $input);
             }
             break;
-        
+
         case 'phases':
             $controller = new PhaseController($db, $tokenManager);
             if ($method !== 'GET') {
                 throw new Exception('Méthode non autorisée', 405);
             }
-            
+
             if ($id === 'active-phase') {
                 $controller->getActivePhase($id, $userId);
             } elseif ($id === 'all-phases') {
@@ -811,15 +812,12 @@ try {
                 // GET /api/challenges/dev/{user_id}/{c_id} or code_name
                 if ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && (is_numeric($request[3]) || is_string($request[3]))) {
                     $controller->findChallengeDev($request[2], $request[3]);
-                }elseif ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3]) && isset($request[4]) && is_numeric($request[4])) {
-                    // GET /api/challenges/dev/{hackathon_id}/{user_id}/{phase_id}
-                    $controller->getChallengesDev($request[2], $request[3], $request[4]);
-                }elseif ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3]) && isset($request[4]) && is_numeric($request[4])) {
+                } elseif ($method === 'GET' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3]) && isset($request[4]) && is_numeric($request[4])) {
                     // GET /api/challenges/dev/{hackathon_id}/{user_id}/{phase_id}
                     $controller->getChallengesDev($request[2], $request[3], $request[4]);
                 }
                 // POST /api/challenges/dev/{hackathon_id}/{user_id} - pour validation et soumission algorithmique
-                elseif ($method === 'POST' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3]) ) {
+                elseif ($method === 'POST' && isset($request[2]) && is_numeric($request[2]) && isset($request[3]) && is_numeric($request[3])) {
                     // Vérifier si c'est une validation ou soumission
                     $action = $input['action'] ?? '';
                     $challengeId = $input['challenge_id'] ?? null;
@@ -853,8 +851,6 @@ try {
             } elseif ($id === 'submissions' && is_numeric($action)) {
                 // GET /api/challenges/submissions/{submission_id}/{user_id}
                 if ($method === 'GET') {
-
-                    // TODO: corriger et adapter le code
                     $controller->getSubmissionResults($action, $request[3]);
                 } else {
                     throw new Exception('Méthode non autorisée pour les soumissions', 405);
@@ -869,22 +865,26 @@ try {
                 }
             } elseif (is_numeric($id)) {
                 // GET /api/challenges/{id}
-                if ($action === null) {
-                    if ($method === 'GET') {
-                        // GET /api/challenges/{id}
-                        $controller->get($id);
-                    } else {
-                        throw new Exception('Méthode non autorisée', 405);
-                    }
+                switch ($action) {
+                    case null:
+                        if ($method === 'GET') {
+                            // GET /api/challenges/{id}
+                            $controller->get($id);
+                        } else {
+                            throw new Exception('Méthode non autorisée', 405);
+                        }
+                        break;
+                    default:
+                        throw new Exception('Action non reconnue', 400);
                 }
             }
             // TODO: insruction non valide pour l'instant
             // elseif ($id === 'hackathon' && is_numeric($action)) {
             //     // GET /api/challenges/hackathon/{id}
             //     $controller->getByHackathon($action);
-            // } 
+            // }
             else {
-                throw new Exception('ID non valide pour /challenges', 400);
+                throw new Exception('ID non valide pour challenges', 400);
             }
             break;
 
@@ -930,14 +930,27 @@ try {
 
         case 'notifications':
             $controller = new NotificationController($db, $tokenManager);
-            if ($id === null) {
-                // GET /api/notifications
+            if ($id === 'user' && is_numeric($action)) {
                 if ($method === 'GET') {
-                    // GET /api/notifications
-                    $controller->getNotifications($userId);
+                    // GET /api/notifications/user/{user_id}
+                    $controller->listForCurrentUser($action);
                 } elseif ($method === 'POST' || $method === 'PUT') {
-                    // POST || PUT /api/notifications
-                    $controller->create();
+                    // POST || PUT /api/notifications/user/{user_id}
+                    $controller->create($input);
+                } else {
+                    throw new Exception('Méthode non autorisée', 405);
+                }
+            } elseif ($id === 'unread-count') {
+                // GET /api/notifications/unread-count/{user_id}
+                if ($method === 'GET' && !empty($action) && is_numeric($action)) {
+                    $controller->getUnreadCount($action);
+                } else {
+                    throw new Exception('Méthode non autorisée', 405);
+                }
+            } elseif ($id === 'mark-all-read') {
+                // POST /api/notifications/mark-all-read/{user_id}
+                if ($method === 'POST' && !empty($action) && is_numeric($action)) {
+                    $controller->markAllAsRead($action);
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
                 }
@@ -946,25 +959,89 @@ try {
                 if ($action === null) {
                     if ($method === 'GET') {
                         // GET /api/notifications/{id}
-                        $controller->getNotifications($userId);
-                    } elseif ($method === 'POST' || $method === 'PUT') {
-                        // POST || PUT /api/notifications/{id}
-                        $controller->update($id);
+                        $controller->getNotification($id);
                     } elseif ($method === 'DELETE') {
                         // DELETE /api/notifications/{id}
                         $controller->delete($id);
                     } else {
                         throw new Exception('Méthode non autorisée', 405);
                     }
-                } elseif ($action === 'markAsRead') {
+                } elseif ($action === 'mark-as-read' && $method === 'POST') {
                     // POST /api/notifications/{id}/markAsRead
                     $controller->markAsRead($id);
+                } else {
+                    throw new Exception('Méthode non autorisée', 405);
                 }
-            } elseif ($id === 'user' && is_numeric($action)) {
-                // GET /api/notifications/user/{id}
-                $controller->getNotifications($action);
             } else {
-                throw new Exception('ID non valide pour /notifications', 400);
+                throw new Exception('Route non reconnue ou invalide', 400);
+            }
+            break;
+        case 'projects':
+            $controller = new ProjectController($db, $tokenManager);
+
+            // POST /api/projects - Soumettre un nouveau projet
+            if ($id === null) {
+                if ($method === 'POST') {
+                    $controller->submit($input);
+                    exit;
+                }
+                
+                // GET /api/projects - Liste des projets (avec filtres optionnels)
+                if ($method === 'GET') {
+                    $filters = [
+                        'hackathon_id' => $_GET['hackathon_id'] ?? null,
+                        'team_id' => $_GET['team_id'] ?? null,
+                        'challenge_id' => $_GET['challenge_id'] ?? null,
+                        'status' => $_GET['status'] ?? null
+                    ];
+                    $controller->getAll($filters);
+                    exit;
+                }
+                
+                jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
+            }
+            
+            // Vérifier si l'ID est numérique
+            if (!is_numeric($id)) {
+                jsonResponse(['success' => false, 'error' => 'ID de projet invalide'], 400);
+            }
+            
+            // Routes avec ID de projet spécifique
+            
+            switch ($action) {
+                case null:
+                    // GET /api/projects/{id} - Récupérer un projet spécifique
+                    if ($method === 'GET') {
+                        $controller->get($id);
+                        exit;
+                    }
+                    
+                    // PUT /api/projects/{id} - Mettre à jour un projet
+                    if ($method === 'PUT') {
+                        $controller->update($id, $input);
+                        exit;
+                    }
+                    
+                    // DELETE /api/projects/{id} - Supprimer un projet
+                    if ($method === 'DELETE') {
+                        $controller->delete($id);
+                        exit;
+                    }
+                    
+                    jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
+                    break;
+                    
+                case 'download':
+                    // GET /api/projects/{id}/download - Télécharger le fichier du projet
+                    if ($method === 'GET') {
+                        $controller->download($id);
+                        exit;
+                    }
+                    jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
+                    break;
+
+                default:
+                    jsonResponse(['success' => false, 'error' => 'Action non reconnue'], 400);
             }
             break;
         case 'piston':

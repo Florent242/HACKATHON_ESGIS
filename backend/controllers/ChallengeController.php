@@ -6,6 +6,8 @@ use Exception;
 use Auth\Model\Challenge;
 use Auth\Model\Hackathon;
 use Auth\Model\TokenManager;
+use Auth\Controller\Controller;
+use PDO;
 
 if (!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
@@ -28,6 +30,7 @@ class ChallengeController extends Controller
     private $challenge;
     private $hackathon;
     private $db;
+    protected $tokenManager;
 
     public function __construct($db, $tokenManager)
     {
@@ -35,6 +38,7 @@ class ChallengeController extends Controller
         $this->db = $db;
         $this->challenge = new Challenge($db);
         $this->hackathon = new Hackathon($db);
+        $this->tokenManager = $tokenManager;
     }
 
     public function index($hackathonId)
@@ -122,6 +126,12 @@ class ChallengeController extends Controller
                 ]);
             }
         } catch (Exception $e) {
+            $this->tokenManager->logSecurityEvent(
+                $user_id ?? 0,
+                'submit_challenge_ctf_error',
+                $e->getMessage(),
+                isset($input['challenge_id']) ? ['challenge_id' => $input['challenge_id']] : []
+            );
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
@@ -254,12 +264,6 @@ class ChallengeController extends Controller
             if (!isset($user_id) || !isset($hackathon_id)) {
                 throw new Exception('user_id et hackathon_id sont requis');
             }
-
-            // Vérifier si le user est inscrit au hackathon
-            if (!$this->isRegistered($user_id, $hackathon_id)) {
-                throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
-            }
-
             $this->validateMethod('GET');
             $performance = $this->challenge->getUserPerformance($user_id, $hackathon_id, $phase_id);
             $this->jsonResponse([
@@ -311,7 +315,7 @@ class ChallengeController extends Controller
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ]);
+            ], 400);
         }
     }
     /**
@@ -651,7 +655,7 @@ class ChallengeController extends Controller
             // Authentification JWT pure
             $token = $this->getBearerToken();
             if (!$token) {
-                throw new Exception('Token JWT requis dans le header Authorization', 401);
+                throw new Exception('Token requis dans le header Authorization', 401);
             }
 
 

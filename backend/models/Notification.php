@@ -42,16 +42,16 @@ class Notification {
         try {
             $this->validate($data);
 
-            $sql = "INSERT INTO {$this->table} (user_id, title, message, type) 
-                    VALUES (:user_id, :title, :message, :type)";
-            
+            $sql = "INSERT INTO {$this->table} 
+                    (user_id, title, message, type, read_status, created_at) 
+                    VALUES (:user_id, :title, :message, :type, 0, NOW() )";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':user_id' => $data['user_id'],
-                ':title' => $data['title'] ?? 'Notification',
+                ':title'   => $data['title'] ?? 'Notification',
                 ':message' => $data['message'],
-                ':type' => $data['type']
-            ]);
+                ':type'    => $data['type'] ?? 'info'
+                ]);
             
             return $this->db->lastInsertId();
         } catch (PDOException $e) {
@@ -60,6 +60,27 @@ class Notification {
             //  . $e->getMessage()
             );
         }
+    }
+
+    public function createBulk(array $rows) {
+        // $rows = [['user_id'=>1,'title'=>'','message'=>'','type'=>'info'], ...]
+        if (empty($rows)) return 0;
+
+        $sql = "INSERT INTO {$this->table} (user_id, title, message, type, read_status, created_at)
+                VALUES ";
+        $vals = [];
+        $params = [];
+        foreach ($rows as $i => $r) {
+            $vals[] = "( :user_id_$i, :title_$i, :message_$i, :type_$i, 0, NOW() )";
+            $params[":user_id_$i"] = (int)$r['user_id'];
+            $params[":title_$i"]   = $r['title']   ?? 'Notification';
+            $params[":message_$i"] = $r['message'];
+            $params[":type_$i"]    = $r['type']    ?? 'info';
+        }
+        $sql .= implode(',', $vals);
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->rowCount();
     }
 
     /**
@@ -90,9 +111,13 @@ class Notification {
      * @throws \Exception
      * @return void
      */
-    public function getByUser($userId, $limit = 10, $offset = 0) {
+    public function getAllByUser($userId, $limit = 10, $offset = 0) {
         try {
-            $sql = "SELECT * FROM {$this->table} WHERE user_id = :user_id ORDER BY created_at DESC LIMIT :limit OFFSET :offset";
+            $sql = "SELECT * FROM {$this->table} 
+            WHERE user_id = :user_id 
+            ORDER BY created_at DESC 
+            LIMIT :limit 
+            OFFSET :offset";
             $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
             $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
@@ -115,7 +140,9 @@ class Notification {
      */
     public function markAsRead($id) {
         try {
-            $sql = "UPDATE {$this->table} SET is_read = TRUE WHERE id = :id";
+            $sql = "UPDATE {$this->table} 
+            SET read_status = TRUE 
+            WHERE id = :id";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([':id' => $id]);
         } catch (PDOException $e) {
@@ -134,7 +161,9 @@ class Notification {
      */
     public function markAllAsRead($userId) {
         try {
-            $sql = "UPDATE {$this->table} SET is_read = TRUE WHERE user_id = :user_id";
+            $sql = "UPDATE {$this->table} 
+            SET read_status = TRUE 
+            WHERE user_id = :user_id";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([':user_id' => $userId]);
         } catch (PDOException $e) {
@@ -153,7 +182,8 @@ class Notification {
      */
     public function delete($id) {
         try {
-            $sql = "DELETE FROM {$this->table} WHERE id = :id";
+            $sql = "DELETE FROM {$this->table} 
+            WHERE id = :id";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([':id' => $id]);
         } catch (PDOException $e) {
@@ -209,7 +239,9 @@ class Notification {
      */
     public function deleteAllRead($userId) {
         try {
-            $sql = "DELETE FROM {$this->table} WHERE user_id = :user_id AND is_read = TRUE";
+            $sql = "DELETE FROM {$this->table} 
+            WHERE user_id = :user_id 
+            AND read_status = TRUE";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([':user_id' => $userId]);
         } catch (PDOException $e) {
@@ -228,7 +260,9 @@ class Notification {
      */
     public function getUnreadCount($userId) {
         try {
-            $sql = "SELECT COUNT(*) FROM {$this->table} WHERE user_id = :user_id AND is_read = FALSE";
+            $sql = "SELECT COUNT(*) FROM {$this->table} 
+            WHERE user_id = :user_id 
+            AND read_status = FALSE";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([':user_id' => $userId]);
             return $stmt->fetchColumn();
@@ -248,7 +282,8 @@ class Notification {
      */
     public function deleteByUser($userId) {
         try {
-            $sql = "DELETE FROM {$this->table} WHERE user_id = :user_id";
+            $sql = "DELETE FROM {$this->table} 
+            WHERE user_id = :user_id";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([':user_id' => $userId]);
         } catch (PDOException $e) {

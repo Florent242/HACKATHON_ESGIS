@@ -453,48 +453,6 @@ function handleError(message, error, type = 'error') {
 }
 
 /**
- * @description Fonction helper pour debug - testez une requête API depuis la console
- * Usage: await testApiRequest('/challenges/dev/1/1', 'POST', {action: 'validate', challenge_id: 47, code: 'print("test")', language: 'python'})
- * @param {string} endpoint 
- * @param {string} method 
- * @param {Object} body 
- */
-async function testApiRequest(endpoint, method = 'GET', body = null) {
-    console.group('🧪 Test API Request');
-    console.log('Endpoint:', endpoint);
-    console.log('Method:', method);
-    console.log('Body:', body);
-    
-    try {
-        const options = {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        };
-        
-        if (body && method !== 'GET') {
-            options.body = JSON.stringify(body);
-        }
-        
-        const result = await apiRequest(endpoint, options);
-        
-        console.log('Result:', result);
-        console.groupEnd();
-        
-        return result;
-    } catch (error) {
-        console.error('Test failed:', error);
-        console.groupEnd();
-        throw error;
-    }
-}
-
-// Exposer la fonction de test globalement pour faciliter le debug
-window.testApiRequest = testApiRequest;
-
-/**
  * @description Fonction utilitaire pour vérifier l'état de connexion
  */
 async function initVerification() {
@@ -590,7 +548,132 @@ function updateDOM(elements, data) {
         }
     });
 }
+
+/**
+ * @description Fonction pour initialiser les tooltips
+ * @returns {void}
+ * @usage initializeTooltips();
+ * @prerequis mettre en place les tooltips dans le HTML avec le data-tooltip
+ */
+function initializeTooltips() {
+    const tooltipElements = document.querySelectorAll('[data-tooltip]');
+
+    tooltipElements.forEach(el => {
+        let tooltipEl;
+        let hideTimeout;
+
+        const show = () => {
+            clearTimeout(hideTimeout);
+
+            const tooltip = el.getAttribute('data-tooltip');
+            if (!tooltip) return;
+
+            // Si déjà un tooltip affiché, on le supprime
+            if (tooltipEl) tooltipEl.remove();
+
+            tooltipEl = document.createElement('div');
+            tooltipEl.className = `
+                fixed px-2 py-2 text-sm rounded-lg shadow-lg border
+                border-slate-700 bg-slate-900/95 backdrop-blur-sm text-white
+                opacity-0 transition-all duration-200 transform scale-95
+                pointer-events-none z-[1000] max-w-xs break-words
+                text-left font-normal leading-normal
+            `;
+            tooltipEl.textContent = tooltip;
+            tooltipEl.setAttribute("role", "tooltip");
+            tooltipEl.setAttribute("aria-hidden", "true");
+
+            document.body.appendChild(tooltipEl);
+
+            // Calculate positions with viewport boundaries
+            const rect = el.getBoundingClientRect();
+            const tooltipRect = tooltipEl.getBoundingClientRect();
+            const viewportPadding = 12;
+            
+            // Default position: centered above the element
+            let top = rect.top - tooltipRect.height - 10;
+            let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+            let arrowPosition = '';
+            
+            // Check for viewport collisions
+            // Horizontal adjustment
+            if (left < viewportPadding) {
+                left = viewportPadding;
+            } else if (left + tooltipRect.width > window.innerWidth - viewportPadding) {
+                left = window.innerWidth - tooltipRect.width - viewportPadding;
+            }
+            
+            // Vertical adjustment
+            if (top < viewportPadding) {
+                // Not enough space above, position below
+                top = rect.bottom + 10;
+                arrowPosition = 'bottom';
+            } else {
+                arrowPosition = 'top';
+            }
+            
+            // Add arrow class based on position
+            tooltipEl.classList.add(`tooltip-arrow-${arrowPosition}`);
+            
+            // Apply final position
+            tooltipEl.style.top = `${Math.max(viewportPadding, Math.min(top, window.innerHeight - tooltipRect.height - viewportPadding))}px`;
+            tooltipEl.style.left = `${Math.max(viewportPadding, Math.min(left, window.innerWidth - tooltipRect.width - viewportPadding))}px`;
+            
+            // Trigger reflow and animate in
+            void tooltipEl.offsetWidth; // Force reflow
+            tooltipEl.style.opacity = '1';
+            tooltipEl.style.transform = 'scale(1)';
+        };
+
+        const hide = () => {
+            if (tooltipEl) {
+                tooltipEl.classList.add("opacity-0", "scale-95");
+                hideTimeout = setTimeout(() => {
+                    tooltipEl?.remove();
+                    tooltipEl = null;
+                }, 200);
+            }
+        };
+
+        el.addEventListener('mouseenter', show);
+        el.addEventListener('mouseleave', hide);
+        el.addEventListener('blur', hide);   // accessibilité (clavier)
+        el.addEventListener('click', hide);  // si clic sur élément
+    });
+}
+
+function showTooltip(e) {
+    const tooltip = this.getAttribute('data-tooltip');
+    if (!tooltip) return;
+
+    const tooltipEl = document.createElement('div');
+    tooltipEl.className = 'tooltip';
+    tooltipEl.textContent = tooltip;
+
+    // Positionnement
+    const rect = this.getBoundingClientRect();
+    tooltipEl.style.position = 'fixed';
+    tooltipEl.style.left = `${rect.left + (rect.width / 2)}px`;
+    tooltipEl.style.top = `${rect.top - 40}px`;
+    tooltipEl.style.transform = 'translateX(-50%)';
+    tooltipEl.style.zIndex = '1000';
+    tooltipEl.style.pointerEvents = 'none';
+    tooltipEl.classList.add('bg-slate-800', 'text-white', 'text-xs', 'px-2', 'py-1', 'rounded', 'shadow-lg', 'border', 'border-slate-700');
+
+    document.body.appendChild(tooltipEl);
+    this._tooltip = tooltipEl;
+}
+
+function hideTooltip() {
+    if (this._tooltip) {
+        this._tooltip.remove();
+        this._tooltip = null;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+    // initialisation des tooltips
+    initializeTooltips();
     // initialisation des notifications
     const notificationElement = document.getElementById('notification-data');
     if (notificationElement) {

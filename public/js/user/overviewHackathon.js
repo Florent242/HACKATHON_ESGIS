@@ -302,7 +302,6 @@ const getUserTeams = async () => {
     });
     if (userTeams)
         userTeams = response.data
-    //  userTeams=userTeams.filter((team)=>team['leader_id']===userConnected.id);
 }
 const createHeader = () => {
     console.log(hackathon);
@@ -760,7 +759,6 @@ const showRegistrationModal = async () => {
                 if (response.success) {
                     closeModal(modal, 'slide-to-top', () => {
                         showNotification('Félicitations !', response.message || 'Inscription reussie', 'success');
-                        // setTimeout(() => { location.reload(); }, 2000);
                     });
                     return;
                 } else {

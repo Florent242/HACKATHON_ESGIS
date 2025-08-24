@@ -305,7 +305,7 @@ class ParticipantController extends Controller
             }
 
             // Vérifier si l'utilisateur est le propriétaire de l'inscription
-            if ($participant['user_id'] !== $_SESSION['user_id']) {
+            if ($participant['user_id'] !== $_SESSION['user']['id']) {
                 throw new Exception('Non autorisé à annuler cette inscription');
             }
 
@@ -334,7 +334,7 @@ class ParticipantController extends Controller
             }
 
             // Récupérer les participations
-            $participations = $this->participant->getByUser($_SESSION['user_id'], $jwt);
+            $participations = $this->participant->getByUser($_SESSION['user']['id'], $jwt);
 
             $this->jsonResponse([
                 'success' => true,

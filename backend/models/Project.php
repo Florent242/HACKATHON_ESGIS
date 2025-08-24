@@ -1,386 +1,289 @@
 <?php
 namespace Auth\Model;
 
-use Exception;
 use PDO;
 use PDOException;
+use Exception;
 
-class Project {
+class Project
+{
     private $db;
     private $table = 'projects';
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->db = $db;
     }
 
     /**
-     * Récupère tous les projets
-     * @return array Liste des projets
+     * Crée un nouveau projet
      */
-    public function getAll() {
+    public function create(array $data): int
+    {
         try {
-            $query = "SELECT * FROM {$this->table} ORDER BY created_at DESC";
-            $stmt = $this->db->prepare($query);
-            $stmt->execute();
+            $this->db->beginTransaction();
 
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            // Préparer les données
+            $projectData = [
+                'team_id' => $data['team_id'],
+                'hackathon_id' => $data['hackathon_id'],
+                'challenge_id' => $data['challenge_id'] ?? null,
+                'name' => $data['name'],
+                'description' => $data['description'],
+                'repository_url' => $data['repository_url'] ?? null,
+                'file_path' => $data['file_path'] ?? null,
+                'file_name' => $data['file_name'] ?? null,
+                'status' => $data['status'] ?? 'pending',
+                'rule_compliance' => $data['rule_compliance'] ?? true,
+                'phase_id' => $data['phase_id'] ?? null,
+                'created_at' => date('Y-m-d H:i:s')
+            ];
+
+            // Requête d'insertion
+            $fields = implode(', ', array_keys($projectData));
+            $placeholders = ':' . implode(', :', array_keys($projectData));
+            
+            $sql = "INSERT INTO {$this->table} ($fields) VALUES ($placeholders)";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($projectData);
+            
+            $projectId = $this->db->lastInsertId();
+            
+            $this->db->commit();
+            
+            return (int)$projectId;
+            
         } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération des projets !' 
-            // Pour debuger
-            //  . $e->getMessage()
-            );
-            return [];
+            $this->db->rollBack();
+            throw new Exception("Erreur lors de la création du projet : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Met à jour un projet existant
+     */
+    public function update(int $id, array $data): bool
+    {
+        try {
+            $this->db->beginTransaction();
+
+            // Champs autorisés à être mis à jour
+            $allowedFields = [
+                'name', 'description', 'repository_url', 'file_path', 
+                'file_name', 'status', 'rule_compliance', 'score', 'updated_at'
+            ];
+            
+            $updates = [];
+            $params = ['id' => $id];
+            
+            foreach ($data as $key => $value) {
+                if (in_array($key, $allowedFields, true)) {
+                    $updates[] = "$key = :$key";
+                    $params[$key] = $value;
+                }
+            }
+            
+            if (empty($updates)) {
+                throw new Exception('Aucun champ valide à mettre à jour');
+            }
+            
+            $updates[] = 'updated_at = NOW()';
+            $updateClause = implode(', ', $updates);
+            
+            $sql = "UPDATE {$this->table} SET $updateClause WHERE id = :id";
+            
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute($params);
+            
+            $this->db->commit();
+            
+            return $result;
+            
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            throw new Exception("Erreur lors de la mise à jour du projet : " . $e->getMessage());
         }
     }
 
     /**
      * Récupère un projet par son ID
-     * @param int $id ID du projet
-     * @return array|bool Les données du projet ou false si non trouvé
      */
-    public function find($id) {
-        try {
-            $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-            $stmt->execute();
-
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération du projet !' 
-            // Pour debuger
-            //  . $e->getMessage()
-            );
-            return false;
+    public function find(int $id): ?array
+    {
+        $sql = "SELECT p.*, t.name as team_name, h.name as hackathon_name, 
+                       c.title as challenge_title, u.username as created_by_username
+                FROM {$this->table} p
+                LEFT JOIN teams t ON p.team_id = t.id
+                LEFT JOIN hackathons h ON p.hackathon_id = h.id
+                LEFT JOIN challenges c ON p.challenge_id = c.id
+                LEFT JOIN users u ON p.created_by = u.id
+                WHERE p.id = :id";
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        
+        $project = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$project) {
+            return null;
         }
-    }
-
-    /**
-     * Crée un nouveau projet
-     * @param array $data Les données du projet
-     * @return int|bool L'ID du nouveau projet ou false si erreur
-     */
-    public function create($data) {
-        try {
-            // Validation des données
-            if (!isset($data['name']) || empty($data['name'])) {
-                throw new Exception('Le nom est requis');
-            }
-            if (!isset($data['description']) || empty($data['description'])) {
-                throw new Exception('La description est requise');
-            }
-            if (!isset($data['team_id']) || empty($data['team_id'])) {
-                throw new Exception('L\'ID de l\'équipe est requis');
-            }
-            if (!isset($data['hackathon_id']) || empty($data['hackathon_id'])) {
-                throw new Exception('L\'ID du hackathon est requis');
-            }
-
-            // Vérifier si l'équipe existe
-            $teamQuery = "SELECT * FROM teams WHERE id = :id LIMIT 1";
-            $teamStmt = $this->db->prepare($teamQuery);
-            $teamStmt->bindParam(':id', $data['team_id'], PDO::PARAM_INT);
-            $teamStmt->execute();
-
-            if (!$teamStmt->fetch(PDO::FETCH_ASSOC)) {
-                throw new Exception('Équipe non trouvée');
-            }
-
-            // Vérifier si le hackathon existe
-            $hackathonQuery = "SELECT * FROM hackathons WHERE id = :id LIMIT 1";
-            $hackathonStmt = $this->db->prepare($hackathonQuery);
-            $hackathonStmt->bindParam(':id', $data['hackathon_id'], PDO::PARAM_INT);
-            $hackathonStmt->execute();
-
-            if (!$hackathonStmt->fetch(PDO::FETCH_ASSOC)) {
-                throw new Exception('Hackathon non trouvé');
-            }
-
-            // Préparation de la requête
-            $query = "INSERT INTO {$this->table} (name, description, status, repository_url, demo_url, documentation_url, team_id, hackathon_id, technologies)
-                     VALUES (:name, :description, :status, :repository_url, :demo_url, :documentation_url, :team_id, :hackathon_id, :technologies)";
-
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':name', $data['name']);
-            $stmt->bindParam(':description', $data['description']);
-            $stmt->bindParam(':status', $data['status'] ?? 'ongoing');
-            $stmt->bindParam(':repository_url', $data['repository_url'] ?? null);
-            $stmt->bindParam(':demo_url', $data['demo_url'] ?? null);
-            $stmt->bindParam(':documentation_url', $data['documentation_url'] ?? null);
-            $stmt->bindParam(':team_id', $data['team_id'], PDO::PARAM_INT);
-            $stmt->bindParam(':hackathon_id', $data['hackathon_id'], PDO::PARAM_INT);
-            $stmt->bindParam(':technologies', $data['technologies'] ?? null);
-
-            $stmt->execute();
-            return $this->db->lastInsertId();
-        } catch (PDOException $e) {
-            error_log('Erreur lors de la création du projet: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la création du projet !' 
-            // Pour debuger
-            //  . $e->getMessage()
-            );
+        
+        // Décoder les champs JSON
+        if (!empty($project['evaluation_criteria'])) {
+            $project['evaluation_criteria'] = json_decode($project['evaluation_criteria'], true);
         }
-    }
-
-    /**
-     * Met à jour un projet
-     * @param int $id ID du projet
-     * @param array $data Les données à mettre à jour
-     * @return bool true si succès, sinon false
-     */
-    public function update($id, $data) {
-        try {
-            // Vérification si le projet existe
-            $project = $this->find($id);
-            if (!$project) {
-                throw new Exception('Projet non trouvé');
-            }
-
-            // Construction de la requête
-            $fields = [];
-            $params = [];
-
-            // Champs à mettre à jour
-            $allowedFields = ['name', 'description', 'status', 'repository_url', 'demo_url', 'documentation_url',
-                             'technologies', 'score', 'judges_comments', 'evaluation_criteria', 'version',
-                             'rule_compliance', 'security_issues'];
-
-            foreach ($allowedFields as $field) {
-                if (isset($data[$field])) {
-                    $fields[] = "{$field} = :{$field}";
-                    $params[":{$field}"] = $data[$field];
-                }
-            }
-
-            if (empty($fields)) {
-                throw new Exception('Aucune donnée à mettre à jour');
-            }
-
-            $query = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
-            $params[':id'] = $id;
-
-            $stmt = $this->db->prepare($query);
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-
-            return $stmt->execute();
-        } catch (PDOException $e) {
-            error_log('Erreur lors de la mise à jour du projet: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la mise à jour du projet !' 
-            // Pour debuger
-            //  . $e->getMessage()
-            );
-        }
-    }
-
-    /**
-     * Supprime un projet
-     * @param int $id ID du projet
-     * @return bool true si succès, sinon false
-     */
-    public function delete($id) {
-        try {
-            // Vérification si le projet existe
-            $project = $this->find($id);
-            if (!$project) {
-                throw new Exception('Projet non trouvé');
-            }
-
-            $query = "DELETE FROM {$this->table} WHERE id = :id";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
-            return $stmt->execute();
-        } catch (PDOException $e) {
-            error_log('Erreur lors de la suppression du projet: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la suppression du projet !' 
-            // Pour debuger
-            //  . $e->getMessage()
-            );
-        }
+        
+        return $project;
     }
 
     /**
      * Récupère les projets d'une équipe
-     * @param int $teamId ID de l'équipe
-     * @return array Liste des projets
      */
-    public function getByTeam($teamId) {
-        try {
-            $query = "SELECT * FROM {$this->table} WHERE team_id = :team_id ORDER BY created_at DESC";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':team_id', $teamId, PDO::PARAM_INT);
-            $stmt->execute();
-
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération des projets par équipe: ' . $e->getMessage());
-            return [];
-        }
+    public function getByTeam(int $teamId): array
+    {
+        $sql = "SELECT p.*, h.name as hackathon_name, c.title as challenge_title
+                FROM {$this->table} p
+                LEFT JOIN hackathons h ON p.hackathon_id = h.id
+                LEFT JOIN challenges c ON p.challenge_id = c.id
+                WHERE p.team_id = :team_id
+                ORDER BY p.created_at DESC";
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':team_id' => $teamId]);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
      * Récupère les projets d'un hackathon
-     * @param int $hackathonId ID du hackathon
-     * @return array Liste des projets
      */
-    public function getByHackathon($hackathonId) {
-        try {
-            $query = "SELECT * FROM {$this->table} WHERE hackathon_id = :hackathon_id ORDER BY created_at DESC";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':hackathon_id', $hackathonId, PDO::PARAM_INT);
-            $stmt->execute();
-
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération des projets par hackathon !' 
-            // Pour debuger
-            //  . $e->getMessage()
-            );
-            return [];
-        }
+    public function getByHackathon(int $hackathonId): array
+    {
+        $sql = "SELECT p.*, t.name as team_name, c.title as challenge_title, 
+                       u.username as created_by_username
+                FROM {$this->table} p
+                LEFT JOIN teams t ON p.team_id = t.id
+                LEFT JOIN challenges c ON p.challenge_id = c.id
+                LEFT JOIN users u ON p.created_by = u.id
+                WHERE p.hackathon_id = :hackathon_id
+                ORDER BY p.created_at DESC";
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':hackathon_id' => $hackathonId]);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
-     * Met à jour le statut d'un projet
-     * @param int $id ID du projet
-     * @param string $status Nouveau statut du projet
-     * @return bool true si succès, sinon false
+     * Supprime un projet
      */
-    public function updateStatus($id, $status) {
+    public function delete(int $id): bool
+    {
         try {
-            // Vérification si le projet existe
+            $this->db->beginTransaction();
+            
+            // Récupérer le chemin du fichier avant suppression
             $project = $this->find($id);
-            if (!$project) {
-                throw new Exception('Projet non trouvé');
+            
+            $sql = "DELETE FROM {$this->table} WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute([':id' => $id]);
+            
+            // Supprimer le fichier associé s'il existe
+            if ($result && !empty($project['file_path']) && file_exists($project['file_path'])) {
+                unlink($project['file_path']);
             }
-
-            // Vérification du statut
-            $validStatuses = ['ongoing', 'completed', 'validated', 'rejected'];
-            if (!in_array($status, $validStatuses)) {
-                throw new Exception('Statut invalide');
-            }
-
-            $query = "UPDATE {$this->table} SET status = :status WHERE id = :id";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':status', $status);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
-            return $stmt->execute();
+            
+            $this->db->commit();
+            
+            return $result;
+            
         } catch (PDOException $e) {
-            error_log('Erreur lors de la mise à jour du statut du projet: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la mise à jour du statut du projet !'
-            // Pour debuger
-            //  . $e->getMessage()
-            );
+            $this->db->rollBack();
+            throw new Exception("Erreur lors de la suppression du projet : " . $e->getMessage());
         }
     }
 
     /**
-     * Met à jour le score d'un projet
-     * @param int $id ID du projet
-     * @param int $score Nouveau score du projet
-     * @param string $judgesTomments Commentaires des juges (optionnel)
-     * @param string $evaluationCriteria Critères d'évaluation au format JSON (optionnel)
-     * @return bool true si succès, sinon false
+     * Vérifie si une équipe a déjà soumis un projet pour un défi
      */
-    public function updateScore($id, $score, $judgesComments = null, $evaluationCriteria = null) {
-        try {
-            // Vérification si le projet existe
-            $project = $this->find($id);
-            if (!$project) {
-                throw new Exception('Projet non trouvé');
-            }
-
-            // Vérification du score
-            if ($score < 0 || $score > 100) {
-                throw new Exception('Score invalide (doit être entre 0 et 100)');
-            }
-
-            // Construire la requête
-            $query = "UPDATE {$this->table} SET score = :score";
-            $params = [':score' => $score, ':id' => $id];
-
-            if ($judgesComments !== null) {
-                $query .= ", judges_comments = :judges_comments";
-                $params[':judges_comments'] = $judgesComments;
-            }
-
-            if ($evaluationCriteria !== null) {
-                $query .= ", evaluation_criteria = :evaluation_criteria";
-                $params[':evaluation_criteria'] = $evaluationCriteria;
-            }
-
-            $query .= " WHERE id = :id";
-
-            $stmt = $this->db->prepare($query);
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
-            }
-
-            return $stmt->execute();
-        } catch (PDOException $e) {
-            error_log('Erreur lors de la mise à jour du score du projet: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la mise à jour du score du projet !'
-            // Pour debuger
-            //  . $e->getMessage()
-            );
-        }
+    public function hasTeamSubmittedForChallenge(int $teamId, int $challengeId): bool
+    {
+        $sql = "SELECT COUNT(*) as count 
+                FROM {$this->table} 
+                WHERE team_id = :team_id 
+                AND challenge_id = :challenge_id";
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':team_id' => $teamId,
+            ':challenge_id' => $challengeId
+        ]);
+        
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        return $result['count'] > 0;
     }
 
     /**
-     * Met à jour la version d'un projet
-     * @param int $id ID du projet
-     * @param string $version Nouvelle version du projet
-     * @return bool true si succès, sinon false
+     * Met à jour les critères d'évaluation d'un projet
      */
-    public function updateVersion($id, $version) {
-        try {
-            // Vérification si le projet existe
-            $project = $this->find($id);
-            if (!$project) {
-                throw new Exception('Projet non trouvé');
-            }
-
-            $query = "UPDATE {$this->table} SET version = :version WHERE id = :id";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':version', $version);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-
-            return $stmt->execute();
-        } catch (PDOException $e) {
-            error_log('Erreur lors de la mise à jour de la version du projet: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la mise à jour de la version du projet !'
-            // Pour debuger
-            //  . $e->getMessage()
-            );
-        }
+    public function updateEvaluationCriteria(int $projectId, array $criteria): bool
+    {
+        $sql = "UPDATE {$this->table} 
+                SET evaluation_criteria = :criteria,
+                    updated_at = NOW()
+                WHERE id = :id";
+                
+        $stmt = $this->db->prepare($sql);
+        
+        return $stmt->execute([
+            ':id' => $projectId,
+            ':criteria' => json_encode($criteria, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+        ]);
     }
 
     /**
-     * Récupère les évaluations d'un projet
-     * @param int $id ID du projet
-     * @return array Liste des évaluations
+     * Récupère les soumissions d'une équipe pour un hackathon
      */
-    public function getEvaluations($id) {
-        try {
-            $query = "SELECT e.*, u.username, u.fullname, u.school, u.email
-                     FROM evaluations e
-                     JOIN users u ON e.judge_id = u.id
-                     WHERE e.project_id = :project_id
-                     ORDER BY e.created_at DESC";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':project_id', $id, PDO::PARAM_INT);
-            $stmt->execute();
+    public function getTeamSubmissionsForHackathon(int $teamId, int $hackathonId): array
+    {
+        $sql = "SELECT p.*, c.title as challenge_title
+                FROM {$this->table} p
+                LEFT JOIN challenges c ON p.challenge_id = c.id
+                WHERE p.team_id = :team_id
+                AND p.hackathon_id = :hackathon_id
+                ORDER BY p.created_at DESC";
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':team_id' => $teamId,
+            ':hackathon_id' => $hackathonId
+        ]);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération des évaluations du projet !'
-            // Pour debuger
-            //  . $e->getMessage()
-            );
-            return [];
-        }
+    /**
+     * Récupère les projets évalués par un juge
+     */
+    public function getProjectsEvaluatedByJudge(int $judgeId, int $hackathonId): array
+    {
+        $sql = "SELECT DISTINCT p.*, t.name as team_name, c.title as challenge_title
+                FROM {$this->table} p
+                LEFT JOIN teams t ON p.team_id = t.id
+                LEFT JOIN challenges c ON p.challenge_id = c.id
+                LEFT JOIN evaluations e ON p.id = e.project_id
+                WHERE e.judge_id = :judge_id
+                AND p.hackathon_id = :hackathon_id";
+                
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            ':judge_id' => $judgeId,
+            ':hackathon_id' => $hackathonId
+        ]);
+        
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

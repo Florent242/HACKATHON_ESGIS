@@ -6,6 +6,8 @@ if (!isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
+// Récupérer l'ID utilisateur pour les notifications
+$user_id = $_SESSION['user_id'] ?? null;
 ?>
 
 <!-- Modal -->
@@ -126,6 +128,10 @@ if (!isset($_SESSION['csrf_token'])) {
                 <i data-lucide="settings"></i>
                 <span>Paramètres</span>
             </a>
+            <a href="/user/notifications" class="mobile-nav-action">
+                <i data-lucide="bell"></i>
+                <span>Notifications</span>
+            </a>
             <div class="mobile-nav-action" id="mobile-logout">
                 <i data-lucide="log-out"></i>
                 <span>Déconnexion</span>
@@ -152,47 +158,53 @@ if (!isset($_SESSION['csrf_token'])) {
                 <nav class="header-dropdown">
                     <div class="dropdown-container">
                         <div class="dropdown">
-                            <ul class="dropdown-item" data-item="0">
-                                <a href="/user/challenge_security">
-                                    <li>
-                                        Challenges de sécurité
-                                    </li>
-                                </a>
-                                <a href="/user/challenge_dev">
-                                    <li>
-                                        Challenges de développement
-                                    </li>
-                                </a>
-                                <a href="/user/hackathon">
-                                    <li>
-                                        Hackathons
-                                    </li>
-                                </a>
-                            </ul>
-                            <ul class="dropdown-item" data-item="1">
-                                <a href="/user/teams">
-                                    <li>
-                                        Teams
-                                    </li>
-                                </a>
-                                <a href="/user/leaderboard">
-                                    <li>
-                                        Leaderboard
-                                    </li>
-                                </a>
-                            </ul>
-                            <ul class="dropdown-item" data-item="2">
-                                <a href="/user/documentation">
-                                    <li>
-                                        Documentation
-                                    </li>
-                                </a>
-                                <a href="/user/faq">
-                                    <li>
-                                        FAQ
-                                    </li>
-                                </a>
-                            </ul>
+                            <div class="dropdown-item" data-item="0">
+                                <ul>
+                                    <a href="/user/challenge_security">
+                                        <li>
+                                            Challenges de sécurité
+                                        </li>
+                                    </a>
+                                    <a href="/user/challenge_dev">
+                                        <li>
+                                            Challenges de développement
+                                        </li>
+                                    </a>
+                                    <a href="/user/hackathon">
+                                        <li>
+                                            Hackathons
+                                        </li>
+                                    </a>
+                                </ul>
+                            </div>
+                            <div class="dropdown-item" data-item="1">
+                                <ul>
+                                    <a href="/user/teams">
+                                        <li>
+                                            Teams
+                                        </li>
+                                    </a>
+                                    <a href="/user/leaderboard">
+                                        <li>
+                                            Leaderboard
+                                        </li>
+                                    </a>
+                                </ul>
+                            </div>
+                            <div class="dropdown-item" data-item="2">
+                                <ul>
+                                    <a href="/user/documentation">
+                                        <li>
+                                            Documentation
+                                        </li>
+                                    </a>
+                                    <a href="/user/faq">
+                                        <li>
+                                            FAQ
+                                        </li>
+                                    </a>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </nav>
@@ -200,8 +212,11 @@ if (!isset($_SESSION['csrf_token'])) {
         </div>
 
         <div class="header-actions">
-            <div class="notification-btn">
-                <i data-lucide="bell" class="stroke-current"></i>
+            <!-- Système de notifications -->
+            <div class="notifications-container" <?php echo $user_id ? "data-user-id=\"$user_id\"" : ''; ?>>
+                <button class="notification-btn" data-tooltip="Notifications">
+                    <i data-lucide="bell" class="stroke-current"></i>
+                </button>
             </div>
 
             <!-- Menu hamburger (pour mobile) -->
@@ -231,6 +246,12 @@ if (!isset($_SESSION['csrf_token'])) {
                             <li class="flex items-center gap-2 p-1 rounded-lg text-white hover:text-blue-500 hover:bg-slate-900">
                                 <i data-lucide="settings" class="w-4 h-4 stroke-current"></i>
                                 Paramètres
+                            </li>
+                        </a>
+                        <a href="/user/notifications">
+                            <li class="flex items-center gap-2 p-1 rounded-lg text-white hover:text-blue-500 hover:bg-slate-900">
+                                <i data-lucide="bell" class="w-4 h-4 stroke-current"></i>
+                                Notifications
                             </li>
                         </a>
                     </div>
