@@ -87,7 +87,7 @@ class Notification {
      * Recherche d'une notification par son ID
      * @param mixed $id
      * @throws \Exception
-     * @return void
+     * @return array
      */
     public function find($id) {
         try {
@@ -109,7 +109,7 @@ class Notification {
      * @param mixed $limit
      * @param mixed $offset
      * @throws \Exception
-     * @return void
+     * @return array
      */
     public function getAllByUser($userId, $limit = 10, $offset = 0) {
         try {
@@ -136,7 +136,7 @@ class Notification {
      * Marquage d'une notification comme lue
      * @param mixed $id
      * @throws \Exception
-     * @return void
+     * @return bool
      */
     public function markAsRead($id) {
         try {
@@ -157,7 +157,7 @@ class Notification {
      * Marquage de toutes les notifications d'un utilisateur comme lues
      * @param mixed $userId
      * @throws \Exception
-     * @return void
+     * @return array
      */
     public function markAllAsRead($userId) {
         try {
@@ -256,7 +256,7 @@ class Notification {
      * Comptage des notifications non lues d'un utilisateur
      * @param mixed $userId
      * @throws \Exception
-     * @return void
+     * @return int
      */
     public function getUnreadCount($userId) {
         try {

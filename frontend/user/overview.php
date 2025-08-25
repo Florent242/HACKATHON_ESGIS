@@ -6,6 +6,8 @@
     <title>Document</title>
     <link rel="stylesheet" href="/css/styles/user/overview.css">
     <link rel="stylesheet" href="/css/dist/output.css">
+    <?php require_once '../includes/user/head.php'; ?>
+
 
     <!-- Ajout de Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>

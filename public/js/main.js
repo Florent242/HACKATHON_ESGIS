@@ -236,9 +236,9 @@ function showNotification(message, details = null, type = 'info', duration = 500
 
     // Message principal avec clamp
     const messageElement = document.createElement('p');
-    messageElement.className = 'text-white font-medium text-sm max-md:text-xs line-clamp-1';
+    messageElement.className = 'text-white font-medium text-sm max-md:text-xs line-clamp-1 whitespace-pre-line';
     messageElement.innerText = message;
-    messageElement.title = message;
+    messageElement.dataset.tooltip = message;
     textContainer.appendChild(messageElement);
 
     // Message de détails (en option)
@@ -246,7 +246,7 @@ function showNotification(message, details = null, type = 'info', duration = 500
         const detailsElement = document.createElement('p');
         detailsElement.className = 'text-gray-300/90 font-normal text-xs max-md:text-[0.6rem] mt-1 line-clamp-2 max-md:line-clamp-3';
         detailsElement.innerText = details;
-        detailsElement.title = details;
+        detailsElement.dataset.tooltip = details;
         textContainer.appendChild(detailsElement);
     }
 
@@ -294,6 +294,9 @@ function showNotification(message, details = null, type = 'info', duration = 500
             clearTimeout(timeoutId);
         }
     });
+
+    // Initioliser les tooltips
+    initializeTooltips();
 
     return notification;
 }
@@ -355,61 +358,69 @@ async function apiRequest(endpoint, options = {}) {
     try {
         const headers = {
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            ...(options.headers || {})
         };
 
         const response = await fetch(`/api${endpoint}`, {
             ...options,
-            headers: { ...headers, ...options.headers }
+            headers
         });
 
-        const data = await response.json(); // On parse toujours le body
+        // Récupérer le texte brut de la réponse
+        const responseText = await response.text();
+        
+        // Nettoyer la réponse des messages de déprication PHP
+        const cleanedResponse = responseText.replace(/^(<br \/>\n<b>Deprecated<\/b>:.*?<br \/>\n)+/g, '').trim();
+        
+        // Parser le JSON nettoyé
+        let data;
+        try {
+            data = JSON.parse(cleanedResponse);
+        } catch (e) {
+            console.error('Erreur de parsing JSON:', e);
+            console.error('Réponse brute:', responseText);
+            throw new Error('Erreur lors de l\'analyse de la réponse du serveur');
+        }
 
-        // Afficher les détails de debug si disponibles (même pour les réponses 200)
+        // Gérer les erreurs de debug
         if (data.debug_message) {
-            console.group('🔍 Debug API Info');
+            console.group('⚠️ Debug Info');
             console.log('Message:', data.debug_message);
             console.log('File:', data.debug_file);
             console.log('Line:', data.debug_line);
             if (data.debug_trace) console.log('Trace:', data.debug_trace);
             console.groupEnd();
         }
+        // Si la réponse n'est pas OK, lancer une erreur
+        if (response.status !== 400 && response.status !== 401 && response.status !== 200 && response.status !== 404 && response.status !== 500) {
+            const error = new Error(data.message || data.error || 'Une erreur est survenue');
+            error.response = response;
+            error.data = data;
+            throw error;
+        }
 
-        if (!response.ok) {
+        return data;
+    } catch (error) {
+        // Si c'est une erreur réseau, on la gère différemment
+        if (error instanceof TypeError && error.message === 'Failed to fetch') {
+            handleError('Erreur réseau', { message: 'Impossible de se connecter au serveur' }, 'error');
             return {
                 success: false,
-                status: data.status || response.status,
-                message: data.message || data.error || 'Erreur inconnue',
-                debug_message: data.debug_message || null,
-                debug_file: data.debug_file || null,
-                debug_line: data.debug_line || null,
-                debug_trace: data.debug_trace || null,
+                status: 'network_error',
+                message: 'Erreur de connexion au serveur',
                 data: null
             };
         }
-
-        // Vérifier si la réponse contient une erreur même avec un status 200
-        if (data.success === false) {
-            return {
-                success: false,
-                status: response.status,
-                message: data.error || data.message || 'Erreur inconnue',
-                debug_message: data.debug_message || null,
-                debug_file: data.debug_file || null,
-                debug_line: data.debug_line || null,
-                debug_trace: data.debug_trace || null,
-                data: data
-            };
+        
+        if (error instanceof Error) {
+            handleError('Erreur lors de la requête API', error, 'error');
         }
-
-        return data;  // Retourne bien les données récupérées
-    } catch (error) {
-        handleError('Erreur lors de la requête API', error, 'error');
         return {
             success: false,
-            status: 'client_error',
-            message: 'Erreur côté client',
-            data: null
+            status: error.status || 'client_error',
+            message: error.message || 'Erreur inconnue',
+            data: error.data || null
         };
     }
 }
@@ -439,7 +450,7 @@ function handleError(message, error, type = 'error') {
     
     // Préparer le message pour la notification
     let notificationMessage = message;
-    let notificationDetails = error.message || error.error || error || "Erreur inconnue";
+    let notificationDetails = error?.message || error?.error || error?.data?.error || error?.data?.message || "Erreur inconnue";
     
     // Si on a des infos de debug, les ajouter aux détails
     if (error && error.debug_message) {
@@ -498,18 +509,13 @@ try {
  */
 async function getUserId() {
     try {
-        const response = await fetch('/api/users/me', {
+        const response = await apiRequest('/users/me', {
             method: 'GET',
             credentials: 'include',
-            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            headers: { 'Accept': 'application/json' }
         });
 
-        if (!response.ok) {
-            throw new Error('Utilisateur non authentifié. Dashboard');
-        }
-
-        const data = await response.json();
-        return data.data.id;  // Retourne bien l'ID utilisateur
+        return response.data?.id;  // Retourne bien l'ID utilisateur
     } catch (error) {
         handleError('Impossible de récupérer l\'ID utilisateur.', error, 'error');
         return null;
@@ -576,7 +582,7 @@ function initializeTooltips() {
                 fixed px-2 py-2 text-sm rounded-lg shadow-lg border
                 border-slate-700 bg-slate-900/95 backdrop-blur-sm text-white
                 opacity-0 transition-all duration-200 transform scale-95
-                pointer-events-none z-[1000] max-w-xs break-words
+                pointer-events-none z-[100001]! max-w-xs break-words
                 text-left font-normal leading-normal
             `;
             tooltipEl.textContent = tooltip;

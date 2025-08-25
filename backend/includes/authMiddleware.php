@@ -64,9 +64,9 @@ class AuthMiddleware
         }
 
         // Vérifier le token JWT (fallback)
-        if ((isset($_COOKIE['jwt_token']) && !empty($_COOKIE['jwt_token'])) || (isset($_COOKIE['long_term_token']) && !empty($_COOKIE['long_term_token']))) {
+        if ((isset($_COOKIE['auth_token']) && !empty($_COOKIE['auth_token'])) || (isset($_COOKIE['long_term_token']) && !empty($_COOKIE['long_term_token']))) {
             try {
-                $token = $_COOKIE['long_term_token'] ?? $_COOKIE['jwt_token'];
+                $token = $_COOKIE['long_term_token'] ?? $_COOKIE['auth_token'];
                 if (empty($token)) {
                     throw new Exception('Token manquant');
                 }
@@ -110,9 +110,9 @@ class AuthMiddleware
     }
     public static function isAuthenticated(): bool
     {
-        if ((isset($_COOKIE['jwt_token']) && !empty($_COOKIE['jwt_token'])) || (isset($_COOKIE['long_term_token']) && !empty($_COOKIE['long_term_token']))) {
+        if ((isset($_COOKIE['auth_token']) && !empty($_COOKIE['auth_token'])) || (isset($_COOKIE['long_term_token']) && !empty($_COOKIE['long_term_token']))) {
             try {
-                $token = $_COOKIE['long_term_token'] ?? $_COOKIE['jwt_token'];
+                $token = $_COOKIE['long_term_token'] ?? $_COOKIE['auth_token'];
                 $database = Database::getInstance();
                 $db = $database->getConnection();
                 $tokenManager = new TokenManager($db, [
@@ -143,7 +143,7 @@ class AuthMiddleware
     {
         session_unset();
         session_destroy();
-        setcookie('jwt_token', '', time() - 3600, '/');
+        setcookie('auth_token', '', time() - 3600, '/');
         setcookie('long_term_token', '', time() - 2592000, '/');
     }
     public static function refreshToken($token)

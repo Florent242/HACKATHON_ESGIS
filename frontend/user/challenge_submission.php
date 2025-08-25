@@ -10,7 +10,6 @@
     <?php require_once '../includes/user/head.php'; ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script defer src="/js/user/challenge_submission.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
 
 </head>
 
@@ -140,6 +139,26 @@
 
                             <form id="githubSubmissionForm" class="space-y-6">
 
+
+                                <!-- Contenu GitHub -->
+                                <div id="nameContent" class="space-y-4">
+                                    <div>
+                                        <label class="flex items-center text-sm font-medium mb-2">
+                                            <i data-lucide="file-text" class="w-4 h-4 mr-2 text-blue-400"></i>
+                                            Nom de votre solution <span class="text-red-400">*</span>
+                                        </label>
+                                        <div class="rounded-lg">
+                                            <input type="text" id="name" name="name" placeholder="Nom de votre solution" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400">
+                                        </div>
+                                        <div class="error-message hidden text-red-500 text-sm mt-1"></div>
+                                        <p class="text-xs text-gray-400 flex items-start">
+                                            <i data-lucide="info" class="w-3.5 h-3.5 mr-1.5 text-blue-400 mt-0.5 flex-shrink-0"></i>
+                                            Nom de votre solution.
+                                        </p>
+                                    </div>
+                                </div>
+
+
                                 <!-- Contenu GitHub -->
                                 <div id="githubContent" class="space-y-4">
                                     <div>
@@ -147,7 +166,10 @@
                                             <i data-lucide="github" class="w-4 h-4 mr-2 text-blue-400"></i>
                                             URL du dépôt GitHub <span class="text-red-400">*</span>
                                         </label>
-                                        <input type="url" id="githubUrl" placeholder="https://github.com/username/repo" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400">
+                                        <div class="rounded-lg">
+                                            <input type="url" id="githubUrl" name="repository_url" placeholder="https://github.com/username/repo" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400">
+                                        </div>
+                                        <div class="error-message hidden text-red-500 text-sm mt-1"></div>
                                         <p class="text-xs text-gray-400 flex items-start">
                                             <i data-lucide="info" class="w-3.5 h-3.5 mr-1.5 text-blue-400 mt-0.5 flex-shrink-0"></i>
                                             Lien vers le dépôt GitHub contenant votre code source.
@@ -161,7 +183,10 @@
                                         <i data-lucide="link" class="w-4 h-4 mr-2 text-blue-400"></i>
                                         URL de démonstration
                                     </label>
-                                    <input type="url" id="githubDemoUrl" placeholder="https://votre-demo.vercel.app" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400">
+                                    <div class="rounded-lg">
+                                        <input type="url" id="githubDemoUrl" name="demo_url" placeholder="https://votre-demo.vercel.app" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400">
+                                    </div>
+                                    <div class="error-message hidden text-red-500 text-sm mt-1"></div>
                                     <p class="text-xs text-gray-400 flex items-start">
                                         <i data-lucide="info" class="w-3.5 h-3.5 mr-1.5 text-blue-400 mt-0.5 flex-shrink-0"></i>
                                         Lien vers une démonstration en ligne de votre solution, si disponible.
@@ -174,7 +199,10 @@
                                         <i data-lucide="file-text" class="w-4 h-4 mr-2 text-blue-400"></i>
                                         Description de votre solution <span class="text-red-400">*</span>
                                     </label>
-                                    <textarea id="githubDescription" rows="4" placeholder="Décrivez comment vous avez abordé et implémenté votre solution..." class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 resize-vertical"></textarea>
+                                    <div class="rounded-lg">
+                                        <textarea id="githubDescription" name="description" rows="4" placeholder="Décrivez comment vous avez abordé et implémenté votre solution..." class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 resize-vertical"></textarea>
+                                    </div>
+                                    <div class="error-message hidden text-red-500 text-sm mt-1"></div>
                                     <p class="text-xs text-gray-400 flex items-start">
                                         <i data-lucide="info" class="w-3.5 h-3.5 mr-1.5 text-blue-400 mt-0.5 flex-shrink-0"></i>
                                         Décrivez comment vous avez abordé et implémenté votre solution.
@@ -187,7 +215,10 @@
                                         <i data-lucide="file-text" class="w-4 h-4 mr-2 text-blue-400"></i>
                                         Notes additionnelles
                                     </label>
-                                    <textarea id="githubNotes" rows="3" placeholder="Instructions pour exécuter le projet, identifiants de test, défis rencontrés, etc." class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 resize-vertical"></textarea>
+                                    <div class="rounded-lg">
+                                        <textarea id="githubNotes" name="notes" rows="3" placeholder="Instructions pour exécuter le projet, identifiants de test, défis rencontrés, etc." class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 resize-vertical"></textarea>
+                                    </div>
+                                    <div class="error-message hidden text-red-500 text-sm mt-1"></div>
                                     <p class="text-xs text-gray-400 flex items-start">
                                         <i data-lucide="info" class="w-3.5 h-3.5 mr-1.5 text-blue-400 mt-0.5 flex-shrink-0"></i>
                                         Instructions pour exécuter le projet, identifiants de test, défis rencontrés, etc.
@@ -254,6 +285,25 @@
                             <!-- zip submissionForm -->
                             <form id="zipSubmissionForm" class="hidden space-y-6 zip" enctype="multipart/form-data">
 
+                                                            
+                                <!-- Contenu Zip -->
+                                <div id="zipNameContent" class="space-y-4">
+                                    <div>
+                                        <label for="zipName" class="flex items-center text-sm font-medium mb-2">
+                                            <i data-lucide="file-text" class="w-4 h-4 mr-2 text-blue-400"></i>
+                                            Nom de votre solution <span class="text-red-400">*</span>
+                                        </label>
+                                        <div class="rounded-lg">
+                                            <input type="text" id="zipName" name="name" placeholder="Nom de votre solution" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400">
+                                        </div>
+                                        <div class="error-message hidden text-red-500 text-sm mt-1"></div>
+                                        <p class="text-xs text-gray-400 flex items-start">
+                                            <i data-lucide="info" class="w-3.5 h-3.5 mr-1.5 text-blue-400 mt-0.5 flex-shrink-0"></i>
+                                            Nom de votre solution.
+                                        </p>
+                                    </div>
+                                </div>
+
                                 <!-- Contenu ZIP -->
                                 <div id="zipContent" class="space-y-4">
                                     <div>
@@ -263,7 +313,7 @@
                                         </label>
                                         <div id="zipDropZone" class="mt-1 border-2 border-dashed border-gray-700/50 rounded-xl p-6 text-center bg-gray-800/30 hover:border-blue-500/50 transition-all duration-300 group/drag">
                                             <div id="dropZone" class="flex flex-col items-center justify-center space-y-3">
-                                                <input type="file" id="zipFile" accept=".zip" class="hidden">
+                                                <input type="file" id="zipFile" name="zip_file" accept=".zip" class="hidden">
                                                 <div class="p-3 mb-2 rounded-xl bg-blue-900/20 group-hover/drag:bg-blue-900/30 transition-colors">
                                                     <i data-lucide="upload-cloud" class="w-8 h-8 text-blue-400 group-hover/drag:scale-110 transition-transform"></i>
                                                 </div>
@@ -275,6 +325,7 @@
                                                 </button>
                                             </div>
                                         </div>
+                                        <div class="error-message hidden text-red-500 text-sm mt-1"></div>
                                         <p class="mt-2 text-xs text-gray-400 flex items-start">
                                             <i data-lucide="info" class="w-3.5 h-3.5 mr-1.5 text-blue-400 mt-0.5 flex-shrink-0"></i>
                                             Fichier ZIP contenant votre code source (max 50MB). Incluez un README avec les instructions d'installation et d'exécution.
@@ -288,7 +339,10 @@
                                         <i data-lucide="link" class="w-4 h-4 mr-2 text-blue-400"></i>
                                         URL de démonstration
                                     </label>
-                                    <input type="url" id="zipDemoUrl" placeholder="https://votre-demo.vercel.app" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400">
+                                    <div class="rounded-lg">
+                                        <input type="url" id="zipDemoUrl" name="demo_url" placeholder="https://votre-demo.vercel.app" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400">
+                                    </div>
+                                    <div class="error-message hidden text-red-500 text-sm mt-1"></div>
                                     <p class="text-xs text-gray-400 mt-1 flex items-start">
                                         <i data-lucide="info" class="w-3.5 h-3.5 mr-1.5 text-blue-400 mt-0.5 flex-shrink-0"></i>
                                         Lien vers une démonstration en ligne de votre solution, si disponible.
@@ -301,7 +355,10 @@
                                         <i data-lucide="file-text" class="w-4 h-4 mr-2 text-blue-400"></i>
                                         Description de votre solution <span class="text-red-400">*</span>
                                     </label>
-                                    <textarea id="zipDescription" rows="4" placeholder="Décrivez comment vous avez abordé et implémenté votre solution..." class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 resize-vertical"></textarea>
+                                    <div class="rounded-lg">
+                                        <textarea id="zipDescription" name="description" rows="4" placeholder="Décrivez comment vous avez abordé et implémenté votre solution..." class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 resize-vertical"></textarea>
+                                    </div>
+                                    <div class="error-message hidden text-red-500 text-sm mt-1"></div>
                                     <p class="text-xs text-gray-400 mt-1 flex items-start">
                                         <i data-lucide="info" class="w-3.5 h-3.5 mr-1.5 text-blue-400 mt-0.5 flex-shrink-0"></i>
                                         Décrivez comment vous avez abordé et implémenté votre solution.
@@ -314,7 +371,10 @@
                                         <i data-lucide="file-text" class="w-4 h-4 mr-2 text-blue-400"></i>
                                         Notes additionnelles
                                     </label>
-                                    <textarea id="zipNotes" rows="3" placeholder="Instructions pour exécuter le projet, identifiants de test, défis rencontrés, etc." class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 resize-vertical"></textarea>
+                                    <div class="rounded-lg">
+                                        <textarea id="zipNotes" name="notes" rows="3" placeholder="Instructions pour exécuter le projet, identifiants de test, défis rencontrés, etc." class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400 resize-vertical"></textarea>
+                                    </div>
+                                    <div class="error-message hidden text-red-500 text-sm mt-1"></div>
                                     <p class="text-xs text-gray-400 mt-1 flex items-start">
                                         <i data-lucide="info" class="w-3.5 h-3.5 mr-1.5 text-blue-400 mt-0.5 flex-shrink-0"></i>
                                         Instructions pour exécuter le projet, identifiants de test, défis rencontrés, etc.

@@ -8,6 +8,8 @@ use Auth\Model\Hackathon;
 use Auth\Model\TokenManager;
 use Auth\Controller\Controller;
 use PDO;
+use Auth\Controller\NotificationController;
+use Auth\Model\Phase;
 
 if (!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
@@ -24,6 +26,13 @@ if (!class_exists('Hackathon')) {
 if (!class_exists('Controller')) {
     require_once __DIR__ . '/Controller.php';
 }
+if (!class_exists('Phase')) {
+    require_once __DIR__ . '/../models/Phase.php';
+}
+if (!class_exists('NotificationController')) {
+    require_once __DIR__ . '/NotificationController.php';
+}
+
 
 class ChallengeController extends Controller
 {
@@ -31,6 +40,8 @@ class ChallengeController extends Controller
     private $hackathon;
     private $db;
     protected $tokenManager;
+    protected $notification;
+    protected $phase;
 
     public function __construct($db, $tokenManager)
     {
@@ -39,6 +50,8 @@ class ChallengeController extends Controller
         $this->challenge = new Challenge($db);
         $this->hackathon = new Hackathon($db);
         $this->tokenManager = $tokenManager;
+        $this->notification = new NotificationController($db, $tokenManager);
+        $this->phase = new Phase($db);
     }
 
     public function index($hackathonId)
@@ -103,6 +116,7 @@ class ChallengeController extends Controller
             if ($phase_id !== null && !$this->challenge->isPhaseActive($input['hackathon_id'], $phase_id)) {
                 throw new Exception("Cette phase n'est pas active actuellement !");
             }
+            
 
             // Vérifier si la période du hackathon est active
             if (!$this->challenge->isChallengeLaunchPeriod($input['hackathon_id'])) {

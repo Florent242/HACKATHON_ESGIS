@@ -11,6 +11,7 @@ const DIFFICULTY_LABELS = { 'easy': 'Facile', 'medium': 'Moyen', 'hard': 'Diffic
 
 const hackathonId = document.querySelector('meta[name="hackathon-id"]').content;
 const phaseId = document.querySelector('meta[name="phase-id"]').content;
+const nextPhaseId = parseInt(phaseId) + 1;
 /**
  * Initialisation de l'application
  */
@@ -42,10 +43,100 @@ async function initializeApp() {
         return;
     }
 
+    // Vérifier si l'utilisateur est qualifie pour une phase
+    const phaseCheck = await checkPhaseQualification(hackathonId, nextPhaseId);
+    if (phaseCheck.success && phaseCheck.action && phaseCheck.action.includes('/')) {
+        // Créer une notification de redirection
+        const notification = document.createElement('div');
+        notification.className = 'fixed bottom-4 right-4 bg-blue-600/90 text-white p-4 rounded-lg shadow-lg z-50 max-w-md';
+        notification.innerHTML = `
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="ml-3 flex-1">
+                    <p class="text-sm font-medium">Vous êtes qualifié pour la phase suivante !</p>
+                    <p class="mt-1 text-sm opacity-90">Voulez-vous y accéder maintenant ?</p>
+                    <div class="mt-2 flex space-x-3">
+                        <a href="${phaseCheck.action}" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Aller à la phase suivante
+                        </a>
+                        <button type="button" class="text-white hover:opacity-80 text-xs font-medium" onclick="this.closest('.fixed').remove()">
+                            Continuer ici
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="ml-4 flex-shrink-0 text-white hover:text-gray-200 focus:outline-none" onclick="this.closest('.fixed').remove()">
+                    <span class="sr-only">Fermer</span>
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        // Ajouter la notification au DOM
+        document.body.appendChild(notification);
+        
+        // Ajouter un bouton flottant si l'utilisateur ferme la notification
+        const floatingButton = document.createElement('a');
+        floatingButton.href = phaseCheck.action;
+        floatingButton.className = 'fixed bottom-4 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg z-40 hover:bg-blue-700 transition-colors duration-200';
+        floatingButton.title = 'Aller à la phase suivante';
+        floatingButton.innerHTML = `
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        `;
+        
+        // Ajouter le bouton flottant après 5 secondes s'il n'est pas déjà là
+        setTimeout(() => {
+            if (!document.querySelector('.fixed[href="' + phaseCheck.action + '"]')) {
+                document.body.appendChild(floatingButton);
+            }
+        }, 5000);
+    }
+    
     // Charger les challenges
     await loadChallenges(hackathonId);
 }
 
+/**
+ * Vérifie si l'utilisateur est qualifie pour une phase
+ */
+async function checkPhaseQualification(hackathonId, phaseId) {
+    try {
+        const response = await apiRequest(`/check-qualification`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({
+                hackathon_id: hackathonId,
+                phase_id: phaseId,
+                csrf_token: getCsrfToken()
+            })
+        });
+
+        return {
+            success: response.success,
+            message: response.message || (response.success ? 'Accès autorisé' : 'Accès refusé'),
+            status: response.status,
+            action: response.action || null
+        };
+    } catch (error) {
+        console.error('Erreur lors de la vérification d\'accès:', error);
+        return {
+            success: false,
+            message: 'Erreur lors de la vérification d\'accès au hackathon',
+            status: 'error',
+            action: null
+        };
+    }
+}
 /**
  * Configure tous les event listeners
  */
@@ -158,14 +249,17 @@ async function loadChallenges(hackathonId) {
 
         if (!response.success) {
             if (
+                response.error === "phase_inactive" ||
+                response.error.includes("phase") ||
                 response.status === "phase_inactive" ||
                 response.status >= 400 ||
                 response.message?.includes("période de l'événement") ||
+                response.error?.includes("période de l'événement") ||
                 response.message?.includes("phase")
             ) {
-                showPhaseInactiveState(response.message || "Les challenges ne sont pas disponibles pour le moment.");
+                showPhaseInactiveState(response.message || response.error || "Les challenges ne sont pas disponibles pour le moment.");
             } else {
-                handleError("Erreur lors de la récupération des challenges", response.message);
+                handleError("Erreur lors de la récupération des challenges", response.message || response.error);
             }
             return;
         }
@@ -784,72 +878,6 @@ function handleResize() {
 
 // Ajouter le listener de redimensionnement
 window.addEventListener('resize', debounce(handleResize, 250));
-
-/**
- * Initialise les tooltips (si nécessaire)
- */
-function initializeTooltips() {
-    const tooltipElements = document.querySelectorAll('[data-tooltip]');
-    
-    tooltipElements.forEach(element => {
-        element.addEventListener('mouseenter', showTooltip);
-        element.addEventListener('mouseleave', hideTooltip);
-    });
-}
-
-function showTooltip(event) {
-    const element = event.target;
-    const text = element.getAttribute('data-tooltip');
-    if (!text) return;
-
-    const tooltip = document.createElement('div');
-    tooltip.className = 'tooltip';
-    tooltip.textContent = text;
-    tooltip.style.cssText = `
-        position: absolute;
-        background: var(--surface);
-        color: var(--text);
-        padding: 0.5rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.875rem;
-        border: 1px solid var(--border);
-        box-shadow: var(--shadow-md);
-        z-index: 1000;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-        pointer-events: none;
-        white-space: nowrap;
-    `;
-
-    document.body.appendChild(tooltip);
-
-    // Positionner le tooltip
-    const rect = element.getBoundingClientRect();
-    const tooltipRect = tooltip.getBoundingClientRect();
-    
-    tooltip.style.left = `${rect.left + (rect.width - tooltipRect.width) / 2}px`;
-    tooltip.style.top = `${rect.top - tooltipRect.height - 8}px`;
-    
-    // Animation d'apparition
-    requestAnimationFrame(() => {
-        tooltip.style.opacity = '1';
-    });
-
-    element._tooltip = tooltip;
-}
-
-function hideTooltip(event) {
-    const element = event.target;
-    if (element._tooltip) {
-        element._tooltip.style.opacity = '0';
-        setTimeout(() => {
-            if (element._tooltip && element._tooltip.parentNode) {
-                element._tooltip.parentNode.removeChild(element._tooltip);
-            }
-            delete element._tooltip;
-        }, 200);
-    }
-}
 
 /**
  * Gère l'état de focus pour l'accessibilité

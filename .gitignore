@@ -20,3 +20,6 @@ build/
 # Ignorer les fichiers de dépendances de système d'exploitation
 .DS_Store
 Thumbs.db
+
+# Ignorer le repertoir storage
+storage

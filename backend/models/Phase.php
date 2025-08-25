@@ -14,6 +14,12 @@ class Phase {
         $this->db = $db;
     }
 
+    /**
+     * Récupère la phase active pour un utilisateur
+     * @param mixed $hackathonId
+     * @param mixed $userId
+     * @throws \Exception
+     */
     public function getActiveForUser($hackathonId, $userId) {
 
         try {
@@ -46,11 +52,16 @@ class Phase {
         } catch (Exception $e) {
             throw new Exception("Erreur lors de la récupération de la phase active !"
             // pour debug
-            . $e->getMessage()
+            // . $e->getMessage()
             );
         }
     }
 
+    /**
+     * Récupère toutes les phases d'un hackathon
+     * @param mixed $hackathonId
+     * @throws \Exception
+     */
     public function getAllForHackathon($hackathonId) {
         try {
             $sql = "SELECT * FROM {$this->table} WHERE hackathon_id = :hid";
@@ -60,11 +71,16 @@ class Phase {
         } catch (Exception $e) {
             throw new Exception("Erreur lors de la récupération de toutes les phases !"
             // pour debug
-            . $e->getMessage()
+            // . $e->getMessage()
             );
         }
     }
 
+    /**
+     * Récupère une phase par son id
+     * @param mixed $id
+     * @throws \Exception
+     */
     public function get($id) {
         try {
             $sql = "SELECT * FROM {$this->table} WHERE id = :id";
@@ -74,7 +90,51 @@ class Phase {
         } catch (Exception $e) {
             throw new Exception("Erreur lors de la récupération de la phase !"
             // pour debug
-            . $e->getMessage()
+            // . $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * Vérifie si un utilisateur est qualifié pour une phase spécifique
+     * @param int $userId ID de l'utilisateur
+     * @param int $phaseId ID de la phase
+     * @param int $hackathonId ID du hackathon
+     * @return bool True si l'utilisateur est qualifié, false sinon
+     * @throws \Exception En cas d'erreur lors de la vérification
+     */
+    public function checkQualification($userId, $phaseId, $hackathonId)
+    {
+        try {
+            // Récupérer les informations de la phase
+            $phase = $this->get($phaseId);
+            if (!$phase) {
+                throw new Exception("Phase non trouvée");
+            }
+
+            // Si la phase est ouverte, tout le monde est qualifié
+            if ($phase['phase_type'] === 'open') {
+                return true;
+            }
+
+            // Pour les phases qualifiantes, vérifier la qualification dans la table hackathon_qualifications
+            $sql = "SELECT COUNT(*) FROM hackathon_qualifications 
+                   WHERE user_id = :user_id 
+                   AND phase_id = :phase_id
+                   AND hackathon_id = :hackathon_id";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                'user_id' => $userId,
+                'phase_id' => $phaseId,
+                'hackathon_id' => $hackathonId
+            ]);
+
+            return (bool) $stmt->fetchColumn();
+        } catch (Exception $e) {
+            throw new Exception("Erreur lors de la vérification de la qualification : " 
+            // pour debug
+            // . $e->getMessage()
             );
         }
     }

@@ -16,6 +16,30 @@ if (!class_exists('Project')) {
 if (!class_exists('Controller')) {
     require_once __DIR__ . '/Controller.php';
 }
+if (!class_exists('Team')) {
+    require_once __DIR__ . '/../models/Team.php';
+}
+if (!class_exists('Challenge')) {
+    require_once __DIR__ . '/../models/Challenge.php';
+}
+if (!class_exists('Hackathon')) {
+    require_once __DIR__ . '/../models/Hackathon.php';
+}
+if (!class_exists('ProjectValidationService')) {
+    require_once __DIR__ . '/../services/ProjectValidationService.php';
+}
+if (!class_exists('AdminController')) {
+    require_once __DIR__ . '/AdminController.php';
+}
+if (!class_exists('TokenManager')) {
+    require_once __DIR__ . '/../models/TokenManager.php';
+}
+if (!class_exists('ValidationException')) {
+    require_once __DIR__ . '/../services/exceptions/ValidationException.php';
+}
+if (!class_exists('NotificationController')) {
+    require_once __DIR__ . '/NotificationController.php';
+}
 
 use Exception;
 use PDO;
@@ -27,6 +51,7 @@ use Auth\Service\ProjectValidationService;
 use Auth\Service\Exception\ValidationException;
 use Auth\Controller\AdminController;
 use Auth\Model\TokenManager;
+use Auth\Controller\NotificationController;
 
 class ProjectController extends Controller
 {
@@ -38,6 +63,7 @@ class ProjectController extends Controller
     protected $tokenManager;
     protected $db;
     protected $admin;
+    protected $notification;
 
     public function __construct($db, $tokenManager)
     {
@@ -50,6 +76,7 @@ class ProjectController extends Controller
         $this->tokenManager = new TokenManager($db);
         $this->db = $db;
         $this->admin = new AdminController($db, $tokenManager);
+        $this->notification = new NotificationController($db, $tokenManager);
     }
 
     /**
@@ -82,9 +109,13 @@ class ProjectController extends Controller
                 throw new Exception('Challenge non trouvé ou inactif', 404);
             }
 
+            // Passer les criteres d'evaluation
+            $data['evaluation_criteria'] = $challenge['evaluation_criteria'];
+
             // Vérifier si l'utilisateur fait partie d'une équipe pour ce hackathon
             $team = $this->team->getByUser($userId);
-            $isRegistredToHackathon = $this->team->getByHackathon($team['hackathon_id']);
+            $team = $team[0];
+            $isRegistredToHackathon = $this->team->getByHackathon($team['id']);
             if (!$team || !$isRegistredToHackathon) {
                 throw new Exception('Vous devez faire partie d\'une équipe pour ce hackathon', 403);
             }
@@ -96,14 +127,21 @@ class ProjectController extends Controller
 
             // Valider le fichier uploadé s'il y en a un
             $fileData = null;
-            if (isset($_FILES['project_file'])) {
-                $fileData = $this->handleFileUpload($_FILES['project_file']);
+            $hasFileUpload = isset($_FILES['zip_file']) && $_FILES['zip_file']['error'] !== UPLOAD_ERR_NO_FILE;
+            $hasRepositoryUrl = !empty($data['repository_url']);
+            
+            // Vérifier qu'au moins un des deux est fourni
+            if (!$hasFileUpload && !$hasRepositoryUrl) {
+                throw new ValidationException('Vous devez fournir soit un fichier ZIP, soit une URL de dépôt GitHub');
+            }
 
-                // Valider le fichier avec le service de validation
-                $this->validationService->validateUploadedFile($_FILES['project_file']);
-
+            // Traitement du fichier ZIP s'il est fourni
+            if ($hasFileUpload) {
+                // Valider le fichier avec le service de validation AVANT de le déplacer
+                $this->validationService->validateUploadedFile($_FILES['zip_file']);
+                
                 // Extraire et valider la structure du projet
-                $extractPath = $this->extractProject($_FILES['project_file']['tmp_name']);
+                $extractPath = $this->extractProject($_FILES['zip_file']['tmp_name']);
                 $structureErrors = $this->validationService->validateProjectStructure($extractPath);
 
                 // Nettoyer le dossier temporaire
@@ -112,15 +150,18 @@ class ProjectController extends Controller
                 if (!empty($structureErrors)) {
                     throw new ValidationException('La structure du projet n\'est pas valide', $structureErrors);
                 }
-            } elseif (empty($data['repository_url'])) {
-                throw new ValidationException('Vous devez fournir soit un fichier ZIP, soit une URL de dépôt GitHub');
+
+                // Maintenant que tout est validé, on peut déplacer le fichier
+                $fileData = $this->handleFileUpload($_FILES['zip_file']);
             }
 
             // Valider les métadonnées
             $metadata = [
                 'name' => $data['name'],
                 'description' => $data['description'],
-                'repository_url' => $data['repository_url'] ?? null
+                'repository_url' => $data['repository_url'] ?? null,
+                'demo_url' => $data['demo_url'] ?? null,
+                'documentation_url' => $data['documentation_url'] ?? null
             ];
 
             $validationErrors = $this->validationService->validateMetadata($metadata);
@@ -136,7 +177,11 @@ class ProjectController extends Controller
                 'name' => $data['name'],
                 'description' => $data['description'],
                 'repository_url' => $data['repository_url'] ?? null,
-                'status' => 'pending',
+                'demo_url' => $data['demo_url'] ?? null,
+                'documentation_url' => $data['documentation_url'] ?? null,
+                'additional_notes' => $data['additional_notes'] ?? null,
+                'evaluation_criteria' => $data['evaluation_criteria'] ?? null,
+                'status' => 'ongoing',
                 'created_by' => $userId,
                 'rule_compliance' => empty($structureErrors)
             ];
@@ -159,6 +204,20 @@ class ProjectController extends Controller
                     'project_id' => $projectId,
                     'team_id' => $team['id'],
                     'challenge_id' => $data['challenge_id']
+                ]
+            );
+
+            // Créer une notification de soumission
+            $this->notification->create(
+                [
+                    'scope' => 'team',
+                    'user_id' => $userId,
+                    'title' => 'Soumission de projet',
+                    'message' => 'Projet soumis par votre équipe',
+                    'project_id' => $projectId,
+                    'team_id' => $team['id'],
+                    'challenge_id' => $data['challenge_id'],
+                    'type' => 'success'
                 ]
             );
 
@@ -190,7 +249,7 @@ class ProjectController extends Controller
      */
     private function handleFileUpload(array $file): array
     {
-        $uploadDir = __DIR__ . '/../../storage/project_submissions/' . date('Y/m/d');
+        $uploadDir = __DIR__ . '/../../storage/project_submissions/' . date('Y-m-d');
 
         // Créer le répertoire s'il n'existe pas
         if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
@@ -439,5 +498,122 @@ class ProjectController extends Controller
                 'error' => $e->getMessage()
             ], $e->getCode() ?: 500);
         }
+    }
+
+    /**
+     * Télécharge le fichier d'un projet
+     * 
+     * @param int $id ID du projet
+     * @throws Exception Si le projet ou le fichier n'existe pas
+     */
+    public function download($id)
+    {
+        try {
+            $this->validateMethod('GET');
+            
+            // Récupérer les détails du projet
+            $project = $this->project->find($id);
+            if (!$project) {
+                throw new Exception('Projet non trouvé', 404);
+            }
+
+            // Vérifier si un fichier est associé
+            if (empty($project['file_path']) || !file_exists($project['file_path'])) {
+                throw new Exception('Aucun fichier trouvé pour ce projet', 404);
+            }
+
+            // Vérifier que l'utilisateur a le droit de télécharger le fichier
+            $userId = $this->tokenManager->getCurrentUserId();
+            if (!$this->hasProjectAccess($userId, $id) && !$this->admin->isAdmin($userId)) {
+                throw new Exception('Accès non autorisé', 403);
+            }
+
+            // Envoyer le fichier
+            header('Content-Description: File Transfer');
+            header('Content-Type: application/octet-stream');
+            header('Content-Disposition: attachment; filename="'.basename($project['file_name']).'"');
+            header('Expires: 0');
+            header('Cache-Control: must-revalidate');
+            header('Pragma: public');
+            header('Content-Length: ' . filesize($project['file_path']));
+            readfile($project['file_path']);
+            exit;
+
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Récupère tous les projets avec filtres
+     * 
+     * @param array $filters Filtres de recherche
+     * @return void
+     */
+    public function getAll($filters = [])
+    {
+        try {
+            $this->validateMethod('GET');
+            
+            // Valider et nettoyer les filtres
+            $validFilters = [];
+            
+            if (isset($filters['hackathon_id'])) {
+                $validFilters['hackathon_id'] = (int)$filters['hackathon_id'];
+            }
+            
+            if (isset($filters['team_id'])) {
+                $validFilters['team_id'] = (int)$filters['team_id'];
+            }
+            
+            if (isset($filters['challenge_id'])) {
+                $validFilters['challenge_id'] = (int)$filters['challenge_id'];
+            }
+            
+            if (isset($filters['status'])) {
+                $validFilters['status'] = filter_var($filters['status'], FILTER_SANITIZE_STRING);
+            }
+
+            // Si l'utilisateur n'est pas admin, on filtre par ses projets
+            $userId = $this->tokenManager->getCurrentUserId();
+            if (!$this->admin->isAdmin($userId)) {
+                $validFilters['user_id'] = $userId;
+            }
+
+            // Récupérer les projets
+            $projects = $this->project->getAll($validFilters);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $projects
+            ]);
+
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Vérifie si un utilisateur a accès à un projet
+     * 
+     * @param int $userId ID de l'utilisateur
+     * @param int $projectId ID du projet
+     * @return bool
+     */
+    private function hasProjectAccess($userId, $projectId)
+    {
+        // Vérifier si l'utilisateur est membre de l'équipe du projet
+        $project = $this->project->find($projectId);
+        if (!$project || !isset($project['team_id'])) {
+            return false;
+        }
+
+        return $this->team->isMember($project['team_id'], $userId);
     }
 }

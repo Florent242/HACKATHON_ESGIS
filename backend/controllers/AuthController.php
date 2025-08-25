@@ -83,8 +83,8 @@ class AuthController
         if (isset($_COOKIE['long_term_token'])) {
             return $_COOKIE['long_term_token'];
         }
-        if (isset($_COOKIE['jwt_token'])) {
-            return $_COOKIE['jwt_token'];
+        if (isset($_COOKIE['auth_token'])) {
+            return $_COOKIE['auth_token'];
         }
         return null;
     }
@@ -210,7 +210,7 @@ class AuthController
             return;
         }
         // Cookie court terme (1 heure)
-        setcookie("jwt_token", $token, [
+        setcookie("auth_token", $token, [
             "expires" => time() + 60 * 60,
             "path" => "/",
             "httponly" => true,
@@ -379,13 +379,13 @@ class AuthController
             if (isset($_COOKIE['long_term_token'])) {
                 $this->tokenManager->revokeToken($_COOKIE['long_term_token']);
             }
-            if (isset($_COOKIE['jwt_token'])) {
-                $this->tokenManager->revokeToken($_COOKIE['jwt_token'], true);
+            if (isset($_COOKIE['auth_token'])) {
+                $this->tokenManager->revokeToken($_COOKIE['auth_token'], true);
             }
             $userId = isset($_SESSION['user']) && isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 
             // Suppression des cookies
-            setcookie("jwt_token", "", time() - 3600, "/");
+            setcookie("auth_token", "", time() - 3600, "/");
             setcookie("long_term_token", "", time() - 3600, "/");
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();

@@ -171,7 +171,6 @@ select {
     width: 100%;
     transition: var(--transition);
     font-size: 0.95rem;
-    margin-bottom: 1rem;
 }
 
 input[type="text"]:focus,
@@ -187,6 +186,8 @@ select:focus {
 textarea {
     min-height: 120px;
     resize: vertical;
+    margin: 0;
+    height: 100%;
 }
 
 /* Zone de dépôt de fichiers */

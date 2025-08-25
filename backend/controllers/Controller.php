@@ -86,8 +86,8 @@ class Controller
             return $_COOKIE['long_term_token'];
         }
 
-        if (isset($_COOKIE['jwt_token'])) {
-            return $_COOKIE['jwt_token'];
+        if (isset($_COOKIE['auth_token'])) {
+            return $_COOKIE['auth_token'];
         }
         if (!empty($headers) && preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
             return $matches[1];
@@ -182,7 +182,7 @@ class Controller
     {
         foreach ($fields as $field) {
             if (empty($data[$field])) {
-                throw new Exception("Le champ '$field' est requis" . print_r($data, true));
+                throw new Exception("Le champ '$field' est requis");
             }
         }
     }

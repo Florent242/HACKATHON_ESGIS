@@ -335,7 +335,11 @@ class Team
             $stmt->bindParam(':hackathon_id', $hackathonId, PDO::PARAM_INT);
             $stmt->execute();
 
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if (empty($teams)) {
+                throw new Exception('Aucune équipe trouvée pour ce hackathon');
+            }
+            return $teams;
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des équipes par hackathon: ' . $e->getMessage());
             throw new Exception(
@@ -359,7 +363,11 @@ class Team
             $stmt->bindParam(':hackathon_id', $hackathonId, PDO::PARAM_INT);
             $stmt->execute();
 
-            return $stmt->fetchColumn();
+            $count = $stmt->fetchColumn();
+            if ($count === false) {
+                throw new Exception('Aucun hackathon trouvé');
+            }
+            return $count;
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des équipes par hackathon: ' . $e->getMessage());
             throw new Exception(
@@ -386,7 +394,11 @@ class Team
             $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
             $stmt->execute();
 
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if (empty($teams)) {
+                throw new Exception('Aucune équipe trouvée pour cet utilisateur');
+            }
+            return $teams;
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des équipes par utilisateur: ' . $e->getMessage());
             throw new Exception(

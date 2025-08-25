@@ -30,12 +30,15 @@ class Project
                 'challenge_id' => $data['challenge_id'] ?? null,
                 'name' => $data['name'],
                 'description' => $data['description'],
+                'evaluation_criteria' => $data['evaluation_criteria'] ? json_encode($data['evaluation_criteria']) : null,
+                'demo_url' => $data['demo_url'] ?? null,
+                'documentation_url' => $data['documentation_url'] ?? null,
                 'repository_url' => $data['repository_url'] ?? null,
-                'file_path' => $data['file_path'] ?? null,
+                'zip_path' => $data['file_path'] ?? null,
                 'file_name' => $data['file_name'] ?? null,
-                'status' => $data['status'] ?? 'pending',
+                'additional_notes' => $data['additional_notes'] ?? null,
+                'status' => $data['status'] ?? 'ongoing',
                 'rule_compliance' => $data['rule_compliance'] ?? true,
-                'phase_id' => $data['phase_id'] ?? null,
                 'created_at' => date('Y-m-d H:i:s')
             ];
 
@@ -70,7 +73,7 @@ class Project
 
             // Champs autorisés à être mis à jour
             $allowedFields = [
-                'name', 'description', 'repository_url', 'file_path', 
+                'name', 'description', 'repository_url', 'file_path', 'demo_url', 
                 'file_name', 'status', 'rule_compliance', 'score', 'updated_at'
             ];
             
@@ -285,5 +288,85 @@ class Project
         ]);
         
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Récupère les projets avec filtres optionnels
+     * 
+     * @param array $filters Tableau associatif des filtres (hackathon_id, team_id, challenge_id, status, user_id)
+     * @return array Liste des projets correspondant aux critères
+     */
+    public function getAll(array $filters = []): array
+    {
+        try {
+            $sql = "SELECT p.*, 
+                           t.name as team_name, 
+                           h.name as hackathon_name, 
+                           c.title as challenge_title,
+                           u.username as created_by_username
+                    FROM {$this->table} p
+                    LEFT JOIN teams t ON p.team_id = t.id
+                    LEFT JOIN hackathons h ON p.hackathon_id = h.id
+                    LEFT JOIN challenges c ON p.challenge_id = c.id
+                    LEFT JOIN users u ON p.created_by = u.id
+                    WHERE 1=1";
+            
+            $params = [];
+            
+            // Filtre par hackathon
+            if (!empty($filters['hackathon_id'])) {
+                $sql .= " AND p.hackathon_id = :hackathon_id";
+                $params[':hackathon_id'] = (int)$filters['hackathon_id'];
+            }
+            
+            // Filtre par équipe
+            if (!empty($filters['team_id'])) {
+                $sql .= " AND p.team_id = :team_id";
+                $params[':team_id'] = (int)$filters['team_id'];
+            }
+            
+            // Filtre par défi
+            if (!empty($filters['challenge_id'])) {
+                $sql .= " AND p.challenge_id = :challenge_id";
+                $params[':challenge_id'] = (int)$filters['challenge_id'];
+            }
+            
+            // Filtre par statut
+            if (!empty($filters['status'])) {
+                $sql .= " AND p.status = :status";
+                $params[':status'] = $filters['status'];
+            }
+            
+            // Filtre par utilisateur (membre de l'équipe)
+            if (!empty($filters['user_id'])) {
+                $sql .= " AND EXISTS (
+                    SELECT 1 FROM team_members tm 
+                    WHERE tm.team_id = p.team_id 
+                    AND tm.user_id = :user_id
+                )";
+                $params[':user_id'] = (int)$filters['user_id'];
+            }
+            
+            // Tri par date de création décroissante par défaut
+            $sql .= " ORDER BY p.created_at DESC";
+            
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute($params);
+            
+            $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Décoder les champs JSON
+            foreach ($projects as &$project) {
+                if (!empty($project['evaluation_criteria'])) {
+                    $project['evaluation_criteria'] = json_decode($project['evaluation_criteria'], true);
+                }
+            }
+            
+            return $projects;
+            
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la récupération des projets: ' . $e->getMessage());
+            throw new Exception("Une erreur est survenue lors de la récupération des projets");
+        }
     }
 }

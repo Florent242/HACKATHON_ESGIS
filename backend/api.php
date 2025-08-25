@@ -215,14 +215,21 @@ try {
             break;
         case 'check-qualification':
             $controller = new HackathonController($db, $tokenManager);
+            
             if ($method !== 'POST') {
                 throw new Exception('Méthode non autorisée', 405);
             }
-            jsonResponse([
-                'success' => false,
-                'message' => 'Qualification vérifiée'
-            ], 200);
-            // $controller->checkQualification($id);
+            
+            // Vérifier que les paramètres nécessaires sont présents
+            if (!isset($input['hackathon_id']) || !isset($input['phase_id'])) {
+                jsonResponse([
+                    'success' => false,
+                    'error' => 'Les paramètres hackathon_id et phase_id sont requis'
+                ], 400);
+            }
+            
+            // Appeler la méthode du contrôleur
+            $controller->checkQualification($input['hackathon_id'], $input['phase_id']);
             break;
         case 'check-participation':
             // Route /api/check-participation
@@ -790,10 +797,10 @@ try {
                     }
                 }
             } elseif ($id === 'hackathon' && is_numeric($action)) {
-                // GET /api/teams/hackathon/{hackathon_id}
+                // GET /api/teams/hackathon/{hackathon_id} - Récupère toutes les équipes d'un hackathon
                 $controller->getByHackathon($action);
             } elseif ($id === 'user') {
-                // GET /api/teams/user/{user_id}
+                // GET /api/teams/user/{user_id} - Récupère l'équipe de l'utilisateur
                 $controller->getByUser($action);
             } else {
                 throw new Exception('ID non valide pour /teams');
@@ -988,60 +995,107 @@ try {
                 
                 // GET /api/projects - Liste des projets (avec filtres optionnels)
                 if ($method === 'GET') {
-                    $filters = [
-                        'hackathon_id' => $_GET['hackathon_id'] ?? null,
-                        'team_id' => $_GET['team_id'] ?? null,
-                        'challenge_id' => $_GET['challenge_id'] ?? null,
-                        'status' => $_GET['status'] ?? null
-                    ];
-                    $controller->getAll($filters);
+                    try {
+                        // Validation des paramètres de filtre
+                        $filters = [
+                            'hackathon_id' => filter_input(INPUT_GET, 'hackathon_id', FILTER_VALIDATE_INT, [
+                                'options' => ['min_range' => 1]
+                            ]) ?: null,
+                            'team_id' => filter_input(INPUT_GET, 'team_id', FILTER_VALIDATE_INT, [
+                                'options' => ['min_range' => 1]
+                            ]) ?: null,
+                            'challenge_id' => filter_input(INPUT_GET, 'challenge_id', FILTER_VALIDATE_INT, [
+                                'options' => ['min_range' => 1]
+                            ]) ?: null,
+                            'status' => filter_input(INPUT_GET, 'status', FILTER_SANITIZE_STRING) ?: null
+                        ];
+                        
+                        $controller->getAll($filters);
+                    } catch (Exception $e) {
+                        jsonResponse([
+                            'success' => false,
+                            'error' => 'Erreur lors de la récupération des projets',
+                            'details' => $e->getMessage()
+                        ], 500);
+                    }
                     exit;
                 }
                 
-                jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
+                jsonResponse([
+                    'success' => false,
+                    'error' => 'Méthode non autorisée',
+                    'allowed_methods' => ['GET', 'POST']
+                ], 405);
             }
             
-            // Vérifier si l'ID est numérique
-            if (!is_numeric($id)) {
-                jsonResponse(['success' => false, 'error' => 'ID de projet invalide'], 400);
+            // Vérifier si l'ID est numérique et valide
+            if (!is_numeric($id) || $id <= 0) {
+                jsonResponse([
+                    'success' => false,
+                    'error' => 'ID de projet invalide',
+                    'expected' => 'Un entier positif non nul'
+                ], 400);
+                exit;
             }
+            
+            $id = (int)$id; // Conversion en entier
             
             // Routes avec ID de projet spécifique
-            
-            switch ($action) {
-                case null:
-                    // GET /api/projects/{id} - Récupérer un projet spécifique
-                    if ($method === 'GET') {
-                        $controller->get($id);
-                        exit;
-                    }
-                    
-                    // PUT /api/projects/{id} - Mettre à jour un projet
-                    if ($method === 'PUT') {
-                        $controller->update($id, $input);
-                        exit;
-                    }
-                    
-                    // DELETE /api/projects/{id} - Supprimer un projet
-                    if ($method === 'DELETE') {
-                        $controller->delete($id);
-                        exit;
-                    }
-                    
-                    jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
-                    break;
-                    
-                case 'download':
-                    // GET /api/projects/{id}/download - Télécharger le fichier du projet
-                    if ($method === 'GET') {
-                        $controller->download($id);
-                        exit;
-                    }
-                    jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
-                    break;
-
-                default:
-                    jsonResponse(['success' => false, 'error' => 'Action non reconnue'], 400);
+            try {
+                switch ($action) {
+                    case null:
+                        // GET /api/projects/{id} - Récupérer un projet spécifique
+                        if ($method === 'GET') {
+                            $controller->get($id);
+                            exit;
+                        }
+                        
+                        // PUT /api/projects/{id} - Mettre à jour un projet
+                        if ($method === 'PUT') {
+                            $controller->update($id, $input);
+                            exit;
+                        }
+                        
+                        // DELETE /api/projects/{id} - Supprimer un projet
+                        if ($method === 'DELETE') {
+                            $controller->delete($id);
+                            exit;
+                        }
+                        
+                        jsonResponse([
+                            'success' => false,
+                            'error' => 'Méthode non autorisée',
+                            'allowed_methods' => ['GET', 'PUT', 'DELETE']
+                        ], 405);
+                        break;
+                        
+                    case 'download':
+                        // GET /api/projects/{id}/download - Télécharger le fichier du projet
+                        if ($method === 'GET') {
+                            $controller->download($id);
+                            exit;
+                        }
+                        
+                        jsonResponse([
+                            'success' => false,
+                            'error' => 'Méthode non autorisée',
+                            'allowed_methods' => ['GET']
+                        ], 405);
+                        break;
+                        
+                    default:
+                        jsonResponse([
+                            'success' => false,
+                            'error' => 'Action non reconnue',
+                            'available_actions' => ['download']
+                        ], 400);
+                }
+            } catch (Exception $e) {
+                jsonResponse([
+                    'success' => false,
+                    'error' => 'Erreur lors du traitement de la requête',
+                    'details' => $e->getMessage()
+                ], 500);
             }
             break;
         case 'piston':

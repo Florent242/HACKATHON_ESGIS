@@ -75,8 +75,8 @@ class AdminController extends Controller
             return $_COOKIE['long_term_token'];
         }
         
-        if (isset($_COOKIE['jwt_token'])) {
-            return $_COOKIE['jwt_token'];
+        if (isset($_COOKIE['auth_token'])) {
+            return $_COOKIE['auth_token'];
         }
 
         return null;

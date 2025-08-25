@@ -23,6 +23,9 @@ class HackathonController extends Controller
     private $db;
     public $tokenManager;
     public $isPublicRoute;
+    private $phase2QualificationRoute;
+    private $phase3QualificationRoute;
+    private $phase4QualificationRoute;
 
     public function __construct($db, $tokenManager)
     {
@@ -31,10 +34,10 @@ class HackathonController extends Controller
             'api/hackathons/[^/]+/stats',
             'api/hackathons/[^/]+/active-phase',
         ];
-        
+
         $requestPath = ltrim($this->getRequestPath(), '/'); // Enlève le slash initial s'il existe
         $isPublicRoute = false;
-        
+
         foreach ($this->publicRoutes as $route) {
             $pattern = '#^' . $route . '$#';
             if (preg_match($pattern, $requestPath)) {
@@ -42,7 +45,7 @@ class HackathonController extends Controller
                 break;
             }
         }
-        
+
         if (!$isPublicRoute) {
             parent::__construct($tokenManager);
         }
@@ -51,12 +54,15 @@ class HackathonController extends Controller
         $this->hackathon = new Hackathon($this->db);
         $this->phase = new Phase($this->db);
         $this->tokenManager = $tokenManager;
+        $this->phase2QualificationRoute = $_ENV['DEV_PHASE_2_QUALIFICATION_ROUTE'];
+        $this->phase3QualificationRoute = $_ENV['DEV_PHASE_3_QUALIFICATION_ROUTE'];
     }
 
-    public function getActivePhase($hackathonId) {
+    public function getActivePhase($hackathonId)
+    {
         $userId = $this->tokenManager->getCurrentUserId(); // récupère l’ID user depuis session/jwt
         $phase = $this->phase->getActiveForUser($hackathonId, $userId);
-    
+
         if (!$phase) {
             echo json_encode([
                 'success' => false,
@@ -64,7 +70,7 @@ class HackathonController extends Controller
             ]);
             return;
         }
-    
+
         echo json_encode([
             'success' => true,
             'phase_id' => $phase['id'],
@@ -73,7 +79,7 @@ class HackathonController extends Controller
             'end_at' => $phase['end_at']
         ]);
     }
-    
+
 
     /**
      * Récupère tous les hackathons
@@ -318,6 +324,48 @@ class HackathonController extends Controller
             $this->jsonResponse([
                 'success' => true,
                 'data' => $stats
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Vérifie si l'utilisateur est qualifié pour une phase spécifique
+     * @param int $hackathonId ID du hackathon
+     * @param int $phaseId ID de la phase
+     * @return void
+     */
+    public function checkQualification($hackathonId, $phaseId)
+    {
+        try {
+            $this->validateMethod('POST');
+
+            // Récupérer l'ID de l'utilisateur connecté
+            $userId = $this->tokenManager->getCurrentUserId();
+
+            if (!$userId) {
+                throw new Exception("Utilisateur non connecté");
+            }
+
+            // Vérifier si l'utilisateur est qualifié pour la phase
+            $isQualified = $this->phase->checkQualification($userId, $phaseId, $hackathonId);
+
+            $this->jsonResponse([
+                'success' => true,
+                'is_qualified' => $isQualified,
+                'message' => $isQualified
+                    ? "L'utilisateur est qualifié pour cette phase"
+                    : "L'utilisateur n'est pas qualifié pour cette phase",
+                'action' => $isQualified && $phaseId == 3
+                    ? $this->phase2QualificationRoute
+                    : ($isQualified && $phaseId == 4
+                        ? $this->phase3QualificationRoute
+                        : null
+                    )
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([

@@ -7,12 +7,16 @@ class ChallengeSubmission {
         this.userRegistered = false;
         this.userId = null;
         this.phaseData = null;
+        this.teamId = null;
+        this.userTeam = null;
+        this.isSubmitting = false;
 
         this.init();
     }
 
     async init() {
         this.userId = await getUserId();
+        await this.getUserTeam();
         this.setupEventListeners();
         this.setupDragAndDrop();
         this.addAlertStyles();
@@ -70,13 +74,33 @@ class ChallengeSubmission {
         }
     }
 
+    async getUserTeam() {
+        try {
+            const response = await apiRequest(`/teams/user/${this.userId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            if (!response.success) {
+                throw new Error(response.message || response.error || 'Équipe non trouvée');
+            }
+            this.teamId = response.data[0].id;
+            this.userTeam = response.data[0];
+        } catch (error) {
+            console.error('Error loading user team data:', error);
+            this.showAlert(error.message || 'Erreur lors du chargement des données de l\'équipe', 'error');
+        }
+    }
+
     async loadChallengeData() {
         try {
             this.showLoading();
 
             const response = await apiRequest(`/challenges/dev/${this.userId}/${this.challengeId}`);
             if (!response.success) {
-                throw new Error('Challenge non trouvé');
+                throw new Error(response.message || response.error || 'Challenge non trouvé');
             }
             const data = response.data;
 
@@ -90,6 +114,7 @@ class ChallengeSubmission {
                 this.handlePhaseStatus();
             }
 
+            this.challengeId = data.id;
         } catch (error) {
             console.error('Error loading challenge data:', error);
             this.showAlert('Erreur lors du chargement des données du défi', 'error');
@@ -128,7 +153,7 @@ class ChallengeSubmission {
         const challengeInfo = document.querySelector('.challenge-info');
 
         if (!this.phaseData) {
-            this.showAlert('Phase non trouvée', 'error');
+            this.showAlert(response.message || response.error || 'Phase non trouvée', 'error');
             formContainer.classList.add('blur-sm');
             return;
         }
@@ -239,16 +264,22 @@ class ChallengeSubmission {
         });
 
         // Form submission
-        document.getElementById('githubSubmissionForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleSubmission();
-        });
+        // Verifier s'il s'agit du leader de l'équipe
+        if (this.userTeam.leader_id !== this.userId) {
+            this.showAlert('Vous devez être le leader de l\'équipe pour soumettre une solution', 'error');
+            return;
+        } else {
+            document.getElementById('githubSubmissionForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleSubmission();
+            });
 
-        document.getElementById('zipSubmissionForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleSubmission();
-        });
 
+            document.getElementById('zipSubmissionForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleSubmission();
+            });
+        }
         // Real-time validation
         this.setupRealTimeValidation();
 
@@ -513,9 +544,6 @@ class ChallengeSubmission {
     saveFormData(data) {
         // Store in memory for this session
         this.formData = { ...data };
-
-        // Visual feedback for auto-save
-        this.showAutoSaveIndicator();
     }
 
     loadFormData() {
@@ -553,10 +581,23 @@ class ChallengeSubmission {
 
     // Handle form submission
     async handleSubmission() {
-        // Validate form
-        if (!this.validateForm()) {
+        // Nettoyer les erreurs précédentes
+        this.clearErrors();
+
+        // Valider le formulaire
+        const validation = this.validateForm();
+
+        if (!validation.isValid) {
+            // Afficher la première erreur
+            const firstError = validation.errors[0];
+            this.showFieldError(firstError.field, firstError.message);
             return;
         }
+
+        // Continuer avec la soumission si pas d'erreur
+        const formData = new FormData();
+        const submissionType = this.submissionType;
+
         // Show loading state
         const submitBtn = document.querySelector('#' + this.submissionType + 'SubmissionForm button[type="submit"]');
         const originalText = submitBtn.innerHTML;
@@ -567,99 +608,205 @@ class ChallengeSubmission {
         submitBtn.disabled = true;
 
         try {
-            const formData = new FormData();
             const data = this.collectFormData();
 
             if (!this.userRegistered) {
                 this.showAlert('Vous devez vous inscrire à ce défi pour soumettre une solution.', 'error');
                 return;
             }
-            // Add all form fields to FormData
+
             Object.keys(data).forEach(key => {
                 if (key !== 'zipFile') {
                     formData.append(key, data[key]);
                 }
             });
 
-            // If it's a ZIP submission, add the file
             if (this.submissionType === 'zip') {
-                const zipFile = document.getElementById('zipFile').files[0];
-                formData.append('zipFile', zipFile);
+                const zipInput = document.getElementById('zipFile');
+                if (!zipInput.files || zipInput.files.length === 0) {
+                    this.showAlert('Veuillez sélectionner un fichier ZIP', 'warning');
+                    return;
+                }
+
+                const zipFile = zipInput.files[0];
+                const maxSize = 50 * 1024 * 1024; // 50MB
+
+                // Vérification de l'extension
+                if (!zipFile.name.toLowerCase().endsWith('.zip')) {
+                    this.showAlert('Le fichier doit être au format ZIP', 'warning');
+                    return;
+                }
+
+                // Vérification de la taille
+                if (zipFile.size > maxSize) {
+                    this.showAlert(`Le fichier est trop volumineux (max ${maxSize / (1024 * 1024)}MB)`, 'warning');
+                    return;
+                }
+
+                formData.append('zip_file', zipFile);
             }
 
-            console.log(formData.forEach((value, key) => {
-                console.log(key, value);
-            }));
-            return;
-            // Submit to API
-            const response = await fetch(`/api/challenges/${this.challengeId}/submit`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            });
+            formData.append('csrf_token', this.getTokenCsrf());
+            formData.append('user_id', this.userId);
+            formData.append('challenge_id', this.challengeId);
+            formData.append('hackathon_id', this.challengeData.hackathon_id);
+            formData.append('team_id', this.teamId);
 
-            const result = await response.json();
+            // Afficher un indicateur de chargement
+            this.isSubmitting = true;
+            this.updateSubmitButton();
 
-            if (response.ok) {
-                this.showSuccessMessage();
-                // Clear form data
-                this.formData = {};
-                // Redirect after success
-                setTimeout(() => {
-                    window.location.href = '/challenge_dev';
-                }, 3000);
-            } else {
-                throw new Error(result.message || 'Erreur lors de la soumission');
+            try {
+                // Ajouter la progression du téléchargement
+                const response = await apiRequest(`/projects`, {
+                    method: 'POST',
+                    headers: {},
+                    body: formData,
+                    onUploadProgress: (progressEvent) => {
+                        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        this.updateProgress(percentCompleted);
+                    }
+                });
+
+                if (response.success) {
+                    this.showSuccessMessage('Soumission réussie !');
+                    this.formData = {};
+                    // Redirection après un délai
+                    setTimeout(() => {
+                        window.location.href = '/user';
+                    }, 10000);
+                } else {
+                    // Gestion des erreurs de validation
+                    if (response.validation_errors && response.validation_errors.length > 0) {
+                        // Afficher chaque erreur de validation
+                        response.validation_errors.forEach(error => {
+                            this.showAlert(error, 'warning');
+                        });
+                    } else {
+                        // Erreur générique si pas de détails de validation
+                        this.showAlert(response.error || 'Erreur lors de la soumission', 'warning');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur de soumission:', error);
+                this.showAlert('Erreur lors de la soumission: ' + (error.message || 'Une erreur est survenue'), 'error');
+            } finally {
+                this.isSubmitting = false;
+                this.updateSubmitButton();
             }
-
         } catch (error) {
-            console.error('Submission error:', error);
-            this.showAlert('Erreur lors de la soumission: ' + error.message, 'error');
+            console.error('Error loading challenge data:', error);
+            // this.showAlert('Erreur lors du chargement des données du défi', 'error');
         } finally {
-            // Restore button
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
+            this.hideLoading();
         }
     }
 
     validateForm() {
         const errors = [];
 
-        // Check submission type specific requirements
+        // Vérification du type de soumission
         if (this.submissionType === 'github') {
+            // Vérification du nom
+            const name = document.getElementById('name').value.trim();
+            if (!name) {
+                errors.push({
+                    message: 'Le nom est requis',
+                    field: 'name'
+                });
+            }
+            // Vérification de l'URL du dépôt GitHub
             const githubUrl = document.getElementById('githubUrl').value.trim();
             if (!githubUrl) {
-                errors.push('L\'URL du dépôt GitHub est requise');
+                errors.push({
+                    message: 'L\'URL du dépôt GitHub est requise',
+                    field: 'githubUrl'
+                });
             } else if (!this.isValidUrl(githubUrl)) {
-                errors.push('L\'URL du dépôt GitHub n\'est pas valide');
+                errors.push({
+                    message: 'L\'URL du dépôt GitHub n\'est pas valide',
+                    field: 'githubUrl'
+                });
             }
-            // Check description
+            // Vérification de la description
             const description = document.getElementById('githubDescription').value.trim();
             if (!description) {
-                errors.push('La description de votre solution est requise');
+                errors.push({
+                    message: 'La description de votre solution est requise',
+                    field: 'githubDescription'
+                });
             }
         } else if (this.submissionType === 'zip') {
+            // Vérification du nom
+            const name = document.getElementById('zipName').value.trim();
+            if (!name) {
+                errors.push({
+                    message: 'Le nom est requis',
+                    field: 'zipName'
+                });
+            }
+            // Vérification du fichier ZIP
             const zipFile = document.getElementById('zipFile').files[0];
             if (!zipFile) {
-                errors.push('Le fichier ZIP est requis');
+                errors.push({
+                    message: 'Le fichier ZIP est requis',
+                    field: 'zipFile'
+                });
             }
-            // Check description
+            // Vérification de la description
             const description = document.getElementById('zipDescription').value.trim();
             if (!description) {
-                errors.push('La description de votre solution est requise');
+                errors.push({
+                    message: 'La description de votre solution est requise',
+                    field: 'zipDescription'
+                });
             }
         }
 
+        return {
+            isValid: errors.length === 0,
+            errors: errors
+        };
+    }
 
-        if (errors.length > 0) {
-            this.showAlert('Veuillez corriger les erreurs suivantes:<br>• ' + errors.join('<br>• '), 'error', true);
-            return false;
+    // Méthode pour afficher les erreurs de champ
+    showFieldError(fieldId, message) {
+        const inputElement = document.getElementById(fieldId);
+        if (!inputElement) return;
+
+        // Trouver l'élément d'erreur (doit être le prochain élément frère avec la classe error-message)
+        let errorElement = inputElement.parentElement.nextElementSibling;
+        while (errorElement && !errorElement.classList.contains('error-message')) {
+            errorElement = errorElement.parentElement.nextElementSibling;
         }
 
-        return true;
+        if (errorElement) {
+            // Faire défiler jusqu'au champ
+            inputElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+
+            // Mettre le focus sur le champ
+            inputElement.focus();
+
+            // Afficher l'erreur
+            showError(inputElement, errorElement, message);
+        }
+
+        // Afficher également un message d'alerte global
+        this.showAlert('Veuillez corriger les erreurs dans le formulaire', 'warning', 5000);
+    }
+
+    // Méthode pour effacer toutes les erreurs
+    clearErrors() {
+        document.querySelectorAll('.input-error').forEach(el => {
+            el.classList.remove('input-error');
+        });
+        document.querySelectorAll('.error-message').forEach(el => {
+            el.textContent = '';
+            el.classList.add('hidden');
+        });
     }
 
     /**
@@ -684,23 +831,25 @@ class ChallengeSubmission {
         };
 
         if (this.submissionType === 'github') {
+            formData.name = document.getElementById('name').value.trim();
             formData.description = document.getElementById('githubDescription').value.trim();
-            formData.notes = document.getElementById('githubNotes').value.trim();
-            formData.githubDemoUrl = document.getElementById('githubDemoUrl').value.trim();
-            formData.githubUrl = document.getElementById('githubUrl').value.trim();
+            formData.additional_notes = document.getElementById('githubNotes').value.trim();
+            formData.demo_url = document.getElementById('githubDemoUrl').value.trim();
+            formData.repository_url = document.getElementById('githubUrl').value.trim();
         } else if (this.submissionType === 'zip') {
+            formData.name = document.getElementById('zipName').value.trim();
             formData.description = document.getElementById('zipDescription').value.trim();
-            formData.notes = document.getElementById('zipNotes').value.trim();
-            formData.demoUrl = document.getElementById('zipDemoUrl').value.trim();
+            formData.additional_notes = document.getElementById('zipNotes').value.trim();
+            formData.demo_url = document.getElementById('zipDemoUrl').value.trim();
             const zipFile = document.getElementById('zipFile').files[0];
-            formData.fileName = zipFile.name;
-            formData.fileSize = zipFile.size;
+            formData.file_name = zipFile.name;
+            formData.file_size = zipFile.size;
         }
 
         return formData;
     }
 
-    showSuccessMessage() {
+    showSuccessMessage(message) {
         const successHtml = `
             <div class="text-center py-8">
                 <div class="animate-bounce mb-4">
@@ -708,9 +857,9 @@ class ChallengeSubmission {
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </div>
-                <h3 class="text-2xl font-bold text-green-400 mb-2">Solution soumise avec succès!</h3>
+                <h3 class="text-2xl font-bold text-green-400 mb-2">${message}</h3>
                 <p class="text-gray-400 mb-4">Votre solution a été envoyée et sera évaluée par notre équipe.</p>
-                <p class="text-sm text-gray-500">Redirection en cours...</p>
+                <p class="text-sm text-gray-500">Redirection dans quelques instants...</p>
             </div>
         `;
 
@@ -768,73 +917,17 @@ class ChallengeSubmission {
                 }
             }, 1000);
         } else {
-            // Pour les autres types de notifications (empilables)
-            const notifications = document.querySelectorAll('.notification-alert');
-            const offset = notifications.length * 4.5; // ~72px spacing
-
-            // Style similaire à showNotification de main.js
-            notification.className = `notification-alert fixed right-4 transform translate-x-0 max-w-md w-auto bg-gray-900/90 backdrop-blur-sm border ${type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'
-                } rounded-lg shadow-lg shadow-black/30 p-3 flex items-start justify-between gap-3 z-[1000] cursor-pointer animate-fade-in`;
-
-            // Conteneur d'icône
-            const iconContainer = document.createElement('div');
-            iconContainer.className = 'flex-shrink-0 pt-0.5';
-            const icon = document.createElement('i');
-            icon.setAttribute('data-lucide', type === 'warning' ? 'alert-triangle' : 'info');
-            icon.className = `w-5 h-5 ${type === 'warning' ? 'text-yellow-400' : 'text-blue-400'}`;
-            iconContainer.appendChild(icon);
-
-            // Contenu du message
-            const textContainer = document.createElement('div');
-            textContainer.className = 'flex-1';
-            const messageElement = document.createElement('p');
-            messageElement.className = 'text-white font-medium text-sm';
-            messageElement.textContent = message;
-            textContainer.appendChild(messageElement);
-
-            // Bouton de fermeture
-            const closeContainer = document.createElement('div');
-            closeContainer.className = 'flex-shrink-0 pt-0.5';
-            const closeButton = document.createElement('button');
-            closeButton.className = 'text-gray-400 hover:text-white transition-colors focus:outline-none';
-            const closeIcon = document.createElement('i');
-            closeIcon.setAttribute('data-lucide', 'x');
-            closeIcon.className = 'w-4 h-4';
-            closeButton.appendChild(closeIcon);
-
-            // Assemblage des éléments
-            notification.appendChild(iconContainer);
-            notification.appendChild(textContainer);
-            closeContainer.appendChild(closeButton);
-            notification.appendChild(closeContainer);
-
-            // Position initiale
-            notification.style.top = `${offset + 1}rem`;
-
-            // Gestionnaires d'événements
-            closeButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                hideNotification(notification);
-            });
-
-            notification.addEventListener('click', () => {
-                hideNotification(notification);
-            });
+            showNotification("Attention", message, type, duration);
         }
 
         // Ajouter la notification au DOM
-        document.body.appendChild(notification);
+        if (type === 'error') {
+            document.body.appendChild(notification);
+        }
 
         // Initialiser les icônes Lucide
         if (window.lucide) {
             window.lucide.createIcons();
-        }
-
-        // Gestion de la disparition pour les notifications non-erreur
-        if (type !== 'error') {
-            setTimeout(() => {
-                hideNotification(notification);
-            }, duration);
         }
     }
 
@@ -913,6 +1006,28 @@ class ChallengeSubmission {
                 element.classList.add('animate-fade-in');
             }, index * 200);
         });
+    }
+
+    updateSubmitButton() {
+        const submitBtn = document.querySelector('#' + this.submissionType + 'SubmissionForm button[type="submit"]');
+        if (this.isSubmitting) {
+            submitBtn.innerHTML = `
+                <i data-lucid="loader" class="fa-solid fa-spinner animate-spin"></i>
+                Soumission en cours...
+            `;
+            submitBtn.disabled = true;
+        } else {
+            submitBtn.innerHTML = 'Soumettre';
+            submitBtn.disabled = false;
+        }
+    }
+
+    updateProgress(percentCompleted) {
+        const progressElement = document.getElementById('progress');
+        if (progressElement) {
+            progressElement.style.width = `${percentCompleted}%`;
+            progressElement.textContent = `${percentCompleted}%`;
+        }
     }
 }
 
