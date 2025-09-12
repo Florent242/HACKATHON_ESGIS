@@ -167,6 +167,8 @@ class PistonRequest
                 '/Function\s*\(/i',
                 '/XMLHttpRequest/i',
                 '/fetch\s*\(/i'
+
+
             ],
             'java' => [
                 '/import\s+java\.io/i',

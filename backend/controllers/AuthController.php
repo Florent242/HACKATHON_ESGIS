@@ -55,7 +55,9 @@ class AuthController
         }
     }
 
-
+    /**
+     * Récupère l'ID de l'utilisateur actuellement authentifié
+     */
     public function getCurrentUserId(): ?int
     {
         try {
@@ -242,7 +244,7 @@ class AuthController
 
             // Validation des données
             if (empty($data['username']) || empty($data['email']) || empty($data['password'])) {
-                throw new Exception("Tous les champs sont obligatoires");
+                throw new Exception("Tous les champs sont obligatoires: " . (empty($data['username']) ? 'Username' : (empty($data['email']) ? 'Email' : 'Password')));
             }
 
             // Validation de l'email
@@ -267,6 +269,7 @@ class AuthController
 
                 setFlashMessage('success', 'Inscription réussie');
 
+                session_regenerate_id();
                 echo json_encode([
                     'success' => true,
                     'redirect' => "/user"
@@ -301,13 +304,13 @@ class AuthController
             }
 
             $identifier = trim(htmlspecialchars($data['identifier'], ENT_QUOTES, 'UTF-8'));
-            
+
             $redisKey = "login_attempts:{$clientIp}:{$identifier}";
 
             $attempts = (int) $this->redisManager->get($redisKey);
             if ($attempts >= 5) {
                 $ttl = $this->redisManager->ttl($redisKey);
-                throw new Exception("Trop de tentatives. Réessayez dans " . ((int)($ttl / 60) < 1 ? "{$ttl} secondes" : (int)($ttl / 60)." minutes."), 401);
+                throw new Exception("Trop de tentatives. Réessayez dans " . ((int)($ttl / 60) < 1 ? "{$ttl} secondes" : (int)($ttl / 60) . " minutes."), 401);
             }
 
             $password = $data['password'];
@@ -346,6 +349,7 @@ class AuthController
                 // Réinitialiser les tentatives après succès
                 $this->redisManager->delete($redisKey);
 
+                session_regenerate_id();
                 echo json_encode([
                     'success' => true,
                     'token' => $token,
@@ -493,19 +497,6 @@ class AuthController
     public function forgotPassword()
     {
         try {
-            // =======
-            //     public function forgotPassword() {
-            //         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            //             try {
-            //                 $email = htmlspecialchars($_POST['email'] ?? '');
-            //                 $user = $this->user->findByEmail($email);
-
-            //                 if ($user) {
-            //                     // Générer un token de réinitialisation
-            //                     $token = bin2hex(random_bytes(32));
-            //                     $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
-            // >>>>>>> frontend
-            // Si c'est une requête API avec des données JSON
             $jsonData = json_decode(file_get_contents('php://input'), true);
             if ($jsonData && isset($jsonData['email'])) {
                 try {

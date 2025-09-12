@@ -2,16 +2,6 @@
 
 // Configuration CORS
 function configureCors() {
-    // Autoriser l'origine spécifique de votre frontend
-    // En développement, vous pouvez utiliser '*' mais en production, spécifiez l'origine exacte
-    header('Access-Control-Allow-Origin: *');
-    
-    // Autoriser les méthodes HTTP
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-    
-    // Autoriser les en-têtes personnalisés
-    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-    
     // Autoriser l'envoi des credentials (cookies, en-têtes d'autorisation)
     header('Access-Control-Allow-Credentials: true');
     

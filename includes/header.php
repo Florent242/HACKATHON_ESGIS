@@ -53,20 +53,12 @@ function isActivePage($url, $current_path)
         (strlen($url) > 1 && strpos($current_path, $url) === 0);
 }
 
-// Détection mobile
-function isMobile()
-{
-    return preg_match('/Mobile|Android|iPhone|iPad/', $_SERVER['HTTP_USER_AGENT'] ?? '');
-}
-
-// Génération des méta-données pour les performances
-$is_mobile = isMobile();
 ?>
 <head>
     <link rel="stylesheet" href="/css/styles/header.css">
     <link rel="stylesheet" href="/css/dist/output.css">
     <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token']; ?>">
-    <link rel="icon" href="/assets/20ans-gold.png" type="image/x-icon">
+    <link rel="shortcut icon" href="/assets/20ans-gold.png" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <!-- Script JavaScript du header (chargé de manière différée) -->

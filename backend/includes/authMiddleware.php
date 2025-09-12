@@ -94,6 +94,10 @@ class AuthMiddleware
             }
         }
 
+        // TODO: Verifier si l'utilisateur est suspendu OU BANNI
+        
+
+
         // Redirection si non authentifié
         // setFlashMessage('error', "Non authentifié");
         // self::redirectToLogin();

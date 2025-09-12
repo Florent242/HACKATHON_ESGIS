@@ -2078,12 +2078,12 @@ button:focus-visible {
 .loading-spinner {
     width: 1.5rem;
     height: 1.5rem;
-    border: 2px solid var(--border);
-    border-top: 2px solid var(--blue);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top: 2px solid rgba(255, 255, 255, 0.7);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 0.5rem;
+    animation: header-spin 1s linear infinite;
 }
+@keyframes header-spin { to { transform: rotate(360deg); } }
 
 /* Animation d'apparition des notifications */
 .notification-item.new {
@@ -2361,3 +2361,137 @@ button:focus-visible {
     border-width: 6px 6px 6px 0;
     border-color: transparent #1e293b transparent transparent;
 }
+
+/* === School select styling (auth form) === */
+.custom-select-container .display { position: relative; }
+.school-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 0.5rem 2.25rem 0.5rem 0.75rem; /* space for arrow */
+  line-height: 1.4;
+}
+.school-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5); /* blue-500 */
+}
+/* Hide default arrow on IE */
+.school-select::-ms-expand { display: none; }
+/* Custom arrow icon (using the existing lucide icon element) */
+.select-arrow {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 0.7;
+}
+.custom-select-container .display:hover .select-arrow { opacity: 1; }
+
+/* Option styling (limited by browser support) */
+.school-select option {
+  background-color: var(--card); /* fallbacks for dark dropdown */
+  color: var(--text);
+}
+.school-select option[disabled] {
+  color: var(--text-muted);
+}
+.school-select optgroup {
+  background-color: var(--card);
+  color: var(--text-secondary);
+}
+
+/* Improve contrast on high-contrast devices */
+@media (prefers-contrast: more) {
+  .school-select { border-color: var(--border); }
+}
+
+/* === Tweaks: refine existing notifications styles (overrides) === */
+
+/* Dropdown: tighter visuals, hidden overflow, subtle border and shadow */
+.notifications-dropdown {
+  max-height: 70vh;
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  box-shadow: 0 10px 30px var(--shadow);
+}
+
+/* Header: keep visible when scrolling inside the panel */
+.notifications-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: linear-gradient(0deg, rgba(255,255,255,0.04), rgba(255,255,255,0.04));
+}
+
+/* Footer: light separation */
+.notifications-footer {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.03));
+}
+
+/* List: larger viewport-based height and refined scrollbar */
+.notifications-list {
+  max-height: 50vh;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.25) transparent;
+}
+.notifications-list::-webkit-scrollbar {
+  width: 8px;
+}
+.notifications-list::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.18);
+  border-radius: 8px;
+}
+
+/* Loading spinner used inside notifications-loading */
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top: 2px solid rgba(255,255,255,0.7);
+  border-radius: 50%;
+  animation: header-spin 1s linear infinite;
+}
+@keyframes header-spin { to { transform: rotate(360deg); } }
+
+/* Notification item: smoother hover and unread accent */
+.notification-item {
+  transition: background-color .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.notification-item:hover {
+  background: rgba(255,255,255,0.06);
+  transform: translateY(-1px);
+}
+/* Keep your existing unread styles and add a slim accent bar */
+.notification-item.unread::before {
+  left: 0;
+  width: 3px;
+  height: calc(100% - 24px);
+  top: 12px;
+  background: var(--blue-light);
+  border-radius: 2px;
+}
+
+/* Icon circle: subtle background and border for contrast */
+.notification-icon {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Typography fallbacks for readability */
+.notification-title { color: var(--text); }
+.notification-message { color: var(--text-secondary); }
+.notification-meta { color: var(--text-muted); }
+
+/* Ensure dropdown overlays content properly */
+.profile-dropdown,
+.notifications-dropdown { z-index: 50; }
+
+/* === End tweaks === */

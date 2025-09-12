@@ -111,7 +111,7 @@ async function displayMyTeams() {
 
 function createTeamCard(team) {
     const card = document.createElement('div');
-    card.className = 'team-card relative'; // relative pour positionner badge type en absolu
+    card.className = 'team-card relative';
     card.setAttribute('data-team-id', team.id);
     card.setAttribute('data-team-type', team.type);
     card.setAttribute('data-is-member', !!team.is_member);

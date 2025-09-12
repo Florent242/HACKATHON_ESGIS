@@ -1,9 +1,21 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    session_start([
+        'cookie_lifetime' => 86400, // 24h
+        'gc_maxlifetime' => 86400   // 24h
+    ]);
 }
-if (!isset($_SESSION['csrf_token'])) {
+
+// Régénérer le token s'il n'existe pas ou est vieux
+$regenerateToken = true;
+if (isset($_SESSION['csrf_token_created'])) {
+    $tokenAge = time() - $_SESSION['csrf_token_created'];
+    $regenerateToken = ($tokenAge > 3600); // Régénérer toutes les heures
+}
+
+if ($regenerateToken || !isset($_SESSION['csrf_token'])) {
     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    $_SESSION['csrf_token_created'] = time();
 }
 
 // Récupérer l'ID utilisateur pour les notifications
@@ -231,35 +243,29 @@ $user_id = $_SESSION['user_id'] ?? null;
                 </div>
 
                 <!-- Dropdown menu -->
-                <div class="profile-dropdown opacity-0 invisible absolute top-full right-0 card-bg border border-gray-300 rounded-lg w-48 overflow-hidden mt-2 transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:visible">
-                    <div class="border-b border-gray-300 p-3">
-                        <span class="text-white">Mon Compte</span>
+                <div class="profile-dropdown opacity-0 invisible absolute top-full right-0 card-bg border border-gray-700 rounded-lg w-56 overflow-hidden mt-2 shadow-xl ring-1 ring-white/10 backdrop-blur-md transition-all duration-300 ease-in-out group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible z-50" role="menu" aria-label="Menu profil">
+                    <div class="border-b border-gray-700 p-3 bg-black/20">
+                        <span class="text-gray-100 text-sm font-medium">Mon Compte</span>
                     </div>
-                    <div class="flex flex-col gap-2 p-2 border-b border-gray-300">
-                        <a href="/user/profile">
-                            <li class="flex items-center gap-2 p-1 rounded-lg text-white hover:text-blue-500 hover:bg-slate-900">
-                                <i data-lucide="circle-user" class="w-4 h-4 stroke-current"></i>
-                                Mon espace
-                            </li>
+                    <div class="flex flex-col gap-1 p-2 border-b border-gray-700 bg-black/10">
+                        <a href="/user/profile" class="flex items-center gap-2 px-3 py-2 rounded-md text-white/90 hover:text-blue-400 hover:bg-slate-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors duration-200" role="menuitem" tabindex="0">
+                            <i data-lucide="circle-user" class="w-4 h-4 stroke-current"></i>
+                            Mon espace
                         </a>
-                        <a href="/user/profile#settings">
-                            <li class="flex items-center gap-2 p-1 rounded-lg text-white hover:text-blue-500 hover:bg-slate-900">
-                                <i data-lucide="settings" class="w-4 h-4 stroke-current"></i>
-                                Paramètres
-                            </li>
+                        <a href="/user/profile#settings" class="flex items-center gap-2 px-3 py-2 rounded-md text-white/90 hover:text-blue-400 hover:bg-slate-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors duration-200" role="menuitem" tabindex="0">
+                            <i data-lucide="settings" class="w-4 h-4 stroke-current"></i>
+                            Paramètres
                         </a>
-                        <a href="/user/notifications">
-                            <li class="flex items-center gap-2 p-1 rounded-lg text-white hover:text-blue-500 hover:bg-slate-900">
-                                <i data-lucide="bell" class="w-4 h-4 stroke-current"></i>
-                                Notifications
-                            </li>
+                        <a href="/user/profile#notifications" class="flex items-center gap-2 px-3 py-2 rounded-md text-white/90 hover:text-blue-400 hover:bg-slate-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 transition-colors duration-200" role="menuitem" tabindex="0">
+                            <i data-lucide="bell" class="w-4 h-4 stroke-current"></i>
+                            Notifications
                         </a>
                     </div>
                     <div id="deco" class="p-2 cursor-pointer">
-                        <li class="flex items-center gap-2 p-1 rounded-lg text-red-500 hover:bg-slate-900">
+                        <div class="flex items-center gap-2 px-3 py-2 rounded-md text-red-400 hover:text-red-300 bg-red-500/5 hover:bg-red-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 transition-colors duration-200" role="menuitem" tabindex="0">
                             <i data-lucide="log-out" class="w-4 h-4 stroke-current"></i>
                             Logout
-                        </li>
+                        </div>
                     </div>
                 </div>
             </div>

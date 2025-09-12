@@ -372,44 +372,6 @@ function sendEmail($to, $subject, $message, $headers = [])
     return mail($to, $subject, $message, implode("\r\n", $headers));
 }
 
-// Fonction pour générer un token JWT
-function generateJwtToken($data, $expiration = 3600)
-{
-    $header = base64_encode(json_encode([
-        'typ' => 'JWT',
-        'alg' => 'HS256'
-    ]));
-
-    $payload = base64_encode(json_encode([
-        'data' => $data,
-        'exp' => time() + $expiration
-    ]));
-
-    $signature = hash_hmac('sha256', "$header.$payload", $_ENV['JWT_SECRET'] ?? 'your-secret-key');
-
-    return "$header.$payload.$signature";
-}
-
-// Fonction pour vérifier un token JWT
-function verifyJwtToken($token)
-{
-    list($header, $payload, $signature) = explode('.', $token);
-
-    $validSignature = hash_hmac('sha256', "$header.$payload", $_ENV['JWT_SECRET'] ?? 'your-secret-key');
-
-    if ($signature !== $validSignature) {
-        return false;
-    }
-
-    $payload = json_decode(base64_decode($payload), true);
-
-    if ($payload['exp'] < time()) {
-        return false;
-    }
-
-    return $payload['data'];
-}
-
 // Fonction pour afficher un message flash
 function setFlashMessage($type, $message, $details = null)
 {

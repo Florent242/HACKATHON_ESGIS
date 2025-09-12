@@ -116,6 +116,122 @@ class AuthService {
     }
 }
 
+// ========== Security helpers (XSS) ==========
+/**
+ * Encode plain text to HTML entities (safe for text insertion)
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeHTML(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
+ * Sanitize an HTML string with a conservative whitelist.
+ * - Removes disallowed tags and attributes
+ * - Strips event handlers (on*) and javascript: URLs
+ * - Keeps only safe URL protocols (http, https, mailto, tel)
+ * @param {string} dirtyHTML
+ * @param {{allowedTags?: string[], allowedAttrs?: Record<string,string[]>, allowDataImages?: boolean}} [opts]
+ * @returns {string}
+ */
+function sanitizeHTML(dirtyHTML, opts = {}) {
+    if (!dirtyHTML) return '';
+
+    const DEFAULT_ALLOWED_TAGS = ['b','i','em','strong','u','s','br','p','ul','ol','li','blockquote','code','pre','span','a'];
+    const DEFAULT_ALLOWED_ATTRS = {
+        a: ['href','title','target','rel'],
+        span: ['class'],
+        code: ['class'],
+        pre: ['class']
+    };
+    const allowedTags = new Set((opts.allowedTags || DEFAULT_ALLOWED_TAGS).map(t => t.toLowerCase()));
+    const allowedAttrs = opts.allowedAttrs || DEFAULT_ALLOWED_ATTRS;
+    const allowDataImages = Boolean(opts.allowDataImages);
+
+    const SAFE_URL = /^(https?:|mailto:|tel:)/i;
+    const DATA_IMAGE = /^data:image\/(png|jpeg|jpg|gif|webp);base64,/i;
+
+    const template = document.createElement('template');
+    template.innerHTML = dirtyHTML;
+
+    const sanitizeNode = (node) => {
+        // Remove comment nodes
+        if (node.nodeType === Node.COMMENT_NODE) {
+            node.remove();
+            return;
+        }
+        // Text nodes are safe
+        if (node.nodeType === Node.TEXT_NODE) {
+            return;
+        }
+        // Element nodes
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            const tag = node.tagName.toLowerCase();
+            if (!allowedTags.has(tag)) {
+                // Replace disallowed element with its text content
+                const text = document.createTextNode(node.textContent || '');
+                node.replaceWith(text);
+                return;
+            }
+            // Clone allowed attributes safely
+            [...node.attributes].forEach(attr => {
+                const name = attr.name.toLowerCase();
+                const value = attr.value;
+
+                // Strip all event handlers (on*) and style attributes
+                if (name.startsWith('on') || name === 'style') {
+                    node.removeAttribute(attr.name);
+                    return;
+                }
+
+                const tagAllowed = (allowedAttrs[tag] || []).map(a => a.toLowerCase());
+                if (!tagAllowed.includes(name)) {
+                    node.removeAttribute(attr.name);
+                    return;
+                }
+
+                // Special handling for URL-bearing attributes
+                if ((tag === 'a' && name === 'href')) {
+                    const val = value.trim();
+                    const safe = SAFE_URL.test(val) || (allowDataImages && DATA_IMAGE.test(val));
+                    if (!safe) {
+                        node.removeAttribute(attr.name);
+                    } else {
+                        // Security: enforce rel and target safety
+                        if (!node.getAttribute('rel')) node.setAttribute('rel', 'noopener noreferrer');
+                        if (/_blank/i.test(node.getAttribute('target') || '')) {
+                            node.setAttribute('rel', 'noopener noreferrer');
+                        }
+                    }
+                }
+            });
+        }
+        // Recurse children (use slice to avoid live collection issues if nodes removed)
+        Array.from(node.childNodes).forEach(sanitizeNode);
+    };
+
+    Array.from(template.content.childNodes).forEach(sanitizeNode);
+    return template.innerHTML;
+}
+
+/**
+ * Safely set innerHTML: sanitize first
+ * @param {HTMLElement} el
+ * @param {string} html
+ * @param {Parameters<typeof sanitizeHTML>[1]} [opts]
+ */
+function setSafeHTML(el, html, opts) {
+    if (!el) return;
+    el.innerHTML = sanitizeHTML(html, opts);
+}
+// ========== End Security helpers ==========
+
 /**
  * Affiche une notification.
  * @param {string} message - Le message à afficher.
@@ -237,7 +353,7 @@ function showNotification(message, details = null, type = 'info', duration = 500
     // Message principal avec clamp
     const messageElement = document.createElement('p');
     messageElement.className = 'text-white font-medium text-sm max-md:text-xs line-clamp-1 whitespace-pre-line';
-    messageElement.innerText = message;
+    setSafeHTML(messageElement, message);
     messageElement.dataset.tooltip = message;
     textContainer.appendChild(messageElement);
 
@@ -245,7 +361,7 @@ function showNotification(message, details = null, type = 'info', duration = 500
     if (details) {
         const detailsElement = document.createElement('p');
         detailsElement.className = 'text-gray-300/90 font-normal text-xs max-md:text-[0.6rem] mt-1 line-clamp-2 max-md:line-clamp-3';
-        detailsElement.innerText = details;
+        setSafeHTML(detailsElement, details);
         detailsElement.dataset.tooltip = details;
         textContainer.appendChild(detailsElement);
     }
@@ -356,23 +472,54 @@ function getFlashMessage() {
  */
 async function apiRequest(endpoint, options = {}) {
     try {
+
+        const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
+
         const headers = {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             ...(options.headers || {})
         };
 
-        const response = await fetch(`/api${endpoint}`, {
+        let response = await fetch(`/api${endpoint}`, {
             ...options,
             headers
         });
-
-        // Récupérer le texte brut de la réponse
         const responseText = await response.text();
-        
+        // Si le token CSRF a expiré (403)
+        if (response.status === 403) {
+            debugger
+            let errorData = {};
+            try {
+                errorData = responseText ? JSON.parse(responseText) : {};
+            } catch (e) {
+                console.error('Erreur lors du parsing de la réponse d\'erreur:', e);
+            }
+            if (errorData.error?.includes('controller') || errorData.error?.includes('csrf') || errorData.requires_refresh) {
+                const newToken = await refreshCsrfToken();
+
+                options.body.csrf_token ? options.body.csrf_token = newToken : options.body.csrf_token = newToken;
+                // On réessaye avec le nouveau token
+                response = await fetch(`/api${endpoint}`, {
+                    ...options,
+                    headers: {
+                        ...headers,
+                        'X-CSRF-TOKEN': newToken,
+                        ...(options.headers || {})
+                    }
+                });
+                // Avant la ligne 395, ajoutez cette vérification
+                if (response.status === 403) {
+                    const error = new Error('Validation du token de session echouée. Veuillez recharger la page. Si le problème persiste, contactez le support.');
+                    error.status = 403;
+                    throw error;
+                }
+            }
+        }
+
         // Nettoyer la réponse des messages de déprication PHP
         const cleanedResponse = responseText.replace(/^(<br \/>\n<b>Deprecated<\/b>:.*?<br \/>\n)+/g, '').trim();
-        
+
         // Parser le JSON nettoyé
         let data;
         try {
@@ -412,7 +559,7 @@ async function apiRequest(endpoint, options = {}) {
                 data: null
             };
         }
-        
+
         if (error instanceof Error) {
             handleError('Erreur lors de la requête API', error, 'error');
         }
@@ -422,6 +569,31 @@ async function apiRequest(endpoint, options = {}) {
             message: error.message || 'Erreur inconnue',
             data: error.data || null
         };
+    }
+}
+
+// Fonction pour rafraîchir le token CSRF
+async function refreshCsrfToken() {
+    try {
+        const response = await fetch('/api/users/refresh-csrf-token', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to refresh CSRF token');
+
+        const data = await response.json();
+        if (data.csrf_token) {
+            const meta = document.querySelector('meta[name="csrf-token"]');
+            if (meta) meta.content = data.csrf_token;
+            return data.csrf_token;
+        }
+    } catch (error) {
+        console.error('Error refreshing CSRF token:', error);
+        throw error;
     }
 }
 
@@ -437,7 +609,7 @@ function handleError(message, error, type = 'error') {
     console.group('🔴 Erreur API');
     console.error('Message:', message);
     console.error('Erreur:', error);
-    
+
     // Si l'erreur a des propriétés de debug, les afficher
     if (error && typeof error === 'object') {
         if (error.debug_message) console.error('Debug message:', error.debug_message);
@@ -447,11 +619,11 @@ function handleError(message, error, type = 'error') {
         if (error.stack) console.error('Stack:', error.stack);
     }
     console.groupEnd();
-    
+
     // Préparer le message pour la notification
     let notificationMessage = message;
     let notificationDetails = error?.message || error?.error || error?.data?.error || error?.data?.message || "Erreur inconnue";
-    
+
     // Si on a des infos de debug, les ajouter aux détails
     if (error && error.debug_message) {
         notificationDetails = `${error.debug_message}`;
@@ -459,7 +631,7 @@ function handleError(message, error, type = 'error') {
             notificationDetails += ` (${error.debug_file}:${error.debug_line})`;
         }
     }
-    
+
     showNotification(notificationMessage, notificationDetails, type);
 }
 
@@ -595,12 +767,12 @@ function initializeTooltips() {
             const rect = el.getBoundingClientRect();
             const tooltipRect = tooltipEl.getBoundingClientRect();
             const viewportPadding = 12;
-            
+
             // Default position: centered above the element
             let top = rect.top - tooltipRect.height - 10;
             let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
             let arrowPosition = '';
-            
+
             // Check for viewport collisions
             // Horizontal adjustment
             if (left < viewportPadding) {
@@ -608,7 +780,7 @@ function initializeTooltips() {
             } else if (left + tooltipRect.width > window.innerWidth - viewportPadding) {
                 left = window.innerWidth - tooltipRect.width - viewportPadding;
             }
-            
+
             // Vertical adjustment
             if (top < viewportPadding) {
                 // Not enough space above, position below
@@ -617,14 +789,14 @@ function initializeTooltips() {
             } else {
                 arrowPosition = 'top';
             }
-            
+
             // Add arrow class based on position
             tooltipEl.classList.add(`tooltip-arrow-${arrowPosition}`);
-            
+
             // Apply final position
             tooltipEl.style.top = `${Math.max(viewportPadding, Math.min(top, window.innerHeight - tooltipRect.height - viewportPadding))}px`;
             tooltipEl.style.left = `${Math.max(viewportPadding, Math.min(left, window.innerWidth - tooltipRect.width - viewportPadding))}px`;
-            
+
             // Trigger reflow and animate in
             void tooltipEl.offsetWidth; // Force reflow
             tooltipEl.style.opacity = '1';

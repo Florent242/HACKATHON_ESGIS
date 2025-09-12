@@ -443,7 +443,7 @@ class NotificationManager {
 
         // Voir toutes les notifications
         viewAllBtn.addEventListener('click', () => {
-            window.location.href = '/user/notifications';
+            window.location.href = '/user/profile#notifications';
         });
 
         // Fermer avec Escape

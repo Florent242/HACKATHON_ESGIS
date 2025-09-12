@@ -81,28 +81,6 @@ class ChallengeController extends Controller
         }
     }
 
-    /**
-     * Récupère tous les challenges
-     */
-    public function getAll()
-    {
-        try {
-            $this->validateMethod('GET');
-
-            $challenges = $this->challenge->getAll();
-
-            $this->jsonResponse([
-                'success' => true,
-                'data' => $challenges
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
-        }
-    }
-
     public function submitChallengeCTF($user_id, $input, $phase_id = null)
     {
         try {
@@ -116,11 +94,16 @@ class ChallengeController extends Controller
             if ($phase_id !== null && !$this->challenge->isPhaseActive($input['hackathon_id'], $phase_id)) {
                 throw new Exception("Cette phase n'est pas active actuellement !");
             }
-            
+
 
             // Vérifier si la période du hackathon est active
             if (!$this->challenge->isChallengeLaunchPeriod($input['hackathon_id'])) {
                 throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
+            }
+
+            // Vérifier s'il s'agit d'une phase pour qualifier
+            if ($phase_id !== null && !$this->phase->checkQualification($user_id, $phase_id, $input['hackathon_id'])) {
+                throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
             }
 
             // Appel à la méthode qui gère toute la logique (valide ou non, dynamique, etc)
@@ -174,6 +157,11 @@ class ChallengeController extends Controller
                 throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
             }
 
+            // Vérifier si l'utilisateur est qualifié pour la phase
+            if ($phase_id !== null && !$this->phase->checkQualification($user_id, $phase_id, $hackathon_id)) {
+                throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
+            }
+
             $challenges = $this->challenge->getChallengeAlgo($hackathon_id, $user_id, $phase_id);
 
             $this->jsonResponse([
@@ -204,6 +192,11 @@ class ChallengeController extends Controller
             // Vérifier si la période du hackathon est active
             if (!$this->challenge->isChallengeLaunchPeriod($hackathon_id)) {
                 throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
+            }
+
+            // Vérifier si l'utilisateur est qualifié pour la phase
+            if ($phase_id !== null && !$this->phase->checkQualification($user_id, $phase_id, $hackathon_id)) {
+                throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
             }
 
             // equipe de l'utilisateur
@@ -259,6 +252,11 @@ class ChallengeController extends Controller
                 throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.(valid: " . ($valid ? 'true' : 'false') . ")");
             }
 
+            // Vérifier si l'utilisateur est qualifié pour la phase
+            if ($phase_id !== null && !$this->phase->checkQualification($user_id, $phase_id, $hackathon_id)) {
+                throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
+            }
+
             $challenges = $this->challenge->getChallengeCTF($hackathon_id, $user_id, $phase_id);
             $this->jsonResponse([
                 'success' => true,
@@ -304,6 +302,11 @@ class ChallengeController extends Controller
                 throw new Exception('Challenge non trouvé');
             }
 
+            // Vérifier si l'utilisateur est qualifié pour la phase
+            if (!$this->phase->checkQualification($userId, $challenge['phase_id'], $challenge['hackathon_id'])) {
+                throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
+            }
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $challenge
@@ -333,27 +336,28 @@ class ChallengeController extends Controller
         }
     }
     /**
+     * TODO: instruction non valide pour l'instant 
      * Récupère les challenges d'un hackathon
      * @param int $id ID du hackathon
      */
-    public function getByHackathon($id)
-    {
-        try {
-            $this->validateMethod('GET');
+    // public function getByHackathon($id)
+    // {
+    //     try {
+    //         $this->validateMethod('GET');
 
-            $challenges = $this->challenge->getByHackathon($id);
+    //         $challenges = $this->challenge->getByHackathon($id);
 
-            $this->jsonResponse([
-                'success' => true,
-                'data' => $challenges
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
-        }
-    }
+    //         $this->jsonResponse([
+    //             'success' => true,
+    //             'data' => $challenges
+    //         ]);
+    //     } catch (Exception $e) {
+    //         $this->jsonResponse([
+    //             'success' => false,
+    //             'error' => $e->getMessage()
+    //         ], 400);
+    //     }
+    // }
 
     public function isRegistered($user_id, $hackathon_id)
     {
@@ -435,21 +439,45 @@ class ChallengeController extends Controller
      * Soumet une solution pour un défi algorithmique
      * POST /api/challenges/algorithmic/{id}/submit
      */
-    public function submitAlgorithmic($challengeId)
+    public function submitAlgorithmic($challengeId, $input)
     {
         try {
             $this->validateMethod('POST');
 
             // Authentification JWT pure
-            $token = $this->getBearerToken();
-            if (!$token) {
+            $userId = $this->tokenManager->getCurrentUserId();
+            if (!$userId) {
                 throw new Exception('Token manquant', 401);
             }
 
-            // TODO: retirer et mettre plutot une autre methode de recuperation de l'utilisateur
+            // Valider les entree requis
+            $this->validateRequiredFields([
+                'code',
+                'hackathon_id',
+                'phase_id',
+                'challenge_id',
+                'user_id'
+            ], $input);
 
-            // Récupérer les données de la soumission
-            $input = $this->getJsonInput();
+            // Vérifier si l'utilisateur est inscrit au hackathon
+            if (!$this->isRegistered($userId, $input['hackathon_id'])) {
+                throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
+            }
+
+            // Vérifier si la phase est active
+            if ($input['phase_id'] !== null && !$this->challenge->isPhaseActive($input['hackathon_id'], $input['phase_id'])) {
+                throw new Exception("Cette phase n'est pas active actuellement !");
+            }
+
+            // Vérifier si la période du hackathon est active
+            if (!$this->challenge->isChallengeLaunchPeriod($input['hackathon_id'])) {
+                throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
+            }
+
+            // Vérifier si l'utilisateur est qualifié pour la phase
+            if ($input['phase_id'] !== null && !$this->phase->checkQualification($userId, $input['phase_id'], $input['hackathon_id'])) {
+                throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
+            }
 
 
             if (!isset($input['code']) || !isset($input['hackathon_id'])) {
@@ -630,6 +658,12 @@ class ChallengeController extends Controller
     private function startEvaluation($submissionId)
     {
         try {
+            $userId = $this->tokenManager->getCurrentUserId();
+            // Verifier si la soumission existe
+            $submission = $this->challenge->getSubmissionDetails($submissionId, $userId);
+            if (!$submission) {
+                throw new Exception('Soumission non trouvée', 404);
+            }
             // Charger le service de validation
             require_once __DIR__ . '/../services/ChallengeValidationService.php';
             $validationService = new \Auth\Service\ChallengeValidationService($this->db, $this->challenge);

@@ -8,11 +8,6 @@ if (
     exit;
 }
 
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
-
 use Auth\Model\Database;
 use Auth\Controller\AuthController;
 use Auth\Controller\HackathonController;
@@ -29,6 +24,7 @@ use Piston\PistonExecutor;
 use Auth\Controller\ParticipantController;
 use Auth\Controller\ScoreController;
 use Auth\Controller\PhaseController;
+use Auth\Service\InputInspectionService;
 
 try {
 
@@ -62,15 +58,16 @@ try {
         'HackathonController' => '/controllers/HackathonController.php',
         'NotificationController' => '/controllers/NotificationController.php',
         'ParticipantController' => '/controllers/ParticipantController.php',
-        'PistonRequest' => '/services/PistonRequest.php',
-        'PistonExecutor' => '/services/PistonExecutor.php',
-        'PistonResponse' => '/services/PistonResponse.php',
-        'PhaseController' => '/controllers/PhaseController.php',
+        'PistonRequest'       => '/services/PistonRequest.php',
+        'PistonExecutor'      => '/services/PistonExecutor.php',
+        'PistonResponse'      => '/services/PistonResponse.php',
+        'PhaseController'     => '/controllers/PhaseController.php',
         'ProjectController'   => '/controllers/ProjectController.php',
         'ScoreController'     => '/controllers/ScoreController.php',
         'TeamController'      => '/controllers/TeamController.php',
         'TokenManager'        => '/models/TokenManager.php',
         'UserController'      => '/controllers/UserController.php',
+        'InputInspectionService' => '/services/InputInspectionService.php',
     ];
 
     foreach ($files as $class => $path) {
@@ -114,6 +111,27 @@ try {
     // Si c'est une requête POST et que le JSON n'est pas valide, utiliser $_POST
     if ($input === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $input = $_POST;
+    }
+
+    // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
+    try {
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+        $input = InputInspectionService::inspectInput($input, [
+            'method' => $method,
+            'headers' => $headers,
+            'raw' => $rawInput,
+            'max_body_bytes' => 1024 * 1024,
+        ]);
+    } catch (Exception $e) {
+        if (isAjaxRequest()) {
+            header('Content-Type: application/json');
+            http_response_code($e->getCode() ?: 400);
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        } else {
+            setFlashMessage('error', 'Entrée invalide', $e->getMessage());
+            header('Location: ' . '/');
+        }
+        exit();
     }
 
     // Initialisation du gestionnaire de token
@@ -386,7 +404,11 @@ try {
                                     exit();
                                 }
                             }
+                        }else if ($request[1] === 'refresh-csrf-token') {
+                            // GET /api/users/refresh-csrf-token
+                            $controller->refreshCsrfToken();
                         }
+
                         break;
 
                     case 'OPTIONS':
@@ -549,6 +571,13 @@ try {
                                 jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                             }
                             $controller->getCompletedChallenges($id, $token);
+                            break;
+                        case 'all-activities':
+                            // Vérification d'autorisation
+                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                                jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                            }
+                            $controller->getAllActivities($id, $token);
                             break;
                         default:
                             if (isAjaxRequest()) {
@@ -832,7 +861,7 @@ try {
                     if ($action === 'validate' && $challengeId) {
                         $controller->validateCode($challengeId, $request[3]);
                     } elseif ($action === 'submit' && $challengeId) {
-                        $controller->submitAlgorithmic($challengeId);
+                        $controller->submitAlgorithmic($challengeId, $input);
                     } else {
                         throw new Exception('Action non reconnue pour les défis dev', 400);
                     }

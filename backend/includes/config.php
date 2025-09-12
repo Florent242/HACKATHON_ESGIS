@@ -58,14 +58,20 @@ define('APP_VERSION', '1.0.0');
 // Configuration des sessions
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_secure', 0); // Mettre à 1 en production avec HTTPS
+ini_set('session.cookie_secure', 1); // Mettre à 1 en production avec HTTPS
 
 // Configuration du fuseau horaire
 date_default_timezone_set('Africa/Porto-Novo');
 
 // Configuration des erreurs
 error_reporting(E_ALL);
-ini_set('display_errors', 1); // Mettre à 0 en production
+
+//verifier si le serveur est en production ou en développement
+if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+    ini_set('display_errors', 0); // Mettre à 0 en production
+} else {
+    ini_set('display_errors', 1); // Mettre à 1 en développement
+}
 
 // Démarrer la session si elle n'est pas déjà démarrée
 if (session_status() === PHP_SESSION_NONE) {
@@ -111,21 +117,17 @@ function jsonResponse($data, $statusCode = 200)
 // Configuration CORS
 function configureCors()
 {
-    // Autoriser l'origine spécifique de votre frontend
-    // En développement, vous pouvez utiliser '*' mais en production, spécifiez l'origine exacte
-    header('Access-Control-Allow-Origin: *');
-
-    // Autoriser les méthodes HTTP
-    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-
-    // Autoriser les en-têtes personnalisés
-    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-
     // Autoriser l'envoi des credentials (cookies, en-têtes d'autorisation)
     header('Access-Control-Allow-Credentials: true');
 
     // Durée de mise en cache des résultats du pre-flight
     header('Access-Control-Max-Age: 86400'); // 24 heures
+
+    header('Content-Security-Policy: default-src \'self\'; script-src \'self\'; object-src \'none\';');
+
+    // Supprimer l'en-tête Server
+    header_remove('Server');
+    header_remove('X-Powered-By');
 
     // Pour les requêtes OPTIONS (pre-flight)
     if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {

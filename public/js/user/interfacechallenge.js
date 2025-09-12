@@ -585,10 +585,26 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         try {
             const result = await executeCode(code, AppState.currentLanguage);
-            displayExecutionResult(result);
+            
+            // Vérification que nous avons bien reçu une réponse
+            if (result) {
+                displayExecutionResult(result);
+            } else {
+                showError('Aucune réponse du serveur');
+            }
         } catch (error) {
             console.error('Erreur lors de l\'exécution:', error);
-            showError('Erreur lors de l\'exécution du code');
+            
+            // Créer un objet d'erreur standardisé pour l'affichage
+            const errorResult = {
+                success: false,
+                error: error.message || 'Erreur de communication avec le serveur',
+                data: {
+                    language: AppState.currentLanguage
+                }
+            };
+            
+            displayExecutionResult(errorResult);
         } finally {
             updateLoadingState(false);
         }
@@ -677,6 +693,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         return response;
     }
+    console.log('Réponse de l\'API:', response);
 
     function displayExecutionResult(result) {
         const consoleOutput = document.getElementById('consoleOutput');
@@ -684,24 +701,39 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         console.log('Résultat d\'exécution:', result);
 
+        // Vérification de sécurité pour éviter les erreurs
+        if (!result) {
+            consoleOutput.innerHTML = `
+                <div class="p-4 text-red-400 flex items-center gap-2">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    <span>Aucun résultat reçu du serveur</span>
+                </div>
+            `;
+            lucide.createIcons();
+            return;
+        }
+
         if (result.success) {
             // Exécution réussie
+            const output = result.output || result.data?.output || '';
+            const stderr = result.run_info?.stderr || result.data?.stderr || '';
+            
             consoleOutput.innerHTML = `
                 <div class="p-4 space-y-2">
                     <div class="flex items-center text-green-400">
                         <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i>
-                        <span class="font-medium">Exécution réussie (${result.language})</span>
+                        <span class="font-medium">Exécution réussie (${result.language || result.data?.language || 'Inconnu'})</span>
                     </div>
-                    ${result.output ? `
+                    ${output ? `
                         <div class="mt-2">
                             <div class="text-xs text-slate-400 mb-1">Sortie :</div>
-                            <pre class="bg-slate-800/50 p-3 rounded-lg overflow-auto">${escapeHtml(result.output)}</pre>
+                            <pre class="bg-slate-800/50 p-3 rounded-lg overflow-auto">${escapeHtml(output)}</pre>
                         </div>
                     ` : ''}
-                    ${result.run_info?.stderr ? `
+                    ${stderr ? `
                         <div class="mt-2">
                             <div class="text-xs text-slate-400 mb-1">Avertissements :</div>
-                            <pre class="bg-slate-800/50 p-3 rounded-lg overflow-auto text-amber-300">${escapeHtml(result.run_info.stderr)}</pre>
+                            <pre class="bg-slate-800/50 p-3 rounded-lg overflow-auto text-amber-300">${escapeHtml(stderr)}</pre>
                         </div>
                     ` : ''}
                 </div>
@@ -729,11 +761,13 @@ document.addEventListener('DOMContentLoaded', async function () {
                 `;
             }
 
-            // Affichage de l'erreur principale
-            const mainError = result.error || result.data.error ||
-                (result.run_info?.stderr) ||
-                (result.compile_info?.stderr) ||
-                (result.data.stderr) ||
+            // Affichage de l'erreur principale - avec vérifications de sécurité
+            const mainError = result.error || 
+                result.data?.error ||
+                result.run_info?.stderr ||
+                result.compile_info?.stderr ||
+                result.data?.stderr ||
+                result.message ||
                 'Erreur d\'exécution inconnue';
 
             errorDetails += `
@@ -744,21 +778,26 @@ document.addEventListener('DOMContentLoaded', async function () {
             `;
 
             // Si il y a une sortie malgré l'erreur
-            if (result.data.output || result.data.stderr || result.error) {
+            const partialOutput = result.data?.output || result.data?.stderr || result.output;
+            if (partialOutput) {
                 errorDetails += `
                     <div class="mt-2">
                         <div class="text-xs text-slate-400 mb-1">Sortie partielle :</div>
-                        <pre class="bg-slate-800/50 p-3 rounded-lg overflow-auto">${escapeHtml(result.data.output || result.data.stderr || result.error)}</pre>
+                        <pre class="bg-slate-800/50 p-3 rounded-lg overflow-auto">${escapeHtml(partialOutput)}</pre>
                     </div>
                 `;
             }
+
+            const language = result.data?.language || result.language || 'Inconnu';
+            const version = result.data?.version || result.version || '';
+            const exitCode = result.data?.exit_code || result.exit_code;
 
             consoleOutput.innerHTML = `
                 <div class="p-4 space-y-2">
                     <div class="flex items-center text-red-400">
                         <i data-lucide="circle-x" class="w-5 h-5 mr-2"></i>
-                        <span class="font-medium">Erreur d'exécution (${result.data.language + ' ' + result.data.version || 'Inconnu'})</span>
-                        ${result.data.exit_code ? `<span class="ml-2 text-xs bg-red-500/20 px-2 py-1 rounded whitespace-nowrap">Code: ${result.data.exit_code}</span>` : ''}
+                        <span class="font-medium">Erreur d'exécution (${language}${version ? ' ' + version : ''})</span>
+                        ${exitCode ? `<span class="ml-2 text-xs bg-red-500/20 px-2 py-1 rounded whitespace-nowrap">Code: ${exitCode}</span>` : ''}
                     </div>
                     ${errorDetails}
                 </div>

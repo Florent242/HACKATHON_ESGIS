@@ -120,29 +120,39 @@ class Controller
      */
     protected function validateCsrfToken(): bool
     {
-        // Méthodes GET n'ont pas besoin de CSRF
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             return true;
         }
     
-        // 1. Essayer de récupérer depuis $_POST ou header
-        $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? null;
+        // 1. Récupération du token depuis différentes sources
+        $token = $_POST['_token'] 
+            ?? $_SERVER['HTTP_X_CSRF_TOKEN'] 
+            ?? $this->getTokenFromJsonInput();
     
-        // 2. Si toujours pas trouvé, tenter via php://input si contenu JSON
-        if (!$token) {
-            $rawData = file_get_contents('php://input');
-            $data = json_decode($rawData, true);
-            $token = $data['csrf_token'] ?? null;
-        }
-
-        // 3. Si toujours pas trouvé, renvoyer false
+        // 2. Vérification de l'existence
         if (!$token) {
             return false;
         }
     
-        return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+        // 3. Vérification de la validité
+        if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+            return false;
+        }
+    
+        return true;
     }
     
+    private function getTokenFromJsonInput(): ?string
+    {
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        if (strpos($contentType, 'application/json') !== false) {
+            $rawData = file_get_contents('php://input');
+            $data = json_decode($rawData, true);
+            return $data['csrf_token'] ?? null;
+        }
+        return null;
+    }
+
 
     /**
      * Retourne le chemin de la requête
@@ -155,25 +165,26 @@ class Controller
 
     /**
      * Envoie une réponse JSON
-     */protected function jsonResponse($data, $statusCode = 200) {
-    try {
-        header('Content-Type: application/json; charset=utf-8');
-        http_response_code((int)$statusCode);
-        $json = json_encode($data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
-        error_log("jsonResponse: " . $json);
-        echo $json;
-        exit;
-    } catch (Exception $e) {
-        error_log("Erreur dans jsonResponse: " . $e->getMessage());
-        header('Content-Type: application/json; charset=utf-8');
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'error' => 'Erreur de sérialisation JSON: ' . $e->getMessage()
-        ]);
-        exit;
+     */ protected function jsonResponse($data, $statusCode = 200)
+    {
+        try {
+            header('Content-Type: application/json; charset=utf-8');
+            http_response_code((int)$statusCode);
+            $json = json_encode($data, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
+            error_log("jsonResponse: " . $json);
+            echo $json;
+            exit;
+        } catch (Exception $e) {
+            error_log("Erreur dans jsonResponse: " . $e->getMessage());
+            header('Content-Type: application/json; charset=utf-8');
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Erreur de sérialisation JSON: ' . $e->getMessage()
+            ]);
+            exit;
+        }
     }
-}
 
     /**
      * Valide les champs requis
@@ -188,14 +199,14 @@ class Controller
     }
 
     /**
- * Valide les méthodes HTTP autorisées
- */
-protected function validateMethod(string $method, string $method2 = ''): void
-{
-    if ($_SERVER['REQUEST_METHOD'] !== strtoupper($method) && $_SERVER['REQUEST_METHOD'] !== strtoupper($method2)) {
-        throw new Exception("Méthode {$_SERVER['REQUEST_METHOD']} non autorisée");
+     * Valide les méthodes HTTP autorisées
+     */
+    protected function validateMethod(string $method, string $method2 = ''): void
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== strtoupper($method) && $_SERVER['REQUEST_METHOD'] !== strtoupper($method2)) {
+            throw new Exception("Méthode {$_SERVER['REQUEST_METHOD']} non autorisée");
+        }
     }
-}
 
     /**
      * Récupère les données de la requête
@@ -219,6 +230,4 @@ protected function validateMethod(string $method, string $method2 = ''): void
     {
         return array_intersect_key($data, array_flip($allowedFields));
     }
-
-
 }

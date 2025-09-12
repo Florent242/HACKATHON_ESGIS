@@ -75,13 +75,13 @@ if (empty($_SESSION['csrf_token'])) {
                         <div class="progress-fill" id="progressFill"></div>
                     </div>
                     <div class="step-bubbles">
-                        <div class="bubble active" data-step="1" title="Informations personnelles">
+                        <div class="bubble active" data-step="1" data-tooltip="Informations personnelles">
                             <span>1</span>
                         </div>
-                        <div class="bubble" data-step="2" title="Sécurité">
+                        <div class="bubble" data-step="2" data-tooltip="Sécurité">
                             <span>2</span>
                         </div>
-                        <div class="bubble" data-step="3" title="Hackathon">
+                        <div class="bubble" data-step="3" data-tooltip="Hackathon">
                             <span>3</span>
                         </div>
                     </div>
@@ -125,19 +125,42 @@ if (empty($_SESSION['csrf_token'])) {
                         <div class="flex gap-2 flex-row justify-between">
                             <div class="form-group">
                                 <label for="phone" class="label after:ml-1 after:text-red-500 after:content-['*']">Téléphone</label>
-                                <div class="display p-2 shadow-lg shadow-indigo-300/10">
+                                <div class="display p-2 shadow-lg shadow-indigo-300/10 flex items-center gap-2">
                                     <i data-lucide="phone"></i>
-                                    <input type="tel" id="phone" name="phone" placeholder="+229 XX XX XX XX" required>
+                                    <select id="phone_country" aria-label="Indicatif pays" class="w-[110px] bg-transparent outline-none px-2 py-2 border border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                                        <option value="BJ" selected>+229 BJ</option>
+                                        <option value="TG">+228 TG</option>
+                                        <option value="CI">+225 CI</option>
+                                        <option value="BF">+226 BF</option>
+                                        <option value="SN">+221 SN</option>
+                                        <option value="GH">+233 GH</option>
+                                        <option value="NG">+234 NG</option>
+                                        <option value="FR">+33 FR</option>
+                                    </select>
+                                    <input
+                                        type="tel"
+                                        id="phone"
+                                        name="phone"
+                                        placeholder="+229 XX XX XX XX"
+                                        autocomplete="tel"
+                                        inputmode="tel"
+                                        required
+                                    >
                                 </div>
-                                <span class="error-message absolute top-full text-red-500 text-xs mt-1 hidden" id="phoneError"></span>
+                                <span class="error-message hidden text-[11px] text-red-400 mt-1" id="phoneError"></span>
                             </div>
                             <div class="form-group">
                                 <label for="school" class="label after:ml-1 after:text-red-500 after:content-['*']">École</label>
-                                <div class="display p-2 shadow-lg shadow-indigo-300/10">
-                                    <i data-lucide="school"></i>
-                                    <input type="text" id="school" name="school" placeholder="Votre école" required>
+                                <div class="custom-select-container">
+                                    <div class="display p-2 shadow-lg shadow-indigo-300/10">
+                                        <i data-lucide="school"></i>
+                                        <select id="school" name="school" required aria-label="Sélectionnez votre école" class="school-select w-full text-white bg-transparent outline-none px-3 py-2 border border-gray-700 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                                            <option value="" disabled selected>— Sélectionnez votre école —</option>
+                                        </select>
+                                        <i data-lucide="chevron-down" class="select-arrow"></i>
+                                    </div>
                                 </div>
-                                <span class="error-message absolute top-full text-red-500 text-xs mt-1 hidden" id="schoolError"></span>
+                                <span class="error-message hidden" id="schoolError"></span>
                             </div>
                         </div>
                     </div>
@@ -178,7 +201,8 @@ if (empty($_SESSION['csrf_token'])) {
                                         id="main_skill"
                                         name="main_skill"
                                         required
-                                        class="w-full bg-transparent text-xs text-gray-100 placeholder-gray-400 border-none focus:ring-0 focus:outline-none appearance-none cursor-pointer pr-5 py-0.5">
+                                        class="w-full bg-transparent text-xs text-gray-100 placeholder-gray-400 border-none focus:ring-0 focus:outline-none appearance-none cursor-pointer pr-5 py-0.5"
+                                    >
                                         <option value="" class="bg-gray-800 text-gray-300">Sélectionnez votre compétence</option>
                                         <optgroup label="Développement" class="bg-gray-800 text-gray-200">
                                             <option value="fullstack" class="hover:bg-indigo-600">Développement Full-Stack</option>

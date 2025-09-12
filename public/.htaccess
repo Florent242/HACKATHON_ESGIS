@@ -31,6 +31,13 @@ Options -Indexes
 RewriteCond %{REQUEST_URI} ^/(backend|includes|frontend)/ [NC]
 RewriteRule .* - [F]
 
+<IfModule mod_headers.c>
+    Header unset Server
+    Header always unset Server
+    Header unset X-Powered-By
+    Header always unset X-Powered-By
+</IfModule>
+
 # 🔒 Protection contre les attaques communes
 <IfModule mod_rewrite.c>
     # Bloquer les tentatives d'injection
@@ -45,6 +52,7 @@ RewriteRule .* - [F]
     RewriteCond %{QUERY_STRING} https\: [NC,OR]
     RewriteCond %{QUERY_STRING} \=PHP[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12} [NC,OR]
     RewriteCond %{QUERY_STRING} mosConfig_[a-zA-Z_]{1,21}(=|\%3D) [OR]
-    RewriteCond %{QUERY_STRING} ^.*(\[|\]|\(|\)|<|>|ê|"|;|\?|\*|=$).* [NC]
+    RewriteCond %{QUERY_STRING} ^.*(\[|\]|\(|\)|<|>|"|;|\?|\*|=$).* [NC]
     RewriteRule .* - [F]
 </IfModule>
+ServerSignature Off

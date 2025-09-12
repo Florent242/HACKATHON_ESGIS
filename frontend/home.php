@@ -70,7 +70,7 @@
                     <h2 class="text-4xl font-bold mb-2">
                         <span class="counter" data-target="200">0</span>+
                     </h2>
-                    <p class="text-slate-400">Membres actifs</p>
+                    <p class="text-slate-400">Membres attendus</p>
                 </div>
                 <div class="stat-item text-center group">
                     <div class="stat-icon bg-blue-500/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-500/20 transition-colors">
@@ -86,7 +86,7 @@
                         <i data-lucide="trophy" class="w-8 h-8 text-blue-400"></i>
                     </div>
                     <h2 class="text-4xl font-bold mb-2">
-                        $<span class="counter" data-target="50">0</span>K
+                        $<span class="counter" data-target="2">0</span>K
                     </h2>
                     <p class="text-slate-400">En jeu</p>
                 </div>
@@ -186,7 +186,7 @@
                         </div>
                         <div class="flex items-center gap-3 text-slate-300">
                             <i data-lucide="users" class="w-5 h-5 text-blue-400"></i>
-                            <span>200+ participants attendus</span>
+                            <span>100+ participants attendus</span>
                         </div>
                         <div class="flex items-center gap-3 text-slate-300">
                             <i data-lucide="clock" class="w-5 h-5 text-blue-400"></i>
@@ -207,7 +207,7 @@
                         </div>
                     </div>
 
-                    <h3 class="text-2xl font-bold mb-4">Challenge de Sécurité</h3>
+                    <h3 class="text-2xl font-bold mb-4">Challenges de Sécurité</h3>
                     <p class="text-slate-400 mb-6">Démontrez vos compétences en sécurité avec des scénarios réalistes</p>
 
                     <div class="event-details space-y-3 mb-8">
@@ -217,7 +217,7 @@
                         </div>
                         <div class="flex items-center gap-3 text-slate-300">
                             <i data-lucide="users" class="w-5 h-5 text-emerald-400"></i>
-                            <span>150+ experts attendus</span>
+                            <span>100+ experts attendus</span>
                         </div>
                         <div class="flex items-center gap-3 text-slate-300">
                             <i data-lucide="shield" class="w-5 h-5 text-emerald-400"></i>
@@ -272,7 +272,7 @@
                     </div>
                 </div>
                 
-                <a href="/contact?source=partnership" class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 rounded-lg font-semibold text-white transition-all duration-300 transform hover:scale-105">
+                <a href="https://discord.gg/FbztK5Uagd" class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 rounded-lg font-semibold text-white transition-all duration-300 transform hover:scale-105">
                     Nous contacter
                     <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
                 </a>

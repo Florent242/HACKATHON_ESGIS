@@ -58,6 +58,7 @@ class UserController extends Controller
             }
 
             unset($user['password']); // Ne pas renvoyer le mot de passe
+            unset($user['role']);
 
             $this->jsonResponse([
                 'success' => true,
@@ -92,6 +93,27 @@ class UserController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Régénère le token CSRF
+     */
+    public function refreshCsrfToken()
+    {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        if (!isset($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+
+        $_SESSION['csrf_token_created'] = time();
+
+        $this->jsonResponse([
+            'success' => true,
+            'csrf_token' => $_SESSION['csrf_token']
+        ]);
     }
 
     /**
@@ -309,11 +331,11 @@ class UserController extends Controller
     public function getUserStats($userId)
     {
         header('Content-Type: application/json');
-    
+
         try {
             $database = Database::getInstance();
             $db = $database->getConnection();
-    
+
             // Vérifier l'existence de l'utilisateur
             $userCheck = $db->prepare("SELECT id FROM users WHERE id = ?");
             $userCheck->execute([$userId]);
@@ -321,7 +343,7 @@ class UserController extends Controller
             if (!$user) {
                 throw new Exception("Utilisateur non trouvé");
             }
-    
+
             // Initialiser la structure de réponse
             $response = [
                 'success' => true,
@@ -340,7 +362,7 @@ class UserController extends Controller
                     ]
                 ]
             ];
-    
+
             // Défis de développement (basé sur user_progress et snippets)
             try {
                 $devQuery = $db->prepare("
@@ -354,7 +376,7 @@ class UserController extends Controller
                 ");
                 $devQuery->execute([$userId]);
                 $devData = $devQuery->fetch(PDO::FETCH_ASSOC);
-    
+
                 if ($devData) {
                     $response['data']['stats']['number-dev-challenges'] = (int)$devData['total'];
                     $response['data']['stats']['number-dev-challenges-on'] = (int)$devData['in_progress'];
@@ -362,7 +384,7 @@ class UserController extends Controller
             } catch (Exception $e) {
                 error_log("Erreur dans la requête des défis de développement: " . $e->getMessage());
             }
-    
+
             // Défis de hacking (basé sur validated_flags)
             try {
                 $hackingQuery = $db->prepare("
@@ -374,22 +396,22 @@ class UserController extends Controller
                 ");
                 $hackingQuery->execute([$userId]);
                 $hackingData = $hackingQuery->fetch(PDO::FETCH_ASSOC);
-    
+
                 if ($hackingData) {
                     $response['data']['stats']['number-hacking-challenges'] = (int)$hackingData['total'];
                     $response['data']['stats']['number-hacking-challenges-validate'] = (int)$hackingData['validated'];
-    
+
                     if ($response['data']['stats']['number-hacking-challenges'] > 0) {
                         $response['data']['stats']['hacking-stat'] = round(
                             ($response['data']['stats']['number-hacking-challenges-validate'] /
-                            $response['data']['stats']['number-hacking-challenges']) * 100
+                                $response['data']['stats']['number-hacking-challenges']) * 100
                         );
                     }
                 }
             } catch (Exception $e) {
                 error_log("Erreur dans la requête des défis de hacking: " . $e->getMessage());
             }
-    
+
             // Projets soumis (basé sur team_members et teams)
             try {
                 $projectsQuery = $db->prepare("
@@ -403,14 +425,14 @@ class UserController extends Controller
                 ");
                 $projectsQuery->execute([$userId]);
                 $projectsData = $projectsQuery->fetch(PDO::FETCH_ASSOC);
-    
+
                 if ($projectsData) {
                     $response['data']['stats']['number-submitted-projects'] = (int)$projectsData['submitted'];
                 }
             } catch (Exception $e) {
                 error_log("Erreur dans la requête des projets soumis: " . $e->getMessage());
             }
-    
+
             // Points totaux (basé sur validated_flags)
             try {
                 $pointsQuery = $db->prepare("
@@ -420,11 +442,11 @@ class UserController extends Controller
                 ");
                 $pointsQuery->execute([$userId]);
                 $pointsData = $pointsQuery->fetch(PDO::FETCH_ASSOC);
-    
+
                 if ($pointsData) {
                     $response['data']['stats']['total-points'] = (int)$pointsData['total'];
                 }
-    
+
                 // Points gagnés depuis la dernière connexion
                 $pointsChangeQuery = $db->prepare("
                     SELECT COALESCE(SUM(points_gained), 0) as total
@@ -434,7 +456,7 @@ class UserController extends Controller
                 ");
                 $pointsChangeQuery->execute([$userId]);
                 $pointsChangeData = $pointsChangeQuery->fetch(PDO::FETCH_ASSOC);
-    
+
                 if ($pointsChangeData) {
                     $response['data']['stats']['points-change'] = (int)$pointsChangeData['total'];
                     $response['data']['stats']['points-change-percent'] = $response['data']['stats']['total-points'] > 0
@@ -444,13 +466,13 @@ class UserController extends Controller
             } catch (Exception $e) {
                 error_log("Erreur dans la requête des points: " . $e->getMessage());
             }
-    
+
             // Pourcentage de progression
             $response['data']['stats']['total-points-stat'] = min(
                 100,
                 round(($response['data']['stats']['total-points'] / 1000) * 100)
             );
-    
+
             echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             exit;
         } catch (PDOException $e) {
@@ -521,42 +543,94 @@ class UserController extends Controller
             $database = Database::getInstance();
             $db = $database->getConnection();
 
-            try {
-                $stmt = $db->prepare("
-                SELECT c.* 
-                FROM challenges c
-                JOIN challenge_submissions cs ON c.id = cs.challenge_id
-                WHERE cs.user_id = :userId AND cs.status = 'pending'
+            // Ongoing = non-CTF with at least one non-completed submission OR
+            // CTF with at least one valid flag but total points still below challenge points
+            $stmt = $db->prepare("
+            WITH non_ctf_ongoing AS (
+                SELECT 
+                    cs.challenge_id,
+                    MIN(cs.submitted_at) AS started_at,
+                    MAX(cs.submitted_at) AS last_activity
+                FROM challenge_submissions cs
+                JOIN challenges c ON c.id = cs.challenge_id AND c.type <> 'ctf'
+                WHERE cs.user_id = :user_id
+                  AND cs.status <> 'completed'
+                GROUP BY cs.challenge_id
+            ),
+            ctf_ongoing AS (
+                SELECT 
+                    vf.challenge_id,
+                    MIN(vf.validated_at) AS started_at,
+                    MAX(vf.validated_at) AS last_activity,
+                    SUM(vf.points_gained) AS total_ctf_points
+                FROM validated_flags vf
+                JOIN challenges ctf ON ctf.id = vf.challenge_id AND ctf.type = 'ctf'
+                WHERE vf.user_id = :user_idp
+                  AND vf.is_valid = 1
+                GROUP BY vf.challenge_id
+                HAVING SUM(vf.points_gained) < MAX(ctf.points)
+            ),
+            ongoing AS (
+                SELECT challenge_id, started_at, last_activity FROM non_ctf_ongoing
+                UNION
+                SELECT challenge_id, started_at, last_activity FROM ctf_ongoing
+            )
+            SELECT 
+                c.id,
+                c.title,
+                c.description,
+                c.type,
+                c.category,
+                c.difficulty,
+                c.points,
+                'ongoing' AS status,
+                og.last_activity AS progress_last_updated,
+                og.started_at AS progress_start_date
+            FROM challenges c
+            JOIN ongoing og ON og.challenge_id = c.id
+            WHERE c.is_active = 1
+            ORDER BY og.last_activity DESC
+            LIMIT 10
             ");
-                $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
-                $stmt->execute();
+            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $stmt->bindParam(':user_idp', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                $challenges = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            } catch (Exception $e) {
-                $this->jsonResponse([
-                    'success' => false,
-                    'error' => "Une erreur est survenue lors de la récupération des défis en cours !"
-                    // pour debug
-                    // . $e->getMessage()
-                ], 500);
-            }
+            // Harmonize shape with frontend expectations
+            $data = array_map(function ($row) {
+                return [
+                    'challenge_id' => $row['id'],
+                    'title' => $row['title'],
+                    'description' => $row['description'],
+                    'type' => $row['type'],
+                    'category' => $row['category'],
+                    'difficulty' => $row['difficulty'],
+                    'points' => $row['points'],
+                    'status' => $row['status'],
+                    'updated_at' => $row['progress_last_updated'],
+                ];
+            }, $rows);
+
             $this->jsonResponse([
                 'success' => true,
-                'data' => $challenges
+                'data' => $data
             ]);
-        } catch (Exception $e) {
+        } catch (PDOException $e) {
+            error_log("Erreur de base de données dans getCurrentChallenges: " . $e->getMessage());
             $this->jsonResponse([
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => 'Erreur lors de la récupération des défis en cours',
+                // 'details' => $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
+            error_log("Erreur générale dans getCurrentChallenges: " . $e->getMessage());
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
-
-    /**
-     * Récupère l'activité récente de l'utilisateur
-     * @param int $userId ID de l'utilisateur
-     */
-
 
     /**
      * Récupère les défis en cours d'un utilisateur
@@ -565,47 +639,77 @@ class UserController extends Controller
     public function getCurrentChallenges($userId, $jwt)
     {
         header('Content-Type: application/json');
-    
+
         try {
             $currentUserId = $this->getUserIdFromJWT($jwt);
             if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
                 $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                 return;
             }
-    
+
             $database = Database::getInstance();
             $db = $database->getConnection();
-    
-            // Récupérer les défis en cours depuis user_progress avec jointure sur challenges
+
+            // Récupérer les défis en cours sans dépendre de user_progress
+            // 1) Non-CTF: au moins une soumission non terminée
+            // 2) CTF: au moins un flag validé mais total points < challenge points
             $query = "
+                WITH non_ctf_ongoing AS (
+                    SELECT 
+                        cs.challenge_id,
+                        MIN(cs.submitted_at) AS started_at,
+                        MAX(cs.submitted_at) AS last_activity
+                    FROM challenge_submissions cs
+                    JOIN challenges c ON c.id = cs.challenge_id AND c.type <> 'ctf'
+                    WHERE cs.user_id = :user_id
+                      AND cs.status <> 'completed'
+                    GROUP BY cs.challenge_id
+                ),
+                ctf_ongoing AS (
+                    SELECT 
+                        vf.challenge_id,
+                        MIN(vf.validated_at) AS started_at,
+                        MAX(vf.validated_at) AS last_activity,
+                        SUM(vf.points_gained) AS total_ctf_points
+                    FROM validated_flags vf
+                    JOIN challenges ctf ON ctf.id = vf.challenge_id AND ctf.type = 'ctf'
+                    WHERE vf.user_id = :user_idp
+                      AND vf.is_valid = 1
+                    GROUP BY vf.challenge_id
+                    HAVING SUM(vf.points_gained) < MAX(ctf.points)
+                ),
+                ongoing AS (
+                    SELECT challenge_id, started_at, last_activity FROM non_ctf_ongoing
+                    UNION
+                    SELECT challenge_id, started_at, last_activity FROM ctf_ongoing
+                )
                 SELECT 
-                    up.challenge_id,
-                    up.status,
-                    up.start_date AS progress_start_date,
-                    up.last_updated AS progress_last_updated,
+                    c.id,
                     c.title,
                     c.description,
                     c.type,
                     c.category,
                     c.difficulty,
-                    c.points
-                FROM user_progress up
-                INNER JOIN challenges c ON up.challenge_id = c.id
-                WHERE up.user_id = :user_id 
-                AND up.status = 'ongoing' 
-                AND c.is_active = 1
-                ORDER BY up.last_updated DESC
+                    c.points,
+                    'ongoing' AS status,
+                    og.last_activity AS progress_last_updated,
+                    og.started_at AS progress_start_date
+                FROM challenges c
+                JOIN ongoing og ON og.challenge_id = c.id
+                WHERE c.is_active = 1
+                ORDER BY og.last_activity DESC
                 LIMIT 10
             ";
             $stmt = $db->prepare($query);
             $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $stmt->bindParam(':user_idp', $userId, PDO::PARAM_INT);
             $stmt->execute();
             $challenges = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
             // Formater les données pour correspondre au frontend
             $formattedChallenges = array_map(function ($challenge) {
                 return [
-                    'challenge_id' => $challenge['challenge_id'],
+                    'challenge_id' => $challenge['id'],
                     'title' => $challenge['title'],
                     'description' => $challenge['description'],
                     'type' => $challenge['type'],
@@ -616,7 +720,7 @@ class UserController extends Controller
                     'updated_at' => $challenge['progress_last_updated']
                 ];
             }, $challenges);
-    
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $formattedChallenges
@@ -626,15 +730,13 @@ class UserController extends Controller
             $this->jsonResponse([
                 'success' => false,
                 'error' => 'Erreur lors de la récupération des défis en cours',
-                'code' => 500,
-                'details' => $e->getMessage()
+                // 'details' => $e->getMessage()
             ], 500);
         } catch (Exception $e) {
             error_log("Erreur générale dans getCurrentChallenges: " . $e->getMessage());
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage(),
-                'code' => 500
             ], 500);
         }
     }
@@ -647,7 +749,6 @@ class UserController extends Controller
                 $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                 return;
             }
-
             $database = Database::getInstance();
             $db = $database->getConnection();
 
@@ -659,16 +760,34 @@ class UserController extends Controller
                     c.title,
                     c.description,
                     c.difficulty,
+                    solved.points as points,
                     c.type,
-                    cs.points,
-                    cs.submitted_at as completed_date
+                    solved.completed_date as completed_date
                 FROM challenges c
-                JOIN challenge_submissions cs ON c.id = cs.challenge_id
-                WHERE cs.user_id = :userId 
-                AND cs.status = 'validated'
-                ORDER BY cs.submitted_at DESC
+                LEFT JOIN (
+                    -- 1. Algo / Projet / Finale : meilleures soumissions validées
+                    SELECT cs.challenge_id, MAX(cs.total_score) AS points, MAX(cs.submitted_at) AS completed_date
+                    FROM challenge_submissions cs
+                    WHERE cs.user_id = :userId
+                    AND cs.status = 'completed'
+                    GROUP BY cs.challenge_id
+
+                    UNION
+
+                    -- 2. CTF : cumul des points des flags validés
+                    SELECT vf.challenge_id, SUM(vf.points_gained) AS points, MAX(vf.validated_at) AS completed_date
+                    FROM validated_flags vf
+                    JOIN challenges ctf ON vf.challenge_id = ctf.id
+                    WHERE vf.user_id = :userIdp
+                    AND vf.is_valid = 1
+                    AND ctf.type = 'ctf'
+                    GROUP BY vf.challenge_id
+                ) AS solved ON solved.challenge_id = c.id
+                WHERE solved.points IS NOT NULL
+                ORDER BY solved.completed_date DESC
             ");
                 $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+                $stmt->bindParam(':userIdp', $userId, PDO::PARAM_INT);
                 $stmt->execute();
 
                 $challenges = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -716,6 +835,53 @@ class UserController extends Controller
                 WHERE user_id = :userId
                 ORDER BY created_at DESC
                 LIMIT 10
+            ");
+                $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+                $stmt->execute();
+
+                $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                $this->jsonResponse([
+                    'success' => false,
+                    'error' => "Une erreur est survenue lors de la récupération des activités récentes !"
+                    // pour debug
+                    // . $e->getMessage()
+                ], 500);
+            }
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $activities
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function getAllActivities($userId, $jwt)
+    {
+        try {
+            $currentUserId = $this->getUserIdFromJWT($jwt);
+            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                return;
+            }
+
+            $database = Database::getInstance();
+            $db = $database->getConnection();
+
+            try {
+                // Récupérer les activités récentes de l'utilisateur
+                $stmt = $db->prepare("
+                SELECT 
+                    action as type,
+                    description,
+                    level,
+                    created_at as timestamp
+                FROM activity_logs
+                WHERE user_id = :userId
+                ORDER BY created_at DESC
             ");
                 $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
                 $stmt->execute();
@@ -1022,17 +1188,17 @@ class UserController extends Controller
     public function getNotifications($userId, $jwt)
     {
         header('Content-Type: application/json');
-    
+
         try {
             $currentUserId = $this->getUserIdFromJWT($jwt);
             if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
                 $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                 return;
             }
-    
+
             $database = Database::getInstance();
             $db = $database->getConnection();
-    
+
             // Récupérer les notifications de l'utilisateur
             $stmt = $db->prepare("
                 SELECT
@@ -1048,7 +1214,7 @@ class UserController extends Controller
             $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
             $stmt->execute();
             $notificationsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
             // Compter le nombre de notifications non lues
             $unreadStmt = $db->prepare("
                 SELECT COUNT(*)
@@ -1058,7 +1224,7 @@ class UserController extends Controller
             $unreadStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
             $unreadStmt->execute();
             $unreadCount = (int) $unreadStmt->fetchColumn();
-    
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => [
