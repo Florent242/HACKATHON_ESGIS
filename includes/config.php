@@ -19,7 +19,12 @@ define('DB_PASS', '');
 
 // Gestion des erreurs
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+//verifier si le serveur est en production ou en développement
+if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+    ini_set('display_errors', 0); // Mettre à 0 en production
+} else {
+    ini_set('display_errors', 1); // Mettre à 1 en développement
+}
 
 // Configuration des sessions
 if (session_status() === PHP_SESSION_NONE) {

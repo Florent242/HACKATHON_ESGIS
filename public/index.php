@@ -25,9 +25,6 @@ switch ($url) {
     case '/admin/hackathon':
         require_once '../frontend/admin/hackathon.php';
         break;
-    case '/admin/challenge':
-        require_once '../frontend/admin/challenge.php';
-        break;
     case '/admin/challenges':
         require_once '../frontend/admin/challenges.php';
         break;

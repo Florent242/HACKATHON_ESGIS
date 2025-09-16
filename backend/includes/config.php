@@ -79,7 +79,12 @@ date_default_timezone_set('Africa/Porto-Novo');
 
 // Configuration des erreurs
 error_reporting(E_ALL);
-ini_set('display_errors', 1); // Mettre à 0 en production
+//verifier si le serveur est en production ou en développement
+if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+    ini_set('display_errors', 0); // Mettre à 0 en production
+} else {
+    ini_set('display_errors', 0); // Mettre à 1 en développement
+}
 
 // Démarrer la session si elle n'est pas déjà démarrée
 if (session_status() === PHP_SESSION_NONE) {

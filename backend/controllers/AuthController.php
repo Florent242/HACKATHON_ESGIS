@@ -8,6 +8,7 @@ use Auth\Model\User;
 use Auth\Model\TokenManager;
 use PDO;
 use PDOException;
+use Auth\Model\RedisManager;
 
 if (!class_exists('Auth\Model\TokenManager')) {
     require_once __DIR__ . '/../models/TokenManager.php';
@@ -21,12 +22,16 @@ if (!class_exists('User')) {
 if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/includes/functions.php';
 }
+if (!class_exists('RedisManager')) {
+    require_once __DIR__ . '/../models/RedisManager.php';
+}
 
 class AuthController
 {
     private $user;
     private $db;
     private $tokenManager;
+    private $redisManager;
 
     public function __construct($db = null)
     {
@@ -45,6 +50,7 @@ class AuthController
             'shortTermExpiry' => 3600, // 1 heure
             'longTermExpiry' => 2592000 // 30 jours
         ]);
+        $this->redisManager = new RedisManager();
 
         // Générer un token CSRF s'il n'existe pas
         if (empty($_SESSION['csrf_token'])) {
@@ -206,80 +212,13 @@ class AuthController
         return;
     }
 
-    // Traiter l'inscription
-    public function register()
-    {
-        try {
-            // Vérifier le token CSRF
-            $this->validateCsrfToken();
-
-            // Récupération et nettoyage des données
-            $data = [
-                'username'    => trim(filter_input(INPUT_POST, 'username', FILTER_DEFAULT) ?: ''),
-                'fullname'    => trim(filter_input(INPUT_POST, 'fullname', FILTER_DEFAULT) ?: ''),
-                'email'       => trim(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?: ''),
-                'school'      => trim(filter_input(INPUT_POST, 'school', FILTER_DEFAULT) ?: ''),
-                'password'    => trim(filter_input(INPUT_POST, 'password', FILTER_UNSAFE_RAW) ?: ''), // Ne pas filtrer le mot de passe
-                'number'      => trim(filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_NUMBER_INT) ?: ''),
-                'special_comp' => trim(filter_input(INPUT_POST, 'main_skill', FILTER_DEFAULT) ?: ''),
-                'study_level' => trim(filter_input(INPUT_POST, 'education_level', FILTER_DEFAULT) ?: ''),
-                'role'        => 'participant'
-            ];
-
-            // Validation des données
-            if (empty($data['username']) || empty($data['email']) || empty($data['password'])) {
-                throw new Exception("Tous les champs sont obligatoires");
-            }
-
-            // Validation de l'email
-            if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-                throw new Exception("Format d'email invalide");
-            }
-
-            // Validation du mot de passe
-            if (strlen($data['password']) < 8) {
-                throw new Exception("Le mot de passe doit contenir au moins 8 caractères");
-            }
-
-            // Création de l'utilisateur
-            $userId = $this->user->create($data);
-
-            if ($userId) {
-                // Générer un token court terme
-                $token = $this->tokenManager->generateJwt($userId);
-
-                // Définir le cookie
-                $this->setAuthCookies($token);
-
-                setFlashMessage('success', 'Inscription réussie');
-
-                echo json_encode([
-                    'success' => true,
-                    'redirect' => "/user"
-                ]);
-                exit();
-            } else {
-                throw new Exception("Erreur lors de la création de l'utilisateur");
-            }
-        } catch (Exception $e) {
-            logActivity('register_error', $e->getMessage(), [
-                'email' => $data['email'] ?? 'non fourni',
-                'error' => $e->getMessage()
-            ], $userId, 'error');
-
-            echo json_encode([
-                'success' => false,
-                'message' => $e->getMessage()
-            ]);
-            exit();
-        }
-    }
-
     // Traiter la connexion
     public function login()
     {
         try {
-            // Récupérer les données
+            $clientIp = $_SERVER['REMOTE_ADDR'];
+
+            // Identifier l'utilisateur pour bloquer par IP + identifiant
             $data = json_decode(file_get_contents("php://input"), true);
             if ($data === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $data = $_POST;
@@ -289,26 +228,28 @@ class AuthController
                 throw new Exception('Email et mot de passe requis');
             }
 
-            $attemptId = getUserAttemptId($data['identifier']);
-            // Récupérer l'identifiant brut depuis POST ou $data
-            $identifier = isset($_POST['identifier']) ? $_POST['identifier'] : $data['identifier'];
-            $identifier = trim(htmlspecialchars($identifier, ENT_QUOTES, 'UTF-8'));
+            $identifier = trim(htmlspecialchars($data['identifier'], ENT_QUOTES, 'UTF-8'));
 
-            if (empty($identifier)) {
-                throw new Exception('Identifiant invalide');
+            $redisKey = "login_attempts:{$clientIp}:{$identifier}";
+
+            $attempts = (int) $this->redisManager->get($redisKey);
+            if ($attempts >= 5) {
+                $ttl = $this->redisManager->ttl($redisKey);
+                throw new Exception("Trop de tentatives. Réessayez dans " . ((int)($ttl / 60) < 1 ? "{$ttl} secondes" : (int)($ttl / 60) . " minutes."), 401);
             }
 
-            $password = filter_input(INPUT_POST, 'password', FILTER_DEFAULT);
+            $password = $data['password'];
             $rememberMe = isset($data['remember_me']) && $data['remember_me'] === 'on';
 
-            // Authentifier l'utilisateur en verifiant son statut et son mot de passe
-            $user = $this->user->authenticate($identifier, $password);
+            // Authentification
+            $auth = $this->user->authenticate($identifier, $password);
 
-            if (isset($user) && $user) {
+            if ($auth['success']) {
+                $user = $auth['user'];
                 if (session_status() === PHP_SESSION_NONE) {
                     session_start();
                 }
-                // Créer la session
+
                 $_SESSION['user'] = [
                     'id' => $user['id'],
                     'email' => $user['email'],
@@ -317,44 +258,55 @@ class AuthController
                     'last_activity' => time()
                 ];
 
-                // Générer les tokens
-                $token = $this->tokenManager->generateJwt($user['id']);
+                // Génération des tokens
+                $token = $this->tokenManager->generateJwt($user['id'], redis: true);
                 $longTermToken = null;
 
                 if ($rememberMe) {
-                    /**
-                     * TODO: Gérer le refresh token
-                     */
+                    // TODO: Gérer le refresh token
                     $longTermTokenData = $this->tokenManager->generateLongTermToken($user['id']);
                     $longTermToken = $longTermTokenData['token'];
                 }
 
-                // Définir les cookies
+                // Auth cookies
                 $this->setAuthCookies($token, $longTermToken);
 
-                // Réponse JSON
+                // Réinitialiser les tentatives après succès
+                $this->redisManager->delete($redisKey);
+
+                logActivity('login_success', 
+                'Connexion d\'un administrateur', 
+                ['user_id' => $user['id'], 
+                'role' => $user['role'], 
+                'identifier' => $identifier,
+                'email' => $user['email'], 
+                'ip' => $clientIp, 
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'], 
+            ], 
+                $user['id'], 
+                'info');
+
+                session_regenerate_id();
                 echo json_encode([
                     'success' => true,
                     'token' => $token,
                     'refresh_token' => $longTermToken,
                     'user' => $user,
-                    'message' => 'Connexion reussie',
+                    'message' => 'Connexion réussie',
                     'redirect' => "/admin"
                 ]);
                 exit();
             } else {
-                throw new Exception("Email ou mot de passe incorrect.");
+                // Échec : incrémenter les tentatives
+                $this->redisManager->increment($redisKey);
+                $this->redisManager->expire($redisKey, 600); // expire après 10 minutes
+                throw new Exception($auth['error'], 401);
             }
         } catch (Exception $e) {
-            logActivity('login_error', $e->getMessage(), [
-                'identifier' => $identifier ?? 'non fourni',
-                'error' => $e->getMessage()
-            ], $attemptId ?? null, 'error');
-
-            echo json_encode([
+            $this->sendResponse([
                 'success' => false,
                 'message' => $e->getMessage()
-            ]);
+            ], $e->getCode() ?: 400);
             exit();
         }
     }
@@ -366,6 +318,9 @@ class AuthController
             // Révocation des tokens
             if (isset($_COOKIE['long_term_token'])) {
                 $this->tokenManager->revokeToken($_COOKIE['long_term_token']);
+            }
+            if (isset($_COOKIE['jwt_token'])) {
+                $this->tokenManager->revokeToken($_COOKIE['jwt_token'], true);
             }
             $userId = isset($_SESSION['user']) && isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 
@@ -385,8 +340,6 @@ class AuthController
             ]);
             exit();
         } catch (Exception $e) {
-            logActivity('logout_error', 'Erreur lors de la déconnexion', ['error' => $e->getMessage()], $userId ?? null, 'error');
-
             echo json_encode([
                 'success' => false,
                 'message' => $e->getMessage()
@@ -457,6 +410,20 @@ class AuthController
 
             // Mettre à jour l'utilisateur
             $this->user->update($_SESSION['user_id'], $data);
+
+            logActivity('update_profile', 
+            'Mise à jour du profil', 
+            ['user_id' => $_SESSION['user_id'], 'data' => $data,
+            'ip' => $_SERVER['REMOTE_ADDR'],
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'],
+            'identifier' => $_SESSION['user']['identifier'],
+            'email' => $_SESSION['user']['email'],
+            'role' => $_SESSION['user']['role'],
+            'logged_in' => $_SESSION['user']['logged_in'],
+            'last_activity' => $_SESSION['user']['last_activity'],
+        ], 
+            $_SESSION['user_id'], 
+            'info');
 
             $_SESSION['notification'] = [
                 'message' => 'Profil mis à jour avec succès !',

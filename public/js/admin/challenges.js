@@ -88,6 +88,123 @@ const ELEMENTS = {
 };
 
 /**
+ * Wizard step-by-step navigation for the challenge form
+ */
+function initWizardNavigation() {
+    const prevBtn = document.getElementById('wizardPrev');
+    const nextBtn = document.getElementById('wizardNext');
+    const submitBtn = document.getElementById('wizardSubmit');
+    const form = document.querySelector(ELEMENTS.form.challenge);
+
+    if (!form || !prevBtn || !nextBtn || !submitBtn) return;
+
+    // Compute current wizard order based on visible tab buttons
+    function getWizardTabs() {
+        const base = ['general', 'content', 'configuration'];
+        const optional = ['flags', 'code', 'technologies'];
+        const result = [...base];
+        optional.forEach(tab => {
+            const btn = document.querySelector(`.tab-button[data-tab="${tab}"]`);
+            if (btn && btn.style.display !== 'none') {
+                result.push(tab);
+            }
+        });
+        // Ensure unique and existing tab-content elements
+        return result.filter((tab, idx) => result.indexOf(tab) === idx && document.getElementById(`${tab}Tab`));
+    }
+
+    function currentTabName() {
+        const active = document.querySelector('.tab-button.active');
+        return active ? active.getAttribute('data-tab') : 'general';
+    }
+
+    function goToTab(tab) {
+        switchTab(tab);
+        updateControls();
+    }
+
+    function goToIndex(delta) {
+        const order = getWizardTabs();
+        const cur = currentTabName();
+        const idx = Math.max(0, order.indexOf(cur));
+        const nextIdx = Math.min(order.length - 1, Math.max(0, idx + delta));
+        if (nextIdx !== idx) {
+            goToTab(order[nextIdx]);
+        }
+    }
+
+    function updateControls() {
+        const order = getWizardTabs();
+        const cur = currentTabName();
+        const idx = Math.max(0, order.indexOf(cur));
+        prevBtn.disabled = idx <= 0;
+        const isLast = idx >= order.length - 1;
+        nextBtn.style.display = isLast ? 'none' : 'inline-flex';
+        submitBtn.style.display = isLast ? 'inline-flex' : 'none';
+    }
+
+    function isFieldEmpty(field) {
+        if (field.type === 'checkbox' || field.type === 'radio') {
+            return !field.checked;
+        }
+        return !String(field.value || '').trim();
+    }
+
+    function validateCurrentTab() {
+        const cur = currentTabName();
+        const panel = document.getElementById(`${cur}Tab`);
+        if (!panel) return true;
+        let ok = true;
+        const required = panel.querySelectorAll('input[required], select[required], textarea[required]');
+        required.forEach(field => {
+            // Clear previous inline errors
+            const err = field.parentNode.querySelector('.field-error');
+            if (err) err.remove();
+            field.classList.remove('is-invalid');
+
+            if (isFieldEmpty(field)) {
+                ok = false;
+                try { if (typeof validateField === 'function') validateField(field); } catch (e) {
+                    field.classList.add('is-invalid');
+                    const div = document.createElement('div');
+                    div.className = 'field-error';
+                    div.textContent = 'Ce champ est requis';
+                    const parent = field.parentNode.classList.contains('form-group') ? field.parentNode : field.parentNode;
+                    parent.appendChild(div);
+                }
+            }
+        });
+        if (!ok && typeof showNotification === 'function') {
+            showNotification('Attention', 'Veuillez compléter les informations de cet onglet avant de continuer.', 'warning');
+        }
+        return ok;
+    }
+
+    prevBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        goToIndex(-1);
+    });
+
+    nextBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!validateCurrentTab()) return;
+        goToIndex(1);
+    });
+
+    // Recompute wizard when type/category impacts optional tabs
+    document.querySelector(ELEMENTS.form.type)?.addEventListener('change', () => {
+        updateControls();
+    });
+    document.querySelector(ELEMENTS.form.category)?.addEventListener('change', () => {
+        updateControls();
+    });
+
+    // Initialize on modal open
+    updateControls();
+}
+
+
+/**
  * Initialise la page de gestion des challenges
  */
 async function initializeChallengesPage() {
@@ -374,6 +491,9 @@ function setupEventListeners() {
     
     // Onglets
     setupTabEventListeners();
+
+    // Wizard navigation (Prev/Next/Submit)
+    initWizardNavigation();
 }
 
 /**
@@ -562,7 +682,7 @@ async function handleFormSubmit(e) {
         }
         
         const isEditing = challengeData.id;
-        const endpoint = isEditing ? `/admin/challenges/${challengeData.id}` : '/admin/challenges';
+        const endpoint = isEditing ? `/admin/challenges/${challengeData.id}` : '/admin/challenges/create';
         const method = isEditing ? 'PUT' : 'POST';
         
         const response = await apiRequest(endpoint, {
@@ -1172,7 +1292,7 @@ function downloadCSV(csv, filename) {
  */
 function setupModalEventListeners() {
     // Fermer les modals
-    document.querySelectorAll('.modal-close').forEach(button => {
+    document.querySelectorAll('.modal-closed').forEach(button => {
         button.addEventListener('click', () => {
             const modal = button.closest('.modal');
             closeModal(modal);

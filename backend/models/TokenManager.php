@@ -7,10 +7,14 @@ use Firebase\JWT\Key;
 use PDO;
 use PDOException;
 use Exception;
+use Auth\Model\RedisManager;
 
 
 if (!class_exists('Firebase\JWT\JWT')) {
     require_once __DIR__ . '/../../vendor/autoload.php';
+}
+if (!class_exists('Auth\Model\RedisManager')) {
+    require_once __DIR__ . '/RedisManager.php';
 }
 
 class TokenManager
@@ -21,6 +25,7 @@ class TokenManager
     private $domain = 'your-domain.com';
     private $shortTermExpiry = 3600; // 1 heure
     private $longTermExpiry = 2592000; // 30 jours
+    private $redis;
 
     // Dans le constructeur
     public function __construct(string $key, PDO $db, array $config = [])
@@ -37,21 +42,36 @@ class TokenManager
         if (!in_array($this->algorithm, ['HS256', 'HS384', 'HS512', 'RS256'])) {
             throw new Exception('Algorithme non supporté');
         }
+
+        try {
+            $this->redis = new RedisManager();
+        } catch (Exception $e) {
+            throw new Exception("Connexion à Redis échouée : " . $e->getMessage());
+        }
     }
 
-    public function generateJwt(int $userId, int $expiryTime = 3600): string
+    public function generateJwt(int $userId, int $expiryTime = 3600, bool $redis = false): string
     {
         $expiryTime = $expiryTime ?? $this->shortTermExpiry;
+        $jti = bin2hex(random_bytes(16)); // ID unique du token
+        $now = time();
         $payload = [
             "iss" => $this->domain,
-            "iat" => time(),
-            "exp" => time() + $expiryTime,
+            "iat" => $now,
+            "exp" => $now + $expiryTime,
             "sub" => $userId,
-            "jti" => bin2hex(random_bytes(16)), // Identifiant unique pour le token
-            "nbf" => time() - 1 // "Not Before" - empêche l'utilisation immédiate
+            "jti" => $jti,
+            "nbf" => $now - 1
         ];
 
-        return JWT::encode($payload, $this->key, $this->algorithm);
+        $jwt = JWT::encode($payload, $this->key, $this->algorithm);
+
+        if ($redis) {
+            // Clé: jwt:{jti}, Valeur: userId, TTL: durée du token
+            $this->redis->set("jwt:$jti", $userId, $expiryTime);
+        }
+
+        return $jwt;
     }
 
     public function generateLongTermToken(int $userId): array

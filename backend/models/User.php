@@ -30,15 +30,26 @@ class User
                 throw new Exception("L'identifiant ne peut pas être vide.");
             }
 
+            if (empty($password)) {
+                throw new Exception("Le mot de passe ne peut pas être vide.");
+            }
+
+            try {
             $query = "SELECT * FROM {$this->table} WHERE email = :email OR username = :username LIMIT 1";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':email', $identifier);
             $stmt->bindParam(':username', $identifier);
             $stmt->execute();
+            } catch (Exception $e) {
+                throw new Exception("Erreur de l'authentification. " 
+                // pour debuger
+                // . $e->getMessage()
+            );
+            }
 
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$user) {
-                return false;
+                return [ 'success' => false, 'error' => 'Utilisateur non trouvé'];
             }
 
             // Vérifier le statut de l'utilisateur
@@ -48,15 +59,15 @@ class User
 
             if (password_verify($password, $user['password'])) {
                 unset($user['password']); // Ne pas renvoyer le mot de passe
-                return $user;
+                return [ 'success' => true, 'user' => $user];
             }else{
-                return false;
+                return [ 'success' => false, 'error' => 'Mot de passe incorrect'];
             }
 
             // return false;
         } catch (Exception $e) {
             error_log('Erreur d\'authentification: ' . $e->getMessage());
-            return false;
+            return [ 'success' => false, 'error' => $e->getMessage()];
         }
     }
 
@@ -185,6 +196,12 @@ class User
             $stmt->bindValue(':profile_picture', $data['profile_picture'] ?? null);
 
             $stmt->execute();
+
+            logActivity('create_success', 'Utilisateur créé avec succès', [
+                'email' => $data['email'] ?? 'non fourni',
+                'username' => $data['username'] ?? 'non fourni',
+                'id' => $this->db->lastInsertId()
+            ], 'success');
             return $this->db->lastInsertId();
         } catch (PDOException $e) {
             logActivity('create_error', $e->getMessage(), [
@@ -237,15 +254,26 @@ class User
 
             $query = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
             $params[':id'] = $id;
+            
 
             $stmt = $this->db->prepare($query);
             foreach ($params as $key => $value) {
                 $stmt->bindValue($key, $value);
             }
 
+            logActivity('update_success', 'Utilisateur mis à jour avec succès', [
+                'id' => $id,
+                'email' => $data['email'] ?? 'non fourni',
+                'username' => $data['username'] ?? 'non fourni',
+            ], 'success');
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log('Erreur lors de la mise à jour de l\'utilisateur: ' . $e->getMessage());
+            logActivity('update_error', $e->getMessage(), [
+                'id' => $id,
+                'email' => $data['email'] ?? 'non fourni',
+                'username' => $data['username'] ?? 'non fourni',
+            ], 'error');
             throw new Exception('Erreur lors de la mise à jour de l\'utilisateur: ' . $e->getMessage());
         }
     }

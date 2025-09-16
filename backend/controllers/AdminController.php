@@ -52,14 +52,25 @@ class AdminController extends Controller
         if (!isset($userId)) {
             return false;
         }
-
+    
+        // Vérification du rôle global
         $query = "SELECT role FROM users WHERE id = :id";
         $stmt = $this->db->prepare($query);
         $stmt->execute([':id' => $userId]);
         $role = $stmt->fetchColumn();
-
-        return $role === 'admin' || $role === 'organisateur';
+    
+        if (!in_array($role, ['admin', 'organisateur'])) {
+            return false;
+        }
+    
+        // Vérification dans la whitelist
+        $query = "SELECT 1 FROM admin_whitelist WHERE user_id = :id LIMIT 1";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([':id' => $userId]);
+    
+        return (bool) $stmt->fetchColumn();
     }
+    
     public function validateToken(string $token): array
     {
         $tokenManager = new TokenManager($this->key, $this->db);
@@ -170,6 +181,17 @@ class AdminController extends Controller
             if (!$this->user->delete($id)) {
                 throw new Exception('Erreur lors de la suppression de l\'utilisateur');
             }
+
+            logActivity('delete_user', 'Utilisateur supprimé', [
+                'user_id' => $id,
+                'ip' => $_SERVER['REMOTE_ADDR'],
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'],
+                'identifier' => $_SESSION['user']?['identifier'] : null,
+                'email' => $_SESSION['user']?['email'] : null,
+                'role' => $_SESSION['user']?['role'] : null,
+                'logged_in' => $_SESSION['user']?['logged_in'] : null,
+                'last_activity' => $_SESSION['user']?['last_activity'] : null,
+            ], $_SESSION['user_id'], 'info');
 
             $this->jsonResponse([
                 'success' => true,
@@ -743,29 +765,152 @@ class AdminController extends Controller
     }
 
     /**
-     * Récupère toutes les soumissions
+     * Récupère toutes les soumissions avec filtres, tri et pagination
      */
     public function getAllSubmissions()
     {
         try {
             $this->validateMethod('GET');
-
-            $query = "SELECT cs.*,
-                    u.username,
-                    c.title as challenge_title,
-                    h.name as hackathon_title
-                    FROM challenge_submissions cs
-                    JOIN users u ON cs.user_id = u.id
-                    JOIN challenges c ON cs.challenge_id = c.id
-                    JOIN hackathons h ON c.hackathon_id = h.id
-                    ORDER BY cs.created_at DESC";
-            $stmt = $this->db->prepare($query);
-            $stmt->execute();
-            $submissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+            
+            // Récupération des paramètres de requête
+            $status = $_GET['status'] ?? null;
+            $hackathonId = isset($_GET['hackathon_id']) ? (int)$_GET['hackathon_id'] : null;
+            $difficulty = $_GET['difficulty'] ?? null;  
+            $search = $_GET['search'] ?? null;
+            $page = max(1, (int)($_GET['page'] ?? 1));
+            $limit = max(1, min(100, (int)($_GET['limit'] ?? 20)));
+            $sort = $_GET['sort'] ?? 'submitted_at';
+            $order = strtoupper($_GET['order'] ?? 'DESC');
+            $order = in_array($order, ['ASC', 'DESC']) ? $order : 'DESC';
+            
+            // Validation du champ de tri
+            $allowedSorts = [
+                'submitted_at', 'username', 'challenge_title', 'difficulty', 
+                'points', 'status', 'execution_time_ms', 'memory_used_bytes'
+            ];
+            $sort = in_array($sort, $allowedSorts) ? $sort : 'submitted_at';
+            
+            // Construction de la requête de base
+            $baseQuery = "FROM challenge_submissions cs
+                        LEFT JOIN users u ON cs.user_id = u.id
+                        LEFT JOIN challenges c ON cs.challenge_id = c.id
+                        LEFT JOIN hackathons h ON c.hackathon_id = h.id
+                        LEFT JOIN team_members tm ON u.id = tm.user_id
+                        LEFT JOIN teams t ON tm.team_id = t.id
+                        WHERE 1=1";
+            
+            $params = [];
+            $types = '';
+            
+            // Filtres
+            if ($status) {
+                $baseQuery .= " AND cs.status = ?";
+                $params[] = $status;
+                $types .= 's';
+            }
+            
+            if ($hackathonId) {
+                $baseQuery .= " AND h.id = ?";
+                $params[] = $hackathonId;
+                $types .= 'i';
+            }
+            
+            if ($difficulty) {
+                $baseQuery .= " AND c.difficulty = ?";
+                $params[] = $difficulty;
+                $types .= 's';
+            }
+            if ($search) {
+                $searchTerm = "%$search%";
+                $baseQuery .= " AND (
+                    u.username LIKE ? OR 
+                    u.email LIKE ? OR 
+                    c.title LIKE ? OR 
+                    h.name LIKE ? OR
+                    t.name LIKE ?
+                )";
+                $params = array_merge($params, array_fill(0, 5, $searchTerm));
+                $types .= str_repeat('s', 5);
+            }
+            
+            // Compte total des résultats (pour la pagination)
+            $countQuery = "SELECT COUNT(*) as total $baseQuery";
+            error_log("Requête de comptage: $countQuery");
+            error_log("Params: " . print_r($params, true));
+            
+            try {
+                $stmt = $this->db->prepare($countQuery);
+                
+                // Exécution avec les paramètres
+                if (!empty($params)) {
+                    $stmt->execute($params);
+                } else {
+                    $stmt->execute();
+                }
+                
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                $totalItems = $row ? (int)$row['total'] : 0;
+                error_log("Total items: $totalItems");
+                
+                $totalPages = ceil($totalItems / $limit);
+                $offset = ($page - 1) * $limit;
+                
+            } catch (PDOException $e) {
+                error_log("Erreur PDO: " . $e->getMessage());
+                throw new Exception("Erreur lors de l'exécution de la requête de comptage: " . $e->getMessage());
+            }
+            
+            try {
+                // Requête des données avec pagination et tri
+                $dataQuery = "SELECT 
+                            cs.id,
+                            cs.user_id,
+                            cs.challenge_id,
+                            cs.status,
+                            cs.total_score,
+                            cs.tests_passed,
+                            cs.total_tests,
+                            cs.execution_time_ms,
+                            cs.memory_used_bytes,
+                            cs.submitted_at,
+                            u.username,
+                            u.email,
+                            t.name as team_name,
+                            c.title as challenge_title,
+                            c.difficulty,
+                            h.name as hackathon_title,
+                            h.id as hackathon_id,
+                            (SELECT COUNT(*) FROM challenge_submissions cs2 
+                             WHERE cs2.challenge_id = cs.challenge_id AND cs2.user_id = cs.user_id) as submission_count
+                            $baseQuery
+                            ORDER BY $sort $order
+                            LIMIT ? OFFSET ?";
+                
+                // Ajout des paramètres de pagination au tableau de paramètres
+                $params[] = (int)$limit;
+                $params[] = (int)$offset;
+                
+                // Préparation et exécution de la requête
+                $stmt = $this->db->prepare($dataQuery);
+                $stmt->execute($params);
+                $submissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                
+            } catch (PDOException $e) {
+                error_log("Erreur PDO (requête de données): " . $e->getMessage());
+                throw new Exception("Erreur lors de la récupération des données: " . $e->getMessage());
+            }
+            
             $this->jsonResponse([
                 'success' => true,
-                'data' => $submissions
+                'data' => [
+                    'items' => $submissions,
+                    'pagination' => [
+                        'total_items' => (int)$totalItems,
+                        'total_pages' => $totalPages,
+                        'current_page' => $page,
+                        'items_per_page' => $limit
+                    ]
+                ]
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([
@@ -776,6 +921,45 @@ class AdminController extends Controller
     }
 
     /**
+     * Récupère la liste des hackathons pour les filtres
+     */
+    public function getHackathons()
+    {
+        try {
+            $this->validateMethod('GET');
+            
+            $query = "SELECT id, name, start_date, end_date 
+                     FROM hackathons 
+                     ORDER BY start_date DESC";
+            
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $hackathons = [];
+            
+            while ($row = $result->fetch_assoc()) {
+                $hackathons[] = [
+                    'id' => (int)$row['id'],
+                    'name' => $row['name'],
+                    'start_date' => $row['start_date'],
+                    'end_date' => $row['end_date']
+                ];
+            }
+            
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $hackathons
+            ]);
+            
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
      * Récupère les statistiques des soumissions
      */
     public function getSubmissionStats()
@@ -784,36 +968,38 @@ class AdminController extends Controller
             $this->validateMethod('GET');
 
             // Total des soumissions
-            $totalQuery = "SELECT COUNT(*) FROM challenge_submissions";
-            $stmt = $this->db->prepare($totalQuery);
+            $query = "SELECT COUNT(*) FROM challenge_submissions";
+            $stmt = $this->db->prepare($query);
             $stmt->execute();
-            $total = $stmt->fetchColumn();
+            $total = (int)$stmt->fetchColumn();
 
-            // Points attribués
-            $pointsQuery = "SELECT SUM(points) FROM challenge_submissions WHERE status = 'approved'";
+            // Points attribués (somme des scores totaux des soumissions complétées)
+            $pointsQuery = "SELECT COALESCE(SUM(total_score), 0) FROM challenge_submissions WHERE status = 'completed'";
             $stmt = $this->db->prepare($pointsQuery);
             $stmt->execute();
-            $pointsAwarded = $stmt->fetchColumn();
+            $pointsAwarded = (int)$stmt->fetchColumn();
 
             // Soumissions en attente
             $pendingQuery = "SELECT COUNT(*) FROM challenge_submissions WHERE status = 'pending'";
             $stmt = $this->db->prepare($pendingQuery);
             $stmt->execute();
-            $pending = $stmt->fetchColumn();
+            $pending = (int)$stmt->fetchColumn();
 
-            // Taux d'approbation
-            $approvedQuery = "SELECT COUNT(*) FROM challenge_submissions WHERE status = 'approved'";
-            $stmt = $this->db->prepare($approvedQuery);
+            // Taux de complétion (plutôt que d'approbation)
+            $completedQuery = "SELECT COUNT(*) FROM challenge_submissions WHERE status = 'completed'";
+            $stmt = $this->db->prepare($completedQuery);
             $stmt->execute();
-            $approved = $stmt->fetchColumn();
-
-            $approvalRate = ($total > 0) ? round(($approved / $total) * 100) : 0;
+            $completed = (int)$stmt->fetchColumn();
+            
+            // Calcul du taux de réussite basé sur les tests passés
+            $successRate = $total > 0 ? round(($completed / $total) * 100) : 0;
 
             $stats = [
-                'total' => $total,
+                'total_submissions' => $total,
                 'points_awarded' => $pointsAwarded,
-                'pending' => $pending,
-                'approval_rate' => $approvalRate
+                'pending_submissions' => $pending,
+                'success_rate' => $successRate,
+                'completed_submissions' => $completed
             ];
 
             $this->jsonResponse([
@@ -854,20 +1040,47 @@ class AdminController extends Controller
             $stmt->execute();
             $participationsCount = $stmt->fetchColumn();
 
-            // Total des défis réalisés
+            // Total des défis réalisés avec succès (au moins une soumission complétée)
             $challengesQuery = "SELECT COUNT(DISTINCT cs.challenge_id) 
                               FROM challenge_submissions cs
-                              JOIN team_members tm ON cs.user_id = tm.user_id
-                              WHERE cs.status = 'approved'";
+                              WHERE cs.status = 'completed'";
             $stmt = $this->db->prepare($challengesQuery);
             $stmt->execute();
-            $challengesCount = $stmt->fetchColumn();
+            $challengesCount = (int)$stmt->fetchColumn();
+            
+            // Statistiques d'exécution moyennes
+            $executionStatsQuery = "SELECT 
+                                    ROUND(AVG(execution_time_ms), 2) as avg_execution_time,
+                                    ROUND(AVG(memory_used_bytes) / 1024, 2) as avg_memory_kb,
+                                    ROUND(AVG(tests_passed * 100.0 / NULLIF(total_tests, 0)), 2) as avg_test_success_rate
+                                  FROM challenge_submissions 
+                                  WHERE status = 'completed' AND total_tests > 0";
+            $stmt = $this->db->prepare($executionStatsQuery);
+            $stmt->execute();
+            $executionStats = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Répartition par statut
+            $statusDistributionQuery = "SELECT 
+                                        status, 
+                                        COUNT(*) as count,
+                                        ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM challenge_submissions), 2) as percentage
+                                      FROM challenge_submissions 
+                                      GROUP BY status";
+            $stmt = $this->db->prepare($statusDistributionQuery);
+            $stmt->execute();
+            $statusDistribution = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             $stats = [
-                'teams_count' => $teamsCount,
-                'members_count' => $membersCount,
-                'participations_count' => $participationsCount,
-                'challenges_count' => $challengesCount
+                'teams_count' => (int)$teamsCount,
+                'members_count' => (int)$membersCount,
+                'participations_count' => (int)$participationsCount,
+                'challenges_count' => $challengesCount,
+                'execution_stats' => $executionStats ?: [
+                    'avg_execution_time' => 0,
+                    'avg_memory_kb' => 0,
+                    'avg_test_success_rate' => 0
+                ],
+                'status_distribution' => $statusDistribution ?: []
             ];
 
             $this->jsonResponse([
@@ -1085,10 +1298,12 @@ class AdminController extends Controller
         try {
             $this->validateMethod('POST');
 
-            if (!hasRole('organisateur')) {
+            $userId = $this->TokenManager->getCurrentUserId();
+            if (!$this->isAdmin($userId)) {
                 throw new Exception('Non autorisé');
             }
 
+            $this->db->beginTransaction();
             $input = json_decode(file_get_contents('php://input'), true);
 
             // Validation des champs requis
@@ -1126,22 +1341,25 @@ class AdminController extends Controller
 
             // Insérer le challenge
             $sql = "INSERT INTO challenges (
-                        title, type, category, description, hint, difficulty,
+                        code_name, title, type, category, description, hint, difficulty,
                         url_path, resource_link, instructions, points, is_active,
                         is_dynamic, created_by, hackathon_id, phase_id, algo_config
                     ) VALUES (
-                        :title, :type, :category, :description, :hint, :difficulty,
+                        :code_name, :title, :type, :category, :description, :hint, :difficulty,
                         :url_path, :resource_link, :instructions, :points, :is_active,
                         :is_dynamic, :created_by, :hackathon_id, :phase_id, :algo_config
                     )";
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
+                ':code_name' => $input['code_name']??null,
                 ':title' => $input['title'],
                 ':type' => $input['type'],
                 ':category' => $input['category'] ?? null,
                 ':description' => $input['description'],
-                ':hint' => $input['hint'] ?? null,
+                ':hint' => isset($input['hint']) && $input['hint'] !== ''
+                ? json_encode($input['hint'])
+                : null,
                 ':difficulty' => $input['difficulty'],
                 ':url_path' => $input['url_path'] ?? null,
                 ':resource_link' => $input['resource_link'] ?? null,
@@ -1149,10 +1367,12 @@ class AdminController extends Controller
                 ':points' => $input['points'],
                 ':is_active' => $input['is_active'] ?? 1,
                 ':is_dynamic' => $input['is_dynamic'] ?? 0,
-                ':created_by' => $_SESSION['user_id'],
+                ':created_by' => $_SESSION['user']['id'],
                 ':hackathon_id' => $input['hackathon_id'],
                 ':phase_id' => $input['phase_id'] ?? null,
-                ':algo_config' => $input['algo_config'] ?? null
+                ':algo_config' => isset($input['algo_config']) && $input['algo_config'] !== ''
+                ? json_encode($input['algo_config'])
+                : null
             ]);
 
             $challengeId = $this->db->lastInsertId();
@@ -1177,12 +1397,14 @@ class AdminController extends Controller
                 $this->createTechnologies($challengeId, $input['technologies']);
             }
 
+            $this->db->commit();
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Challenge créé avec succès',
                 'data' => ['id' => $challengeId]
             ]);
         } catch (Exception $e) {
+            $this->db->rollBack();
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()

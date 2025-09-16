@@ -228,7 +228,6 @@
                                     <option value="">Sélectionner un type</option>
                                     <option value="ctf">CTF (Capture The Flag)</option>
                                     <option value="dev">Développement</option>
-                                    <option value="project">Projet</option>
                                     <option value="finale">Finale</option>
                                 </select>
                             </div>
@@ -238,10 +237,13 @@
                                 <label for="category">Catégorie</label>
                                 <select id="category" name="category" class="form-control">
                                     <option value="">Sélectionner une catégorie</option>
+                                    <option value="project">Projet</option>
                                     <option value="web">Web</option>
                                     <option value="crypto">Cryptographie</option>
                                     <option value="forensics">Forensics</option>
                                     <option value="reverse">Reverse Engineering</option>
+                                    <option value="osint">OSINT</option>
+                                    <option value="stegano">Stéganographie</option>
                                     <option value="pwn">Pwn</option>
                                     <option value="algo">Algorithmique</option>
                                     <option value="mobile">Mobile</option>
@@ -268,7 +270,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="phase_id">Phase</label>
-                                <select id="phase_id" name="phase_id" class="form-control">
+                                <select id="phase_id" name="phase_id" class="form-control" required>
                                     <option value="">Sélectionner une phase</option>
                                 </select>
                             </div>
@@ -301,11 +303,11 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="url_path">URL du challenge</label>
-                                <input type="url" id="url_path" name="url_path" class="form-control">
+                                <input type="text" id="url_path" name="url_path" class="form-control">
                             </div>
                             <div class="form-group">
                                 <label for="resource_link">Lien de ressource</label>
-                                <input type="url" id="resource_link" name="resource_link" class="form-control">
+                                <input type="text" id="resource_link" name="resource_link" class="form-control">
                             </div>
                         </div>
                         <div class="form-group">
@@ -405,15 +407,25 @@
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary modal-close">
+            <div class="modal-footer" style="display:flex; gap:8px; justify-content:space-between; align-items:center;">
+                <button type="button" class="btn btn-secondary modal-closed">
                     <i class="fas fa-times"></i>
                     Annuler
                 </button>
-                <button type="submit" form="challengeForm" class="btn btn-primary">
-                    <i class="fas fa-save"></i>
-                    <span id="saveButtonText">Créer</span>
-                </button>
+                <div class="wizard-actions" style="display:flex; gap:8px; align-items:center;">
+                    <button type="button" class="btn btn-secondary" id="wizardPrev" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                        Précédent
+                    </button>
+                    <button type="button" class="btn btn-primary" id="wizardNext">
+                        Suivant
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button type="submit" form="challengeForm" class="btn btn-primary" id="wizardSubmit" style="display:none;">
+                        <i class="fas fa-save"></i>
+                        <span id="saveButtonText">Créer</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

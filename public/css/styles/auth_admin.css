@@ -1,154 +1,759 @@
-:root {
-    --background: #030B20;
-    --background-hover: #151821;
-    --card-hover: #1E293B;
-    --blue: #3B82F6;
-    --primary: #3B82F6;
-    --primary-hover: #2563EB;
-    --border: #1E293B;
-    --text: #FFFFFF;
-    --text-secondary: #94A3B8;
+/* 
+ * Styles personnalisés pour la page de connexion
+ * Les styles de base sont gérés par Tailwind CSS
+ */
+
+/* Animations personnalisées */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes float {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0); }
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+/* Transition de base pour les interactions utilisateur */
 * {
-    box-sizing: border-box;
+    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
 }
 
-body {
-    background-color: var(--background);
-    color: var(--text);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    margin: 0 auto;
-}
-
-p{
-    color: var(--text-secondary);
-    text-align: left;
-    margin-top: 1%;
-}
-
-.ad-container{
-    width: 100%;
-    max-width: 400px;
-    text-align: center;
-}
-
-
-
+/* Application des animations */
 .ad-card {
-    background: var(--background);
-    padding: 2rem;
-    width: 40%;
-    max-width: 450px; /* Ajuste la largeur pour ne pas couvrir toute la page */
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    border: 1px solid var(--text-secondary);
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); /* Centre parfaitement le formulaire */
+    animation: fadeIn 0.6s ease-out forwards;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-
-.ad-form {
-    display: block;
-    text-align: left;
-    background: var(--background);
-    margin-bottom: -2.5px;
+.ad-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-.ad-form h1 {
-    font-size: 1.5rem;
-    margin-bottom: 10px;
-    
+.w-20 {
+    animation: pulse 3s ease-in-out infinite;
+    transition: transform 0.3s ease;
 }
 
+/* Animation des éléments du formulaire */
 .form-group {
-    margin-bottom: 20px;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    width: 100%;
+    animation: slideInUp 0.5s ease-out backwards;
 }
 
-.form-group label {
-    display: block;
-    font-size: 0.9rem;
-    margin-bottom: 5px;
-    color:  var(--text);
-    width: 180px;
-    text-align: left; 
+/* Délai d'animation pour chaque champ */
+.form-group:nth-child(1) { animation-delay: 0.1s; }
+.form-group:nth-child(2) { animation-delay: 0.2s; }
+.form-group:nth-child(3) { animation-delay: 0.3s; }
+
+/* Animation du bouton de soumission */
+.submit-btn {
+    animation: fadeIn 0.6s ease-out 0.4s backwards;
+}
+
+/* Désactiver les animations si l'utilisateur les a désactivées */
+@media (prefers-reduced-motion: reduce) {
+    .ad-card, .w-20, .form-group, .submit-btn {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Correction pour la propriété appearance */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="checkbox"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Styles responsives pour les petits écrans */
+@media (max-width: 640px) {
+    body {
+        padding: 1rem;
+    }
+    
+    .ad-card {
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        margin: 0;
+        width: 100%;
+    }
+    
+    /* Amélioration de la zone de clic pour les écrans tactiles */
+    button, a, input[type="checkbox"] + label {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Ajustement des espacements */
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    /* Taille de police plus grande pour une meilleure lisibilité */
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    button, select, textarea {
+        font-size: 16px !important; /* Empêche le zoom sur iOS */
+    }
+}
+
+/* Désactiver les effets de survol sur mobile */
+@media (hover: none) {
+    .submit-btn:hover {
+        transform: none !important;
+    }
+    
+    a:hover::after {
+        width: 0 !important;
+    }
+}
+
+/* Amélioration des interactions tactiles */
+button, a, [role="button"], input[type="submit"], input[type="button"] {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+}
+
+/* Empêcher le zoom sur les champs de formulaire sur iOS */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    select, textarea { 
+        font-size: 16px !important;
+    }
+}
+
+/* Amélioration de la lisibilité sur mobile */
+@media (max-width: 640px) {
+    body {
+        -webkit-text-size-adjust: 100%;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Augmenter la taille des zones de clic pour les éléments interactifs */
+    button, .btn, a[role="button"], input[type="submit"], input[type="button"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Ajustement des espacements pour une meilleure utilisation au doigt */
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    /* Meilleure visibilité des états actifs */
+    button:active, a:active, [role="button"]:active {
+        opacity: 0.9;
+        transform: scale(0.98);
+    }
+}
+
+/* Styles personnalisés pour les champs de formulaire */
+.form-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+/* Style pour les icônes des champs avec animation */
+.form-group .lucide {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+}
+
+/* Styles d'accessibilité pour le focus */
+:focus-visible {
+    outline: 3px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+}
+
+/* Amélioration du focus pour les éléments interactifs */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+    position: relative;
+    z-index: 10;
+}
+
+/* Styles de survol et focus pour les champs de formulaire */
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+    transition: all 0.2s ease-in-out;
+}
+
+input[type="text"]:hover,
+input[type="password"]:hover,
+input[type="email"]:hover {
+    border-color: #93c5fd;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+}
+
+/* Styles pour les boutons */
+button[type="submit"],
+button[type="button"] {
+    position: relative;
     overflow: hidden;
 }
 
-.display{
-  display: flex;
-  align-items: center;  /* Aligne l'icône et l'input */
-  border: 1px  solid var(--text-secondary);
-  border-radius: 10px;
-  padding: 5px;
-  background: var(--background);
-  width: 100%;
-  transition: border 0.3s ease-in-out;
-  color: var(--text-secondary);
+/* Effet de vague au clic */
+button[type="submit"]::after,
+button[type="button"]::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: rgba(255, 255, 255, 0.2);
+    opacity: 0;
+    transition: transform 0.6s, opacity 0.6s;
+    transform: scale(0);
+    border-radius: 50%;
+    pointer-events: none;
 }
 
-.form-group .display:focus {
-    border: 1px solid var(--blue); /* Bordure bleue au focus */
-  }
+button[type="submit"]:active::after,
+button[type="button"]:active::after {
+    transform: scale(2);
+    opacity: 0.3;
+    transition: 0s;
+}
 
-.form-group input {
-    flex: 1;
+/* Amélioration de la visibilité pour le mode contraste élevé */
+@media (forced-colors: active) {
+    :focus-visible {
+        outline: 2px solid Highlight !important;
+        outline-offset: 2px;
+    }
+    
+    button, a, [role="button"] {
+        border: 2px solid transparent;
+    }
+    
+    button:focus-visible, 
+    a:focus-visible, 
+    [role="button"]:focus-visible {
+        border-color: Highlight !important;
+    }
+}
+
+/* Effet de focus sur le conteneur du champ */
+.form-group:focus-within .lucide {
+    color: #3b82f6; /* blue-500 */
+    transform: scale(1.15) translateY(-1px);
+    animation: pulse 1.5s infinite;
+}
+
+/* Animation du label au focus */
+.form-group label {
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    display: inline-block;
+}
+
+/* Effet de soulignement animé pour les liens */
+a {
+    position: relative;
+    text-decoration: none;
+    transition: color 0.2s ease-in-out;
+}
+
+a:not(.no-underline)::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -2px;
+    left: 0;
+    background-color: currentColor;
+    transition: width 0.3s ease-in-out;
+}
+
+a:not(.no-underline):hover::after,
+a:not(.no-underline):focus-visible::after {
     width: 100%;
-    padding: 5px 5px 5px 15px;
-    font-size: 10px;
-    border: none;
-    border-radius: 8px;
-    background: transparent;
-    color:var(--text-secondary);
+}
+
+/* Amélioration de l'accessibilité au clavier */
+[tabindex]:focus-visible {
+    outline: 3px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+}
+
+/* Style pour les états actifs et focus */
+button:active,
+button:focus-visible,
+a:active,
+a:focus-visible,
+[role="button"]:active,
+[role="button"]:focus-visible {
+    transform: translateY(1px);
+}
+
+/* Amélioration de la visibilité des états focus pour la navigation au clavier */
+.js-focus-visible :focus:not(.focus-visible) {
     outline: none;
 }
 
-.form-group input::placeholder , i{
-    color: var(--text-secondary);
+.js-focus-visible .focus-visible {
+    outline: 3px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
 }
 
- i{
-    width: 20px;
-    height: 8px;
-    margin-right: 5px;
+/* Amélioration des transitions pour les interactions utilisateur */
+button,
+a,
+[role="button"],
+input,
+select,
+textarea {
+    transition: all 0.2s ease-in-out;
 }
 
+/* Feedback visuel pour les boutons au survol */
+button:not(:disabled):hover,
+button:not(:disabled):focus-visible,
+[role="button"]:not(:disabled):hover,
+[role="button"]:not(:disabled):focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
 
-.submit-btn {
-    width: 100%;
-    padding: 8px;
-    background: #3b82f6;
-    border: none;
-    border-radius: 8px;
+button:not(:disabled):active,
+[role="button"]:not(:disabled):active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Style personnalisé pour le bouton de bascule du mot de passe */
+#togglePasswordBtn {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 5px;
-    color: #051831;
-    font-size: 10px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.3s ease;
+    height: 2.5rem;
+    width: 2.5rem;
+    margin: 0;
+    z-index: 10;
+    -webkit-appearance: none;
+    appearance: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(4px);
+}
+
+#togglePasswordBtn:hover {
+    color: #3b82f6;
+    background: rgba(255, 255, 255, 1);
+    border-color: #d1d5db;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transform: translateY(-50%) scale(1.05);
+}
+
+#togglePasswordBtn:active {
+    transform: translateY(-50%) scale(0.98);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Ajustement du padding à droite du champ mot de passe */
+#password_user {
+    padding-right: 3rem !important;
+    -webkit-appearance: none; /* Désactiver le style par défaut sur iOS */
+    appearance: none; /* Standard */
+}
+
+/* Cacher l'icône d'œil par défaut sur les navigateurs */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+/* Conteneur du champ de mot de passe */
+.form-group .relative {
+    position: relative;
+}
+
+/* Style pour le conteneur de l'icône de l'œil */
+.form-group .relative .absolute {
+    z-index: 5;
+    transition: all 0.3s ease;
+}
+
+/* Style pour les icônes dans les champs de formulaire */
+.form-group .absolute i[data-lucide] {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Style pour les icônes dans les boutons */
+button i[data-lucide] {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05));
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Effet de survol sur les icônes */
+button:not(:disabled):hover i[data-lucide] {
+    filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3));
+    transform: translateY(-1px);
+}
+
+/* Style pour le bouton de soumission */
+.submit-btn i[data-lucide] {
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.1));
+}
+
+/* Style pour le fond de la page */
+body {
+    background: linear-gradient(135deg, #0a0f1f 0%, #0f1a3d 100%);
+    min-height: 100vh;
+    margin: 0;
+    padding: 2rem;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Style pour le fond du formulaire avec effet glass */
+.ad-card {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(16px) saturate(200%);
+    -webkit-backdrop-filter: blur(16px) saturate(200%);
+    border: 1px solid rgba(71, 85, 105, 0.3);
+    border-radius: 1rem;
+    box-shadow: 0 8px 32px 0 rgba(2, 6, 23, 0.4);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Effet de survol sur la carte */
+.ad-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px 0 rgba(2, 6, 23, 0.5);
+    border-color: rgba(100, 116, 139, 0.5);
+    background: rgba(15, 23, 42, 0.8);
+}
+
+/* Effet de brillance au survol */
+.ad-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.1),
+        transparent
+    );
+    transition: 0.5s;
+}
+
+.ad-card:hover::before {
+    left: 100%;
+}
+
+/* Adaptation du texte pour le thème sombre */
+.ad-card h1,
+.ad-card p,
+.ad-card label,
+.ad-card .text-gray-700,
+.ad-card .text-gray-600 {
+    color: #f8fafc !important;
+}
+
+/* Style des champs de formulaire */
+.ad-card input[type="text"],
+.ad-card input[type="password"],
+.ad-card input[type="email"] {
+    background-color: rgba(30, 41, 59, 0.7) !important;
+    border: 1px solid rgba(71, 85, 105, 0.5) !important;
+    color: #f8fafc !important;
+    transition: all 0.3s ease;
+}
+
+.ad-card input[type="text"]:focus,
+.ad-card input[type="password"]:focus,
+.ad-card input[type="email"]:focus {
+    background-color: rgba(30, 41, 59, 0.9) !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
+    outline: none;
+}
+
+/* Style du placeholder */
+.ad-card input::placeholder {
+    color: #64748b !important;
+    opacity: 1;
+}
+
+/* Placeholder plus clair */
+.ad-card input::placeholder {
+    color: rgba(248, 250, 252, 0.6) !important;
+}
+
+/* Style pour les icônes dans les champs */
+.ad-card .text-gray-400,
+.ad-card [data-lucide] {
+    color: #94a3b8 !important;
+    stroke: #94a3b8 !important;
+}
+
+/* Icônes dans les boutons */
+.ad-card button [data-lucide] {
+    color: #e2e8f0 !important;
+    stroke: #e2e8f0 !important;
+}
+
+/* Icônes dans les champs de formulaire */
+.ad-card .relative > [data-lucide] {
+    color: #64748b !important;
+    stroke: #64748b !important;
+}
+
+/* Icône du bouton de bascule */
+#togglePasswordBtn [data-lucide] {
+    color: #94a3b8 !important;
+    stroke: #94a3b8 !important;
+}
+
+#togglePasswordBtn:hover [data-lucide] {
+    color: #60a5fa !important;
+    stroke: #60a5fa !important;
+}
+
+/* Style du bouton de soumission */
+.ad-card .submit-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    transition: all 0.3s ease;
+}
+
+.ad-card .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
+.ad-card .submit-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+}
+
+/* Style pour l'icône du logo */
+.w-20.h-20 i[data-lucide] {
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+/* Style pour le bouton de soumission avec effet de brillance */
+.submit-btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+    will-change: transform, box-shadow;
+}
+
+.submit-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .submit-btn:hover {
-    background: #2563eb;
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
+.submit-btn:active {
+    transform: translateY(0) scale(0.99);
+}
 
-/* RESPONSIVE DESIGN*/
-@media (max-width: 768px) {
-    .ad-card {
-        max-width: 90%;
-    }
+.submit-btn:hover::before {
+    left: 100%;
+}
+
+/* Animation de l'icône du bouton */
+.submit-btn .lucide {
+    transition: transform 0.3s ease;
+}
+
+.submit-btn:hover .lucide {
+    transform: translateX(3px);
+}
+
+/* Amélioration du focus pour l'accessibilité */
+input:focus, button:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+
+/* Animation subtile pour les champs de formulaire */
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: left center;
+}
+
+/* Effet de survol sur les champs */
+input[type="text"]:hover,
+input[type="password"]:hover,
+input[type="email"]:hover {
+    border-color: #9ca3af; /* gray-400 */
+    transform: translateY(-1px);
+}
+
+/* Effet de focus sur les champs */
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus {
+    border-color: #3b82f6; /* blue-500 */
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px) scaleX(1.01);
+}
+
+/* Animation pour les champs invalides */
+input:invalid:not(:placeholder-shown) {
+    animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    backface-visibility: hidden;
+    transform-origin: center;
+}
+
+/* Style pour les messages d'erreur */
+.error-message {
+    color: #ef4444; /* red-500 */
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: none;
+}
+
+/* Afficher le message d'erreur quand la classe 'error' est présente */
+.form-group.error .error-message {
+    display: block;
+}
+
+/* Style pour le champ en erreur */
+.form-group.error input {
+    border-color: #ef4444; /* red-500 */
+    background-color: #fef2f2; /* red-50 */
+}
+
+/* Style pour la case à cocher personnalisée */
+input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.25rem;
+    border: 1px solid #d1d5db; /* gray-300 */
+    transition: all 0.2s ease-in-out;
+}
+
+input[type="checkbox"]:checked {
+    background-color: #3b82f6; /* blue-500 */
+    border-color: #3b82f6; /* blue-500 */
+}
+
+/* Style pour les liens avec animation */
+a {
+    position: relative;
+    color: #2563eb;
+    text-decoration: none;
+    transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -2px;
+    left: 0;
+    background-color: #2563eb;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+a:hover {
+    color: #1d4ed8; /* blue-700 */
+}
+
+a:hover::after {
+    width: 100%;
+}
+
+/* Animation de chargement */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading {
+    animation: spin 1s linear infinite;
+}
+
+/* Feedback visuel lors de la soumission du formulaire */
+.form-submitting .submit-btn {
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+/* Animation de succès */
+@keyframes checkmark {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.success-checkmark {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    animation: checkmark 0.5s cubic-bezier(0.42, 0, 0.27, 1.55);
 }

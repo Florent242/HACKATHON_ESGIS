@@ -3,6 +3,7 @@ namespace Auth\Controller;
 
 use Exception;
 use Auth\Model\Notification;
+use PDO;
 
 if(!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
@@ -20,41 +21,74 @@ if(!class_exists('Controller')) {
 class NotificationController extends Controller {
     private $notification;
     private $db;
-    private $tokenManager;
-
+    
     public function __construct($db, $tokenManager) {
         parent::__construct($tokenManager);
         $this->db = $db;
         $this->notification = new Notification($this->db);
     }
 
-    public function create() {
+    public function create($data) {
         try {
             $this->validateMethod('POST');
-
-            $requiredFields = ['user_id', 'message', 'type'];
-            $this->validateRequiredFields($_POST, $requiredFields);
-
-            if (!in_array($_POST['type'], ['info', 'success', 'warning', 'error'])) {
-                throw new Exception('Type de notification invalide');
+    
+            // Vérification du scope
+            if (empty($data['scope']) || !in_array($data['scope'], ['user', 'team', 'hackathon', 'global'])) {
+                throw new Exception("Scope invalide (user|team|hackathon|global)");
             }
-
-            $data = [
-                'user_id' => (int)$_POST['user_id'],
-                'titre' => $_POST['titre'] ?? 'Notification',
-                'message' => $_POST['message'],
-                'type' => $_POST['type'],
-                'created_at' => date('Y-m-d H:i:s'),
-                'lu' => false
-            ];
-
-            $notificationId = $this->notification->create($data);
-
+    
+            if (empty($data['message'])) {
+                throw new Exception("Le message est requis");
+            }
+            if (empty($data['type']) || !in_array($data['type'], ['info', 'success', 'warning', 'error'])) {
+                throw new Exception("Type de notification invalide");
+            }
+    
+            // Résoudre les destinataires selon le scope
+            $recipients = [];
+            switch ($data['scope']) {
+                case 'user':
+                    if (empty($data['user_id'])) throw new Exception("user_id requis pour scope=user");
+                    $recipients = [ (int)$data['user_id'] ];
+                    break;
+    
+                case 'team':
+                    if (empty($data['team_id'])) throw new Exception("team_id requis pour scope=team");
+                    $recipients = $this->getTeamMemberIds($data['team_id']);
+                    break;
+    
+                case 'hackathon':
+                    if (empty($data['hackathon_id'])) throw new Exception("hackathon_id requis pour scope=hackathon");
+                    $recipients = $this->getHackathonParticipantIds($data['hackathon_id']);
+                    break;
+    
+                case 'global':
+                    $recipients = $this->getAllActiveUserIds();
+                    break;
+            }
+    
+            if (empty($recipients)) {
+                throw new Exception("Aucun destinataire trouvé");
+            }
+    
+            // Fan-out via createBulk()
+            $rows = [];
+            foreach ($recipients as $uid) {
+                $rows[] = [
+                    'user_id' => $uid,
+                    'title'   => $data['title'] ?? 'Notification',
+                    'message' => $data['message'],
+                    'type'    => $data['type'],
+                ];
+            }
+            $count = $this->notification->createBulk($rows);
+    
             $this->jsonResponse([
                 'success' => true,
-                'message' => 'Notification créée avec succès',
-                'data' => ['id' => $notificationId]
+                'message' => 'Notifications créées avec succès',
+                'data' => ['sent' => $count]
             ]);
+    
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
@@ -63,11 +97,58 @@ class NotificationController extends Controller {
         }
     }
 
+    private function getTeamMemberIds(int $teamId): array {
+        $sql = "SELECT DISTINCT user_id FROM team_members WHERE team_id = :tid";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':tid' => $teamId]);
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    private function getHackathonParticipantIds(int $hackathonId): array {
+        // privilégie la table hackathon_participants si elle existe
+        $sql = "SELECT DISTINCT user_id FROM hackathon_participants WHERE hackathon_id = :hid";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':hid' => $hackathonId]);
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
+    private function getAllActiveUserIds(): array {
+        $sql = "SELECT id FROM users WHERE status = 'active'";
+        $stmt = $this->db->query($sql);
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+    
+    /**
+     * Récupère toutes les notifications d'un utilisateur
+     * @param int $userId ID de l'utilisateur
+     */
+    public function listForCurrentUser($userId, $limit = 10, $offset = 0) {
+        try {
+            $this->validateMethod('GET');
+            $uid = (int)$userId;
+            $limit = max(1, min(50, (int)$limit));
+            $offset = max(0, (int)$offset);
+
+            $items = $this->notification->getAllByUser($uid, $limit, $offset);
+            $unread = $this->notification->getUnreadCount($uid);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => [
+                    'items' => $items,
+                    'unread_count' => $unread
+                ]
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 400);
+        }
+    }
+
     /** 
      * Récupère une notification par son ID
      * @param int $id ID de la notification
      */
-    public function getNotifications($id) {
+    public function getNotification($id) {
         try {
             $this->validateMethod('GET');
 
@@ -97,7 +178,7 @@ class NotificationController extends Controller {
      * Met à jour une notification
      * @param int $id ID de la notification
      */
-    public function update($id) {
+    public function update($id, $data) {
         try {
             $this->validateMethod('POST');
 
@@ -111,8 +192,8 @@ class NotificationController extends Controller {
                 throw new Exception('Non autorisé - Réservé aux administrateurs');
             }
 
-            $updatableFields = ['titre', 'message', 'type', 'lu'];
-            $data = $this->filterData($_POST, $updatableFields);
+            $updatableFields = ['title', 'message', 'type', 'read_status'];
+            $data = $this->filterData($data, $updatableFields);
 
             if (empty($data)) {
                 throw new Exception('Aucune donnée à mettre à jour');
@@ -122,8 +203,8 @@ class NotificationController extends Controller {
                 throw new Exception('Type de notification invalide');
             }
 
-            if (isset($data['lu'])) {
-                $data['lu'] = (bool)$data['lu'];
+            if (isset($data['read_status'])) {
+                $data['read_status'] = (bool)$data['read_status'];
             }
 
             $data['updated_at'] = date('Y-m-d H:i:s');
@@ -161,7 +242,7 @@ class NotificationController extends Controller {
         try {
             $this->validateMethod('POST');
 
-            $this->notification->update($id, ['lu' => true]);
+            $this->notification->markAsRead($id);
 
             $this->jsonResponse([
                 'success' => true,

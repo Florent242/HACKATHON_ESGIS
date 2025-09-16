@@ -1,5 +1,23 @@
 document.addEventListener("DOMContentLoaded", function () {
     const signinForm = document.getElementById('signinForm');
+    // Init icons on load
+    if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+    }
+
+    // Display server-side notification if any
+    try {
+        const notifEl = document.getElementById('notification-data');
+        if (notifEl) {
+            const raw = notifEl.getAttribute('data-notification');
+            if (raw && raw !== 'null') {
+                const notification = JSON.parse(raw);
+                if (notification && typeof window.showNotification === 'function') {
+                    showNotification(notification.message || 'Notification', notification.details || '', notification.type || 'info');
+                }
+            }
+        }
+    } catch (_) {}
 
     // Gestionnaire de formulaire de connexion
     signinForm.addEventListener('submit', async function (e) {

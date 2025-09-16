@@ -1,196 +1,220 @@
-<?php require_once '../includes/admin/header.php'; ?>
+<html lang="fr">
 
-<h1 class="page-title">Gestion des Soumissions</h1>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/styles/admin/soumissions.css">
+    <meta name="csrf_token" content="<?php echo $_SESSION['csrf_token']; ?>">
+</head>
 
-<div class="card-header" style="justify-content: flex-end; margin-bottom: 20px;">
-    <button class="btn btn-primary">
-        <i class="fas fa-download btn-icon"></i> Exporter
-    </button>
-</div>
+<body>
 
-<div class="stats-container">
-    <div class="stat-card">
-        <div class="stat-info">
-            <h3>Total Soumissions</h3>
-            <div class="number">5</div>
-        </div>
-        <div class="stat-icon purple">
-            <i class="fas fa-file-alt"></i>
-        </div>
+    <?php
+    require_once '../includes/admin/header.php';
+
+    ?>
+    <div id="global-loading-spinner" class="loading-spinner" style="display: none;">
+        <div class="spinner"></div>
     </div>
-    
-    <div class="stat-card">
-        <div class="stat-info">
-            <h3>Points attribués</h3>
-            <div class="number">230</div>
-        </div>
-        <div class="stat-icon green">
-            <i class="fas fa-star"></i>
-        </div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-info">
-            <h3>En attente</h3>
-            <div class="number">2</div>
-        </div>
-        <div class="stat-icon orange">
-            <i class="fas fa-clock"></i>
-        </div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-info">
-            <h3>Taux d'approbation</h3>
-            <div class="number">40%</div>
-        </div>
-        <div class="stat-icon green">
-            <i class="fas fa-check-circle"></i>
-        </div>
-    </div>
-</div>
 
-<div class="search-container">
-    <i class="fas fa-search search-icon"></i>
-    <input type="text" class="search-input" placeholder="Rechercher une soumission..." data-table="submissionsTable">
-</div>
+    <h1 class="page-title">Gestion des Soumissions</h1>
 
-<div class="filter-container" style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
-    <select class="dropdown-toggle" style="width: auto;">
-        <option value="all">Tous les statuts</option>
-        <option value="approved">Approuvé</option>
-        <option value="pending">En attente</option>
-        <option value="rejected">Rejeté</option>
-    </select>
-</div>
-
-<div class="card">
-    <div class="table-container">
-        <table id="submissionsTable">
-            <thead>
-                <tr>
-                    <th>Utilisateur</th>
-                    <th>Équipe</th>
-                    <th>Défi</th>
-                    <th>Points</th>
-                    <th>Date</th>
-                    <th>Statut</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Pierre Martin</td>
-                    <td>Frontend Wizards</td>
-                    <td>API Security Challenge</td>
-                    <td><span class="badge badge-warning">150</span></td>
-                    <td>11/05/2024</td>
-                    <td><span class="badge badge-success">Approuvé</span></td>
-                    <td>
-                        <a href="#" class="action-button" data-action="view" data-id="1">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Marie Dupont</td>
-                    <td>Solo</td>
-                    <td>Front-end Performance</td>
-                    <td><span class="badge badge-warning">100</span></td>
-                    <td>10/05/2024</td>
-                    <td><span class="badge badge-warning">En attente</span></td>
-                    <td>
-                        <a href="#" class="action-button" data-action="view" data-id="2">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                        <a href="#" class="action-button" data-action="approve" data-id="2">
-                            <i class="fas fa-check" style="color: var(--secondary);"></i>
-                        </a>
-                        <a href="#" class="action-button" data-action="reject" data-id="2">
-                            <i class="fas fa-times" style="color: var(--danger);"></i>
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Jean Durand</td>
-                    <td>Data Science Squad</td>
-                    <td>Database Optimization</td>
-                    <td><span class="badge badge-warning">120</span></td>
-                    <td>09/05/2024</td>
-                    <td><span class="badge badge-danger">Rejeté</span></td>
-                    <td>
-                        <a href="#" class="action-button" data-action="view" data-id="3">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Sophie Laurent</td>
-                    <td>DevOps Masters</td>
-                    <td>Cloud Infrastructure</td>
-                    <td><span class="badge badge-warning">200</span></td>
-                    <td>08/05/2024</td>
-                    <td><span class="badge badge-warning">En attente</span></td>
-                    <td>
-                        <a href="#" class="action-button" data-action="view" data-id="4">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                        <a href="#" class="action-button" data-action="approve" data-id="4">
-                            <i class="fas fa-check" style="color: var(--secondary);"></i>
-                        </a>
-                        <a href="#" class="action-button" data-action="reject" data-id="4">
-                            <i class="fas fa-times" style="color: var(--danger);"></i>
-                        </a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Thomas Petit</td>
-                    <td>Solo</td>
-                    <td>Mobile Responsive Design</td>
-                    <td><span class="badge badge-warning">80</span></td>
-                    <td>07/05/2024</td>
-                    <td><span class="badge badge-success">Approuvé</span></td>
-                    <td>
-                        <a href="#" class="action-button" data-action="view" data-id="5">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<div class="card" style="margin-top: 30px;">
-    <div class="card-header">
-        <div class="card-title">Détails des soumissions récentes</div>
-    </div>
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px;">
-        <div class="submission-detail">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3>API Security Challenge</h3>
-                <span class="badge badge-success">Approuvé</span>
+    <div class="card-header flex justify-between align-center mb-4">
+        <div class="filters-container flex flex-wrap gap-2">
+            <div class="filter-group">
+                <label for="statusFilter" class="form-label small mb-1">Statut</label>
+                <select id="statusFilter" class="form-select form-select-sm">
+                    <option value="">Tous les statuts</option>
+                    <option value="pending">En attente</option>
+                    <option value="completed">Complété</option>
+                    <option value="approved">Validé</option>
+                    <option value="rejected">Rejeté</option>
+                    <option value="error">Erreur</option>
+                </select>
             </div>
-            <p>Soumis par Pierre Martin (Frontend Wizards)</p>
-            <div style="display: flex; align-items: center; margin-top: 10px;">
-                <i class="fas fa-star" style="color: #f59e0b; margin-right: 5px;"></i>
-                <span>150 points</span>
-                <span style="margin-left: auto;">11/05/2024</span>
+            <div class="filter-group">
+                <label for="hackathonFilter" class="form-label small mb-1">Hackathon</label>
+                <select id="hackathonFilter" class="form-select form-select-sm">
+                    <option value="">Tous les hackathons</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="difficultyFilter" class="form-label small mb-1">Difficulté</label>
+                <select id="difficultyFilter" class="form-select form-select-sm">
+                    <option value="">Tous niveaux</option>
+                    <option value="facile">Facile</option>
+                    <option value="moyen">Moyen</option>
+                    <option value="difficile">Difficile</option>
+                    <option value="expert">Expert</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="searchInput" class="form-label small mb-1">Recherche</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Rechercher...">
+                </div>
             </div>
         </div>
-        
-        <div class="submission-detail">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3>Front-end Performance</h3>
-                <span class="badge badge-warning">En attente</span>
+        <div class="actions">
+            <button id="exportBtn" class="btn btn-primary btn-sm">
+                <i class="fas fa-download me-1"></i> Exporter
+            </button>
+            <button id="refreshBtn" class="btn btn-outline-secondary btn-sm ms-2" title="Rafraîchir">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-info">
+                <h3>Total Soumissions</h3>
+                <div class="number">0</div>
             </div>
-            <p>Soumis par Marie Dupont (Solo)</p>
-            <div style="display: flex; align-items: center; margin-top: 10px;">
-                <i class="fas fa-star" style="color: #f59e0b; margin-right: 5px;"></i>
-                <span>100 points</span>
-                <span style="margin-left: auto;">10/05/2024</span>
+            <div class="stat-icon purple">
+                <i class="fas fa-file-alt"></i>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-info">
+                <h3>Points attribués</h3>
+                <div class="number">0</div>
+            </div>
+            <div class="stat-icon green">
+                <i class="fas fa-star"></i>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-info">
+                <h3>En attente</h3>
+                <div class="number">0</div>
+            </div>
+            <div class="stat-icon orange">
+                <i class="fas fa-clock"></i>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-info">
+                <h3>Taux d'approbation</h3>
+                <div class="number">0%</div>
+            </div>
+            <div class="stat-icon green">
+                <i class="fas fa-check-circle"></i>
             </div>
         </div>
     </div>
-</div>
+
+    <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="searchInput" class="search-input" placeholder="Rechercher une soumission...">
+    </div>
+
+    <div class="filter-container" style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+        <select id="statusFilter" class="dropdown-toggle" style="width: auto;">
+            <option value="all">Tous les statuts</option>
+            <option value="approved">Approuvé</option>
+            <option value="pending">En attente</option>
+            <option value="rejected">Rejeté</option>
+        </select>
+    </div>
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 15%;">Utilisateur</th>
+                        <th style="width: 20%;">Challenge</th>
+                        <th style="width: 10%;">Difficulté</th>
+                        <th style="width: 15%;">Résultats</th>
+                        <th style="width: 12%;">Performance</th>
+                        <th style="width: 10%;">Statut</th>
+                        <th style="width: 10%;">Date</th>
+                        <th style="width: 8%;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="submissionsTable">
+                    <!-- Les soumissions seront chargées ici -->
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 30px;">
+        <div class="card-header">
+            <div class="card-title">Détails des soumissions récentes</div>
+        </div>
+
+        <div id="recentSubmissions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px;">
+            <div class="submission-detail">
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <div class="empty-state-text">
+                        <h3>Chargement...</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="submission-detail">
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                    <div class="empty-state-text">
+                        <h3>Chargement...</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour afficher les détails d'une soumission -->
+    <div id="submissionModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Détails de la soumission</h2>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="submissionDetails">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-spinner fa-spin"></i>
+                        </div>
+                        <div class="empty-state-text">
+                            <h3>Chargement des détails...</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="approveBtn" class="btn btn-secondary" style="display: none;">Approuver</button>
+                <button id="rejectBtn" class="btn btn-danger" style="display: none;">Rejeter</button>
+                <button id="closeModalBtn" class="btn btn-primary">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="notification" style="display: none;">
+        <div class="notification-content">
+            <span id="notificationMessage"></span>
+            <button class="notification-close">&times;</button>
+        </div>
+    </div>
+
+    <!-- Inclure le JavaScript -->
+    <script defer src="/js/admin/soumissions.js"></script>
+
+</body>
+
+</html>

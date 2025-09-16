@@ -177,7 +177,7 @@ class Controller
     protected function validateMethod(string $method, string $method2 = ''): void
     {
         if ($_SERVER['REQUEST_METHOD'] !== strtoupper($method) && $_SERVER['REQUEST_METHOD'] !== strtoupper($method2)) {
-            throw new Exception("Méthode {$_SERVER['REQUEST_METHOD']} non autorisée");
+            throw new Exception("Méthode {$_SERVER['REQUEST_METHOD']} non autorisée. method_required :" . $method . " " . $method2);
         }
     }
 

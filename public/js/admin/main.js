@@ -1,15 +1,84 @@
-document.addEventListener('DOMContentLoaded', function () {
-    // Initialiser tous les composants
-    initDropdowns();
-    initModals();
-    initSearchFilters();
-    initFileUploads();
-    initFormValidation();
-    initTooltips();
-    initTablesSort();
+// Fonction pour initialiser l'application
+function initApp() {
+    try {
+        console.log('Initialisation de l\'application...');
+        
+        // Initialiser uniquement les composants nécessaires
+        // Vérifier les dropdowns personnalisés (sauf ceux de Bootstrap)
+        const customDropdowns = document.querySelectorAll('.dropdown:not(.bootstrap-dropdown)');
+        if (customDropdowns.length > 0) {
+            console.log(`Initialisation de ${customDropdowns.length} menus déroulants personnalisés`);
+            initDropdowns();
+        }
+        
+        // Vérifier les modaux personnalisés (sauf ceux de Bootstrap)
+        const customModals = document.querySelectorAll('.modal:not(.bootstrap-modal)');
+        if (customModals.length > 0) {
+            console.log(`Initialisation de ${customModals.length} modaux personnalisés`);
+            initModals();
+        }
+        
+        // Initialiser les autres composants si nécessaire
+        if (document.querySelector('[data-search]')) {
+            initSearchFilters();
+        }
+        
+        // Initialiser les autres fonctionnalités
+        initFileUploads();
+        initFormValidation();
+        initTooltips();
+        initTablesSort();
+        
+        // Marquer les menus déroulants Bootstrap pour éviter les conflits
+        document.querySelectorAll('.dropdown[data-bs-toggle="dropdown"]').forEach(el => {
+            el.classList.add('bootstrap-dropdown');
+        });
+        
+        // Marquer les modaux Bootstrap pour éviter les conflits
+        document.querySelectorAll('.modal[data-bs-toggle="modal"]').forEach(el => {
+            el.classList.add('bootstrap-modal');
+        });
+        
+        // Ajouter la classe 'loaded' au body pour les animations d'entrée
+        document.body.classList.add('loaded');
+        
+        console.log('Initialisation terminée');
+    } catch (error) {
+        console.error('Erreur lors de l\'initialisation de l\'application:', error);
+    }
+}
 
-    // Ajouter la classe 'loaded' au body pour les animations d'entrée
-    document.body.classList.add('loaded');
+// Attendre que le DOM soit chargé
+document.addEventListener('DOMContentLoaded', initApp);
+
+// Gérer le cas où le DOM est déjà chargé
+if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    initApp();
+}
+
+// Gestionnaire d'erreurs global
+window.addEventListener('error', function(event) {
+    console.error('Erreur non gérée:', event.error || event.message, event);
+    
+    // Afficher un message d'erreur convivial à l'utilisateur
+    const errorMessage = `Une erreur s'est produite: ${event.message || 'Erreur inconnue'}`;
+    showNotification(errorMessage, 'Veuillez recharger la page et réessayer.', 'error');
+    
+    // Empêcher la propagation de l'erreur
+    event.preventDefault();
+    return false;
+});
+
+// Gestionnaire pour les promesses non gérées
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('Promesse rejetée non gérée:', event.reason);
+    
+    // Afficher un message d'erreur convivial à l'utilisateur
+    const errorMessage = event.reason?.message || 'Une erreur est survenue lors du chargement des données';
+    showNotification('Erreur', errorMessage, 'error');
+    
+    // Empêcher la propagation de l'erreur
+    event.preventDefault();
 });
 
 /**
@@ -116,15 +185,57 @@ function closeAllDropdowns() {
  * Solution robuste qui fonctionne même avec des conteneurs complexes
  */
 function initDropdowns() {
-    const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+    // Ne pas initialiser les dropdowns Bootstrap car ils sont déjà gérés par Bootstrap
+    const dropdownToggles = document.querySelectorAll('.dropdown-toggle:not([data-bs-toggle="dropdown"]):not(.bootstrap-dropdown)');
+
+    // Si aucun dropdown personnalisé n'est trouvé, ne rien faire
+    if (dropdownToggles.length === 0) {
+        console.log('Aucun menu déroulant personnalisé à initialiser');
+        return;
+    }
+
+    console.log(`Initialisation de ${dropdownToggles.length} menus déroulants personnalisés`);
 
     dropdownToggles.forEach(toggle => {
+        // Vérifier si le toggle a déjà un gestionnaire d'événements
+        if (toggle.hasAttribute('data-dropdown-initialized')) return;
+        
+        // Marquer comme initialisé
+        toggle.setAttribute('data-dropdown-initialized', 'true');
+        
+        // Ajouter un ID unique si non défini
+        if (!toggle.id) {
+            toggle.id = 'dropdown-toggle-' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // Ajouter l'écouteur d'événements
         toggle.addEventListener('click', function (e) {
-            e.preventDefault();
+            // Ne pas empêcher le comportement par défaut pour les liens
+            if (this.tagName !== 'A') {
+                e.preventDefault();
+            }
             e.stopPropagation();
 
             const dropdown = this.closest('.dropdown');
-            const menu = dropdown.querySelector('.dropdown-menu');
+            if (!dropdown) {
+                console.warn('Élément parent .dropdown non trouvé pour', this);
+                return;
+            }
+            
+            // Trouver le menu déroulant correspondant
+            let menu = dropdown.querySelector('.dropdown-menu');
+            if (!menu) {
+                // Essayer de trouver le menu par aria-labelledby
+                const menuId = this.getAttribute('aria-controls') || this.getAttribute('aria-labelledby');
+                if (menuId) {
+                    menu = document.getElementById(menuId);
+                }
+                
+                if (!menu) {
+                    console.warn('Menu déroulant non trouvé pour', this);
+                    return;
+                }
+            }
 
             // Si le dropdown est déjà actif, le fermer
             if (dropdown.classList.contains('active')) {
@@ -285,7 +396,7 @@ function closeModal(modal) {
 
     // Fermer le modal après l'animation
     setTimeout(() => {
-        modal.classList.remove('show');
+        modal.classList.remove('show'); 
         document.body.classList.remove('modal-open');
 
         // Réinitialiser les formulaires dans le modal

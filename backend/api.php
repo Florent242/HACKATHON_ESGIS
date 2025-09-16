@@ -200,7 +200,7 @@ try {
             // Routage des endpoints administrateur
             $adminAction = $request[1] ?? null;
 
-            
+
             // Gestion des routes admin directes
             switch ($adminAction) {
                 case 'stats':
@@ -235,7 +235,7 @@ try {
                     } elseif ($method === 'GET' && isset($request[2]) && $request[2] === 'stats') {
                         // GET /api/admin/challenges/stats
                         $controllerAdmin->getChallengesStats();
-                    } elseif ($method === 'POST' && $request[2] === 'create') {
+                    } elseif ($method === 'POST' && isset($request[2]) && $request[2] === 'create') {
                         // POST /api/admin/challenges/create
                         $controllerAdmin->createChallenge();
                     } elseif (isset($request[2]) && is_numeric($request[2])) {
@@ -849,9 +849,6 @@ try {
                         throw new Exception('Méthode non autorisée', 405);
                     }
                 }
-            } elseif ($id === 'hackathon' && is_numeric($action)) {
-                // Route /api/challenges/hackathon/{id}
-                $controller->getByHackathon($action);
             } else {
                 throw new Exception('ID non valide pour /challenges', 400);
             }
@@ -892,34 +889,50 @@ try {
 
         case 'notifications':
             $controller = new NotificationController($db, $tokenManager);
-            if ($id === null) {
-                // Route /api/notifications
+            if ($id === 'user' && is_numeric($action)) {
                 if ($method === 'GET') {
-                    $controller->getNotifications($userId);
-                } elseif ($method === 'POST') {
-                    $controller->create();
+                    // GET /api/notifications/user/{user_id}
+                    $controller->listForCurrentUser($action);
+                } elseif ($method === 'POST' || $method === 'PUT') {
+                    // POST || PUT /api/notifications/user/{user_id}
+                    $controller->create($input);
+                } else {
+                    throw new Exception('Méthode non autorisée', 405);
+                }
+            } elseif ($id === 'unread-count') {
+                // GET /api/notifications/unread-count/{user_id}
+                if ($method === 'GET' && !empty($action) && is_numeric($action)) {
+                    $controller->getUnreadCount($action);
+                } else {
+                    throw new Exception('Méthode non autorisée', 405);
+                }
+            } elseif ($id === 'mark-all-read') {
+                // POST /api/notifications/mark-all-read/{user_id}
+                if ($method === 'POST' && !empty($action) && is_numeric($action)) {
+                    $controller->markAllAsRead($action);
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
                 }
             } elseif (is_numeric($id)) {
-                // Route /api/notifications/{id}
+                // GET /api/notifications/{id}
                 if ($action === null) {
                     if ($method === 'GET') {
-                        $controller->getNotifications($userId);
-                    } elseif ($method === 'POST' || $method === 'PUT') {
-                        $controller->update($id);
+                        // GET /api/notifications/{id}
+                        $controller->getNotification($id);
                     } elseif ($method === 'DELETE') {
+                        // DELETE /api/notifications/{id}
                         $controller->delete($id);
                     } else {
                         throw new Exception('Méthode non autorisée', 405);
                     }
-                } elseif ($action === 'markAsRead') {
+                } elseif ($action === 'mark-as-read' && $method === 'POST') {
+                    // POST /api/notifications/{id}/markAsRead
                     $controller->markAsRead($id);
+                } else {
+                    throw new Exception('Méthode non autorisée', 405);
                 }
-            } elseif ($id === 'user' && is_numeric($action)) {
-                $controller->getNotifications($action);
             } else {
-                throw new Exception('ID non valide pour /notifications', 400);
+                throw new Exception('Route non reconnue ou invalide', 400);
             }
             break;
 
