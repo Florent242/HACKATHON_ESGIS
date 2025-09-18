@@ -89,6 +89,7 @@ class ProjectController extends Controller
 
             // Récupérer l'utilisateur connecté
             $userId = $this->tokenManager->getCurrentUserId();
+            $isAdmin = isAdmin($userId);
             if (!$userId) {
                 throw new Exception('Utilisateur non connecté', 401);
             }
@@ -116,7 +117,7 @@ class ProjectController extends Controller
             $team = $this->team->getByUser($userId);
             $team = $team[0];
             $isRegistredToHackathon = $this->team->getByHackathon($team['id']);
-            if (!$team || !$isRegistredToHackathon) {
+            if ((!$team || !$isRegistredToHackathon) && !$isAdmin ) {
                 throw new Exception('Vous devez faire partie d\'une équipe pour ce hackathon', 403);
             }
 

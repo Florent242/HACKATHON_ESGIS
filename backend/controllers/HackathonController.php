@@ -135,7 +135,7 @@ class HackathonController extends Controller
                 ':hackathon_id' => (int)$hackathonId
             ]);
 
-            if (!$stmt->fetchColumn() > 0) {
+            if (!$stmt->fetchColumn() > 0 && !isAdmin($userId)) {
                 return [
                     'success' => false,
                     'message' => 'Accès non autorisé ! Vous devez être participant au hackathon pour accéder à cette ressource.'
@@ -154,7 +154,7 @@ class HackathonController extends Controller
                 ':user_id' => (int)$userId
             ]);
 
-            if (!$stmt->fetchColumn() > 0) {
+            if (!$stmt->fetchColumn() > 0 && !isAdmin($userId)) {
                 return [
                     'success' => false,
                     'message' => 'Accès non autorisé ! Vous devez être membre d\'une equipe participant au hackathon pour accéder à cette ressource.'

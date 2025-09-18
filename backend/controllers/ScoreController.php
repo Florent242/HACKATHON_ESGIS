@@ -1,4 +1,5 @@
 <?php
+
 namespace Auth\Controller;
 
 use Auth\Model\Score;
@@ -44,19 +45,20 @@ class ScoreController extends Controller
     {
         try {
             $this->validateMethod('GET');
+
+            $score = new Score($this->db);
+            $leaderboard = $score->getLeaderboard($hackathon_id, $phase_id);
+
+            jsonResponse([
+                'success' => true,
+                'leaderboard' => $leaderboard
+            ]);
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
             ], 400);
         }
-        $score = new Score($this->db);
-        $leaderboard = $score->getLeaderboard($hackathon_id, $phase_id);
-
-        jsonResponse([
-            'success' => true,
-            'leaderboard' => $leaderboard
-        ]);
     }
 
     public function getPhases($hackathon_id)
@@ -65,7 +67,7 @@ class ScoreController extends Controller
             $this->validateMethod('GET');
             $score = new Score($this->db);
             $phases = $score->getPhases((int)$hackathon_id);
-            
+
             jsonResponse([
                 'success' => true,
                 'phases' => $phases
@@ -78,22 +80,23 @@ class ScoreController extends Controller
         }
     }
 
-    public function updateScore($team_id, $hackathon_id, $phase_id, $input)
-    {
-        try {
-            $this->validateMethod('POST');
-            $score = new Score($this->db);
-            $score->updateScore($team_id, $hackathon_id, $phase_id, $input);
-            
-            jsonResponse([
-                'success' => true,
-                'message' => 'Score mis à jour avec succès'
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
-        }
-    }
+    // TODO : Instruction interdite aux participants
+    // public function updateScore($team_id, $hackathon_id, $phase_id, $input)
+    // {
+    //     try {
+    //         $this->validateMethod('POST');
+    //         $score = new Score($this->db);
+    //         $score->updateScore($team_id, $hackathon_id, $phase_id, $input);
+
+    //         jsonResponse([
+    //             'success' => true,
+    //             'message' => 'Score mis à jour avec succès'
+    //         ]);
+    //     } catch (Exception $e) {
+    //         $this->jsonResponse([
+    //             'success' => false,
+    //             'error' => $e->getMessage()
+    //         ], 400);
+    //     }
+    // }
 }

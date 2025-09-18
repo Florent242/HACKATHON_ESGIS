@@ -3,6 +3,11 @@
 namespace Auth\Controller;
 
 use Exception;
+use Auth\Service\InputInspectionService;
+
+if (!class_exists('InputInspectionService')) {
+    require_once __DIR__ . '/../services/InputInspectionService.php';
+}
 
 class Controller
 {
@@ -148,6 +153,29 @@ class Controller
         if (strpos($contentType, 'application/json') !== false) {
             $rawData = file_get_contents('php://input');
             $data = json_decode($rawData, true);
+
+            // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
+            try {
+                $rawInput = $rawData;
+                $method = $_SERVER['REQUEST_METHOD'];
+                $headers = function_exists('getallheaders') ? getallheaders() : [];
+                $data = InputInspectionService::inspectInput($data, [
+                    'method' => $method,
+                    'headers' => $headers,
+                    'raw' => $rawInput,
+                    'max_body_bytes' => 1024 * 1024,
+                ]);
+            } catch (Exception $e) {
+                if (isAjaxRequest()) {
+                    header('Content-Type: application/json');
+                    http_response_code($e->getCode() ?: 400);
+                    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+                } else {
+                    setFlashMessage('error', 'Entrée invalide', $e->getMessage());
+                    header('Location: ' . '/');
+                }
+                exit();
+            }
             return $data['csrf_token'] ?? null;
         }
         return null;

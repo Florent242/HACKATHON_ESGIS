@@ -5,6 +5,10 @@ namespace Auth\Model;
 use Exception;
 use PDO;
 
+if (!defined('FUNCTIONS_INCLUDED')) {
+    require_once __DIR__ . '/../includes/functions.php';
+}
+
 class Phase {
 
     private $db;
@@ -130,7 +134,7 @@ class Phase {
                 'hackathon_id' => $hackathonId
             ]);
 
-            return (bool) $stmt->fetchColumn();
+            return (bool) $stmt->fetchColumn() || isAdmin($userId);
         } catch (Exception $e) {
             throw new Exception("Erreur lors de la vérification de la qualification : " 
             // pour debug

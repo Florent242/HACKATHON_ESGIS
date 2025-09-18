@@ -50,17 +50,32 @@ if (empty($_SESSION['csrf_token'])) {
 
                     <div class="form-group">
                         <label for="password_user">Mot de passe</label>
-                        <div class="display p-2 shadow-lg shadow-indigo-300/10">
+                        <div class="display relative p-2 shadow-lg shadow-indigo-300/10">
                             <i data-lucide="key"></i>
-                            <input type="password" id="password_user" name="password" placeholder="............" required>
+                            <input
+                                type="password"
+                                id="password_user"
+                                name="password"
+                                placeholder="............"
+                                required
+                                autocomplete="current-password"
+                                aria-describedby="password_help">
+                            <button
+                                type="button"
+                                class="toggle-password absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-blue-500 focus:outline-none transition-colors duration-200"
+                                aria-label="Afficher le mot de passe"
+                                title="Afficher/Masquer le mot de passe">
+                                <i data-lucide="eye" class=""></i>
+                            </button>
                         </div>
+                        <p id="password_help" class="error-message mt-1.5 text-xs sm:text-sm"></p>
                     </div>
 
-                    <div class="flex flex-row justify-center items-center mx-auto max-w-[60%] max-md:text-xs">
+                    <div class="flex flex-row justify-center items-center mx-auto max-w-[60%] max-md:text-sm">
                         <label for="remember_me" class="animated-checkbox">
                             <input type="checkbox" id="remember_me" name="remember_me" class="animated-checkbox-input">
                             <span class="animated-checkbox-check"></span>
-                            <span class="animated-checkbox-label text-sm max-md:text-xs">Rester connecté</span>
+                            <span class="animated-checkbox-label text-sm max-md:text-sm">Rester connecté</span>
                         </label>
                     </div>
                     <button type="submit" class="submit-btn"> <i data-lucide="send"></i>Se connecter</button>
@@ -99,7 +114,7 @@ if (empty($_SESSION['csrf_token'])) {
                                 <i data-lucide="user"></i>
                                 <input type="text" id="fullname" name="fullname" placeholder="Votre nom complet" required>
                             </div>
-                            <span class="error-message absolute top-full text-red-500 text-xs mt-1 hidden" id="fullNameError"></span>
+                            <span class="error-message absolute top-full text-red-500 text-sm mt-1 hidden" id="fullNameError"></span>
                         </div>
                         <div class="flex gap-2 flex-row justify-between">
 
@@ -109,7 +124,7 @@ if (empty($_SESSION['csrf_token'])) {
                                     <i data-lucide="user"></i>
                                     <input type="text" id="username" name="username" placeholder="Votre pseudo" required>
                                 </div>
-                                <span class="error-message absolute top-full text-red-500 text-xs mt-1 hidden" id="usernameError"></span>
+                                <span class="error-message absolute top-full text-red-500 text-sm mt-1 hidden" id="usernameError"></span>
                             </div>
 
                             <div class="form-group">
@@ -118,7 +133,7 @@ if (empty($_SESSION['csrf_token'])) {
                                     <i data-lucide="mail"></i>
                                     <input type="email" id="email" name="email" placeholder="etudiant@esgis.bj" required>
                                 </div>
-                                <span class="error-message absolute top-full text-red-500 text-xs mt-1 hidden" id="emailError"></span>
+                                <span class="error-message absolute top-full text-red-500 text-sm mt-1 hidden" id="emailError"></span>
                             </div>
                         </div>
 
@@ -144,8 +159,7 @@ if (empty($_SESSION['csrf_token'])) {
                                         placeholder="+229 XX XX XX XX"
                                         autocomplete="tel"
                                         inputmode="tel"
-                                        required
-                                    >
+                                        required>
                                 </div>
                                 <span class="error-message hidden text-[11px] text-red-400 mt-1" id="phoneError"></span>
                             </div>
@@ -173,18 +187,20 @@ if (empty($_SESSION['csrf_token'])) {
                             <label for="password" class="label after:ml-1 after:text-red-500 after:content-['*']">Mot de passe</label>
                             <div class="display p-2 shadow-lg shadow-indigo-300/10">
                                 <i data-lucide="key"></i>
-                                <input type="password" id="password" name="password" placeholder="Minimum 8 caractères" required>
+                                <input type="password" id="password" name="password" placeholder="Minimum 8 caractères" required autocomplete="new-password">
+                                <button type="button" class="toggle-password" aria-label="Afficher le mot de passe" title="Afficher/Masquer le mot de passe"><i data-lucide="eye"></i></button>
                             </div>
-                            <span class="error-message absolute top-full text-red-500 text-xs mt-1 hidden" id="passwordError"></span>
+                            <span class="error-message absolute top-full text-red-500 text-sm mt-1 hidden" id="passwordError"></span>
                         </div>
 
                         <div class="form-group">
                             <label for="confirmPassword" class="label after:ml-1 after:text-red-500 after:content-['*']">Confirmer le mot de passe</label>
                             <div class="display p-2 shadow-lg shadow-indigo-300/10">
                                 <i data-lucide="key"></i>
-                                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Retapez votre mot de passe" required>
+                                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Retapez votre mot de passe" required autocomplete="new-password">
+                                <button type="button" class="toggle-password" aria-label="Afficher le mot de passe" title="Afficher/Masquer le mot de passe"><i data-lucide="eye"></i></button>
                             </div>
-                            <span class="error-message absolute top-full text-red-500 text-xs mt-1 hidden" id="confirmPasswordError"></span>
+                            <span class="error-message absolute top-full text-red-500 text-sm mt-1 hidden" id="confirmPasswordError"></span>
                         </div>
                     </div>
 
@@ -193,7 +209,7 @@ if (empty($_SESSION['csrf_token'])) {
                         <h3 class="section-title">Participation au Hackathon</h3>
 
                         <div class="form-group mb-4">
-                            <label for="main_skill" class="label after:ml-1 after:text-red-500 after:content-['*'] mb-1.5 block text-xs font-medium text-gray-300">Compétence principale</label>
+                            <label for="main_skill" class="label after:ml-1 after:text-red-500 after:content-['*'] mb-1.5 block text-sm font-medium text-gray-300">Compétence principale</label>
                             <div class="relative w-full">
                                 <div class="flex items-center bg-gray-800/80 border border-gray-600/50 rounded-md px-2.5 py-1.5 text-sm focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all w-full duration-150">
                                     <i data-lucide="code" class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0"></i>
@@ -201,8 +217,7 @@ if (empty($_SESSION['csrf_token'])) {
                                         id="main_skill"
                                         name="main_skill"
                                         required
-                                        class="w-full bg-transparent text-xs text-gray-100 placeholder-gray-400 border-none focus:ring-0 focus:outline-none appearance-none cursor-pointer pr-5 py-0.5"
-                                    >
+                                        class="w-full bg-transparent text-sm text-gray-100 placeholder-gray-400 border-none focus:ring-0 focus:outline-none appearance-none cursor-pointer pr-5 py-0.5">
                                         <option value="" class="bg-gray-800 text-gray-300">Sélectionnez votre compétence</option>
                                         <optgroup label="Développement" class="bg-gray-800 text-gray-200">
                                             <option value="fullstack" class="hover:bg-indigo-600">Développement Full-Stack</option>
@@ -264,8 +279,8 @@ if (empty($_SESSION['csrf_token'])) {
                     <!-- Section Conditions -->
                     <div class="form-group mt-6">
                         <div class="flex items-center w-full">
-                            <input class="checked:bg-blue-500 w-xs" type="checkbox" id="terms" name="terms" required class="mr-2">
-                            <label for="terms" class="text-sm w-full">J'accepte les <a href="/conditions" class="text-indigo-500 hover:underline">conditions d'utilisation</a> et la <a href="/privacy" class="text-indigo-500 hover:underline">politique de confidentialité</a></label>
+                            <input class="checked:bg-blue-500 w-sm" type="checkbox" id="terms" name="terms" required class="mr-2">
+                            <label for="terms" class="text-sm w-full">J'accepte les <a href="/conditions" target="_blank" class="text-indigo-500 hover:underline">conditions d'utilisation</a> et la <a href="/privacy" target="_blank" class="text-indigo-500 hover:underline">politique de confidentialité</a></label>
                         </div>
                     </div>
 

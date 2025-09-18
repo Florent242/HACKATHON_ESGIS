@@ -6,6 +6,10 @@ use Exception;
 use PDO;
 use PDOException;
 
+if (!defined('FUNCTIONS_INCLUDED')) {
+    require_once __DIR__ . '/../includes/functions.php';
+}
+
 class Challenge
 {
     private $db;
@@ -24,6 +28,7 @@ class Challenge
     public function find($id, $user_id = null)
     {
         try {
+            $isAdmin = isAdmin($user_id);
             $sql = "SELECT c.id,
             c.code_name,
             c.title,
@@ -61,7 +66,7 @@ class Challenge
             }
 
             // Vérifier si la phase est active
-            if ($challenge['phase_id'] !== null && !$this->isPhaseActive($challenge['hackathon_id'], $challenge['phase_id'])) {
+            if ($challenge['phase_id'] !== null && !$this->isPhaseActive($challenge['hackathon_id'], $challenge['phase_id']) && !$isAdmin) {
                 throw new Exception("La phase du challenge n'est pas active actuellement !");
             }
 
@@ -85,7 +90,7 @@ class Challenge
             }
 
             // Vérifier si l'utilisateur est spécifié et s'il est inscrit au hackathon
-            if ($user_id !== null && !$this->isRegistered($user_id, $challenge['hackathon_id'])) {
+            if ($user_id !== null && !$this->isRegistered($user_id, $challenge['hackathon_id']) && !$isAdmin) {
                 throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
             }
 
@@ -105,9 +110,10 @@ class Challenge
     public function submitChallengeCTF($user_id, $input, $phase_id = null)
     {
         try {
+            $isAdmin = isAdmin($user_id);
             $this->db->beginTransaction();
             // Verifier si l'utiisateur est inscrit au hackathon
-            if (!$this->isRegistered($user_id, $input['hackathon_id'])) {
+            if (!$this->isRegistered($user_id, $input['hackathon_id']) && !$isAdmin && !$isAdmin) {
                 throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
             }
 
@@ -137,7 +143,7 @@ class Challenge
             // Récupérer l’équipe du joueur
             $team_id = $this->getTeam($user_id);
 
-            if (!$team_id) {
+            if (!$team_id && !$isAdmin) {
                 return [
                     'success' => false,
                     'message' => "Vous n'appartenez à aucune équipe.",
@@ -179,47 +185,49 @@ class Challenge
                 ];
             }
 
-            $stmt = $this->db->prepare("UPDATE flags SET solves = solves + 1 WHERE id = :flag_id");
-            $stmt->execute([':flag_id' => $flag['id']]);
+            if (!$isAdmin) {
+                $stmt = $this->db->prepare("UPDATE flags SET solves = solves + 1 WHERE id = :flag_id");
+                $stmt->execute([':flag_id' => $flag['id']]);
 
-            // Récupère solve_count pour ce flag
-            $stmt = $this->db->prepare("
+
+                // Récupère solve_count pour ce flag
+                $stmt = $this->db->prepare("
                         SELECT COUNT(DISTINCT user_id)
                         FROM validated_flags
                         WHERE flag_id = :flag_id
                         AND is_valid = 1
                     ");
-            $stmt->execute([':flag_id' => $flag['id']]);
-            $solveCount = $stmt->fetchColumn();
+                $stmt->execute([':flag_id' => $flag['id']]);
+                $solveCount = $stmt->fetchColumn();
 
-            // Calcule les nouveaux points dynamiques
-            $points = $this->calculateDynamicFlagPoints(
-                (int)$flag['initial_points'],
-                (int)$flag['min_points'],
-                (int)$flag['decay'],
-                (int)$solveCount
-            );
+                // Calcule les nouveaux points dynamiques
+                $points = $this->calculateDynamicFlagPoints(
+                    (int)$flag['initial_points'],
+                    (int)$flag['min_points'],
+                    (int)$flag['decay'],
+                    (int)$solveCount
+                );
 
-            // Mise à jour des points du flag
-            $stmt = $this->db->prepare("UPDATE flags SET points = :points WHERE id = :flag_id");
-            $stmt->execute([
-                ':points' => $points,
-                ':flag_id' => $flag['id']
-            ]);
+                // Mise à jour des points du flag
+                $stmt = $this->db->prepare("UPDATE flags SET points = :points WHERE id = :flag_id");
+                $stmt->execute([
+                    ':points' => $points,
+                    ':flag_id' => $flag['id']
+                ]);
 
-            // Insertion de la validation
-            $stmt = $this->db->prepare("
+                // Insertion de la validation
+                $stmt = $this->db->prepare("
                 INSERT INTO validated_flags (flag_id, user_id, challenge_id,points_gained, validated_at,flag_submitted, is_valid) 
                 VALUES (:flag_id, :user_id, :challenge_id, :points_gained, NOW(), :flag_submitted, 1)
-            ");
-            $stmt->execute([
-                ':flag_id' => $flag['id'],
-                ':user_id' => $user_id,
-                ':challenge_id' => $flag['challenge_id'],
-                ':points_gained' => $points,
-                ':flag_submitted' => $input['flag_value']
-            ]);
-
+                ");
+                $stmt->execute([
+                    ':flag_id' => $flag['id'],
+                    ':user_id' => $user_id,
+                    ':challenge_id' => $flag['challenge_id'],
+                    ':points_gained' => $points,
+                    ':flag_submitted' => $input['flag_value']
+                ]);
+            }
             $validatedFlagId = $this->db->lastInsertId();
             if ($this->db->inTransaction()) $this->db->commit();
 
@@ -236,11 +244,12 @@ class Challenge
 
             $scoreId = $stmt->fetchColumn();
 
-            if ($scoreId) {
+            if ($scoreId && !$isAdmin) {
                 // Update
                 $stmt = $this->db->prepare("
                     UPDATE scores 
-                    SET total_points = total_points + :points , last_update = NOW() 
+                    SET total_points = total_points + :points , last_update
+                     = NOW() 
                     WHERE id = :id
                 ");
                 $stmt->execute([
@@ -248,6 +257,12 @@ class Challenge
                     ':id' => $scoreId
                 ]);
             } else {
+                if ($isAdmin) return [
+                    'success' => true,
+                    'message' => "Flag validé avec succès ! Vous gagnez ".$flag['points']." points.",
+                    'validated_flag_id' => $validatedFlagId,
+                    'points' => $flag['points']
+                ];
                 // Insert
                 $stmt = $this->db->prepare("
                     INSERT INTO scores (team_id, hackathon_id, phase_id, total_points)
@@ -257,7 +272,7 @@ class Challenge
                     ':team_id' => $team_id,
                     ':hackathon_id' => $input['hackathon_id'] ?? 1,
                     ':phase_id' => $phase_id ?? 1,
-                    ':points' => $points
+                    ':points' => $points ?? 0
                 ]);
             }
 
@@ -334,19 +349,50 @@ class Challenge
      * @return int Le nombre total de résolutions.
      * @throws Exception Si une erreur de base de données survient.
      */
-    public function getTotalSolvesCount(): int
+    public function getTotalSolvesCount($hackathonId = null, $phaseId = null): array
     {
         try {
-            $stmt = $this->db->query("
-                SELECT COUNT(DISTINCT tm.team_id, vf.challenge_id) AS total_solves
-                FROM validated_flags vf
-                JOIN team_members tm ON vf.user_id = tm.user_id
-                WHERE vf.is_valid = 1
-            ");
-            return (int) $stmt->fetchColumn();
+            $query = "
+                SELECT 
+                    vf.challenge_id,
+                    COUNT(DISTINCT vf.user_id) AS unique_users_count
+                FROM 
+                    validated_flags vf
+                JOIN 
+                    users u ON vf.user_id = u.id
+                WHERE 
+                    vf.is_valid = 1
+                    AND u.role NOT IN ('admin', 'organisateur')";
+
+            $params = [];
+
+            // Filtre par hackathon si spécifié
+            if ($hackathonId !== null) {
+                $query .= " AND vf.hackathon_id = :hackathon_id";
+                $params[':hackathon_id'] = $hackathonId;
+            }
+
+            // Filtre par phase si spécifié
+            if ($phaseId !== null) {
+                $query .= " AND vf.phase_id = :phase_id";
+                $params[':phase_id'] = $phaseId;
+            }
+
+            $query .= " GROUP BY vf.challenge_id";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->execute($params);
+
+            // Retourne un tableau associatif challenge_id => nombre d'utilisateurs uniques
+            $result = [];
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $result[$row['challenge_id']] = (int)$row['unique_users_count'];
+            }
+
+            return $result;
         } catch (PDOException $e) {
             throw new Exception(
-                "Erreur lors du comptage total des résolutions !"
+                "Erreur lors du comptage des résolutions uniques !"
                 // pour debug
                 // . $e->getMessage()
             );
@@ -393,7 +439,7 @@ class Challenge
     public function getChallengeAlgo($hackathon_id, $user_id, $phase_id)
     {
         // Verifier si l'utiisateur est inscrit au hackathon
-        if (!$this->isRegistered($user_id, $hackathon_id)) {
+        if (!$this->isRegistered($user_id, $hackathon_id) && !isAdmin($user_id)) {
             throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
         }
         try {
@@ -467,7 +513,7 @@ class Challenge
     {
         try {
             // Verifier si l'utiisateur est inscrit au hackathon
-            if (!$this->isRegistered($user_id, $hackathon_id)) {
+            if (!$this->isRegistered($user_id, $hackathon_id) && !isAdmin($user_id)) {
                 throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
             }
             $sql = "SELECT 
@@ -538,7 +584,7 @@ class Challenge
     {
         try {
             // Verifier si l'utiisateur est inscrit au hackathon
-            if (!$this->isRegistered($user_id, $hackathon_id)) {
+            if (!$this->isRegistered($user_id, $hackathon_id) && !isAdmin($user_id)) {
                 throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
             }
             $sql = "SELECT 

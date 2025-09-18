@@ -244,16 +244,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Fonction pour ouvrir le menu mobile
     const openMobileMenu = () => {
+        // Sauvegarder la position de défilement actuelle
+        document.body.style.top = `-${window.scrollY}px`;
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+        
+        // Ouvrir le menu
         mobileNav.classList.add('active');
         mobileNavOverlay.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Empêche le défilement du body
+        document.body.style.overflow = 'hidden';
     };
 
     // Fonction pour fermer le menu mobile
     const closeMobileMenu = () => {
+        // Fermer le menu
         mobileNav.classList.remove('active');
         mobileNavOverlay.classList.remove('active');
-        document.body.style.overflow = ''; // Rétablit le défilement du body
+        
+        // Restaurer le défilement et la position
+        const scrollY = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        document.body.style.overflow = '';
+        
+        // Restaurer la position de défilement
+        if (scrollY) {
+            window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        }
     };
 
     // Ouvrir le menu mobile
@@ -810,15 +828,21 @@ class NotificationManager {
         const diffHours = Math.floor(diffMins / 60);
         const diffDays = Math.floor(diffHours / 24);
 
-        if (diffSecs < 60) return 'À l\'instant';
-        if (diffMins < 60) return `il y a ${diffMins}m`;
-        if (diffHours < 24) return `il y a ${diffHours}h`;
-        if (diffDays < 7) return `il y a ${diffDays}j`;
-
-        return date.toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'short'
-        });
+        switch (true) {
+            case diffSecs < 60:
+                return 'À l\'instant';
+            case diffMins < 60:
+                return `il y a ${diffMins}m`;
+            case diffHours < 24:
+                return `il y a ${diffHours}h`;
+            case diffDays < 7:
+                return `il y a ${diffDays}j`;
+            default:
+                return date.toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'short'
+                });
+        }
     }
 
     escapeHtml(text) {

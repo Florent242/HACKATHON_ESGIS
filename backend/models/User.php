@@ -35,21 +35,22 @@ class User
             }
 
             try {
-            $query = "SELECT * FROM {$this->table} WHERE email = :email OR username = :username LIMIT 1";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':email', $identifier);
-            $stmt->bindParam(':username', $identifier);
-            $stmt->execute();
+                $query = "SELECT * FROM {$this->table} WHERE email = :email OR username = :username LIMIT 1";
+                $stmt = $this->db->prepare($query);
+                $stmt->bindParam(':email', $identifier);
+                $stmt->bindParam(':username', $identifier);
+                $stmt->execute();
             } catch (Exception $e) {
-                throw new Exception("Erreur de l'authentification. " 
-                // pour debuger
-                // . $e->getMessage()
-            );
+                throw new Exception(
+                    "Erreur de l'authentification. "
+                    // pour debuger
+                    // . $e->getMessage()
+                );
             }
 
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$user) {
-                return [ 'success' => false, 'error' => 'Utilisateur non trouvé'];
+                return ['success' => false, 'error' => 'Utilisateur non trouvé'];
             }
 
             // Vérifier le statut de l'utilisateur
@@ -59,15 +60,15 @@ class User
 
             if (password_verify($password, $user['password'])) {
                 unset($user['password']); // Ne pas renvoyer le mot de passe
-                return [ 'success' => true, 'user' => $user];
-            }else{
-                return [ 'success' => false, 'error' => 'Mot de passe incorrect'];
+                return ['success' => true, 'user' => $user];
+            } else {
+                return ['success' => false, 'error' => 'Mot de passe incorrect'];
             }
 
             // return false;
         } catch (Exception $e) {
             error_log('Erreur d\'authentification: ' . $e->getMessage());
-            return [ 'success' => false, 'error' => $e->getMessage()];
+            return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 
@@ -203,10 +204,11 @@ class User
                 'error' => $e->getMessage()
             ], 'error');
             error_log('Erreur lors de la création de l\'utilisateur: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la création de l\'utilisateur !'
-            // Pour debuger
-            //  . $e->getMessage()
-        );
+            throw new Exception(
+                'Erreur lors de la création de l\'utilisateur !'
+                // Pour debuger
+                //  . $e->getMessage()
+            );
         }
     }
 
@@ -260,10 +262,11 @@ class User
             return $stmt->execute();
         } catch (PDOException $e) {
             error_log('Erreur lors de la mise à jour de l\'utilisateur: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la mise à jour de l\'utilisateur !'
-            // Pour debuger
-            //  . $e->getMessage()
-        );
+            throw new Exception(
+                'Erreur lors de la mise à jour de l\'utilisateur !'
+                // Pour debuger
+                //  . $e->getMessage()
+            );
         }
     }
 
@@ -305,10 +308,11 @@ class User
             $stmt->execute([':username' => $username]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
         } catch (PDOException $e) {
-            throw new Exception('Erreur lors de la recherche par username !'
-            // Pour debuger
-            //  . $e->getMessage()
-        );
+            throw new Exception(
+                'Erreur lors de la recherche par username !'
+                // Pour debuger
+                //  . $e->getMessage()
+            );
         }
     }
 
@@ -320,10 +324,11 @@ class User
             $stmt->execute([':email' => $email]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: false;
         } catch (PDOException $e) {
-            throw new Exception('Erreur lors de la recherche par email !'
-            // Pour debuger
-            //  . $e->getMessage()
-        );
+            throw new Exception(
+                'Erreur lors de la recherche par email !'
+                // Pour debuger
+                //  . $e->getMessage()
+            );
         }
     }
     /**
@@ -339,10 +344,11 @@ class User
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des utilisateurs: ' . $e->getMessage());
-            throw new Exception("Cette adresse email est déjà utilisée. "
-        // Pour debuger
-        //  . $e->getMessage()
-        );
+            throw new Exception(
+                "Cette adresse email est déjà utilisée. "
+                // Pour debuger
+                //  . $e->getMessage()
+            );
         }
     }
 

@@ -25,6 +25,22 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
 $dotenv->load();
 
+// Gestion des sessions
+if (session_status() === PHP_SESSION_NONE) {
+    session_start([
+        'cookie_lifetime' => 86400, // 24h
+        'gc_maxlifetime' => 86400   // 24h
+    ]);
+}
+
+// Gestion des tokens CSRF
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    $_SESSION['csrf_token_created'] = time();
+}
+
+// Récupérer l'ID utilisateur pour les notifications
+$user_id = $_SESSION['user_id'] ?? null;
 
 class AuthMiddleware
 {

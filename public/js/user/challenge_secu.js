@@ -29,7 +29,7 @@ const CHALLENGE_ELEMENTS = {
 };
 
 const hackathonId = document.querySelector('meta[name="hackathon-id"]').content;
-const   phaseId = document.querySelector('meta[name="phase-id"]').content;
+const phaseId = document.querySelector('meta[name="phase-id"]').content;
 
 // Fonction utilitaire pour gérer les erreurs
 function handleError(title = 'Une erreur est survenue', error = null, type = 'error') {
@@ -39,11 +39,15 @@ function handleError(title = 'Une erreur est survenue', error = null, type = 'er
 
 // Fonction utilitaire pour vérifier la participation au hackathon
 async function checkHackathonAccess(hackathonId) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
     const response = await apiRequest(`/check-participation`, {
         method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
             hackathon_id: hackathonId,
-            csrf_token: document.querySelector('meta[name="csrf-token"]').content
+            csrf_token: csrfToken
         })
     });
 
@@ -769,9 +773,14 @@ function setupFlagForm() {
         formData.append("phase_id", phaseId);
 
         try {
+            const plainObject = Object.fromEntries(formData.entries());
+
             const res = await apiRequest(`/challenges/ctf/submit/${userId}`, {
                 method: "POST",
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(plainObject)
             });
 
             if (res.success) {

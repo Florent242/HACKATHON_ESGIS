@@ -480,6 +480,9 @@ async function apiRequest(endpoint, options = {}) {
             'X-Requested-With': 'XMLHttpRequest',
             ...(options.headers || {})
         };
+        if (!headers['Content-Type']) {
+            headers['Content-Type'] = 'application/json';
+        }
 
         let response = await fetch(`/api${endpoint}`, {
             ...options,
@@ -488,7 +491,6 @@ async function apiRequest(endpoint, options = {}) {
         const responseText = await response.text();
         // Si le token CSRF a expiré (403)
         if (response.status === 403) {
-            debugger
             let errorData = {};
             try {
                 errorData = responseText ? JSON.parse(responseText) : {};

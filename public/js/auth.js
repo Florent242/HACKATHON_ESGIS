@@ -5,9 +5,57 @@ document.addEventListener("DOMContentLoaded", function () {
     const registerForm = document.getElementById('registerForm');
     const authCard = document.querySelector(".auth-card");
 
+    // Initialize Lucide icons once DOM is ready, with robust fallbacks
+    let __lucideInitDone = false;
+    function ensureLucideIcons() {
+        try {
+            if (window.lucide && typeof lucide.createIcons === 'function') {
+                lucide.createIcons();
+                __lucideInitDone = true;
+            }
+        } catch (_) {}
+    }
+    // Try on DOM ready
+    ensureLucideIcons();
+    // Try again on window load (in case lucide is loaded after auth.js)
+    window.addEventListener('load', ensureLucideIcons, { once: true });
+    // Poll briefly if still not initialized
+    if (!__lucideInitDone) {
+        let tries = 0;
+        const maxTries = 40; // ~2s at 50ms
+        const iv = setInterval(() => {
+            tries++;
+            ensureLucideIcons();
+            if (__lucideInitDone || tries >= maxTries) clearInterval(iv);
+        }, 50);
+    }
+
     // Disable native HTML5 validation on auth forms to avoid UA "not focusable" edge cases
     if (loginForm) loginForm.setAttribute('novalidate', 'novalidate');
     if (registerForm) registerForm.setAttribute('novalidate', 'novalidate');
+
+    // Toggle password visibility for all buttons with .toggle-password
+    function initPasswordToggles(root) {
+        const scope = root || document;
+        const btns = scope.querySelectorAll('.toggle-password');
+        btns.forEach((btn) => {
+            if (btn.__hasToggleHandler) return;
+            btn.__hasToggleHandler = true;
+            btn.addEventListener('click', () => {
+                const wrapper = btn.closest('.display') || btn.parentElement;
+                if (!wrapper) return;
+                let input = wrapper.querySelector('input[type="password"], input[type="text"]');
+                if (!input) return;
+                const isText = input.type === 'text';
+                input.type = isText ? 'password' : 'text';
+                btn.setAttribute('aria-label', isText ? 'Afficher le mot de passe' : 'Masquer le mot de passe');
+                btn.title = isText ? 'Afficher le mot de passe' : 'Masquer le mot de passe';
+                btn.innerHTML = isText ? '<i data-lucide="eye"></i>' : '<i data-lucide="eye-off"></i>';
+                try { if (window.lucide) lucide.createIcons(); } catch (_) {}
+            });
+        });
+    }
+    initPasswordToggles(document);
 
     // Email sanitization + validation (prevents scripts/invalid chars)
     const emailInputs = document.querySelectorAll('input[type="email"][name="email"]');
@@ -521,6 +569,9 @@ document.addEventListener("DOMContentLoaded", function () {
             const newHeight = calculateTotalHeight(nextForm);
 
             authCard.style.height = `${newHeight}px`;
+            // Ensure icons are rendered and toggles are wired after switch
+            ensureLucideIcons();
+            initPasswordToggles(nextForm);
         }, 50);
 
         // Enable next form controls and disable current to avoid native validation on hidden fields
@@ -531,6 +582,8 @@ document.addEventListener("DOMContentLoaded", function () {
     // Display login form by default and set initial height
     loginForm.classList.add("active");
     authCard.style.height = `${calculateTotalHeight(loginForm)}px`;
+    ensureLucideIcons();
+    initPasswordToggles(loginForm);
 
     // Initialize tabs
     tabLogin.addEventListener("click", function () {
@@ -623,6 +676,9 @@ document.addEventListener("DOMContentLoaded", function () {
             const newHeight = calculateTotalHeight(activeForm);
             authCard.style.height = `${newHeight}px`;
         }
+        // Render icons when step sections change (password fields appear at step 2)
+        ensureLucideIcons();
+        initPasswordToggles(activeForm);
     }
 
     // Écouteurs d'événements pour les boutons

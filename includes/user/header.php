@@ -1,27 +1,3 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start([
-        'cookie_lifetime' => 86400, // 24h
-        'gc_maxlifetime' => 86400   // 24h
-    ]);
-}
-
-// Régénérer le token s'il n'existe pas ou est vieux
-$regenerateToken = true;
-if (isset($_SESSION['csrf_token_created'])) {
-    $tokenAge = time() - $_SESSION['csrf_token_created'];
-    $regenerateToken = ($tokenAge > 3600); // Régénérer toutes les heures
-}
-
-if ($regenerateToken || !isset($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    $_SESSION['csrf_token_created'] = time();
-}
-
-// Récupérer l'ID utilisateur pour les notifications
-$user_id = $_SESSION['user_id'] ?? null;
-?>
-
 <!-- Modal -->
 <div id="fenetre_modal" class="mymodal">
     <div class="modal_content">

@@ -35,7 +35,10 @@ class TokenManager
         try {
             $this->redis = new RedisManager();
         } catch (Exception $e) {
-            throw new Exception("Connexion à Redis échouée : " . $e->getMessage());
+            throw new Exception("Connexion à Redis échouée " 
+            // Pour le debug
+            // .$e->getMessage()
+            );
         }
 
         $this->algorithm = $config['algorithm'] ?? 'HS256';

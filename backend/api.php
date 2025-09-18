@@ -333,17 +333,19 @@ try {
                         'error' => 'Hackathon ID et phase ID requis.' . print_r($request, true)
                     ], 400);
                 }
-            } elseif ($method === 'POST' && is_numeric($id) && isset($id)) {
-                // Route /api/scores/{hackathon_id}/{phase_id}
-                if (isset($id) && is_numeric($id) && isset($action) && is_numeric($action) && isset($input['team_id']) && is_numeric($input['team_id'])) {
-                    $controller->updateScore($input['team_id'], (int)$id, (int)$action, $input);
-                } else {
-                    jsonResponse([
-                        'success' => false,
-                        'error' => 'Hackathon ID et phase ID requis.'
-                    ], 400);
-                }
-            }
+            } 
+            // TODO : Instruction interdite aux participants
+            // elseif ($method === 'POST' && is_numeric($id) && isset($id)) {
+            //     // Route /api/scores/{hackathon_id}/{phase_id}
+            //     if (isset($id) && is_numeric($id) && isset($action) && is_numeric($action) && isset($input['team_id']) && is_numeric($input['team_id'])) {
+            //         $controller->updateScore($input['team_id'], (int)$id, (int)$action, $input);
+            //     } else {
+            //         jsonResponse([
+            //             'success' => false,
+            //             'error' => 'Hackathon ID et phase ID requis.'
+            //         ], 400);
+            //     }
+            // }
             break;
         case 'users':
             $controller = new UserController($db, $tokenManager);
@@ -384,7 +386,7 @@ try {
                         if ($request[1] === 'me') {
                             // Vérifier l'authentification
                             if (!$currentUserId) {
-                                jsonResponse(['error' => 'Non authentifié. api'], 401);
+                                jsonResponse(['error' => 'Non authentifié - api'], 401);
                                 return;
                             }
 
@@ -441,7 +443,7 @@ try {
                         case 'POST':
                         case 'PUT':
                             // Un utilisateur peut mettre à jour son propre profil ou un admin peut mettre à jour n'importe quel profil
-                            if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
+                            if ($currentUserId != $id) {
                                 if (isAjaxRequest()) {
                                     jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                                     return;
@@ -502,6 +504,7 @@ try {
                             break;
 
                         case 'teams':
+                            // GET /api/users/{id}/teams
                             // Un utilisateur peut voir sa propre équipe ou un admin peut voir n'importe quelles équipes
                             if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                 if (isAjaxRequest()) {
@@ -516,7 +519,7 @@ try {
                             break;
 
                         case 'ongoing-challenges':
-
+                            // GET /api/users/{id}/ongoing-challenges
                             // Un utilisateur peut voir ses propres défis en cours ou un admin peut voir ceux des autres
                             if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                 jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
@@ -529,6 +532,7 @@ try {
                             $controller->getOngoingChallenges($id, $token);
                             break;
                         case 'current-challenges':
+                            // GET /api/users/{id}/current-challenges
                             // Vérification d'autorisation (similaire à ongoing-challenges)
                             if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                 jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
@@ -537,6 +541,7 @@ try {
                             $controller->getCurrentChallenges($id, $token);
                             break;
                         case 'current-hackathons':
+                            // GET /api/users/{id}/current-hackathons
                             // Un utilisateur peut voir ses propres hackathons ou un admin peut voir n'importe quels hackathons
                             if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                 jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
@@ -545,6 +550,7 @@ try {
                             break;
 
                         case 'recent-activities':
+                            // GET /api/users/{id}/recent-activities
                             // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
                             if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                 jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
@@ -552,6 +558,7 @@ try {
                             $controller->getRecentActivities($id, $token);
                             break;
                         case 'next-event':
+                            // GET /api/users/{id}/next-event
                             // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
                             if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                 jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
@@ -559,6 +566,7 @@ try {
                             $controller->getNextEvent($id, $token);
                             break;
                         case 'notifications':
+                            // GET /api/users/{id}/notifications
                             // Un utilisateur peut voir sa propre activité récente ou un admin peut voir celle des autres
                             if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                 jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
@@ -566,6 +574,7 @@ try {
                             $controller->getNotifications($id, $token);
                             break;
                         case 'completed-challenges':
+                            // GET /api/users/{id}/completed-challenges
                             // Vérification d'autorisation
                             if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                 jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
@@ -573,6 +582,7 @@ try {
                             $controller->getCompletedChallenges($id, $token);
                             break;
                         case 'all-activities':
+                            // GET /api/users/{id}/all-activities
                             // Vérification d'autorisation
                             if ($currentUserId != $id && !$controller->isAdmin($currentUserId)) {
                                 jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
@@ -858,8 +868,9 @@ try {
                     $action = $input['action'] ?? '';
                     $challengeId = $input['challenge_id'] ?? null;
 
+                    // POST /api/challenges/dev/{hackathon_id}/{user_id}
                     if ($action === 'validate' && $challengeId) {
-                        $controller->validateCode($challengeId, $request[3]);
+                        $controller->validateCode($challengeId, $request[3], $request[2]);
                     } elseif ($action === 'submit' && $challengeId) {
                         $controller->submitAlgorithmic($challengeId, $input);
                     } else {
@@ -873,14 +884,14 @@ try {
                 if ($method === 'GET' && isset($action) && is_numeric($action) && isset($request[3]) && is_numeric($request[3]) && isset($request[4]) && is_numeric($request[4])) {
 
                     $controller->getChallengesCTF($action, $request[3], $request[4]);
-                } else if ($method === 'POST' && isset($action) && $action === 'submit' && isset($request[3]) && is_numeric($request[3]) && isset($request[4]) && is_numeric($request[4])) {
+                } else if ($method === 'POST' && isset($action) && $action === 'submit' && isset($request[3]) && is_numeric($request[3])) {
 
-                    if (!isset($request[3]) || !is_numeric($request[3]) || !isset($request[4]) || !is_numeric($request[4])) {
+                    if (!isset($request[3]) || !is_numeric($request[3]) || !isset($input['phase_id']) || !is_numeric($input['phase_id'])) {
                         throw new Exception('ID utilisateur ou phase manquants', 400);
                     }
 
                     // POST /api/challenges/ctf/submit/{user_id}
-                    $controller->submitChallengeCTF($request[3], $input, $request[4]);
+                    $controller->submitChallengeCTF($request[3], $input, $input['phase_id']);
                 } else {
                     throw new Exception('Méthode non autorisée ou paramètres invalides', 400);
                 }
@@ -970,9 +981,6 @@ try {
                 if ($method === 'GET') {
                     // GET /api/notifications/user/{user_id}
                     $controller->listForCurrentUser($action);
-                } elseif ($method === 'POST' || $method === 'PUT') {
-                    // POST || PUT /api/notifications/user/{user_id}
-                    $controller->create($input);
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
                 }
@@ -996,9 +1004,6 @@ try {
                     if ($method === 'GET') {
                         // GET /api/notifications/{id}
                         $controller->getNotification($id);
-                    } elseif ($method === 'DELETE') {
-                        // DELETE /api/notifications/{id}
-                        $controller->delete($id);
                     } else {
                         throw new Exception('Méthode non autorisée', 405);
                     }

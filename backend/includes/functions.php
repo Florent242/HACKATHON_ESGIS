@@ -3,6 +3,50 @@ if (!defined('FUNCTIONS_INCLUDED')) {
     define('FUNCTIONS_INCLUDED', true);
 }
 
+/**
+ * Vérifie si l'utilisateur est un administrateur
+ * @param int $userId ID de l'utilisateur
+ * @return bool True si l'utilisateur est admin, false sinon
+ */
+function isAdmin(int $userId)
+{
+    if (!isset($userId)) {
+        return false;
+    }
+
+    // Vérifier si la table existe
+    global $db;
+
+    // Si aucune connexion à la base de données n'est disponible, essayer d'en créer une
+    if (!isset($db)) {
+        try {
+            require_once __DIR__ . '/../models/Database.php';
+            $database = \Auth\Model\Database::getInstance();
+            $db = $database->getConnection();
+        } catch (Exception $e) {
+            error_log("Erreur de connexion à la base de données. check-up : " . $e->getMessage());
+            return false;
+        }
+    }
+
+    // Vérification du rôle global
+    $query = "SELECT role FROM users WHERE id = :id";
+    $stmt = $db->prepare($query);
+    $stmt->execute([':id' => $userId]);
+    $role = $stmt->fetchColumn();
+
+    if (!in_array($role, ['admin', 'organisateur'])) {
+        return false;
+    }
+
+    // Vérification dans la whitelist
+    $query = "SELECT 1 FROM admin_whitelist WHERE user_id = :id LIMIT 1";
+    $stmt = $db->prepare($query);
+    $stmt->execute([':id' => $userId]);
+
+    return (bool) $stmt->fetchColumn();
+}
+
 function sendResponse($statusCode, $data = [], $headers = [])
 {
     http_response_code($statusCode);
@@ -197,6 +241,7 @@ function recalculateAllHackathonScores(PDO $db): void
 {
     // Hackathon 1 = CTF
     recalculateCTFScores($db, 1, 1); // tu peux passer null si phase pas gérée
+    recalculateCTFScores($db, 1, 5); // tu peux passer null si phase pas gérée
 
     // Désactivation des scores orphelins
     deactivateOrphanScores($db, 1, 1);
@@ -208,6 +253,105 @@ function recalculateAllHackathonScores(PDO $db): void
 
     // Désactivation des scores orphelins
     deactivateOrphanScores($db, 2, 2);
+}
+
+// fonction pour mettre a jour top hackers pour les meilleurs hackers individuels de la competition
+function updateTopHackers(PDO $db): void
+{
+    try {
+        // Désactiver temporairement les clés étrangères pour plus de performance
+        $db->exec('SET FOREIGN_KEY_CHECKS=0');
+        
+        // 1. Mettre à jour les enregistrements existants
+        $updateStmt = $db->prepare("
+            UPDATE top_hackers th
+            JOIN (
+                SELECT 
+                    vf.user_id,
+                    u.username,
+                    SUM(vf.points_gained) AS total_points,
+                    @rank := @rank + 1 as new_rank
+                FROM 
+                    validated_flags vf
+                JOIN 
+                    users u ON vf.user_id = u.id,
+                    (SELECT @rank := 0) r
+                WHERE 
+                    vf.is_valid = 1
+                GROUP BY 
+                    vf.user_id, u.username
+                ORDER BY 
+                    total_points DESC
+                LIMIT 10
+            ) new_ranks ON th.user_id = new_ranks.user_id
+            SET 
+                th.points = new_ranks.total_points,
+                th.ranking = new_ranks.new_rank,
+                th.last_updated = NOW()
+            WHERE 
+                th.points != new_ranks.total_points 
+                OR th.ranking != new_ranks.new_rank
+        ");
+        $updateStmt->execute();
+        
+        // 2. Insérer les nouveaux enregistrements qui n'existent pas
+        $insertStmt = $db->prepare("
+            INSERT INTO top_hackers 
+                (user_id, username, points, type, ranking, last_updated)
+            SELECT 
+                new_ranks.user_id,
+                new_ranks.username,
+                new_ranks.total_points,
+                'Hack',
+                new_ranks.new_rank,
+                NOW()
+            FROM (
+                SELECT 
+                    vf.user_id,
+                    u.username,
+                    SUM(vf.points_gained) AS total_points,
+                    @rank := @rank + 1 as new_rank
+                FROM 
+                    validated_flags vf
+                JOIN 
+                    users u ON vf.user_id = u.id,
+                    (SELECT @rank := 0) r
+                WHERE 
+                    vf.is_valid = 1
+                GROUP BY 
+                    vf.user_id, u.username
+                ORDER BY 
+                    total_points DESC
+                LIMIT 10
+            ) new_ranks
+            LEFT JOIN top_hackers th ON new_ranks.user_id = th.user_id
+            WHERE th.user_id IS NULL
+        ");
+        $insertStmt->execute();
+        
+        // 3. Supprimer les anciens enregistrements qui ne sont plus dans le top
+        $deleteStmt = $db->prepare("
+            DELETE th FROM top_hackers th
+            LEFT JOIN (
+                SELECT user_id 
+                FROM validated_flags 
+                WHERE is_valid = 1
+                GROUP BY user_id
+                ORDER BY SUM(points_gained) DESC
+                LIMIT 10
+            ) top_users ON th.user_id = top_users.user_id
+            WHERE top_users.user_id IS NULL
+        ");
+        $deleteStmt->execute();
+        
+        $db->exec('SET FOREIGN_KEY_CHECKS=1');
+        error_log("[SUCCESS] Top hackers mis à jour avec succès");
+        
+    } catch (Exception $e) {
+        $db->exec('SET FOREIGN_KEY_CHECKS=1');
+        error_log("[ERROR] Erreur dans updateTopHackers: " . $e->getMessage());
+        throw $e;
+    }
 }
 
 // Fonction pour valider une adresse email
@@ -479,17 +623,17 @@ function logActivity($action, $description, $data = [], $userId = null, $level =
 function logSecurity($action, $description, $data = [], $userId = null, $level = 'info')
 {
     global $db;
-    
+
     try {
         // Récupérer l'adresse IP du client
         $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-        
+
         // Récupérer le user-agent du navigateur
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
-        
+
         // Convertir les données en JSON pour le stockage
         $dataJson = !empty($data) ? json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : null;
-        
+
         // Préparer et exécuter la requête d'insertion
         $query = "INSERT INTO security_logs 
                  (user_id, event_type, ip_address, user_agent, details) 

@@ -11,7 +11,11 @@ use Exception;
 use PDO;
 use PDOException;
 use Auth\Model\TokenManager;
+use Auth\Service\InputInspectionService;
 
+if (!class_exists('InputInspectionService')) {
+    require_once __DIR__ . '/../services/InputInspectionService.php';
+}
 if (!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
 }
@@ -171,6 +175,27 @@ class UserController extends Controller
                 return;
             }
 
+            // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
+            try {
+                $method = $_SERVER['REQUEST_METHOD'];
+                $headers = function_exists('getallheaders') ? getallheaders() : [];
+                $data = InputInspectionService::inspectInput($data, [
+                    'method' => $method,
+                    'headers' => $headers,
+                    'raw' => $rawData,
+                    'max_body_bytes' => 1024 * 1024,
+                ]);
+            } catch (Exception $e) {
+                if (isAjaxRequest()) {
+                    header('Content-Type: application/json');
+                    http_response_code($e->getCode() ?: 400);
+                    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+                } else {
+                    setFlashMessage('error', 'Entrée invalide', $e->getMessage());
+                    header('Location: ' . '/');
+                }
+                exit();
+            }
             $updatableFields = ['username', 'fullname', 'school', 'email', 'special_comp', 'idea_project', 'study_level', 'number', 'bio', 'github_url', 'linkedin_url'];
             $filteredData  = $this->filterData($data, $updatableFields);
 
@@ -223,6 +248,27 @@ class UserController extends Controller
             $requiredFields = ['currentPassword', 'newPassword'];
             $this->validateRequiredFields($data, $requiredFields);
 
+            // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
+            try {
+                $method = $_SERVER['REQUEST_METHOD'];
+                $headers = function_exists('getallheaders') ? getallheaders() : [];
+                $data = InputInspectionService::inspectInput($data, [
+                    'method' => $method,
+                    'headers' => $headers,
+                    'raw' => $rawData,
+                    'max_body_bytes' => 1024 * 1024,
+                ]);
+            } catch (Exception $e) {
+                if (isAjaxRequest()) {
+                    header('Content-Type: application/json');
+                    http_response_code($e->getCode() ?: 400);
+                    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+                } else {
+                    setFlashMessage('error', 'Entrée invalide', $e->getMessage());
+                    header('Location: ' . '/');
+                }
+                exit();
+            }
             // Vérifier l'ancien mot de passe
             $user = $this->user->find($id, true);
             if (!$user) {
@@ -1169,22 +1215,45 @@ class UserController extends Controller
      *
      * @return bool True si l'utilisateur est administrateur, false sinon
      */
-    public function isAdmin($userId)
+    function isAdmin ($userId)
     {
         if (!isset($userId)) {
             return false;
         }
-
-        $database = Database::getInstance();
-        $db = $database->getConnection();
-
+    
+        // Vérifier si la table existe
+        global $db;
+    
+        // Si aucune connexion à la base de données n'est disponible, essayer d'en créer une
+        if (!isset($db)) {
+            try {
+                require_once __DIR__ . '/../models/Database.php';
+                $database = Database::getInstance();
+                $db = $database->getConnection();
+            } catch (Exception $e) {
+                error_log("Erreur de connexion à la base de données. check-up : " . $e->getMessage());
+                return false;
+            }
+        }
+    
+        // Vérification du rôle global
         $query = "SELECT role FROM users WHERE id = :id";
         $stmt = $db->prepare($query);
         $stmt->execute([':id' => $userId]);
         $role = $stmt->fetchColumn();
-
-        return $role === 'admin' || $role === 'organisateur';
+    
+        if (!in_array($role, ['admin', 'organisateur'])) {
+            return false;
+        }
+    
+        // Vérification dans la whitelist
+        $query = "SELECT 1 FROM admin_whitelist WHERE user_id = :id LIMIT 1";
+        $stmt = $db->prepare($query);
+        $stmt->execute([':id' => $userId]);
+    
+        return (bool) $stmt->fetchColumn();
     }
+    
     public function getNotifications($userId, $jwt)
     {
         header('Content-Type: application/json');
@@ -1263,10 +1332,10 @@ class UserController extends Controller
             $stmt->execute();
             $hackers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            echo json_encode(['success' => true, 'data' => $hackers]);
+            $this->jsonResponse(['success' => true, 'data' => $hackers]);
         } catch (Exception $e) {
             http_response_code(500);
-            echo json_encode(['success' => false, 'error' => 'Erreur lors de la récupération du classement des hackers: ' . $e->getMessage()]);
+            $this->jsonResponse(['success' => false, 'error' => 'Erreur lors de la récupération du classement des hackers: ' . $e->getMessage()], 500);
         }
         exit;
     }

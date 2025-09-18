@@ -35,7 +35,7 @@ class Score
                     SELECT user_id FROM team_members WHERE team_id = t.id
                 )
             LEFT JOIN challenge_submissions cs 
-                ON cs.challenge_id IN (
+                ON cs.challenge_id IN ( 
                     SELECT id FROM challenges WHERE hackathon_id = s.hackathon_id AND type = 'dev'
                 )
                 AND cs.user_id IN (
@@ -92,52 +92,54 @@ class Score
             );
         }
     }
-    public function updateScore($team_id, $hackathon_id, $phase_id, $points)
-    {
-        try {
-            // Vérifie si une ligne existe
-            $stmt = $this->db->prepare("
-            SELECT id FROM scores 
-            WHERE team_id = :team_id AND hackathon_id = :hackathon_id AND phase_id = :phase_id
-        ");
-            $stmt->execute([
-                ':team_id' => $team_id,
-                ':hackathon_id' => $hackathon_id,
-                ':phase_id' => $phase_id
-            ]);
 
-            $scoreId = $stmt->fetchColumn();
+    // TODO : Instruction interdite aux participants
+    // public function updateScore($team_id, $hackathon_id, $phase_id, $points)
+    // {
+    //     try {
+    //         // Vérifie si une ligne existe
+    //         $stmt = $this->db->prepare("
+    //         SELECT id FROM scores 
+    //         WHERE team_id = :team_id AND hackathon_id = :hackathon_id AND phase_id = :phase_id
+    //     ");
+    //         $stmt->execute([
+    //             ':team_id' => $team_id,
+    //             ':hackathon_id' => $hackathon_id,
+    //             ':phase_id' => $phase_id
+    //         ]);
 
-            if ($scoreId) {
-                // Mise à jour
-                $stmt = $this->db->prepare("
-                UPDATE scores 
-                SET total_points = total_points + :points 
-                WHERE id = :id
-            ");
-                $stmt->execute([
-                    ':points' => $points,
-                    ':id' => $scoreId
-                ]);
-            } else {
-                // Insertion
-                $stmt = $this->db->prepare("
-                INSERT INTO scores (team_id, hackathon_id, phase_id, total_points)
-                VALUES (:team_id, :hackathon_id, :phase_id, :points)
-            ");
-                $stmt->execute([
-                    ':team_id' => $team_id,
-                    ':hackathon_id' => $hackathon_id,
-                    ':phase_id' => $phase_id,
-                    ':points' => $points
-                ]);
-            }
-        } catch (Exception $e) {
-            throw new Exception(
-                "Erreur lors de la mise à jour du score !"
-                // pour debug
-                // . $e->getMessage()
-            );
-        }
-    }
+    //         $scoreId = $stmt->fetchColumn();
+
+    //         if ($scoreId) {
+    //             // Mise à jour
+    //             $stmt = $this->db->prepare("
+    //             UPDATE scores 
+    //             SET total_points = total_points + :points 
+    //             WHERE id = :id
+    //         ");
+    //             $stmt->execute([
+    //                 ':points' => $points,
+    //                 ':id' => $scoreId
+    //             ]);
+    //         } else {
+    //             // Insertion
+    //             $stmt = $this->db->prepare("
+    //             INSERT INTO scores (team_id, hackathon_id, phase_id, total_points)
+    //             VALUES (:team_id, :hackathon_id, :phase_id, :points)
+    //         ");
+    //             $stmt->execute([
+    //                 ':team_id' => $team_id,
+    //                 ':hackathon_id' => $hackathon_id,
+    //                 ':phase_id' => $phase_id,
+    //                 ':points' => $points
+    //             ]);
+    //         }
+    //     } catch (Exception $e) {
+    //         throw new Exception(
+    //             "Erreur lors de la mise à jour du score !"
+    //             // pour debug
+    //             // . $e->getMessage()
+    //         );
+    //     }
+    // }
 }

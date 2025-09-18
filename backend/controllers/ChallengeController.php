@@ -10,7 +10,11 @@ use Auth\Controller\Controller;
 use PDO;
 use Auth\Controller\NotificationController;
 use Auth\Model\Phase;
+use Auth\Service\InputInspectionService;
 
+if (!class_exists('InputInspectionService')) {
+    require_once __DIR__ . '/../services/InputInspectionService.php';
+}
 if (!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
 }
@@ -91,18 +95,17 @@ class ChallengeController extends Controller
             }
 
             // Vérifier si la phase est active
-            if ($phase_id !== null && !$this->challenge->isPhaseActive($input['hackathon_id'], $phase_id)) {
+            if ($phase_id !== null && !$this->challenge->isPhaseActive($input['hackathon_id'], $phase_id) && !isAdmin($user_id)) {
                 throw new Exception("Cette phase n'est pas active actuellement !");
             }
 
-
             // Vérifier si la période du hackathon est active
-            if (!$this->challenge->isChallengeLaunchPeriod($input['hackathon_id'])) {
+            if (!$this->challenge->isChallengeLaunchPeriod($input['hackathon_id']) && !isAdmin($user_id)) {
                 throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
             }
 
             // Vérifier s'il s'agit d'une phase pour qualifier
-            if ($phase_id !== null && !$this->phase->checkQualification($user_id, $phase_id, $input['hackathon_id'])) {
+            if ($phase_id !== null && !$this->phase->checkQualification($user_id, $phase_id, $input['hackathon_id']) && !isAdmin($user_id)) {
                 throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
             }
 
@@ -142,23 +145,24 @@ class ChallengeController extends Controller
         try {
             $this->validateMethod('GET');
 
+            $isAdmin = isAdmin($user_id);
             // Verifier si l'utiisateur est inscrit au hackathon
-            if (!$this->isRegistered($user_id, $hackathon_id)) {
+            if (!$this->isRegistered($user_id, $hackathon_id) && !$isAdmin) {
                 throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
             }
 
             // Vérifier si la phase est active
-            if ($phase_id !== null && !$this->challenge->isPhaseActive($hackathon_id, $phase_id)) {
+            if ($phase_id !== null && !$this->challenge->isPhaseActive($hackathon_id, $phase_id) && !$isAdmin) {
                 throw new Exception("Cette phase n'est pas active actuellement !");
             }
 
             // Vérifier si la période du hackathon est active
-            if (!$this->challenge->isChallengeLaunchPeriod($hackathon_id)) {
+            if (!$this->challenge->isChallengeLaunchPeriod($hackathon_id) && !$isAdmin) {
                 throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
             }
 
             // Vérifier si l'utilisateur est qualifié pour la phase
-            if ($phase_id !== null && !$this->phase->checkQualification($user_id, $phase_id, $hackathon_id)) {
+            if ($phase_id !== null && !$this->phase->checkQualification($user_id, $phase_id, $hackathon_id) && !$isAdmin) {
                 throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
             }
 
@@ -185,23 +189,23 @@ class ChallengeController extends Controller
             }
 
             // Vérifier si la phase est active
-            if ($phase_id !== null && !$this->challenge->isPhaseActive($hackathon_id, $phase_id)) {
+            if ($phase_id !== null && !$this->challenge->isPhaseActive($hackathon_id, $phase_id) && !isAdmin($user_id)) {
                 throw new Exception("Cette phase n'est pas active actuellement !");
             }
 
             // Vérifier si la période du hackathon est active
-            if (!$this->challenge->isChallengeLaunchPeriod($hackathon_id)) {
+            if (!$this->challenge->isChallengeLaunchPeriod($hackathon_id) && !isAdmin($user_id)) {
                 throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
             }
 
             // Vérifier si l'utilisateur est qualifié pour la phase
-            if ($phase_id !== null && !$this->phase->checkQualification($user_id, $phase_id, $hackathon_id)) {
+            if ($phase_id !== null && !$this->phase->checkQualification($user_id, $phase_id, $hackathon_id) && !isAdmin($user_id)) {
                 throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
             }
 
             // equipe de l'utilisateur
             $team = $this->challenge->getTeam($user_id);
-            if (!$team) {
+            if (!$team && !isAdmin($user_id)) {
                 throw new Exception("L'utilisateur n'est pas inscrit avec une équipe.");
             }
             $challenges = $this->challenge->getChallengeDev($hackathon_id, $team, $phase_id);
@@ -243,17 +247,17 @@ class ChallengeController extends Controller
             }
 
             // Vérifier si la phase est active
-            if ($phase_id !== null && !$this->challenge->isPhaseActive($hackathon_id, $phase_id)) {
+            if ($phase_id !== null && !$this->challenge->isPhaseActive($hackathon_id, $phase_id) && !isAdmin($user_id)) {
                 throw new Exception("Cette phase n'est pas active actuellement !");
             }
 
             // Vérifier si la période du hackathon est active
-            if ($valid = !$this->challenge->isChallengeLaunchPeriod($hackathon_id)) {
+            if ($valid = !$this->challenge->isChallengeLaunchPeriod($hackathon_id) && !isAdmin($user_id)) {
                 throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.(valid: " . ($valid ? 'true' : 'false') . ")");
             }
 
             // Vérifier si l'utilisateur est qualifié pour la phase
-            if ($phase_id !== null && !$this->phase->checkQualification($user_id, $phase_id, $hackathon_id)) {
+            if ($phase_id !== null && !$this->phase->checkQualification($user_id, $phase_id, $hackathon_id) && !isAdmin($user_id)) {
                 throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
             }
 
@@ -303,7 +307,7 @@ class ChallengeController extends Controller
             }
 
             // Vérifier si l'utilisateur est qualifié pour la phase
-            if (!$this->phase->checkQualification($userId, $challenge['phase_id'], $challenge['hackathon_id'])) {
+            if (!$this->phase->checkQualification($userId, $challenge['phase_id'], $challenge['hackathon_id']) && !isAdmin($userId)) {
                 throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
             }
 
@@ -450,6 +454,7 @@ class ChallengeController extends Controller
                 throw new Exception('Token manquant', 401);
             }
 
+            $isAdmin = isAdmin($userId);
             // Valider les entree requis
             $this->validateRequiredFields([
                 'code',
@@ -460,22 +465,22 @@ class ChallengeController extends Controller
             ], $input);
 
             // Vérifier si l'utilisateur est inscrit au hackathon
-            if (!$this->isRegistered($userId, $input['hackathon_id'])) {
+            if (!$this->isRegistered($userId, $input['hackathon_id']) && !$isAdmin) {
                 throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
             }
 
             // Vérifier si la phase est active
-            if ($input['phase_id'] !== null && !$this->challenge->isPhaseActive($input['hackathon_id'], $input['phase_id'])) {
+            if ($input['phase_id'] !== null && !$this->challenge->isPhaseActive($input['hackathon_id'], $input['phase_id']) && !$isAdmin) {
                 throw new Exception("Cette phase n'est pas active actuellement !");
             }
 
             // Vérifier si la période du hackathon est active
-            if (!$this->challenge->isChallengeLaunchPeriod($input['hackathon_id'])) {
+            if (!$this->challenge->isChallengeLaunchPeriod($input['hackathon_id']) && !$isAdmin) {
                 throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
             }
 
             // Vérifier si l'utilisateur est qualifié pour la phase
-            if ($input['phase_id'] !== null && !$this->phase->checkQualification($userId, $input['phase_id'], $input['hackathon_id'])) {
+            if ($input['phase_id'] !== null && !$this->phase->checkQualification($userId, $input['phase_id'], $input['hackathon_id']) && !$isAdmin) {
                 throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
             }
 
@@ -502,7 +507,7 @@ class ChallengeController extends Controller
 
             // Recuperer l'equipe de l'utilisateur
             $teamId = $this->challenge->getTeam($userId);
-            if (!$teamId) {
+            if (!$teamId && !$isAdmin) {
                 throw new Exception("Vous n'appartenez à aucune équipe.", 404);
             }
 
@@ -520,7 +525,7 @@ class ChallengeController extends Controller
                 ':team_id' => $teamId
             ]);
             $result = $stmt->fetch();
-            if ($result) {
+            if ($result && !$isAdmin) {
                 throw new Exception('Un membre de votre équipe a déjà validé ce challenge.', 400);
             }
 
@@ -554,6 +559,7 @@ class ChallengeController extends Controller
                 $scoreId = $stmt->fetchColumn();
 
                 if ($scoreId) {
+                    if ($isAdmin) return;
                     // Update
                     $stmt = $this->db->prepare("
                         UPDATE scores 
@@ -565,12 +571,13 @@ class ChallengeController extends Controller
                         ':id' => $scoreId
                     ]);
                 } else {
+                    if ($isAdmin) return;
                     // Insert
-                    $stmt = $this->db->prepare("
-                        INSERT INTO scores (team_id, hackathon_id, phase_id, total_points)
-                        VALUES (:team_id, :hackathon_id, :phase_id, :points)
-                    ");
-                    $stmt->execute([
+                        $stmt = $this->db->prepare("
+                            INSERT INTO scores (team_id, hackathon_id, phase_id, total_points)
+                            VALUES (:team_id, :hackathon_id, :phase_id, :points)
+                        ");
+                        $stmt->execute([
                         ':team_id' => $team_id,
                         ':hackathon_id' => $input['hackathon_id'] ?? 2,
                         ':phase_id' => $phase_id ?? 2,
@@ -695,17 +702,53 @@ class ChallengeController extends Controller
      * Validation rapide du code (tests publics seulement)
      * POST /api/challenges/algorithmic/{id}/validate
      */
-    public function validateCode($challengeId, $userId)
+    public function validateCode($challengeId, $userId, $hackathonId)
     {
         try {
-            $this->validateMethod('POST');
-
+            $this->validateMethod('POST');            
             // Authentification JWT pure
             $token = $this->getBearerToken();
             if (!$token) {
                 throw new Exception('Token requis dans le header Authorization', 401);
             }
 
+            $isAdmin = isAdmin($userId);
+            // Verifier si l'utilisateur est inscrit au hackathon
+            if (!$this->challenge->isRegistered($userId, $hackathonId) && !$isAdmin) {
+                throw new Exception("L'utilisateur n'est pas inscrit au hackathon !", 401);
+            }
+
+            // Verifier si le challenge est actif
+            $challenge = $this->challenge->findAlgorithmic($challengeId, $userId);
+            if (!$challenge) {
+                throw new Exception("Défi algorithmique non trouvé !", 404);
+            }
+
+            // Verifier si le challenge est ouvert
+            if (!$this->challenge->isChallengeOpen($challengeId) && !$isAdmin) {
+                throw new Exception("Le défi n'est pas ouvert !", 401);
+            }
+
+            // Verifier si la phase est active
+            if (!$this->challenge->isPhaseActive($hackathonId, $challenge['phase_id']) && !$isAdmin) {
+                throw new Exception("La phase n'est pas active !", 401);
+            }
+
+            
+            // Vérifier si la phase est active
+            if ($challenge['phase_id'] !== null && !$this->challenge->isPhaseActive($hackathonId, $challenge['phase_id']) && !$isAdmin) {
+                throw new Exception("Cette phase n'est pas active actuellement !");
+            }
+
+            // Vérifier si la période du hackathon est active
+            if ($valid = !$this->challenge->isChallengeLaunchPeriod($hackathonId) && !$isAdmin) {
+                throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.(valid: " . ($valid ? 'true' : 'false') . ")");
+            }
+
+            // Vérifier si l'utilisateur est qualifié pour la phase
+            if ($challenge['phase_id'] !== null && !$this->phase->checkQualification($userId, $challenge['phase_id'], $hackathonId) && !$isAdmin) {
+                throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
+            }
 
             // Récupérer les données
             $input = $this->getJsonInput();
@@ -748,6 +791,28 @@ class ChallengeController extends Controller
         $input = file_get_contents('php://input');
         $data = json_decode($input, true);
 
+        // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
+        try {
+            $rawInput = $input;
+            $method = $_SERVER['REQUEST_METHOD'];
+            $headers = function_exists('getallheaders') ? getallheaders() : [];
+            $data = InputInspectionService::inspectInput($data, [
+                'method' => $method,
+                'headers' => $headers,
+                'raw' => $rawInput,
+                'max_body_bytes' => 1024 * 1024,
+            ]);
+        } catch (Exception $e) {
+            if (isAjaxRequest()) {
+                header('Content-Type: application/json');
+                http_response_code($e->getCode() ?: 400);
+                echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            } else {
+                setFlashMessage('error', 'Entrée invalide', $e->getMessage());
+                header('Location: ' . '/');
+            }
+            exit();
+        }
         if (json_last_error() !== JSON_ERROR_NONE) {
             // Si ce n'est pas du JSON valide, essayer $_POST
             return $_POST;

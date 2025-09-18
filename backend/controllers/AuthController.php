@@ -9,7 +9,11 @@ use Auth\Model\TokenManager;
 use PDO;
 use PDOException;
 use Auth\Model\RedisManager;
+use Auth\Service\InputInspectionService;
 
+if (!class_exists('InputInspectionService')) {
+    require_once __DIR__ . '/../services/InputInspectionService.php';
+}
 if (!class_exists('Auth\Model\TokenManager')) {
     require_once __DIR__ . '/../models/TokenManager.php';
 }
@@ -299,6 +303,29 @@ class AuthController
                 $data = $_POST;
             }
 
+            // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
+            try {
+                $rawInput = file_get_contents('php://input');
+                $method = $_SERVER['REQUEST_METHOD'];
+                $headers = function_exists('getallheaders') ? getallheaders() : [];
+                $data = InputInspectionService::inspectInput($data, [
+                    'method' => $method,
+                    'headers' => $headers,
+                    'raw' => $rawInput,
+                    'max_body_bytes' => 1024 * 1024,
+                ]);
+            } catch (Exception $e) {
+                if (isAjaxRequest()) {
+                    header('Content-Type: application/json');
+                    http_response_code($e->getCode() ?: 400);
+                    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+                } else {
+                    setFlashMessage('error', 'Entrée invalide', $e->getMessage());
+                    header('Location: ' . '/');
+                }
+                exit();
+            }
+
             if (!isset($data['identifier']) || !isset($data['password'])) {
                 throw new Exception('Email et mot de passe requis');
             }
@@ -362,7 +389,7 @@ class AuthController
             } else {
                 // Échec : incrémenter les tentatives
                 $this->redisManager->increment($redisKey);
-                $this->redisManager->expire($redisKey, 120); // expire après 10 minutes
+                $this->redisManager->expire($redisKey, 600); // expire après 10 minutes
                 throw new Exception($auth['error'], 401);
             }
         } catch (Exception $e) {
@@ -497,10 +524,32 @@ class AuthController
     public function forgotPassword()
     {
         try {
-            $jsonData = json_decode(file_get_contents('php://input'), true);
-            if ($jsonData && isset($jsonData['email'])) {
+            $data = json_decode(file_get_contents('php://input'), true);
+            // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
+            try {
+                $rawInput = file_get_contents('php://input');
+                $method = $_SERVER['REQUEST_METHOD'];
+                $headers = function_exists('getallheaders') ? getallheaders() : [];
+                $data = InputInspectionService::inspectInput($data, [
+                    'method' => $method,
+                    'headers' => $headers,
+                    'raw' => $rawInput,
+                    'max_body_bytes' => 1024 * 1024,
+                ]);
+            } catch (Exception $e) {
+                if (isAjaxRequest()) {
+                    header('Content-Type: application/json');
+                    http_response_code($e->getCode() ?: 400);
+                    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+                } else {
+                    setFlashMessage('error', 'Entrée invalide', $e->getMessage());
+                    header('Location: ' . '/');
+                }
+                exit();
+            }
+            if ($data && isset($data['email'])) {
                 try {
-                    $email = filter_var($jsonData['email'], FILTER_VALIDATE_EMAIL);
+                    $email = filter_var($data['email'], FILTER_VALIDATE_EMAIL);
                     if (!$email) {
                         throw new Exception('Adresse email invalide');
                     }
@@ -514,7 +563,7 @@ class AuthController
                         // Enregistrer le token dans la base de données
                         $query = "INSERT INTO password_resets (user_id, token, expiry) VALUES (:user_id, :token, :expiry)";
                         $stmt = $this->db->prepare($query);
-                        $stmt->bindParam(':user_id', $user['id'], \PDO::PARAM_INT);
+                        $stmt->bindParam(':user_id', $user['id'], PDO::PARAM_INT);
                         $stmt->bindParam(':token', $token);
                         $stmt->bindParam(':expiry', $expiry);
                         $stmt->execute();
@@ -568,7 +617,7 @@ class AuthController
                         // Enregistrer le token dans la base de données
                         $query = "INSERT INTO password_resets (user_id, token, expiry) VALUES (:user_id, :token, :expiry)";
                         $stmt = $this->db->prepare($query);
-                        $stmt->bindParam(':user_id', $user['id'], \PDO::PARAM_INT);
+                        $stmt->bindParam(':user_id', $user['id'], PDO::PARAM_INT);
                         $stmt->bindParam(':token', $token);
                         $stmt->bindParam(':expiry', $expiry);
                         $stmt->execute();
@@ -617,6 +666,29 @@ class AuthController
             $data = json_decode(file_get_contents("php://input"), true);
             if (!$data) {
                 $data = $_POST;
+            }
+
+            // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
+            try {
+                $rawInput = file_get_contents('php://input');
+                $method = $_SERVER['REQUEST_METHOD'];
+                $headers = function_exists('getallheaders') ? getallheaders() : [];
+                $data = InputInspectionService::inspectInput($data, [
+                    'method' => $method,
+                    'headers' => $headers,
+                    'raw' => $rawInput,
+                    'max_body_bytes' => 1024 * 1024,
+                ]);
+            } catch (Exception $e) {
+                if (isAjaxRequest()) {
+                    header('Content-Type: application/json');
+                    http_response_code($e->getCode() ?: 400);
+                    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+                } else {
+                    setFlashMessage('error', 'Entrée invalide', $e->getMessage());
+                    header('Location: ' . '/');
+                }
+                exit();
             }
 
             // Valider les données

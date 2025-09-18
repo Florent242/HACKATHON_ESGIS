@@ -6,7 +6,11 @@ use Exception;
 use Auth\Model\User;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception as MailerException;
+use Auth\Service\InputInspectionService;
 
+if (!class_exists('InputInspectionService')) {
+    require_once __DIR__ . '/../services/InputInspectionService.php';
+}
 require_once __DIR__ . '/Controller.php';
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -47,6 +51,29 @@ class ResetPasswordController extends Controller
             $input = json_decode(file_get_contents('php://input'), true);
             if ($input === null) {
                 throw new Exception('Format JSON invalide');
+            }
+
+            // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
+            try {
+                $rawInput = file_get_contents('php://input');
+                $method = $_SERVER['REQUEST_METHOD'];
+                $headers = function_exists('getallheaders') ? getallheaders() : [];
+                $input = InputInspectionService::inspectInput($input, [
+                    'method' => $method,
+                    'headers' => $headers,
+                    'raw' => $rawInput,
+                    'max_body_bytes' => 1024 * 1024,
+                ]);
+            } catch (Exception $e) {
+                if (isAjaxRequest()) {
+                    header('Content-Type: application/json');
+                    http_response_code($e->getCode() ?: 400);
+                    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+                } else {
+                    setFlashMessage('error', 'Entrée invalide', $e->getMessage());
+                    header('Location: ' . '/');
+                }
+                exit();
             }
 
             $this->validateRequiredFields($input, ['email']);
@@ -107,6 +134,29 @@ class ResetPasswordController extends Controller
             $input = json_decode(file_get_contents('php://input'), true);
             if ($input === null) {
                 throw new Exception('Format JSON invalide');
+            }
+
+            // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
+            try {
+                $rawInput = file_get_contents('php://input');
+                $method = $_SERVER['REQUEST_METHOD'];
+                $headers = function_exists('getallheaders') ? getallheaders() : [];
+                $input = InputInspectionService::inspectInput($input, [
+                    'method' => $method,
+                    'headers' => $headers,
+                    'raw' => $rawInput,
+                    'max_body_bytes' => 1024 * 1024,
+                ]);
+            } catch (Exception $e) {
+                if (isAjaxRequest()) {
+                    header('Content-Type: application/json');
+                    http_response_code($e->getCode() ?: 400);
+                    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+                } else {
+                    setFlashMessage('error', 'Entrée invalide', $e->getMessage());
+                    header('Location: ' . '/');
+                }
+                exit();
             }
 
             $this->validateRequiredFields($input, ['token', 'password', 'confirm_password']);

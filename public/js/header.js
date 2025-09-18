@@ -9,6 +9,19 @@ class HeaderManager {
         this.header = document.querySelector('header');
         this.lastScrollY = window.scrollY;
         this.isMenuOpen = false;
+        this.scrollPosition = 0;
+        this.body = document.body;
+        this.touchStartY = 0;
+        this.scrollTop = 0;
+        
+        // Lier les méthodes pour le contexte this
+        this.handleTouchStart = this.handleTouchStart.bind(this);
+        this.handleTouchMove = this.handleTouchMove.bind(this);
+        this.toggleMobileMenu = this.toggleMobileMenu.bind(this);
+        this.closeMobileMenu = this.closeMobileMenu.bind(this);
+        this.handleOutsideClick = this.handleOutsideClick.bind(this);
+        this.handleKeydown = this.handleKeydown.bind(this);
+        this.handleResize = this.handleResize.bind(this);
 
         this.init();
     }
@@ -28,18 +41,28 @@ class HeaderManager {
         if (startBtn) {
             startBtn.addEventListener('click', this.handleStartChallenge.bind(this));
         }
-
         // Menu mobile
-        if (this.mobileMenuBtn && this.mobileMenu) {
-            this.mobileMenuBtn.addEventListener('click', this.toggleMobileMenu.bind(this));
-
-            // Fermer le menu en cliquant à l'extérieur
-            document.addEventListener('click', this.handleOutsideClick.bind(this));
-
-            // Fermer avec Echap
-            document.addEventListener('keydown', this.handleKeydown.bind(this));
-
-            // Fermer en cliquant sur un lien
+        if (this.mobileMenuBtn) {
+            this.mobileMenuBtn.addEventListener('click', this.toggleMobileMenu);
+            
+            // Ajouter les écouteurs tactiles pour le menu mobile
+            if (this.mobileMenu) {
+                this.mobileMenu.addEventListener('touchstart', this.handleTouchStart, { passive: true });
+                this.mobileMenu.addEventListener('touchmove', this.handleTouchMove, { passive: false });
+            }
+        }
+        
+        // Fermer le menu en cliquant à l'extérieur
+        document.addEventListener('click', this.handleOutsideClick);
+        
+        // Fermer avec Echap
+        document.addEventListener('keydown', this.handleKeydown);
+        
+        // Gestion du redimensionnement
+        window.addEventListener('resize', this.handleResize);
+        
+        // Fermer en cliquant sur un lien du menu
+        if (this.mobileMenu) {
             this.mobileMenu.querySelectorAll('a').forEach(link => {
                 link.addEventListener('click', () => {
                     this.closeMobileMenu();
@@ -109,7 +132,7 @@ class HeaderManager {
 
     // Gestion du menu mobile
     toggleMobileMenu(e) {
-        e.stopPropagation();
+        if (e) e.stopPropagation();
 
         if (this.isMenuOpen) {
             this.closeMobileMenu();
@@ -119,23 +142,69 @@ class HeaderManager {
     }
 
     openMobileMenu() {
-        this.isMenuOpen = true;
+        if (!this.mobileMenu || !this.mobileMenuBtn) return;
+        
+        // Sauvegarder la position de défilement
+        this.scrollPosition = window.scrollY;
+        
+        // Ajouter les classes actives
         this.mobileMenu.classList.add('active');
         this.mobileMenuBtn.classList.add('active');
-        document.body.style.overflow = 'hidden';
-
+        this.isMenuOpen = true;
+        
+        // Empêcher le défilement de la page
+        this.body.style.overflow = 'hidden';
+        this.body.style.position = 'fixed';
+        this.body.style.width = '100%';
+        this.body.style.top = `-${this.scrollPosition}px`;
+        
         // Ajouter l'animation séquentielle aux éléments
         const menuItems = this.mobileMenu.querySelectorAll('li');
         menuItems.forEach((item, index) => {
             item.style.transitionDelay = `${0.1 + index * 0.05}s`;
+            item.style.opacity = '0';
+            item.style.transform = 'translateY(10px)';
+            
+            // Forcer le reflow
+            void item.offsetWidth;
+            
+            // Ajouter la classe d'animation
+            item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            item.style.opacity = '1';
+            item.style.transform = 'translateY(0)';
         });
+        
+        // Ajouter les écouteurs tactiles
+        this.addTouchListeners();
     }
 
     closeMobileMenu() {
-        this.isMenuOpen = false;
+        if (!this.mobileMenu || !this.mobileMenuBtn) return;
+        
+        // Retirer les classes actives
         this.mobileMenu.classList.remove('active');
         this.mobileMenuBtn.classList.remove('active');
-        document.body.style.overflow = '';
+        this.isMenuOpen = false;
+        
+        // Rétablir le défilement de la page
+        this.body.style.overflow = '';
+        this.body.style.position = '';
+        this.body.style.width = '';
+        this.body.style.top = '';
+        
+        // Restaurer la position de défilement
+        window.scrollTo(0, this.scrollPosition);
+        
+        // Réinitialiser les styles d'animation
+        const menuItems = this.mobileMenu.querySelectorAll('li');
+        menuItems.forEach(item => {
+            item.style.transition = '';
+            item.style.opacity = '';
+            item.style.transform = '';
+        });
+        
+        // Supprimer les écouteurs tactiles
+        this.removeTouchListeners();
     }
 
     handleOutsideClick(e) {
@@ -159,25 +228,44 @@ class HeaderManager {
         }
     }
 
-    // Prévenir le scroll du body
-    preventBodyScroll() {
-        let startY = 0;
+    // Gestion des événements tactiles pour le menu mobile
+    handleTouchStart(e) {
+        if (!this.mobileMenu || !this.isMenuOpen) return;
+        this.touchStartY = e.touches[0].clientY;
+        this.scrollTop = this.mobileMenu.scrollTop;
+    }
 
-        if (this.mobileMenu) {
-            this.mobileMenu.addEventListener('touchstart', (e) => {
-                startY = e.touches[0].clientY;
-            }, { passive: true });
-
-            this.mobileMenu.addEventListener('touchmove', (e) => {
-                const currentY = e.touches[0].clientY;
-                const deltaY = currentY - startY;
-
-                if ((this.mobileMenu.scrollTop === 0 && deltaY > 0) ||
-                    (this.mobileMenu.scrollHeight - this.mobileMenu.scrollTop === this.mobileMenu.clientHeight && deltaY < 0)) {
-                    e.preventDefault();
-                }
-            }, { passive: false });
+    handleTouchMove(e) {
+        if (!this.mobileMenu || !this.isMenuOpen) return;
+        
+        const y = e.touches[0].clientY;
+        const deltaY = y - this.touchStartY;
+        const isScrollingDown = deltaY > 0;
+        
+        // Empêcher le défilement du body lorsque l'utilisateur fait défiler le menu
+        if ((this.scrollTop <= 0 && isScrollingDown) || 
+            (this.scrollTop >= this.mobileMenu.scrollHeight - this.mobileMenu.offsetHeight && !isScrollingDown)) {
+            e.preventDefault();
         }
+    }
+    
+    // Nettoyage des écouteurs d'événements
+    destroy() {
+        // Retirer les écouteurs du menu mobile
+        if (this.mobileMenuBtn) {
+            this.mobileMenuBtn.removeEventListener('click', this.toggleMobileMenu);
+        }
+        
+        // Retirer les écouteurs tactiles
+        if (this.mobileMenu) {
+            this.mobileMenu.removeEventListener('touchstart', this.handleTouchStart);
+            this.mobileMenu.removeEventListener('touchmove', this.handleTouchMove);
+        }
+        
+        // Retirer les autres écouteurs
+        document.removeEventListener('click', this.handleOutsideClick);
+        document.removeEventListener('keydown', this.handleKeydown);
+        window.removeEventListener('resize', this.handleResize);
     }
 
     // Gestion du scroll du header
