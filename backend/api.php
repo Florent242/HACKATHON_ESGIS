@@ -673,18 +673,18 @@ try {
                 if ($method === 'GET') {
                     $controller->getAll();
                 } elseif ($method === 'POST') {
-                    $controller->create();
+                    $controller->create($input);
                 } else {
                     throw new Exception('Méthode non autorisée');
                 }
             } elseif ($id === 'join' && $method === 'POST') {
                 // Route /api/teams/join
                 error_log("Route join appelée avec input: " . print_r($input, true));
-                $controller->joinTeamViaCode($input['invitation_code'] ?? $_POST['invitation_code'] ?? '');
+                $controller->joinTeamViaCode($input['invitation_code'] ?? '');
             } elseif ($id === 'request' && $method === 'POST') {
                 // Route /api/teams/request
-                error_log("Route request appelée avec input: " . print_r($input, true) . ", POST: " . print_r($_POST, true));
-                $teamName = $input['team_name'] ?? $_POST['team_name'] ?? null;
+                error_log("Route request appelée avec input: " . print_r($input, true));
+                $teamName = $input['team_name'] ?? $input['team_name'] ?? null;
                 error_log("teamName extrait: " . var_export($teamName, true));
 
                 if (!$teamName) {

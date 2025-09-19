@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nos Sponsors</title>
     <link rel="stylesheet" href="/css/styles/sponsors.css">
-    <link rel="stylesheet" href="/css/styles/header.css">
-    <link rel="stylesheet" href="/css/dist/output.css">
+    <?php require_once "../includes/head.php"; ?>
     <!-- Intégration du CDN Lucide -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>

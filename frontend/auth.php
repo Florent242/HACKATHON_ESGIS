@@ -19,7 +19,7 @@ if (empty($_SESSION['csrf_token'])) {
     <script defer src="/js/auth.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
+    <?php require_once "../includes/head.php"; ?>
 
 </head>
 

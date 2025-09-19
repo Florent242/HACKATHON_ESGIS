@@ -312,7 +312,14 @@ function renderTopHackers(hackers) {
 
     hackers.forEach((hacker, index) => {
         const item = document.createElement('li');
-        item.textContent = `${index + 1}. ${hacker.username} - ${hacker.points} pts`;
+        item.innerHTML = `
+        <div class="flex items-center justify-between gap-2 bg-slate-800/50 p-2 rounded-lg">
+            <span class="text-xs font-semibold text-white align-middle">${index + 1}</span>
+            <span class="text-xs font-semibold text-white align-middle">${hacker.username}</span>
+            <span class="text-xs font-semibold text-white align-middle">${hacker.points} pts</span>
+        </div>
+        `;
+        container.innerHTML = '';
         container.appendChild(item);
     });
 }
@@ -514,6 +521,7 @@ function setupSorting() {
     if (defaultSortOption) {
         defaultSortOption.classList.add('active');
         sortBtn.querySelector('span').textContent = defaultSortOption.textContent;
+        sortChallenges(defaultSortOption.textContent, 'desc');
     }
 
     return cleanup; // Retourne la fonction de nettoyage
@@ -528,8 +536,8 @@ function sortChallenges(sortBy, direction = 'desc') {
         switch (sortBy.toLowerCase()) {
             case 'latest':
                 // Tri par date (plus récent en premier)
-                aValue = new Date(a.getAttribute('data-created-at') || '0');
-                bValue = new Date(b.getAttribute('data-created-at') || '0');
+                aValue = new Date(a.getAttribute('data-created_at') || '0');
+                bValue = new Date(b.getAttribute('data-created_at') || '0');
                 return direction === 'asc' ? aValue - bValue : bValue - aValue;
 
             case 'most solved':
@@ -600,12 +608,12 @@ function setupModal() {
 
     const downloadBtn = document.getElementById("download-files-button");
     if (downloadBtn) {
-        // Empêcher d'ajouter plusieurs fois l'écouteur
+
         if (downloadHandler) {
             downloadBtn.removeEventListener("click", downloadHandler);
         }
 
-        downloadHandler = function (e) {
+        downloadHandler = async function (e) {
             e.preventDefault();
             const file = downloadBtn.getAttribute("data-resource_link");
             if (!file) {
@@ -614,16 +622,43 @@ function setupModal() {
             }
 
             const url = `/download/${encodeURIComponent(file)}`;
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = "";
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+
+            try {
+                const response = await fetch(url, { method: "GET", credentials: "include" });
+                if (!response.ok) throw new Error("Erreur lors du téléchargement");
+
+                // Récupérer le content-type envoyé par PHP
+                const contentType = response.headers.get("Content-Type") || "application/octet-stream";
+
+                // Construire le blob avec le bon type MIME
+                const arrayBuffer = await response.arrayBuffer();
+                const blob = new Blob([arrayBuffer], { type: contentType });
+
+                // Nom du fichier à partir du header Content-Disposition
+                let filename = file;
+                const disposition = response.headers.get("Content-Disposition");
+                if (disposition && disposition.includes("filename=")) {
+                    filename = disposition.split("filename=")[1].replace(/"/g, "");
+                }
+
+                // Créer un lien temporaire
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = downloadUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+
+            } catch (err) {
+                showNotification("Erreur", err.message, "error");
+            }
         };
 
         downloadBtn.addEventListener("click", downloadHandler);
     }
+
 
 }
 
@@ -631,7 +666,7 @@ function openModal(card) {
     if (!card) return;
     const modal = document.querySelector(CHALLENGE_ELEMENTS.modal);
     const modalContainer = document.querySelector('#modal-container');
-    const timeAgo = card.getAttribute("data-created-at") ? `Il y a ${formatTimeDifference(card.getAttribute("data-created-at"))}` : 'Nouveau challenge';
+    const timeAgo = card.getAttribute("data-created_at") ? `Il y a ${formatTimeDifference(card.getAttribute("data-created_at"))}` : 'Nouveau challenge';
 
     const challengeDetails = {
         author: card.getAttribute("data-created_by") || "Unknown",
@@ -674,6 +709,17 @@ function openModal(card) {
         downloadButton.disabled = true;
     }
 
+    // Gestion du bouton de lancement de l'instance
+    const launchInstanceButton = document.getElementById("launch-instance-button");
+    if (launchInstanceButton && challengeDetails.instance) {
+        launchInstanceButton.setAttribute("data-instance", challengeDetails.instance);
+        launchInstanceButton.disabled = false;
+    } else {
+        launchInstanceButton.setAttribute("data-instance", "");
+        launchInstanceButton.textContent = "Instance non disponible";
+        launchInstanceButton.disabled = true;
+    }
+
     // Réinitialiser le conteneur
     document.querySelector("#challenge-hint").innerHTML = "";
 
@@ -683,7 +729,7 @@ function openModal(card) {
     // Si hint est une string JSON, on la parse
     if (typeof hints === "string" && hints.trim() !== "") {
         try {
-            hints = JSON.parse(hints);
+            hints = safeJsonParse(hints);
         } catch (e) {
             console.error("Erreur de parsing JSON du champ hint :", e);
             hints = [];
@@ -727,6 +773,26 @@ function openModal(card) {
     modalContainer.classList.add('scale-in-center');
     modal.classList.remove('fade-out-bck');
 
+}
+
+function safeJsonParse(jsonString) {
+    try {
+        // Nettoyage de la chaîne
+        let clean = jsonString
+            .replace(/^"|"$/g, '')  // Enlève les guillemets extérieurs
+            .replace(/\\"/g, '"')    // Déséchappe les guillemets
+            .replace(/\n/g, '')      // Supprime les sauts de ligne
+            .replace(/\\n/g, '')     // Supprime les \n échappés
+            .trim();
+        
+        // S'assure que c'est bien un tableau JSON
+        if (!clean.startsWith('[')) clean = `[${clean}]`;
+        
+        return JSON.parse(clean);
+    } catch (e) {
+        console.error("Erreur de parsing JSON:", e);
+        return []; // ou une valeur par défaut
+    }
 }
 
 function closeModal() {

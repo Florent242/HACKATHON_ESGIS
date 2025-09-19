@@ -185,9 +185,10 @@ async function createTeamViaAPI() {
             method: 'POST',
             credentials: 'include',
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
             },
-            body: formData
+            body: JSON.stringify(Object.fromEntries(formData))
         });
 
         if (!response.success) {
@@ -215,9 +216,10 @@ async function joinTeamViaCode(invitationCode) {
             method: 'POST',
             credentials: 'include',
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
             },
-            body: formData
+            body: JSON.stringify(Object.fromEntries(formData))
         });
 
         if (response.success) {
@@ -246,9 +248,10 @@ async function sendJoinRequest(teamName) {
             method: 'POST',
             credentials: 'include',
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
             },
-            body: formData
+            body: JSON.stringify(Object.fromEntries(formData))
         });
 
         if (response.success) {

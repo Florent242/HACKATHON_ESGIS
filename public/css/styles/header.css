@@ -475,7 +475,7 @@ nav a.active::before {
 
     .logo-circle{
         width: 6rem;
-        font-size: 0.9rem;
+        font-size: 90%;
     }
 
     .header-nav{
@@ -505,7 +505,7 @@ nav a.active::before {
     
     .start-challenge {
         padding: 0.4rem 1rem;
-        font-size: 0.6rem;
+        font-size: 0.7rem;
     }
 }
 
@@ -534,7 +534,7 @@ nav a.active::before {
     
     .start-challenge {
         padding: 0.6rem 0.8rem;
-        font-size: 0.6rem;
+        font-size: 0.7rem;
     }
     
     .logo {
@@ -542,7 +542,6 @@ nav a.active::before {
     }
     
     .logo-circle {
-        width: 6rem;
         font-size: 0.8rem;
     }
 }
@@ -576,7 +575,7 @@ nav a.active::before {
     
     .start-challenge {
         padding: 0.4rem 0.6rem;
-        font-size: 0.5rem;
+        font-size: 0.7rem;
         white-space: nowrap;
     }
     
@@ -607,7 +606,7 @@ nav a.active::before {
     
     .start-challenge {
         padding: 0.4rem 0.6rem;
-        font-size: 0.6rem;
+        font-size: 0.7rem;
     }
     
     .logo {

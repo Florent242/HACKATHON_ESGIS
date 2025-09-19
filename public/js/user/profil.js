@@ -438,7 +438,6 @@ async function loadUserInfo(userId) {
             return
         }
         const data = await apiRequest(`/users/${userId}`)
-        console.log("Informations utilisateur:", data)
 
         if (data.success) {
             const userData = data.data;
@@ -481,7 +480,6 @@ async function loadUserStats(userId) {
         }
 
         const response = await apiRequest(`/users/${userId}/stats`)
-        console.log("Statistiques utilisateur:", response)
 
         if (response.success) {
             updateUserStats(response.data.stats || {})
@@ -500,7 +498,6 @@ async function loadChallengesInProgress(userId) {
         if (!userId) return
 
         const response = await apiRequest(`/users/${userId}/current-challenges`)
-        console.log("Défis en cours:", response)
 
         if (response.success) {
             updateChallengesInprogress(response.data || [])
@@ -519,7 +516,6 @@ async function loadCompletedChallenges(userId) {
         if (!userId) return
 
         const response = await apiRequest(`/users/${userId}/completed-challenges`)
-        console.log("Défis complétés:", response)
 
         if (response.success) {
             updateCompletedChallenge(response.data || [])
@@ -538,7 +534,6 @@ async function loadRecentActivity(userId) {
         if (!userId) return
 
         const response = await apiRequest(`/users/${userId}/recent-activities`)
-        console.log("Activités récentes:", response)
 
         if (response.success) {
             updateRecentActivities(response.data || [])
@@ -553,7 +548,6 @@ async function loadActivities(userId) {
         if (!userId) return
 
         const response = await apiRequest(`/users/${userId}/all-activities`)
-        console.log("Activités récentes:", response)
 
         if (response.success) {
             updateRecentActivities(response.data || [])
@@ -759,7 +753,6 @@ async function loadChalengesInProgress(userId) {
             return;
         }
         const data = await apiRequest(`/users/${userId}/challenges`);
-        console.log(data);
         updateDOM({
             challenges: PROFILE_ELEMENTS.challenges
         }, data);

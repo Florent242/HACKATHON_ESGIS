@@ -745,30 +745,24 @@ function formatDateTime(dateString) {
         const diff = now - date;
 
         // Moins d'une minute
-        if (diff < 60000) {
-            return 'À l\'instant';
+        switch (true) {
+            case diff < 60000:
+                return 'À l\'instant';
+            case diff < 3600000:
+                const minutes = Math.floor(diff / 60000);
+                return `Il y a ${minutes} min`;
+            case diff < 86400000:
+                const hours = Math.floor(diff / 3600000);
+                return `Il y a ${hours}h`;
+            default:
+                return date.toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
         }
-
-        // Moins d'une heure
-        if (diff < 3600000) {
-            const minutes = Math.floor(diff / 60000);
-            return `Il y a ${minutes} min`;
-        }
-
-        // Moins d'un jour
-        if (diff < 86400000) {
-            const hours = Math.floor(diff / 3600000);
-            return `Il y a ${hours}h`;
-        }
-
-        // Plus d'un jour
-        return date.toLocaleDateString('fr-FR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
     } catch (error) {
         return 'Date invalide';
     }

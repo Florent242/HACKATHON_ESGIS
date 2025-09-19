@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Hackathons</title>
-    <link rel="stylesheet" href="/css/dist/output.css">
+    <?php require_once "../includes/head.php"; ?>
     <link rel="stylesheet" href="/css/styles/hackathons.css">
 </head>
 <body class="bg-background text-text">

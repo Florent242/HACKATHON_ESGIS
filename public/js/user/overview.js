@@ -335,7 +335,7 @@ const renderJoinRequestsContent = () => {
                     <div class="request-details">
                         <h4>${request.username}</h4>
                         <p class="specialty">${request.special_comp}</p>
-                        <p class="time-ago">Demande reçue il y a ${request.joined_at}</p>
+                        <p class="time-ago">Demande reçue ${formatDateTime(request.joined_at)}</p>
                     </div>
                 </div>
                 <div class="request-actions">

@@ -19,28 +19,46 @@ if (session_status() === PHP_SESSION_NONE) {
 $url = $_SERVER['REQUEST_URI'] ?? "/";
 $url = parse_url($url, PHP_URL_PATH);
 
-// Gestion du téléchargement sécurisé
+// Remplacer la section de téléchargement par :
 if (preg_match('#^/download/([\w\-\.]+)$#', $url, $matches)) {
-    $filename = basename($matches[1]); // empêche toute traversée de répertoires
-
-    // Exemple : les fichiers sont dans /storage/challenges_resources/
+    $filename = basename($matches[1]);
     $path = __DIR__ . '/../storage/challenges_resources/' . $filename;
 
-    if (file_exists($path)) {
+    if (file_exists($path) && is_readable($path)) {
+        // Détection du type MIME
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime_type = finfo_file($finfo, $path);
+        finfo_close($finfo);
+
+        // En-têtes de sécurité
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: DENY');
+        header('X-XSS-Protection: 1; mode=block');
+
+        // En-têtes de téléchargement
         header('Content-Description: File Transfer');
-        header('Content-Type: application/octet-stream');
-        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Type: ' . $mime_type);
+        header('Content-Disposition: attachment; filename="' . basename($path) . '"');
         header('Content-Length: ' . filesize($path));
-        flush();
+        header('Cache-Control: no-cache, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+
+        // Nettoyage du buffer de sortie
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // Lecture et envoi du fichier
         readfile($path);
         exit;
     } else {
         http_response_code(404);
-        echo "Fichier introuvable.";
+        header('Content-Type: text/plain');
+        echo "Fichier introuvable ou inaccessible.";
         exit;
     }
 }
-
 // Vérifier l'URL et inclure le fichier correspondant
 switch ($url) {
     case '/':
@@ -111,7 +129,7 @@ switch ($url) {
         break;
     default:
         // TODO: ajouter la gestion des urls avec le format CHALL-[A-Za-z0-9]{8,}
-         if (preg_match('#^/user/challenge_submission/(CHALL-[A-Za-z0-9]{8,})$#', $url, $matches)) {
+        if (preg_match('#^/user/challenge_submission/(CHALL-[A-Za-z0-9]{8,})$#', $url, $matches)) {
             $challenge_id = $matches[1]; // Format: CHALL-XXXXXXXX où X est alphanumérique
             require_once '../frontend/user/challenge_submission.php';
             $_GET['challenge_id'] = $challenge_id;

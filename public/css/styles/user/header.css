@@ -1781,7 +1781,7 @@ button:focus-visible {
     position: absolute;
     top: calc(100% + 0.5rem);
     right: 0;
-    width: 380px;
+    min-width: 30vw;
     max-width: 90vw;
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -2122,25 +2122,46 @@ button:focus-visible {
     .notification-item {
         padding: 1rem;
     }
-    
-    .notification-title {
-        font-size: 0.9rem;
-    }
-    
-    .notification-message {
+
+    .notification-item * {
         font-size: 0.85rem;
+    }
+
+    .notification-message {
+        line-clamp: 3;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+
+    .notification-actions {
+        font-size: 0.8rem;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: end;
     }
 }
 
 @media (max-width: 480px) {
     .notifications-dropdown {
-        width: calc(100vw - 2rem);
-        right: -0.5rem;
-        left: 1rem;
+        width: calc(100vw - 3rem);
+        right: -1rem;
     }
     
     .notifications-list {
         max-height: 280px;
+    }
+    
+    .notification-message {
+        line-clamp: 3;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
+
+    .notification-actions {
+        font-size: 0.8rem;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: end;
     }
 }
 

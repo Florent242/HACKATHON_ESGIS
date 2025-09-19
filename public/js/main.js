@@ -478,6 +478,7 @@ async function apiRequest(endpoint, options = {}) {
         const headers = {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken(),
             ...(options.headers || {})
         };
         if (!headers['Content-Type']) {
@@ -727,6 +728,49 @@ function updateDOM(elements, data) {
             });
         }
     });
+}
+
+/**
+ * @description Fonction pour formater une date/heure
+ * @param {string} dateString 
+ * @returns {string}
+ */
+function formatDateTime(dateString) {
+    if (!dateString) return 'Non renseigné';
+
+    try {
+        // Convertir le format "YYYY-MM-DD HH:MM:SS" en ISO
+        const [datePart, timePart] = dateString.split(' ');
+        const [year, month, day] = datePart.split('-');
+        const [hours, minutes, seconds] = timePart.split(':');
+        const isoString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+        
+        const date = new Date(isoString);
+        const now = new Date();
+        const diff = now - date;
+
+        // Moins d'une minute
+        switch (true) {
+            case diff < 60000:
+                return 'À l\'instant';
+            case diff < 3600000:
+                const minutes = Math.floor(diff / 60000);
+                return `Il y a ${minutes} min`;
+            case diff < 86400000:
+                const hours = Math.floor(diff / 3600000);
+                return `Il y a ${hours}h`;
+            default:
+                return date.toLocaleDateString('fr-FR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+        }
+    } catch (error) {
+        return 'Date invalide';
+    }
 }
 
 /**

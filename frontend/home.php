@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Challenge Yourself</title>
     <link rel="stylesheet" href="/css/styles/home.css">
+    <?php require_once "../includes/head.php"; ?>
     <script defer src="/js/home.js"></script>
 </head>
 

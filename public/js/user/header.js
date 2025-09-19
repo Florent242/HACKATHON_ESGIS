@@ -679,6 +679,32 @@ class NotificationManager {
         }
     }
 
+    formatTimeAgo(timestamp) {
+        const now = new Date();
+        const diff = now - new Date(timestamp);
+        const seconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+        const months = Math.floor(days / 30);
+        const years = Math.floor(days / 365);
+
+        switch (true) {
+            case years > 0:
+                return `${years} year${years > 1 ? 's' : ''} ago`;
+            case months > 0:
+                return `${months} month${months > 1 ? 's' : ''} ago`;
+            case days > 0:
+                return `${days} day${days > 1 ? 's' : ''} ago`;
+            case hours > 0:
+                return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            case minutes > 0:
+                return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+            default:
+                return `${seconds} second${seconds > 1 ? 's' : ''} ago`;
+        }
+    }
+
     openModal(modalId, params) {
         const modal = document.getElementById(modalId);
         if (modal) {
@@ -816,32 +842,6 @@ class NotificationManager {
 
         if (window.lucide) {
             window.lucide.createIcons();
-        }
-    }
-
-    formatTimeAgo(dateString) {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffMs = now - date;
-        const diffSecs = Math.floor(diffMs / 1000);
-        const diffMins = Math.floor(diffSecs / 60);
-        const diffHours = Math.floor(diffMins / 60);
-        const diffDays = Math.floor(diffHours / 24);
-
-        switch (true) {
-            case diffSecs < 60:
-                return 'À l\'instant';
-            case diffMins < 60:
-                return `il y a ${diffMins}m`;
-            case diffHours < 24:
-                return `il y a ${diffHours}h`;
-            case diffDays < 7:
-                return `il y a ${diffDays}j`;
-            default:
-                return date.toLocaleDateString('fr-FR', {
-                    day: 'numeric',
-                    month: 'short'
-                });
         }
     }
 

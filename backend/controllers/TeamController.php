@@ -162,13 +162,13 @@ class TeamController extends Controller
     /**
      * Crée une nouvelle équipe
      */
-    public function create()
+    public function create($input)
     {
         try {
             $this->validateMethod('POST');
 
             $requiredFields = ['nom', 'type'];
-            $this->validateRequiredFields($_POST, $requiredFields);
+            $this->validateRequiredFields($input, $requiredFields);
             // Utiliser getCurrentUserId() de AuthController
             $currentUserId = $this->tokenManager->getCurrentUserId();
             if (!$currentUserId) {
@@ -176,11 +176,11 @@ class TeamController extends Controller
             }
 
             $data = [
-                'name' => $_POST['nom'],
-                'hackathon_id' => $_POST['hackathon_id'] ?? null,
+                'name' => $input['nom'],
+                'hackathon_id' => $input['hackathon_id'] ?? null,
                 'leader_id' => $currentUserId,
-                'type' => $_POST['type'],
-                'description' => $_POST['description'] ?? null,
+                'type' => $input['type'],
+                'description' => $input['description'] ?? null,
                 'invitation_code' => $this->generateInvitationCode()
             ];
 

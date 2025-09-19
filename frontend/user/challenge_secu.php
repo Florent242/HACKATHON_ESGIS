@@ -91,6 +91,10 @@
                                         <i class="w-4 h-4 text-blue-400" data-lucide="eye"></i>
                                         <span>OSINT</span>
                                     </button>
+                                    <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2" data-category="stegano">
+                                        <i class="w-4 h-4 text-blue-400" data-lucide="file-question"></i>
+                                        <span>Steganography</span>
+                                    </button>
                                     <button class="filter-btn w-full text-left px-3 py-2 rounded-lg hover:bg-gray-800/50 transition-colors flex items-center gap-2" data-category="forensics">
                                         <i class="w-4 h-4 text-blue-400" data-lucide="terminal"></i>
                                         <span>Forensics</span>
@@ -191,10 +195,10 @@
                         </div>
                     </div>
                     <div class="sort-filter">
-                        <span>Sort By</span>
+                        <span>Trier par</span>
                         <div class="sort-select relative">
                             <button class="sort-btn">
-                                <span>Latest</span>
+                                <span>Choix</span>
                                 <i class="w-4 h-4 stroke-current" data-lucide="chevron-down" style="color: var(--text-secondary);"></i>
                             </button>
                             <div class="sort-options text-center align-middle whitespace-nowrap flex-col items-start justify-start absolute top-[100%] right-0 bg-[#0f172a] border border-white/10 rounded-lg p-2 z-5" style="display: none;">
@@ -301,9 +305,9 @@
                         <button id="download-files-button" class="flex items-center gap-2 w-1/2 border border-white/10 px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-800 rounded-md text-sm max-md:w-full">
                             <i data-lucide="download" class="w-4 h-4"></i> Download files
                         </button>
-                        <span id="launch-instance-button" class="clamp-1 flex items-center gap-2 w-1/2 border border-white/10 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-md text-sm max-md:w-full">
+                        <button id="launch-instance-button" class="clamp-1 flex items-center gap-2 w-1/2 border border-white/10 px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-800 rounded-md text-sm max-md:w-full">
                             <i data-lucide="play-circle" class="w-4 h-4"></i> Launch instance
-                        </span>
+                        </button>
                     </div>
                 </div>
 
@@ -323,7 +327,7 @@
                         <div class="flex gap-2 relative mb-2 items-center">
                             <div class="w-full relative rounded-md ">
                                 <input type="hidden" name="challenge_id" id="challenge_id">
-                                <input type="text" name="flag_value" placeholder="ESGISFLAG{. . .}" class="w-full shadow-lg shadow-indigo-300/10 px-4 py-2 rounded-md bg-slate-900 text-sm text-white placeholder-gray-400 focus:outline-none border border-slate-700 max-md:text-xs max-md:font-medium max-sm:font-semibold max-sm:text-xs" id="flag" />
+                                <input type="text" name="flag_value" placeholder="ESGISFLAG{. . .} | ESGISCTF{. . .}" class="w-full shadow-lg shadow-indigo-300/10 px-4 py-2 rounded-md bg-slate-900 text-sm text-white placeholder-gray-400 focus:outline-none border border-slate-700 max-md:text-xs max-md:font-medium max-sm:font-semibold max-sm:text-xs" id="flag" />
                             </div>
                             <span class="error-message absolute ml-auto top-full text-red-500 text-xs mt-1 hidden" id="flagError"></span>
                             <button class="whitespace-nowrap px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm max-md:text-xs max-md:px-2 max-md:py-1 max-md:font-medium max-sm:font-semibold max-sm:text-xs max-sm:px-2 max-sm:py-1">

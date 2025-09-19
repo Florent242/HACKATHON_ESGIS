@@ -1137,18 +1137,17 @@ class Team
             if ($stmt->fetchColumn() > 0) {
                 throw new Exception('Vous êtes déjà membre d\'une equipe');
             }
+            // Vérifier si l'utilisateur a une demande en attente
+            $requestQuery = "SELECT COUNT(*) FROM teams_adhesions WHERE teams_id = :teams_id AND user_id = :user_id AND status = 'pending'";
+            $requestStmt = $this->db->prepare($requestQuery);
+            $requestStmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
+            $requestStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $requestStmt->execute();
+            if ((int)$requestStmt->fetchColumn() > 0) {
+                throw new Exception('Vous avez déjà une demande d\'adhésion en attente pour cette équipe');
+            }
 
             try {
-                // Vérifier si l'utilisateur a une demande en attente
-                $requestQuery = "SELECT COUNT(*) FROM teams_adhesions WHERE teams_id = :teams_id AND user_id = :user_id AND status = 'pending'";
-                $requestStmt = $this->db->prepare($requestQuery);
-                $requestStmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
-                $requestStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-                $requestStmt->execute();
-                if ((int)$requestStmt->fetchColumn() > 0) {
-                    throw new Exception('Vous avez déjà une demande d\'adhésion en attente pour cette équipe');
-                }
-
                 // Ajouter l'utilisateur comme membre
                 $this->addMember($teamId, $userId);
 

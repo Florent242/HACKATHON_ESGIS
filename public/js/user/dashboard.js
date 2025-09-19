@@ -204,7 +204,7 @@ function updateActivityItem(element, activity) {
 
     if (timeElement) {
         timeElement.textContent = activity.created_at ?
-            formatDate(activity.created_at) :
+            formatDateTime(activity.created_at) :
             'Récemment';
     }
 
@@ -258,7 +258,7 @@ function updateNotifications(notifications) {
 function updateNotificationItem(element, notification) {
     element.querySelector('.notification-title').textContent = notification.title;
     element.querySelector('.notification-message').textContent = notification.message;
-    element.querySelector('.notification-time').textContent = notification.created_at ? formatDate(notification.created_at) : 'Récemment';
+    element.querySelector('.notification-time').textContent = notification.created_at ? formatDateTime(notification.created_at) : 'Récemment';
 
     if (notification.created_at) {
         const date = new Date(notification.created_at);

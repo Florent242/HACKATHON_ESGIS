@@ -333,9 +333,6 @@
   .absolute {
     position: absolute;
   }
-  .absolute\! {
-    position: absolute !important;
-  }
   .fixed {
     position: fixed;
   }
@@ -362,6 +359,9 @@
   }
   .top-0 {
     top: calc(var(--spacing) * 0);
+  }
+  .top-0\! {
+    top: calc(var(--spacing) * 0) !important;
   }
   .top-1 {
     top: calc(var(--spacing) * 1);
@@ -2710,9 +2710,17 @@
     font-size: var(--text-base);
     line-height: var(--tw-leading, var(--text-base--line-height));
   }
+  .text-base\! {
+    font-size: var(--text-base) !important;
+    line-height: var(--tw-leading, var(--text-base--line-height)) !important;
+  }
   .text-lg {
     font-size: var(--text-lg);
     line-height: var(--tw-leading, var(--text-lg--line-height));
+  }
+  .text-lg\! {
+    font-size: var(--text-lg) !important;
+    line-height: var(--tw-leading, var(--text-lg--line-height)) !important;
   }
   .text-sm {
     font-size: var(--text-sm);
@@ -4559,10 +4567,28 @@
       line-height: var(--tw-leading, var(--text-3xl--line-height));
     }
   }
+  .max-md\:text-base {
+    @media (width < 48rem) {
+      font-size: var(--text-base);
+      line-height: var(--tw-leading, var(--text-base--line-height));
+    }
+  }
+  .max-md\:text-base\! {
+    @media (width < 48rem) {
+      font-size: var(--text-base) !important;
+      line-height: var(--tw-leading, var(--text-base--line-height)) !important;
+    }
+  }
   .max-md\:text-lg {
     @media (width < 48rem) {
       font-size: var(--text-lg);
       line-height: var(--tw-leading, var(--text-lg--line-height));
+    }
+  }
+  .max-md\:text-lg\! {
+    @media (width < 48rem) {
+      font-size: var(--text-lg) !important;
+      line-height: var(--tw-leading, var(--text-lg--line-height)) !important;
     }
   }
   .max-md\:text-sm {
@@ -4752,6 +4778,24 @@
     @media (width >= 40rem) {
       font-size: var(--text-7xl);
       line-height: var(--tw-leading, var(--text-7xl--line-height));
+    }
+  }
+  .sm\:text-base {
+    @media (width >= 40rem) {
+      font-size: var(--text-base);
+      line-height: var(--tw-leading, var(--text-base--line-height));
+    }
+  }
+  .sm\:text-base\! {
+    @media (width >= 40rem) {
+      font-size: var(--text-base) !important;
+      line-height: var(--tw-leading, var(--text-base--line-height)) !important;
+    }
+  }
+  .sm\:text-lg\! {
+    @media (width >= 40rem) {
+      font-size: var(--text-lg) !important;
+      line-height: var(--tw-leading, var(--text-lg--line-height)) !important;
     }
   }
   .sm\:text-sm {
