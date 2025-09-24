@@ -1,762 +1,1710 @@
-// Configuration de base
-const API_BASE_URL = "/api"
+// Configuration
+const ITEMS_PER_PAGE = 10;
+let currentPage = 1;
+let currentSort = { field: 'created_at', order: 'desc' };
+let totalPages = 1;
+let selectedUsers = new Set();
+let currentUserId = null;
+let allUsers = [];
+let filteredUsers = [];
 
-// Sélecteurs pour les éléments de la page
-const USER_ELEMENTS = {
-  loadingSpinner: "#global-loading-spinner",
-  stats: {
-    totalUsers: ".stat-card:nth-child(1) .number",
-    admins: ".stat-card:nth-child(2) .number",
-    activeUsers: ".stat-card:nth-child(3) .number",
-    suspendedUsers: ".stat-card:nth-child(4) .number",
-  },
-  usersTable: {
-    container: "#usersTable tbody",
-    rows: "#usersTable tbody tr",
-  },
-  activityFeed: {
-    container: ".activity-feed",
-    items: ".activity-item",
-  },
-  searchInput: ".search-input",
+// Initialisation
+document.addEventListener('DOMContentLoaded', function () {
+  initializePage();
+  setupEventListeners();
+
+});
+
+function initializePage() {
+  loadUsers(1);
+  loadTeams();
+  loadUserStats();
 }
 
-/**
- * Initialise la page de gestion des utilisateurs
- */
-async function initializeUserPage() {
-  try {
-    showLoading()
-
-    // Charger toutes les données en parallèle
-    await Promise.all([loadUsers(), loadUserStats(), loadUserActivity()])
-
-    // Configurer les gestionnaires d'événements
-    setupEventListeners()
-  } catch (error) {
-    handleError("Erreur lors de l'initialisation de la page", error)
-  } finally {
-    hideLoading()
+function sortUsers(field) {
+  if (currentSort.field === field) {
+    // Inverser l'ordre de tri si on clique sur la même colonne
+    currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+  } else {
+    // Nouvelle colonne, tri ascendant par défaut
+    currentSort.field = field;
+    currentSort.order = 'asc';
   }
+  loadUsers(1); // Retour à la première page lors du tri
 }
 
-/**
- * Charge la liste des utilisateurs
- */
-async function loadUsers() {
-  try {
-    const response = await apiRequest("/admin/users")
+function updateSortIcons(activeColumn) {
+  document.querySelectorAll('.sortable').forEach(header => {
+    const icon = header.querySelector('i');
+    if (header.dataset.column === activeColumn) {
+      icon.className = currentSort.order === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+      icon.style.visibility = 'visible';
+    } else {
+      icon.className = 'fas fa-sort';
+      icon.style.visibility = 'hidden';
+    }
+  });
+}
 
-    if (response.success && response.data) {
-      updateUsersTable(response.data)
+function setupEventListeners() {
+  // Recherche
+  const searchInput = document.getElementById('searchInput');
+  let searchTimeout;
+  searchInput?.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      currentPage = 1;
+      loadUsers(1);
+    }, 500);
+  });
+
+  // Filtres
+  document.querySelectorAll('#roleFilter, #statusFilter, #teamFilter').forEach(select => {
+    select.addEventListener('change', () => {
+      currentPage = 1;
+      loadUsers(1);
+    });
+  });
+
+  // Tri des colonnes
+  document.querySelectorAll('[data-sort]').forEach(header => {
+    header.addEventListener('click', () => {
+      const field = header.dataset.sort;
+      sortUsers(field);
+    });
+  });
+
+  // Réinitialisation des filtres
+  document.getElementById('resetFiltersBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    document.querySelectorAll('#roleFilter, #statusFilter, #teamFilter, #searchInput').forEach(input => {
+      input.value = '';
+    });
+    currentPage = 1;
+    refreshDisplayedData();
+  });
+
+  // Sélection globale
+  document.getElementById('selectAll')?.addEventListener('change', (e) => {
+    const checkboxes = document.querySelectorAll('.user-checkbox');
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = e.target.checked;
+      toggleUserSelection(checkbox);
+    });
+    updateBulkActions();
+  });
+
+  // Bouton d'export
+  document.getElementById('exportUsersBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    exportUsers();
+  });
+
+  // Bouton d'ajout
+  document.getElementById('addUserBtn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    showUserModal();
+  });
+
+  // Bouton d'actions de masse
+  document.getElementById('bulkActionsBtn')?.addEventListener('click', (e) => {
+    if (selectedUsers.size > 0) {
+      showBulkActionsModal();
+    }
+  });
+
+  // faire en sorte que si on selectionne un bulkaction on rende le boutton utilisable et inversement
+  document.getElementById('bulkAction')?.addEventListener('change', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const confirmBtn = document.getElementById('confirmBulkAction');
+    confirmBtn.disabled = e.target.value === '';
+    confirmBtn.classList.toggle('disabled', e.target.value === '');
+  });
+
+  // Gestion des onglets
+  const tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
+  tabEls.forEach(tabEl => {
+    tabEl.addEventListener('shown.bs.tab', (event) => {
+      if (event.target.id === 'activity-tab' && currentUserId) {
+        loadUserActivity(currentUserId);
+      }
+    });
+  });
+
+  // Soumission du formulaire
+  document.getElementById('userForm')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleUserFormSubmit(e);
+  });
+
+  // Actions de masse - Sélection d'action
+  document.getElementById('bulkAction')?.addEventListener('change', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const roleContainer = document.getElementById('bulkRoleContainer');
+    const warningContainer = document.getElementById('bulkActionWarning');
+    const confirmBtn = document.getElementById('confirmBulkAction');
+
+    roleContainer.classList.toggle('hidden', e.target.value !== 'change_role');
+
+    let warning = '';
+    switch (e.target.value) {
+      case 'delete':
+        warning = 'Attention : Cette action supprimera définitivement les utilisateurs sélectionnés.';
+        break;
+      case 'suspend':
+        warning = 'Les utilisateurs ne pourront plus se connecter jusqu\'à ce que vous les réactiviez.';
+        break;
+      case 'activate':
+        warning = 'Les utilisateurs sélectionnés seront réactivés.';
+        break;
+      case 'deactivate':
+        warning = 'Les utilisateurs sélectionnés seront désactivés.';
+        break;
+      case 'change_role':
+        warning = 'Le rôle sera changé pour tous les utilisateurs sélectionnés.';
+        break;
+    }
+
+    if (warning) {
+      warningContainer.textContent = warning;
+      warningContainer.classList.remove('hidden');
+    } else {
+      warningContainer.classList.add('hidden');
+    }
+
+    confirmBtn.disabled = !e.target.value;
+  });
+
+  // Actions de masse - Confirmation
+  document.getElementById('confirmBulkAction')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleBulkAction(e);
+  });
+
+  // Validation des mots de passe
+  document.getElementById('password_confirmation')?.addEventListener('input', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    validatePasswordMatch(e);
+  });
+  document.getElementById('password')?.addEventListener('input', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    validatePasswordMatch(e);
+  });
+
+  lucide.createIcons();
+}
+
+// Chargement des données
+async function loadUsers(page = 1) {
+  try {
+    showTableLoading();
+    currentPage = page;
+
+    const params = new URLSearchParams({
+      page: page,
+      per_page: ITEMS_PER_PAGE,
+      search: document.getElementById('searchInput')?.value || '',
+      role: document.getElementById('roleFilter')?.value || '',
+      status: document.getElementById('statusFilter')?.value || '',
+      team: document.getElementById('teamFilter')?.value || '',
+      sort: currentSort.field,
+      order: currentSort.order
+    });
+
+    const response = await apiRequest(`/admin/users?${params.toString()}`);
+
+    if (response.success) {
+      renderUsersTable(response.data);
+      updatePagination(response.meta);
+      updateTableInfo(response.meta);
+    } else {
+      throw new Error(response.message || 'Erreur lors du chargement des utilisateurs');
     }
   } catch (error) {
-    handleError("Erreur lors du chargement des utilisateurs", error)
+    console.error('Erreur:', error);
+    showNotification('Impossible de charger les utilisateurs - ' + error.message, null, 'error');
+    showEmptyTable();
   }
 }
 
+
 /**
- * Met à jour le tableau des utilisateurs
- * @param {Array} users - Liste des utilisateurs
+ * Applique les filtres aux utilisateurs
  */
-function updateUsersTable(users) {
-  const container = document.querySelector(USER_ELEMENTS.usersTable.container)
+function applyFilters(users) {
+  const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const roleFilter = document.getElementById('roleFilter')?.value;
+  const statusFilter = document.getElementById('statusFilter')?.value;
+  const teamFilter = document.getElementById('teamFilter')?.value;
 
-  if (!container) return
+  console.log('Filters - Search:', searchTerm, 'Role:', roleFilter, 'Status:', statusFilter, 'Team:', teamFilter); // Debug
 
-  // Vider le conteneur
-  container.innerHTML = ""
 
-  // Afficher l'état vide si aucun utilisateur
-  if (!users || !users.length) {
-    container.innerHTML = `
+  const filtered = users.filter(user => {
+    // Filtre de recherche
+    const matchesSearch = !searchTerm ||
+      (user.username && user.username.toLowerCase().includes(searchTerm)) ||
+      (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+      (user.fullname && user.fullname.toLowerCase().includes(searchTerm));
+
+    // Filtre par rôle
+    const matchesRole = !roleFilter || user.role === roleFilter;
+
+    // Filtre par statut
+    const matchesStatus = !statusFilter || user.status === statusFilter;
+
+    // Filtre par équipe
+    const matchesTeam = !teamFilter || (user.team_id && user.team_id.toString() === teamFilter);
+
+    return matchesSearch && matchesRole && matchesStatus && matchesTeam;
+  });
+
+  console.log('Users after filtering:', filtered.length); // Debug
+  return filtered;
+}
+
+/**
+ * Met à jour les données sans recharger depuis le serveur
+ */
+function refreshDisplayedData() {
+  loadUsers(currentPage);
+}
+
+async function loadUserStats() {
+  try {
+    const response = await apiRequest('/admin/users/stats');
+
+    if (response.success) {
+      const stats = response.data;
+
+      document.getElementById('totalUsers').textContent = stats.total_users || 0;
+      document.getElementById('activeUsers').textContent = stats.active_users || 0;
+      document.getElementById('inactiveUsers').textContent = stats.inactive_users || 0;
+      document.getElementById('suspendedUsers').textContent = stats.suspended_users || 0;
+      document.getElementById('bannedUsers').textContent = stats.banned_users || 0;
+      document.getElementById('newUsersThisWeek').textContent = stats.new_users_this_week || 0;
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des statistiques:', error);
+  }
+}
+
+async function loadTeams() {
+  try {
+    const response = await apiRequest('/admin/teams');
+
+    if (response.success) {
+      const teams = response.data;
+      const select = document.getElementById('teamFilter');
+      if (select) {
+        select.innerHTML = '<option value="">Toutes les équipes</option>';
+        teams.forEach(team => {
+          const option = document.createElement('option');
+          option.value = team.id;
+          option.textContent = team.name;
+          select.appendChild(option);
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des équipes:', error);
+  }
+}
+
+async function loadUserActivity(userId) {
+  try {
+    const activityFeed = document.getElementById('userActivityFeed');
+    if (!activityFeed) return;
+
+    activityFeed.innerHTML = `
+    <div class="text-center py-4">
+      <div class="spinner-border text-primary" role="status">
+        <i data-lucide="loader" class="w-5 h-5"></i>
+      </div>
+      <span class="visually-hidden">Chargement...</span>
+    </div>`;
+
+    const response = await apiRequest(`/admin/users/${userId}/activities`);
+
+    if (response.success) {
+      renderActivityFeed(response.data);
+    } else {
+      throw new Error(response.message || 'Erreur lors du chargement de l\'activité');
+    }
+  } catch (error) {
+    console.error('Erreur:', error);
+    const activityFeed = document.getElementById('userActivityFeed');
+    if (activityFeed) {
+      activityFeed.innerHTML = `
+        <div class="alert alert-danger">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          Impossible de charger l'activité de l'utilisateur. ${error.message}
+        </div>
+      `;
+    }
+  }
+}
+
+function renderUsersTable(users) {
+  const tbody = document.getElementById('usersTableBody');
+  if (!tbody) return;
+
+  if (!users || users.length === 0) {
+    showEmptyTable();
+    return;
+  }
+
+  const template = document.getElementById('userRowTemplate');
+  tbody.innerHTML = '';
+
+  users.forEach(user => {
+    const clone = template.content.cloneNode(true);
+    const row = clone.querySelector('tr');
+    row.dataset.userId = user.id;
+
+    // Remplir les données utilisateur
+    const fullName = getFullName(user) || user.username;
+    clone.querySelector('.user-name').textContent = fullName;
+    clone.querySelector('.user-id').textContent = `#${user.id}`;
+    clone.querySelector('.user-email').textContent = user.email;
+
+    // Rôle
+    const roleBadge = clone.querySelector('.user-role-badge');
+    roleBadge.textContent = getRoleLabel(user.role || 'user');
+    roleBadge.className = `px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeClass(user.role || 'user')}`;
+
+    // Statut
+    const statusBadge = clone.querySelector('.user-status-badge');
+    statusBadge.textContent = getStatusLabel(user.status || 'inactive');
+    statusBadge.className = `px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(user.status || 'inactive')}`;
+
+    // Équipe
+    const teamCell = clone.querySelector('.user-team');
+    if (user.team_name) {
+      teamCell.innerHTML = `<span class="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">${user.team_name}</span>`;
+    }
+
+    // Dernière connexion
+    const lastLoginCell = clone.querySelector('.user-last-login');
+    const lastIpCell = clone.querySelector('.user-last-ip');
+
+    if (user.last_login_at) {
+      lastLoginCell.textContent = formatDate(user.last_login_at);
+      lastIpCell.textContent = user.last_login_ip || '';
+    } else {
+      lastLoginCell.textContent = 'Connexion unregistered';
+    }
+
+    // Avatar
+    const avatar = clone.querySelector('.user-avatar');
+    const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    avatar.src = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=random`;
+    avatar.alt = fullName;
+
+    // Gestion des événements
+    setupUserRowEventListeners(row, user);
+    tbody.appendChild(row);
+  });
+
+  // Mettre à jour les actions groupées
+  updateBulkActions();
+}
+
+function setupUserRowEventListeners(row, user) {
+  // Case à cocher
+  const checkbox = row.querySelector('.user-checkbox');
+  if (checkbox) {
+    checkbox.addEventListener('change', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.target.checked) {
+        selectedUsers.add(user.id);
+      } else {
+        selectedUsers.delete(user.id);
+      }
+      updateBulkActions();
+    });
+  }
+
+  // Menu déroulant
+  const menuButton = row.querySelector('[aria-haspopup="true"]');
+  const menu = row.querySelector('.dropdown-menu-li');
+
+  if (menuButton && menu) {
+    menuButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isExpanded = menuButton.getAttribute('aria-expanded') === 'true';
+      menuButton.setAttribute('aria-expanded', !isExpanded);
+      menu.classList.toggle('hidden', isExpanded);
+    });
+
+    // Fermer le menu quand on clique ailleurs
+    document.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!row.contains(e.target)) {
+        menuButton.setAttribute('aria-expanded', 'false');
+        menu.classList.add('hidden');
+      }
+    });
+  }
+
+  // Actions du menu
+  const actions = {
+    '.edit-user': () => showUserModal(user.id),
+    '.view-activity': () => showUserModal(user.id, 'activity'),
+    '.reset-password': () => resetUserPassword(user.id, user.username),
+    '.toggle-status': (e) => {
+      e.preventDefault();
+      const newStatus = user.status === 'active' ? 'inactive' : 'active';
+      toggleUserStatus(user.id, newStatus, user.username);
+    },
+    '.delete-user': (e) => {
+      e.preventDefault();
+      confirmDeleteUser(user.id, user.username);
+    }
+  };
+
+  Object.entries(actions).forEach(([selector, handler]) => {
+    const element = row.querySelector(selector);
+    if (element) {
+      element.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handler(e);
+      });
+    }
+  });
+
+  lucide.createIcons();
+}
+
+function setupUserActions(clone, user) {
+  clone.querySelector('.edit-user').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    showUserModal(user.id);
+  });
+
+  clone.querySelector('.view-activity').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    showUserModal(user.id, 'activity');
+  });
+
+  clone.querySelector('.reset-password').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resetUserPassword(user.id, user.username);
+  });
+
+  const toggleStatusBtn = clone.querySelector('.toggle-status');
+  const statusText = clone.querySelector('.status-action-text');
+
+  if (user.status === 'active') {
+    statusText.textContent = 'Suspendre';
+    toggleStatusBtn.querySelector('i').className = 'fas fa-user-slash me-2';
+  } else if (user.status === 'suspended') {
+    statusText.textContent = 'Activer';
+    toggleStatusBtn.querySelector('i').className = 'fas fa-user-check me-2';
+  } else {
+    statusText.textContent = 'Changer le statut';
+  }
+
+  toggleStatusBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const newStatus = user.status === 'active' ? 'suspend' : 'activate';
+    toggleUserStatus(user.id, newStatus, user.username);
+  });
+
+  clone.querySelector('.delete-user').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    confirmDeleteUser(user.id, user.username);
+  });
+}
+
+function showEmptyTable() {
+  const tbody = document.getElementById('usersTableBody');
+  if (tbody) {
+    tbody.innerHTML = `
       <tr>
-        <td colspan="5">
-          <div class="empty-state">
-            <div class="empty-state-icon">
-              <i class="fas fa-users"></i>
-            </div>
-            <div class="empty-state-text">
-              <h3>Aucun utilisateur</h3>
-              <p>Ajoutez des utilisateurs en cliquant sur le bouton "Ajouter utilisateur".</p>
-            </div>
+        <td colspan="8" class="text-center py-4">
+          <div class="d-flex flex-column align-items-center">
+            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+            <p class="text-muted mb-0">Aucun utilisateur trouvé</p>
           </div>
         </td>
       </tr>
-    `
-    return
+    `;
   }
+}
 
-  // Ajouter chaque utilisateur
-  users.forEach((user) => {
-    const row = document.createElement("tr")
-
-    // Déterminer le rôle et la classe
-    let roleClass = "badge-info"
-    let roleText = "Utilisateur"
-
-    if (user.role === "admin") {
-      roleClass = "badge-primary"
-      roleText = "Admin"
-    } else if (user.role === "moderator") {
-      roleClass = "badge-info"
-      roleText = "Modérateur"
-    }
-
-    // Déterminer le statut et la classe
-    let statusClass = "badge-success"
-    let statusText = "Actif"
-
-    if (user.status === "suspended") {
-      statusClass = "badge-warning"
-      statusText = "Suspendu"
-    } else if (user.status === "inactive") {
-      statusClass = "badge-danger"
-      statusText = "Inactif"
-    }
-
-    row.innerHTML = `
-      <td>${sanitizeText(user.name || user.username)}</td>
-      <td>${sanitizeText(user.email)}</td>
-      <td><span class="badge ${roleClass}">${roleText}</span></td>
-      <td><span class="badge ${statusClass}">${statusText}</span></td>
-      <td>
-        <div class="dropdown">
-          <button class="dropdown-toggle">
-            <i class="fas fa-ellipsis-v"></i>
-          </button>
-          <div class="dropdown-menu">
-            <a href="#" class="dropdown-item action-button" data-action="edit" data-id="${user.id}">Modifier</a>
-            <a href="#" class="dropdown-item action-button" data-action="view" data-id="${user.id}">Voir profil</a>
-            ${
-              user.status === "suspended"
-                ? `<a href="#" class="dropdown-item action-button" data-action="activate" data-id="${user.id}">Activer</a>`
-                : `<a href="#" class="dropdown-item action-button" data-action="suspend" data-id="${user.id}">Suspendre</a>`
-            }
+function showTableLoading() {
+  const tbody = document.getElementById('usersTableBody');
+  if (tbody) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8" class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <i data-lucide="loader" class="w-5 h-5"></i>
           </div>
-        </div>
-      </td>
-    `
-
-    container.appendChild(row)
-  })
-
-  // Initialiser les dropdowns
-  initializeDropdowns()
-}
-
-/**
- * Charge les statistiques des utilisateurs
- */
-async function loadUserStats() {
-  try {
-    const response = await apiRequest("/admin/user-stats")
-
-    if (response.success && response.data) {
-      updateUserStats(response.data)
-    }
-  } catch (error) {
-    handleError("Erreur lors du chargement des statistiques", error)
+          <span class="visually-hidden">Chargement...</span>
+        </td>
+      </tr>
+    `;
   }
 }
 
-/**
- * Met à jour les statistiques des utilisateurs
- * @param {Object} stats - Statistiques à afficher
- */
-function updateUserStats(stats) {
-  if (!stats) return
+function renderActivityFeed(activities) {
+  const container = document.getElementById('userActivityFeed');
+  if (!container) return;
 
-  // Mettre à jour les compteurs
-  const elements = USER_ELEMENTS.stats
-  Object.keys(elements).forEach((key) => {
-    const element = document.querySelector(elements[key])
-    if (element && stats[key] !== undefined) {
-      element.textContent = stats[key]
-    }
-  })
-}
+  const template = document.getElementById('activityItemTemplate');
+  container.innerHTML = '';
 
-/**
- * Charge les activités récentes des utilisateurs
- */
-async function loadUserActivity() {
-  try {
-    const response = await apiRequest("/admin/activity")
-
-    if (response.success && response.data) {
-      // Filtrer pour obtenir uniquement les activités liées aux utilisateurs
-      const userActivities = response.data
-        .filter((activity) => {
-          const type = activity.type || activity.action_type || ""
-          return type.includes("user") || type.includes("login") || type.includes("register")
-        })
-        .slice(0, 3) // Limiter à 3 activités
-
-      updateActivityFeed(userActivities)
-    }
-  } catch (error) {
-    handleError("Erreur lors du chargement des activités", error)
-  }
-}
-
-/**
- * Met à jour le flux d'activité
- * @param {Array} activities - Liste des activités
- */
-function updateActivityFeed(activities) {
-  const container = document.querySelector(USER_ELEMENTS.activityFeed.container)
-
-  if (!container) return
-
-  // Vider le conteneur
-  container.innerHTML = ""
-
-  // Afficher l'état vide si aucune activité
-  if (!activities || !activities.length) {
+  if (!activities || activities.length === 0) {
     container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state-icon">
-          <i class="fas fa-history"></i>
-        </div>
-        <div class="empty-state-text">
-          <h3>Aucune activité récente</h3>
-          <p>Les activités récentes apparaîtront ici.</p>
+      <div class="text-center py-8 text-gray-400">
+        <i class="fas fa-inbox text-3xl mb-2"></i>
+        <p class="text-sm">Aucune activité récente</p>
+      </div>
+    `;
+    return;
+  }
+
+  // gerer l'onglet activity
+  const activityTab = document.getElementById('activity-tab');
+  if (activityTab) {
+    const isExpanded = activityTab.getAttribute('aria-expanded') === 'true';
+    activityTab.classList.toggle('hidden', isExpanded);
+    activityTab.setAttribute('aria-expanded', !isExpanded);
+  }
+  // Mappage des icônes selon le type d'activité
+  const iconMap = {
+    'login': 'fa-sign-in-alt',
+    'logout': 'fa-sign-out-alt',
+    'profile_update': 'fa-user-edit',
+    'password_change': 'fa-key',
+    'team_join': 'fa-users',
+    'challenge_complete': 'fa-flag-checkered',
+    'project_submit': 'fa-paper-plane',
+    'default': 'fa-circle'
+  };
+
+  activities.forEach(activity => {
+    const clone = template.content.cloneNode(true);
+    const action = activity.action || 'default';
+
+    // Définir l'icône
+    const icon = clone.querySelector('[data-icon]');
+    icon.className = `fas text-lg ${iconMap[action] || iconMap.default}`;
+
+    // Titre et détails
+    clone.querySelector('[data-title]').textContent = getActivityTitle(action, activity);
+    clone.querySelector('[data-details]').textContent = activity.description || '';
+
+    // Date formatée
+    if (activity.created_at) {
+      const date = new Date(activity.created_at);
+      clone.querySelector('[data-time]').textContent = formatTimeAgo(date);
+    }
+
+    // Adresse IP
+    const ipElement = clone.querySelector('[data-ip-text]');
+    if (ipElement) {
+      ipElement.textContent = activity.ip_address || 'IP inconnue';
+    } else {
+      clone.querySelector('[data-ip]').classList.add('hidden');
+    }
+
+    // Appareil
+    const deviceElement = clone.querySelector('[data-device-text]');
+    if (deviceElement && activity.user_agent) {
+      deviceElement.textContent = getDeviceInfo(activity.user_agent);
+    } else {
+      clone.querySelector('[data-device]').classList.add('hidden');
+    }
+
+    container.appendChild(clone);
+  });
+}
+
+// Fonction utilitaire pour formater la date en "il y a X temps"
+function formatTimeAgo(date) {
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+
+  if (diffInSeconds < 60) return 'À l\'instant';
+  if (diffInSeconds < 3600) {
+    const mins = Math.floor(diffInSeconds / 60);
+    return `Il y a ${mins} min${mins > 1 ? 's' : ''}`;
+  }
+  if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600);
+    return `Il y a ${hours} heure${hours > 1 ? 's' : ''}`;
+  }
+
+  // Si plus d'un jour, afficher la date complète
+  return date.toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+// Fonction pour générer un titre d'activité lisible
+function getActivityTitle(action, activity) {
+  const titles = {
+    'login': 'Connexion',
+    'logout': 'Déconnexion',
+    'profile_update': 'Mise à jour du profil',
+    'password_change': 'Changement de mot de passe',
+    'team_join': 'A rejoint une équipe',
+    'challenge_complete': 'Défi complété',
+    'project_submit': 'Projet soumis'
+  };
+
+  let title = titles[action] || 'Activité récente';
+
+  // Ajouter des détails spécifiques si disponibles
+  if (action === 'challenge_complete' && activity.challenge_name) {
+    title += ` : ${activity.challenge_name}`;
+  } else if (action === 'team_join' && activity.team_name) {
+    title += ` : ${activity.team_name}`;
+  }
+
+  return title;
+}
+
+// Fonction pour obtenir des informations sur l'appareil (version simplifiée)
+function getDeviceInfo(userAgent) {
+  if (!userAgent) return 'Appareil inconnu';
+
+  const ua = userAgent.toLowerCase();
+  if (ua.includes('mobile')) return 'Mobile';
+  if (ua.includes('tablet')) return 'Tablette';
+  if (ua.includes('windows')) return 'Windows';
+  if (ua.includes('mac')) return 'Mac';
+  if (ua.includes('linux')) return 'Linux';
+
+  return 'Ordinateur';
+}
+
+/**
+ * Met à jour les contrôles de pagination
+ */
+function updatePagination(meta) {
+  const paginationContainer = document.getElementById('pagination');
+  if (!paginationContainer) return;
+
+  const { current_page, last_page } = meta;
+  let paginationHTML = '';
+
+  // Bouton Précédent
+  paginationHTML += `
+    <button 
+      onclick="loadUsers(${current_page - 1})" 
+      ${current_page === 1 ? 'disabled' : ''}
+      class="p-2 rounded-md ${current_page === 1 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100'}"
+    >
+      <i data-lucide="chevron-left" class="w-4 h-4"></i>
+    </button>
+  `;
+
+  // Afficher les numéros de page
+  const maxPagesToShow = 5;
+  let startPage = Math.max(1, current_page - Math.floor(maxPagesToShow / 2));
+  let endPage = Math.min(last_page, startPage + maxPagesToShow - 1);
+
+  if (endPage - startPage + 1 < maxPagesToShow) {
+    startPage = Math.max(1, endPage - maxPagesToShow + 1);
+  }
+
+  // Premier bouton de page
+  if (startPage > 1) {
+    paginationHTML += createPageButton(1);
+    if (startPage > 2) {
+      paginationHTML += '<span class="px-2 py-1">...</span>';
+    }
+  }
+
+  // Boutons des pages
+  for (let i = startPage; i <= endPage; i++) {
+    paginationHTML += createPageButton(i);
+  }
+
+  // Dernier bouton de page
+  if (endPage < last_page) {
+    if (endPage < last_page - 1) {
+      paginationHTML += '<span class="px-2 py-1">...</span>';
+    }
+    paginationHTML += createPageButton(last_page);
+  }
+
+  // Bouton Suivant
+  paginationHTML += `
+    <button 
+      onclick="loadUsers(${current_page + 1})" 
+      ${current_page === last_page ? 'disabled' : ''}
+      class="p-2 rounded-md ${current_page === last_page ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100'}"
+    >
+      <i data-lucide="chevron-right" class="w-4 h-4"></i>
+    </button>
+  `;
+
+  paginationContainer.innerHTML = paginationHTML;
+  lucide.createIcons();
+}
+
+// Mettre à jour la fonction createPageButton
+function createPageButton(pageNumber) {
+  const isActive = pageNumber === currentPage;
+  return `
+    <button 
+      onclick="loadUsers(${pageNumber})" 
+      class="w-10 h-10 rounded-md ${isActive
+      ? 'bg-blue-600 text-white'
+      : 'text-slate-600 hover:bg-slate-100'
+    }"
+      ${isActive ? 'aria-current="page"' : ''}
+    >
+      ${pageNumber}
+    </button>
+  `;
+}
+
+
+/**
+ * Met à jour les informations du tableau (ex: "Affichage de 1 à 10 sur 50 entrées")
+ */
+function updateTableInfo(meta) {
+  const tableInfo = document.getElementById('tableInfo');
+  if (!tableInfo) return;
+
+  const { from, to, total } = meta;
+  tableInfo.textContent = `Affichage de ${from} à ${to} sur ${total} entrée${total !== 1 ? 's' : ''}`;
+}
+
+(async function initSchoolSelect() {
+  const schoolSelect = document.getElementById('school');
+  const schoolError = document.getElementById('schoolError');
+  if (!schoolSelect) return;
+
+  function populateSchools(list) {
+    for (let i = schoolSelect.options.length - 1; i >= 1; i--) {
+      schoolSelect.remove(i);
+    }
+    (list || []).forEach(name => {
+      if (!name || typeof name !== 'string') return;
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      schoolSelect.appendChild(opt);
+    });
+  }
+
+  try {
+    async function loadSchoolsScript() {
+      if (window.SCHOOLS) return;
+      if (document.querySelector('script[data-schools="true"]')) return new Promise((res) => {
+        if (window.SCHOOLS) return res();
+        document.addEventListener('schools:loaded', () => res(), { once: true });
+      });
+
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = '/assets/schools.js';
+        s.async = true;
+        s.defer = true;
+        s.dataset.schools = 'true';
+        s.onload = () => {
+          document.dispatchEvent(new CustomEvent('schools:loaded'));
+          resolve();
+        };
+        s.onerror = () => reject(new Error('Impossible de charger /assets/schools.js'));
+        document.head.appendChild(s);
+      });
+    }
+
+    await loadSchoolsScript();
+
+    const raw = window.SCHOOLS;
+    const schools = Array.isArray(raw) ? raw : (Array.isArray(raw?.schools) ? raw.schools : []);
+    if (!schools.length) throw new Error('Aucune école dans window.SCHOOLS');
+
+    schools.sort((a, b) => ('' + a).localeCompare(b));
+    populateSchools(schools);
+  } catch (e) {
+    populateSchools([
+      'Autre / Non listée'
+    ]);
+    console.warn('Impossible de charger /assets/schools.js:', e);
+  }
+
+  function validateSchool() {
+    if (!schoolSelect.value) {
+      schoolError && (schoolError.textContent = 'Veuillez sélectionner votre école');
+      schoolError && schoolError.classList.remove('hidden');
+      return false;
+    }
+    schoolError && schoolError.classList.add('hidden');
+    return true;
+  }
+
+  schoolSelect.addEventListener('change', validateSchool);
+
+  const signupBtn = document.querySelector('#signup');
+  if (signupBtn) {
+    signupBtn.addEventListener('click', (e) => {
+      if (!validateSchool()) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    });
+  }
+})();
+
+// Gestion des utilisateurs
+async function showUserModal(userId = null, activeTab = 'profile') {
+  const modal = document.getElementById('userModal');
+  modal.classList.remove('hidden');
+
+  // Réinitialiser le formulaire en prenant en compte les cas d'ajout et de modification
+  const form = document.getElementById('userForm');
+  if (userId) {
+    form.reset();
+  }
+
+  // Gestion des onglets
+  const tabs = {
+    profile: {
+      tab: document.getElementById('profile-tab'),
+      content: document.getElementById('profile')
+    },
+    security: {
+      tab: document.getElementById('security-tab'),
+      content: document.getElementById('security')
+    },
+    activity: {
+      tab: document.getElementById('activity-tab'),
+      content: document.getElementById('activity')
+    }
+  };
+
+  // Activer l'onglet demandé et désactiver les autres
+  Object.entries(tabs).forEach(([key, { tab, content }]) => {
+    if (tab && content) {
+      if (key === activeTab) {
+        tab.classList.add('border-blue-500', 'text-blue-600');
+        tab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+        content.classList.remove('hidden');
+      } else {
+        tab.classList.remove('border-blue-500', 'text-blue-600');
+        tab.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+        content.classList.add('hidden');
+      }
+    }
+  });
+
+  if (userId) {
+    // Mode édition
+    document.getElementById('modal-title').textContent = 'Modifier l\'utilisateur';
+    document.getElementById('saveButtonText').textContent = 'Enregistrer les modifications';
+
+    try {
+      const response = await apiRequest(`/admin/users/${userId}`);
+
+      if (response.success) {
+        const user = response.data;
+
+        const schoolOption = document.createElement('option');
+        schoolOption.value = user.school;
+        schoolOption.textContent = user.school ? user.school : 'Aucune';
+        document.getElementById('school')?.appendChild(schoolOption);
+        document.getElementById('school').value = user.school || '';
+        // Remplir le formulaire
+        document.getElementById('userId').value = user.id;
+        document.getElementById('username').value = user.username || '';
+        document.getElementById('email').value = user.email || '';
+        document.getElementById('fullName').value = user.fullname || '';
+        document.getElementById('role').value = user.role || 'user';
+        document.getElementById('status').value = user.status || 'active';
+        document.getElementById('bio').value = user.bio || '';
+        document.getElementById('twoFactorEnabled').checked = user.two_factor_enabled || false;
+        document.getElementById('number').value = user.number || '';
+        document.getElementById('study_level').value = user.study_level || '';
+
+
+        // Si l'onglet d'activité est actif, charger les activités
+        if (activeTab === 'activity') {
+          loadUserActivity(userId);
+        }
+      } else {
+        throw new Error(response.message || 'Erreur lors du chargement des données utilisateur');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      showNotification('Impossible de charger les données de l\'utilisateur', error.message, 'error');
+      return;
+    }
+  } else {
+    // Mode création
+    document.getElementById('modal-title').textContent = 'Ajouter un utilisateur';
+    document.getElementById('saveButtonText').textContent = 'Ajouter l\'utilisateur';
+    document.getElementById('userId').value = '';
+
+  }
+
+  // Gestion des clics sur les onglets
+  document.querySelectorAll('[id$="-tab"]').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const tabId = tab.id.replace('-tab', '');
+      // gerer le cas d'un ajout d'un utilisateur
+      if (tabId === 'profile') {
+        showUserModal(null, tabId);
+      } else {
+        showUserModal(document.getElementById('userId')?.value || null, tabId);
+      }
+    });
+  });
+
+  // Gestion de la fermeture de la modal
+  document.getElementById('closeModal').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('userModal').classList.add('hidden');
+    document.getElementById('userForm').reset();
+  });
+  document.getElementById('cancelModalBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    document.getElementById('userModal').classList.add('hidden');
+    document.getElementById('userForm').reset();
+  });
+
+}
+async function handleUserFormSubmit(e) {
+  e.preventDefault();
+
+  const form = e.target;
+  const userId = document.getElementById('userId').value;
+  const isEdit = !!userId;
+
+  // Validation
+  if (!validateForm(form)) {
+    return;
+  }
+
+  const formData = {
+    username: form.username.value.trim(),
+    email: form.email.value.trim(),
+    fullname: form.fullName.value.trim() || null,
+    role: form.role.value,
+    school: form.school.value.trim() || null,
+    status: form.status.value,
+    bio: form.bio.value.trim() || null,
+    two_factor_enabled: form.twoFactorEnabled.checked,
+    force_password_reset: form.forcePasswordReset?.checked || false,
+    study_level: form.study_level.value.trim() || null,
+    number: form.number.value.trim() || null
+  };
+
+  // Ajouter le mot de passe uniquement s'il est fourni
+  if (form.password.value) {
+    if (form.password.value !== form.password_confirmation.value) {
+      showNotification('Les mots de passe ne correspondent pas', null, 'error');
+      return;
+    }
+    formData.password = form.password.value;
+    formData.password_confirmation = form.password_confirmation.value;
+  }
+
+  try {
+    const saveSpinner = document.getElementById('saveSpinner');
+    const saveButtonText = document.getElementById('saveButtonText');
+
+    saveSpinner.classList.remove('hidden');
+    saveButtonText.textContent = isEdit ? 'Modification...' : 'Création...';
+
+    const url = isEdit ? `/admin/users/${userId}` : `/admin/users`;
+    const method = isEdit ? 'PUT' : 'POST';
+
+    const response = await apiRequest(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formData)
+    });
+
+    if (response.success) {
+      document.getElementById('userModal').classList.add('hidden');
+      document.getElementById('userForm').reset();
+      document.getElementById('userId').value = '';
+
+      showNotification(
+        `Utilisateur ${isEdit ? 'mis à jour' : 'créé'} avec succès`,
+        null,
+        'success'
+      );
+
+      loadUsers();
+      loadUserStats();
+    } else {
+      throw new Error(response.message || 'Erreur lors de l\'enregistrement');
+    }
+
+  } catch (error) {
+    console.error('Erreur:', error);
+    showNotification(
+      'Erreur lors de l\'enregistrement',
+      error.message,
+      'error'
+    );
+  } finally {
+    const saveSpinner = document.getElementById('saveSpinner');
+    const saveButtonText = document.getElementById('saveButtonText');
+
+    saveSpinner.classList.add('hidden');
+    saveButtonText.textContent = document.getElementById('userId').value ? 'Enregistrer' : 'Créer';
+  }
+}
+
+function validateForm(form) {
+  const requiredFields = ['username', 'email'];
+  let isValid = true;
+
+  requiredFields.forEach(fieldName => {
+    const field = form[fieldName];
+    if (!field.value.trim()) {
+      field.classList.add('is-invalid');
+      isValid = false;
+    } else {
+      field.classList.remove('is-invalid');
+    }
+  });
+
+  // Validation email
+  const emailField = form.email;
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (emailField.value && !emailPattern.test(emailField.value)) {
+    emailField.classList.add('is-invalid');
+    isValid = false;
+  }
+
+  if (!isValid) {
+    showNotification('Veuillez corriger les erreurs dans le formulaire', null, 'warning');
+  }
+
+  return isValid;
+}
+
+function validatePasswordMatch() {
+  const password = document.getElementById('password');
+  const confirmation = document.getElementById('password_confirmation');
+
+  if (password.value && confirmation.value) {
+    if (password.value !== confirmation.value) {
+      confirmation.classList.add('is-invalid');
+    } else {
+      confirmation.classList.remove('is-invalid');
+    }
+  }
+}
+
+async function toggleUserStatus(userId, status, username) {
+  const actionText = status === 'inactive' ? 'suspendre' : 'activer';
+
+  if (!confirm(`Êtes-vous sûr de vouloir ${actionText} l'utilisateur "${username}" ?`)) {
+    return;
+  }
+
+  try {
+    const response = await apiRequest(`/admin/users/${userId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status })
+    });
+
+    if (response.success) {
+      showNotification(
+        `Utilisateur ${status === 'inactive' ? 'suspendu' : 'activé'} avec succès`,
+        `"${username}" a été ${status === 'inactive' ? 'suspendu' : 'activé'}`,
+        'success'
+      );
+      loadUsers();
+      loadUserStats();
+    } else {
+      throw new Error(response.message || 'Erreur lors de la mise à jour du statut');
+    }
+
+  } catch (error) {
+    console.error('Erreur:', error);
+    showNotification('Erreur lors de la mise à jour du statut', error.message, 'error');
+  }
+}
+
+async function resetUserPassword(userId, username) {
+  if (!confirm(`Voulez-vous vraiment réinitialiser le mot de passe de l'utilisateur "${username}" ?\n\nUn email lui sera envoyé avec les instructions.`)) {
+    return;
+  }
+
+  try {
+    const response = await apiRequest(`/admin/users/${userId}/reset-password`, {
+      method: 'POST'
+    });
+
+    if (response.success) {
+      showNotification(
+        'Email de réinitialisation envoyé',
+        `Un email a été envoyé à "${username}" avec les instructions`,
+        'success'
+      );
+    } else {
+      throw new Error(response.message || response.error || 'Erreur lors de la réinitialisation du mot de passe');
+    }
+
+  } catch (error) {
+    console.error('Erreur:', error);
+    showNotification('Erreur lors de la réinitialisation', error.message, 'error');
+  }
+}
+
+function confirmDeleteUser(userId, username) {
+  // Créer la modale avec Tailwind
+  const modal = document.createElement('div');
+  modal.id = 'deleteUserModal';
+  modal.className = 'fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4';
+  modal.innerHTML = `
+    <div class="bg-slate-400 dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md">
+      <div class="p-6">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Confirmer la suppression</h3>
+        <p class="text-slate-600 dark:text-slate-300 mb-6">
+          Vous êtes sur le point de supprimer l'utilisateur <strong class="text-slate-900 dark:text-white">"${username}"</strong>.
+        </p>
+        <div class="flex justify-end space-x-3">
+          <button id="cancelDeleteBtn" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+            Annuler
+          </button>
+          <button id="confirmDeleteBtn" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">
+            Supprimer
+          </button>
         </div>
       </div>
-    `
-    return
-  }
-
-  // Ajouter chaque activité
-  activities.forEach((activity) => {
-    const activityElement = createActivityElement(activity)
-    container.appendChild(activityElement)
-  })
-}
-
-/**
- * Crée un élément d'activité
- * @param {Object} activity - Données de l'activité
- * @returns {HTMLElement} - Élément DOM de l'activité
- */
-function createActivityElement(activity) {
-  const div = document.createElement("div")
-  div.className = "activity-item"
-
-  // Déterminer l'icône et la classe en fonction du type d'activité
-  let iconClass = "background-color: rgba(59, 130, 246, 0.2); color: #3b82f6;"
-  let iconName = "user"
-
-  // Adapter en fonction de la structure de données renvoyée par l'API
-  const activityType = activity.type || activity.action_type || "default"
-
-  switch (activityType) {
-    case "login":
-      iconName = "sign-in-alt"
-      iconClass = "background-color: rgba(59, 130, 246, 0.2); color: #3b82f6;"
-      break
-    case "register":
-      iconName = "user-plus"
-      iconClass = "background-color: rgba(16, 185, 129, 0.2); color: #10b981;"
-      break
-    case "submission":
-    case "submit_solution":
-      iconName = "file-code"
-      iconClass = "background-color: rgba(16, 185, 129, 0.2); color: #10b981;"
-      break
-    case "hackathon":
-      iconName = "calendar-alt"
-      iconClass = "background-color: rgba(109, 40, 217, 0.2); color: #6d28d9;"
-      break
-  }
-
-  // Formater la date
-  const date =
-    activity.timestamp || activity.created_at ? formatDate(activity.timestamp || activity.created_at) : "Récemment"
-
-  // Déterminer le texte de l'activité
-  const activityText = activity.description || activity.action || "Activité inconnue"
-  const username = activity.username || activity.user_name || ""
-
-  div.innerHTML = `
-    <div class="activity-icon" style="${iconClass}">
-      <i class="fas fa-${iconName}"></i>
     </div>
-    <div class="activity-content">
-      <div class="activity-title">${sanitizeText(username)}</div>
-      <div class="activity-subtitle">${sanitizeText(activityText)}</div>
-    </div>
-    <div class="activity-time">
-      ${date}
-    </div>
-  `
+  `;
 
-  return div
-}
+  // Ajouter la modale au DOM
+  document.body.appendChild(modal);
+  document.body.classList.add('overflow-hidden');
 
-/**
- * Configure les gestionnaires d'événements
- */
-function setupEventListeners() {
-  // Gestionnaire pour le bouton "Ajouter utilisateur"
-  const addUserButton = document.querySelector(".btn-primary:nth-of-type(2)")
-  if (addUserButton) {
-    addUserButton.addEventListener("click", () => {
-      // Rediriger vers la page d'ajout d'utilisateur ou ouvrir un modal
-      // window.location.href = "/admin/utilisateurs/add.php"
-      alert("Fonctionnalité d'ajout d'utilisateur à implémenter")
-    })
-  }
+  // Gestion des événements
+  const confirmBtn = modal.querySelector('#confirmDeleteBtn');
+  const cancelBtn = modal.querySelector('#cancelDeleteBtn');
 
-  // Gestionnaire pour le bouton "Notification globale"
-  const notificationButton = document.querySelector(".btn-primary:nth-of-type(1)")
-  if (notificationButton) {
-    notificationButton.addEventListener("click", () => {
-      // Ouvrir un modal pour envoyer une notification globale
-      alert("Fonctionnalité de notification globale à implémenter")
-    })
-  }
+  const closeModal = () => {
+    document.body.removeChild(modal);
+    document.body.classList.remove('overflow-hidden');
+  };
 
-  // Gestionnaire pour les boutons d'action
-  document.addEventListener("click", (e) => {
-    const actionButton = e.target.closest(".action-button")
-    if (actionButton) {
-      e.preventDefault()
-      const action = actionButton.dataset.action
-      const id = actionButton.dataset.id
+  const handleConfirm = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    await deleteUser(userId, username);
+    closeModal();
+  };
 
-      switch (action) {
-        case "edit":
-          editUser(id)
-          break
-        case "view":
-          viewUser(id)
-          break
-        case "suspend":
-          suspendUser(id)
-          break
-        case "activate":
-          activateUser(id)
-          break
-      }
+  confirmBtn.addEventListener('click', handleConfirm);
+  cancelBtn.addEventListener('click', closeModal);
+
+  // Fermer en cliquant en dehors de la modale
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
     }
-  })
+  });
 
-  // Gestionnaire pour la recherche
-  const searchInput = document.querySelector(USER_ELEMENTS.searchInput)
-  if (searchInput) {
-    searchInput.addEventListener("input", handleSearch)
-  }
-
-  // Initialiser les dropdowns
-  initializeDropdowns()
+  // Nettoyage
+  return () => {
+    confirmBtn.removeEventListener('click', handleConfirm);
+    cancelBtn.removeEventListener('click', closeModal);
+  };
 }
 
-/**
- * Édite un utilisateur
- * @param {string} id - ID de l'utilisateur
- */
-function editUser(id) {
-  // Rediriger vers la page d'édition d'utilisateur
-  window.location.href = `/admin/utilisateurs/edit.php?id=${id}`
-}
-
-/**
- * Affiche les détails d'un utilisateur
- * @param {string} id - ID de l'utilisateur
- */
-function viewUser(id) {
-  // Rediriger vers la page de détails d'utilisateur
-  window.location.href = `q/admin/utilisateurs/view.php?id=${id}`
-}
-
-/**
- * Suspend un utilisateur
- * @param {string} id - ID de l'utilisateur
- */
-async function suspendUser(id) {
-  if (!confirm("Êtes-vous sûr de vouloir suspendre cet utilisateur ?")) {
-    return
-  }
-
+async function deleteUser(userIds, username) {
   try {
-    showLoading()
-
-    // Envoyer la requête de suspension
-    const response = await apiRequest(`/admin/users/${id}/suspend`, {
-      method: "POST",
-    })
+    const response = await apiRequest(`/admin/users/${userIds}`, {
+      method: 'DELETE'
+    });
 
     if (response.success) {
-      // Recharger les utilisateurs
-      await loadUsers()
-
-      // Afficher un message de succès
-      showNotification("Utilisateur suspendu avec succès", "success")
+      showNotification(
+        'Utilisateur supprimé avec succès',
+        `"${username}" a été supprimé définitivement`,
+        'success'
+      );
+      loadUsers();
+      loadUserStats();
+    } else {
+      throw new Error(response.message || 'Erreur lors de la suppression');
     }
+
   } catch (error) {
-    handleError("Erreur lors de la suspension de l'utilisateur", error)
-  } finally {
-    hideLoading()
+    console.error('Erreur:', error);
+    showNotification('Erreur lors de la suppression', error.message, 'error');
   }
 }
 
-/**
- * Active un utilisateur
- * @param {string} id - ID de l'utilisateur
- */
-async function activateUser(id) {
+// Actions de masse
+function toggleUserSelection(checkbox) {
+  const userId = checkbox.value;
+  if (checkbox.checked) {
+    selectedUsers.add(userId);
+  } else {
+    selectedUsers.delete(userId);
+  }
+
+  // Mettre à jour la case "tout sélectionner"
+  const selectAll = document.getElementById('selectAll');
+  const totalCheckboxes = document.querySelectorAll('.user-checkbox').length;
+
+  if (selectAll) {
+    selectAll.checked = selectedUsers.size === totalCheckboxes && totalCheckboxes > 0;
+    selectAll.indeterminate = selectedUsers.size > 0 && selectedUsers.size < totalCheckboxes;
+  }
+
+  updateBulkActions();
+}
+
+function updateBulkActions() {
+  const bulkActionsBtn = document.getElementById('bulkActionsBtn');
+  if (bulkActionsBtn) {
+    bulkActionsBtn.disabled = selectedUsers.size === 0;
+    bulkActionsBtn.innerHTML = `<i class="fas fa-tasks me-1"></i> Actions (${selectedUsers.size})`;
+  }
+}
+
+function showBulkActionsModal() {
+  const modal = document.getElementById('bulkActionsModal');
+  const selectionInfo = document.getElementById('bulkSelectionInfo');
+  const bulkAction = document.getElementById('bulkAction');
+  const bulkRoleContainer = document.getElementById('bulkRoleContainer');
+  const warningContainer = document.getElementById('bulkActionWarning');
+  const confirmBtn = document.getElementById('confirmBulkAction');
+
+  // Réinitialiser le formulaire
+  bulkAction.value = '';
+  bulkRoleContainer.classList.add('hidden');
+  warningContainer.classList.add('hidden');
+
+  // Mettre à jour le texte d'information
+  selectionInfo.textContent = `${selectedUsers.size} utilisateur(s) sélectionné(s)`;
+
+  // Afficher la modale
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('overflow-hidden');
+
+  // Ajouter un écouteur pour fermer la modale
+  const closeBtn = document.getElementById('cancelBulkBtn');
+  closeBtn.addEventListener('click', closeBulkActionsModal);
+}
+
+function closeBulkActionsModal() {
+  const modal = document.getElementById('bulkActionsModal');
+  modal.classList.add('hidden');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('overflow-hidden');
+}
+
+async function handleBulkAction() {
+  const action = document.getElementById('bulkAction').value;
+  if (!action || selectedUsers.size === 0) return;
+
+  const userIds = Array.from(selectedUsers);
+  let confirmMessage = `Êtes-vous sûr de vouloir effectuer cette action sur ${userIds.length} utilisateur(s) ?`;
+
+  // Messages de confirmation spécifiques
+  switch (action) {
+    case 'delete':
+      confirmMessage = `Êtes-vous sûr de vouloir SUPPRIMER DÉFINITIVEMENT ces ${userIds.length} utilisateur(s) ?\n\nCette action est irréversible.`;
+      break;
+    case 'suspend':
+      confirmMessage = `Êtes-vous sûr de vouloir suspendre ces ${userIds.length} utilisateur(s) ?`;
+      break;
+    case 'activate':
+      confirmMessage = `Êtes-vous sûr de vouloir activer ces ${userIds.length} utilisateur(s) ?`;
+      break;
+    case 'deactivate':
+      confirmMessage = `Êtes-vous sûr de vouloir désactiver ces ${userIds.length} utilisateur(s) ?`;
+      break;
+    case 'change_role':
+      const role = document.getElementById('bulkRole').value;
+      if (!role) {
+        showNotification('Veuillez sélectionner un rôle', null, 'warning');
+        return;
+      }
+      confirmMessage = `Êtes-vous sûr de vouloir changer le rôle de ces ${userIds.length} utilisateur(s) vers "${getRoleLabel(role)}" ?`;
+      break;
+  }
+
+  const confirmed = await showConfirmDialog(
+    confirmMessage,
+    'Confirmer l\'action',
+    'Confirmer',
+    'Annuler'
+  );
+
+  if (!confirmed) return;
+
   try {
-    showLoading()
+    const bulkSpinner = document.getElementById('bulkSpinner');
+    const confirmBtn = document.getElementById('confirmBulkAction');
 
-    // Envoyer la requête d'activation
-    const response = await apiRequest(`/admin/users/${id}/activate`, {
-      method: "POST",
-    })
+    bulkSpinner.classList.remove('hidden');
+    confirmBtn.disabled = true;
 
-    if (response.success) {
-      // Recharger les utilisateurs
-      await loadUsers()
+    let body = { action, user_ids: userIds };
 
-      // Afficher un message de succès
-      showNotification("Utilisateur activé avec succès", "success")
+    if (action === 'change_role') {
+      body.role = document.getElementById('bulkRole').value;
     }
-  } catch (error) {
-    handleError("Erreur lors de l'activation de l'utilisateur", error)
-  } finally {
-    hideLoading()
-  }
-}
 
-/**
- * Gère la recherche
- * @param {Event} e - Événement de saisie
- */
-function handleSearch(e) {
-  const searchTerm = e.target.value.toLowerCase()
-  const tableId = e.target.dataset.table
-  const rows = document.querySelectorAll(`#${tableId} tbody tr`)
-
-  rows.forEach((row) => {
-    const text = row.textContent.toLowerCase()
-    row.style.display = text.includes(searchTerm) ? "" : "none"
-  })
-}
-
-/**
- * Initialise les dropdowns
- */
-function initializeDropdowns() {
-  document.querySelectorAll(".dropdown-toggle").forEach((button) => {
-    button.addEventListener("click", (e) => {
-      e.preventDefault()
-      e.stopPropagation()
-      const dropdown = button.nextElementSibling
-      dropdown.classList.toggle("show")
-    })
-  })
-
-  // Fermer les dropdowns quand on clique ailleurs
-  document.addEventListener("click", (e) => {
-    if (!e.target.matches(".dropdown-toggle")) {
-      document.querySelectorAll(".dropdown-menu.show").forEach((dropdown) => {
-        dropdown.classList.remove("show")
-      })
-    }
-  })
-}
-
-/**
- * Affiche le spinner de chargement
- */
-function showLoading() {
-  // Créer un spinner s'il n'existe pas déjà
-  let spinner = document.querySelector("#global-loading-spinner")
-  if (!spinner) {
-    spinner = document.createElement("div")
-    spinner.id = "global-loading-spinner"
-    spinner.className = "loading-spinner"
-    spinner.innerHTML = '<div class="spinner"></div>'
-    document.body.appendChild(spinner)
-
-    // Ajouter les styles nécessaires
-    const style = document.createElement("style")
-    style.textContent = `
-      .loading-spinner {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(255, 255, 255, 0.7);
-        z-index: 1000;
-      }
-      .loading-spinner .spinner {
-        width: 50px;
-        height: 50px;
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid #3498db;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      .hidden {
-        display: none !important;
-      }
-    `
-    document.head.appendChild(style)
-  }
-
-  spinner.classList.remove("hidden")
-}
-
-/**
- * Cache le spinner de chargement
- */
-function hideLoading() {
-  const spinner = document.querySelector("#global-loading-spinner")
-  if (spinner) {
-    spinner.classList.add("hidden")
-  }
-}
-
-/**
- * Affiche une notification
- * @param {string} message - Message à afficher
- * @param {string} type - Type de notification (success, error, warning, info)
- */
-function showNotification(message, type = "info") {
-  // Créer un conteneur de notification s'il n'existe pas déjà
-  let notifContainer = document.querySelector("#notification-container")
-  if (!notifContainer) {
-    notifContainer = document.createElement("div")
-    notifContainer.id = "notification-container"
-    notifContainer.style.position = "fixed"
-    notifContainer.style.top = "20px"
-    notifContainer.style.right = "20px"
-    notifContainer.style.zIndex = "1000"
-    document.body.appendChild(notifContainer)
-  }
-
-  // Créer la notification
-  const notification = document.createElement("div")
-  notification.className = `notification notification-${type}`
-  notification.innerHTML = `
-    <div class="notification-icon">
-      <i class="fas fa-${getNotificationIcon(type)}"></i>
-    </div>
-    <div class="notification-content">
-      <div class="notification-message">${message}</div>
-    </div>
-    <button class="notification-close">&times;</button>
-  `
-
-  // Ajouter les styles nécessaires
-  const style = document.createElement("style")
-  style.textContent = `
-    .notification {
-      display: flex;
-      align-items: center;
-      padding: 15px;
-      border-radius: 4px;
-      margin-bottom: 10px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      animation: slideIn 0.3s ease-out;
-    }
-    .notification-success {
-      background-color: #d4edda;
-      color: #155724;
-    }
-    .notification-error {
-      background-color: #f8d7da;
-      color: #721c24;
-    }
-    .notification-warning {
-      background-color: #fff3cd;
-      color: #856404;
-    }
-    .notification-info {
-      background-color: #d1ecf1;
-      color: #0c5460;
-    }
-    .notification-icon {
-      margin-right: 10px;
-    }
-    .notification-content {
-      flex: 1;
-    }
-    .notification-close {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 1.2rem;
-      color: inherit;
-    }
-    @keyframes slideIn {
-      from {
-        transform: translateX(100%);
-        opacity: 0;
-      }
-      to {
-        transform: translateX(0);
-        opacity: 1;
-      }
-    }
-  `
-  document.head.appendChild(style)
-
-  // Ajouter la notification au conteneur
-  notifContainer.appendChild(notification)
-
-  // Gestionnaire pour le bouton de fermeture
-  const closeButton = notification.querySelector(".notification-close")
-  closeButton.addEventListener("click", () => {
-    notification.remove()
-  })
-
-  // Supprimer la notification après 5 secondes
-  setTimeout(() => {
-    notification.style.animation = "slideOut 0.3s ease-in"
-    notification.style.opacity = "0"
-    setTimeout(() => {
-      notification.remove()
-    }, 300)
-  }, 5000)
-}
-
-/**
- * Obtient l'icône appropriée pour un type de notification
- * @param {string} type - Type de notification
- * @returns {string} - Nom de l'icône FontAwesome
- */
-function getNotificationIcon(type) {
-  switch (type) {
-    case "success":
-      return "check-circle"
-    case "error":
-      return "exclamation-circle"
-    case "warning":
-      return "exclamation-triangle"
-    case "info":
-    default:
-      return "info-circle"
-  }
-}
-
-/**
- * Gère les erreurs
- * @param {string} message - Message d'erreur
- * @param {Error} error - Objet d'erreur
- */
-function handleError(message, error) {
-  console.error(message, error)
-  showNotification(`${message}: ${error.message || "Erreur inconnue"}`, "error")
-}
-
-/**
- * Effectue une requête API
- * @param {string} endpoint - Point de terminaison de l'API
- * @param {Object} options - Options de la requête
- * @returns {Promise<Object>} - Réponse de l'API
- */
-async function apiRequest(endpoint, options = {}) {
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
+    const response = await apiRequest('/admin/users/bulk', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-        ...options.headers,
+        'Content-Type': 'application/json'
       },
-      credentials: "include",
-    })
+      body: JSON.stringify(body)
+    });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || errorData.error || `Erreur API: ${response.status} ${response.statusText}`)
+    if (response.success) {
+      // Fermer le modal et recharger les données
+      document.getElementById('bulkActionsModal').classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+
+      const data = response.data;
+      showNotification(
+        'Action effectuée avec succès',
+        `${data.updated_count} utilisateur(s) mis à jour${data.failed_count > 0 ? `, ${data.failed_count} échec(s)` : ''}`,
+        'success'
+      );
+
+      selectedUsers.clear();
+      loadUsers();
+      loadUserStats();
+    } else {
+      throw new Error(response.message || 'Erreur lors de l\'exécution de l\'action');
     }
 
-    return await response.json()
   } catch (error) {
-    handleError("Erreur lors de la requête API", error)
-    throw error
+    console.error('Erreur:', error);
+    showNotification('Erreur lors de l\'action de masse', error.message, 'error');
+  } finally {
+    const bulkSpinner = document.getElementById('bulkSpinner');
+    const confirmBtn = document.getElementById('confirmBulkAction');
+
+    bulkSpinner.classList.add('hidden');
+    confirmBtn.disabled = false;
   }
 }
 
-/**
- * Nettoie le texte pour prévenir les attaques XSS
- * @param {string} text - Texte à nettoyer
- * @returns {string} - Texte nettoyé
- */
-function sanitizeText(text) {
-  if (!text) return ""
-  const div = document.createElement("div")
-  div.textContent = text
-  return div.innerHTML
-}
-
-/**
- * Formate une date
- * @param {string} dateString - Chaîne de date à formater
- * @param {boolean} shortFormat - Format court (jour mois année)
- * @returns {string} - Date formatée
- */
-function formatDate(dateString, shortFormat = false) {
+// Export des utilisateurs
+async function exportUsers() {
   try {
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return "Date invalide"
+    showNotification('Préparation de l\'export en cours...', null, 'info', 2000);
 
-    if (shortFormat) {
-      return date.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      })
-    }
+    // Construire les paramètres de filtre
+    const params = new URLSearchParams({
+      search: document.getElementById('searchInput')?.value || '',
+      role: document.getElementById('roleFilter')?.value || '',
+      status: document.getElementById('statusFilter')?.value || '',
+      team: document.getElementById('teamFilter')?.value || ''
+    });
 
-    // Calculer la différence de temps
-    const now = new Date()
-    const diffMs = now - date
-    const diffSec = Math.floor(diffMs / 1000)
-    const diffMin = Math.floor(diffSec / 60)
-    const diffHour = Math.floor(diffMin / 60)
-    const diffDay = Math.floor(diffHour / 24)
+    // Créer un lien de téléchargement temporaire
+    const exportUrl = `/api/admin/users/export?${params.toString()}`;
 
-    // Afficher un format relatif si c'est récent
-    if (diffDay < 1) {
-      if (diffHour < 1) {
-        if (diffMin < 1) {
-          return "À l'instant"
-        }
-        return `Il y a ${diffMin} minute${diffMin > 1 ? "s" : ""}`
-      }
-      return `Il y a ${diffHour} heure${diffHour > 1 ? "s" : ""}`
-    } else if (diffDay < 7) {
-      return `Il y a ${diffDay} jour${diffDay > 1 ? "s" : ""}`
-    }
+    // Ouvrir dans une nouvelle fenêtre pour déclencher le téléchargement
+    const link = document.createElement('a');
+    link.href = exportUrl;
+    link.download = `utilisateurs_${new Date().toISOString().split('T')[0]}.csv`;
+    link.style.display = 'none';
 
-    // Sinon, afficher la date complète
-    return date.toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
-  } catch (e) {
-    console.error("Erreur de formatage de date", e)
-    return "Date inconnue"
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showNotification('Export démarré', 'Le téléchargement devrait commencer automatiquement', 'success');
+
+  } catch (error) {
+    console.error('Erreur:', error);
+    showNotification('Erreur lors de l\'export', error.message, 'error');
   }
 }
 
-// Initialiser la page lorsque le DOM est chargé
-document.addEventListener("DOMContentLoaded", () => {
-  // Initialiser la page
-  initializeUserPage()
-})
+// Fonctions utilitaires
+function getFullName(user) {
+  const firstName = user.first_name || '';
+  const lastName = user.last_name || '';
+
+  if (firstName && lastName) {
+    return `${firstName} ${lastName}`;
+  }
+
+  return firstName || lastName || null;
+}
+
+function formatDate(dateString) {
+  if (!dateString) return 'N/A';
+
+  try {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('fr-FR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  } catch (error) {
+    console.error('Erreur de formatage de date:', error);
+    return 'Date invalide';
+  }
+}
+
+function getRoleLabel(role) {
+  const roles = {
+    'admin': 'Administrateur',
+    'moderator': 'Modérateur',
+    'organisateur': 'Organisateur',
+    'participant': 'Participant'
+  };
+  return roles[role] || role;
+}
+
+function getRoleBadgeClass(role) {
+  const classes = {
+    'admin': 'danger',
+    'moderator': 'warning',
+    'organisateur': 'success',
+    'participant': 'info'
+  };
+  return classes[role] || 'secondary';
+}
+
+function getStatusLabel(status) {
+  const statuses = {
+    'active': 'Actif',
+    'inactive': 'Inactif',
+    'suspended': 'Suspendu',
+    'banned': 'Banni'
+  };
+  return statuses[status] || status;
+}
+
+function getStatusBadgeClass(status) {
+  const classes = {
+    'active': 'success',
+    'inactive': 'secondary',
+    'suspended': 'warning',
+    'banned': 'danger'
+  };
+  return classes[status] || 'light';
+}
+
+function getActivityAction(action) {
+  const actions = {
+    'login': 'Connexion',
+    'logout': 'Déconnexion',
+    'profile_update': 'Mise à jour du profil',
+    'password_change': 'Changement de mot de passe',
+    'user_created': 'Création de compte',
+    'user_updated': 'Mise à jour du compte',
+    'user_deleted': 'Suppression du compte',
+    'password_reset': 'Réinitialisation de mot de passe',
+    'email_verified': 'Email vérifié',
+    'two_factor_enabled': 'Authentification 2FA activée',
+    'two_factor_disabled': 'Authentification 2FA désactivée'
+  };
+  return actions[action] || action;
+}
+
+/**
+ * Affiche une boîte de dialogue de confirmation personnalisée
+ * @param {string} message - Le message à afficher
+ * @param {string} [title='Confirmer'] - Le titre de la boîte de dialogue
+ * @param {string} [confirmText='Confirmer'] - Le texte du bouton de confirmation
+ * @param {string} [cancelText='Annuler'] - Le texte du bouton d'annulation
+ * @returns {Promise<boolean>} Résout à true si confirmé, false si annulé
+ */
+async function showConfirmDialog(message, title = 'Confirmer', confirmText = 'Confirmer', cancelText = 'Annuler') {
+  return new Promise((resolve) => {
+    // Créer la modale
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'confirm-dialog-title');
+    modal.setAttribute('aria-describedby', 'confirm-dialog-description');
+
+    modal.innerHTML = `
+          <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
+              <div class="p-6">
+                  <h3 id="confirm-dialog-title" class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                      ${title}
+                  </h3>
+                  <p id="confirm-dialog-description" class="text-slate-600 dark:text-slate-300 mb-6">
+                      ${message}
+                  </p>
+                  <div class="flex justify-end space-x-3">
+                      <button 
+                          type="button" 
+                          class="confirm-cancel-btn px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                          data-action="cancel"
+                      >
+                          ${cancelText}
+                      </button>
+                      <button 
+                          type="button" 
+                          class="confirm-ok-btn px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                          data-action="confirm"
+                      >
+                          ${confirmText}
+                      </button>
+                  </div>
+              </div>
+          </div>
+      `;
+
+    // Ajouter la modale au document
+    document.body.appendChild(modal);
+    document.body.classList.add('overflow-hidden');
+
+    // Gestionnaires d'événements
+    const handleAction = (e) => {
+      const action = e.currentTarget.getAttribute('data-action');
+      document.body.removeChild(modal);
+      document.body.classList.remove('overflow-hidden');
+      resolve(action === 'confirm');
+    };
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        document.body.removeChild(modal);
+        document.body.classList.remove('overflow-hidden');
+        resolve(false);
+      } else if (e.key === 'Enter') {
+        document.body.removeChild(modal);
+        document.body.classList.remove('overflow-hidden');
+        resolve(true);
+      }
+    };
+
+    // Ajouter les écouteurs
+    const confirmBtn = modal.querySelector('[data-action="confirm"]');
+    const cancelBtn = modal.querySelector('[data-action="cancel"]');
+
+    confirmBtn.addEventListener('click', handleAction);
+    cancelBtn.addEventListener('click', handleAction);
+    modal.addEventListener('keydown', handleKeyDown);
+
+    // Focus sur le bouton d'annulation par défaut
+    cancelBtn.focus();
+  });
+}
+
+function getDeviceInfo(userAgent) {
+  if (!userAgent) return 'Appareil inconnu';
+
+  // Détection simple du navigateur et de l'OS
+  let browser = 'Navigateur inconnu';
+  let os = 'Système inconnu';
+
+  // Détection du navigateur
+  if (userAgent.includes('Firefox')) {
+    browser = 'Firefox';
+  } else if (userAgent.includes('Chrome') && !userAgent.includes('Chromium')) {
+    browser = 'Chrome';
+  } else if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) {
+    browser = 'Safari';
+  } else if (userAgent.includes('Edge')) {
+    browser = 'Edge';
+  } else if (userAgent.includes('Opera') || userAgent.includes('OPR')) {
+    browser = 'Opera';
+  } else if (userAgent.includes('MSIE') || userAgent.includes('Trident/')) {
+    browser = 'Internet Explorer';
+  }
+
+  // Détection de l'OS
+  if (userAgent.includes('Windows NT 10')) {
+    os = 'Windows 10';
+  } else if (userAgent.includes('Windows NT 6.3')) {
+    os = 'Windows 8.1';
+  } else if (userAgent.includes('Windows NT 6.1')) {
+    os = 'Windows 7';
+  } else if (userAgent.includes('Windows')) {
+    os = 'Windows';
+  } else if (userAgent.includes('Macintosh') || userAgent.includes('Mac OS X')) {
+    os = 'macOS';
+  } else if (userAgent.includes('Linux')) {
+    os = 'Linux';
+  } else if (userAgent.includes('Android')) {
+    os = 'Android';
+  } else if (userAgent.includes('iOS') || userAgent.includes('iPhone') || userAgent.includes('iPad')) {
+    os = 'iOS';
+  }
+
+  return `${browser} sur ${os}`;
+}
+
+// Fonctions de débogage et logging
+function debugLog(message, data = null) {
+  if (console && console.log) {
+    if (data) {
+      console.log(`[UserManagement] ${message}:`, data);
+    } else {
+      console.log(`[UserManagement] ${message}`);
+    }
+  }
+}
+
+// Gestion globale des erreurs pour cette page
+window.addEventListener('error', function (event) {
+  event.preventDefault();
+  event.stopPropagation();
+  console.error('Erreur JavaScript dans la gestion des utilisateurs:', event.error);
+});
+
+// Nettoyage lors du déchargement de la page
+window.addEventListener('beforeunload', function () {
+  selectedUsers.clear();
+  currentUserId = null;
+});
+
+// Export des fonctions pour les tests (si nécessaire)
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    formatDate,
+    getRoleLabel,
+    getStatusLabel,
+    getActivityAction,
+    getDeviceInfo,
+    getFullName
+  };
+}

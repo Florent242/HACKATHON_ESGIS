@@ -438,41 +438,6 @@ function handleError(message, error) {
 }
 
 /**
- * Effectue une requête API
- * @param {string} endpoint - Point de terminaison de l'API
- * @param {Object} options - Options de la requête
- * @returns {Promise<Object>} - Réponse de l'API
- */
-async function apiRequest(endpoint, options = {}) {
-    showLoading();
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                ...options.headers
-            },
-            credentials: 'include'
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || errorData.error || `Erreur API: ${response.status} ${response.statusText}`);
-        }
-        
-        return await response.json();
-    } catch (error) {
-        handleError('Erreur lors de la requête API', error);
-        throw error;
-    } finally {
-        hideLoading();
-    }
-}
-
-/**
  * Charge les statistiques du tableau de bord
  */
 async function loadAdminStats() {

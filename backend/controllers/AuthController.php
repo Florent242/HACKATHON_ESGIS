@@ -320,7 +320,7 @@ class AuthController
                 $this->tokenManager->revokeToken($_COOKIE['long_term_token']);
             }
             if (isset($_COOKIE['jwt_token'])) {
-                $this->tokenManager->revokeToken($_COOKIE['jwt_token'], true);
+                $this->tokenManager->revokeToken($_COOKIE['jwt_token']);
             }
             $userId = isset($_SESSION['user']) && isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 

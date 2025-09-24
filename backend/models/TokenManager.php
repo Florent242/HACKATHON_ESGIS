@@ -181,7 +181,7 @@ class TokenManager
         try {
             JWT::decode($token, new Key($this->key, 'HS256'));
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }

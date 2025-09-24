@@ -10,6 +10,9 @@ use Auth\Model\TokenManager;
 use Exception;
 use PDO;
 use PDOException;
+use Auth\Controller\Controller;
+use DateTime;
+use DateInterval;
 
 if (!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
@@ -52,30 +55,293 @@ class AdminController extends Controller
         if (!isset($userId)) {
             return false;
         }
-    
+
         // Vérification du rôle global
         $query = "SELECT role FROM users WHERE id = :id";
         $stmt = $this->db->prepare($query);
         $stmt->execute([':id' => $userId]);
         $role = $stmt->fetchColumn();
-    
+
         if (!in_array($role, ['admin', 'organisateur'])) {
             return false;
         }
-    
+
         // Vérification dans la whitelist
-        $query = "SELECT 1 FROM admin_whitelist WHERE user_id = :id LIMIT 1";
+        $query = "SELECT 1 FROM admin_whitelist WHERE user_id = :id AND (expires_at > NOW() OR expires_at IS NULL) LIMIT 1";
         $stmt = $this->db->prepare($query);
         $stmt->execute([':id' => $userId]);
-    
+
         return (bool) $stmt->fetchColumn();
     }
-    
+
     public function validateToken(string $token): array
     {
         $tokenManager = new TokenManager($this->key, $this->db);
         return $tokenManager->validateToken($token);
     }
+    /**
+     * Bannir un utilisateur
+     */
+    public function banUser($userId, $reason = '')
+    {
+        try {
+            $this->validateMethod('POST');
+
+            $userId = (int)$userId;
+            $reason = trim($reason);
+
+            // Vérifier si l'utilisateur existe
+            $user = $this->getUserById($userId);
+            if (!$user) {
+                throw new Exception('Utilisateur non trouvé', 404);
+            }
+
+            // Mettre à jour le statut
+            $stmt = $this->db->prepare("
+            UPDATE users 
+            SET status = 'inactive',
+                suspended_until = NULL,
+                suspension_reason = :reason
+            WHERE id = :id
+        ");
+
+            $stmt->execute([
+                ':id' => $userId,
+                ':reason' => $reason ?: 'Compte banni par un administrateur'
+            ]);
+
+            // Journalisation
+            $this->logActivity(
+                'user_banned',
+                "Utilisateur #$userId banni" . ($reason ? " (Raison: $reason)" : ''),
+                $userId,
+                $user['role'],
+                $_SERVER['REMOTE_ADDR'],
+                $_SERVER['HTTP_USER_AGENT']
+            );
+
+            $this->jsonResponse(['success' => true, 'message' => 'Utilisateur banni avec succès']);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Suspendre un utilisateur
+     */
+    public function suspendUser($userId, $duration = 24, $reason = '')
+    {
+        try {
+            $this->validateMethod('POST');
+
+            $userId = (int)$userId;
+            $duration = max(1, (int)$duration); // En heures
+            $reason = trim($reason);
+
+            // Vérifier si l'utilisateur existe
+            $user = $this->getUserById($userId);
+            if (!$user) {
+                throw new Exception('Utilisateur non trouvé', 404);
+            }
+
+            // Calculer la date de fin de suspension
+            $suspendedUntil = (new DateTime())
+                ->add(new DateInterval("PT{$duration}H"))
+                ->format('Y-m-d H:i:s');
+
+            // Mettre à jour le statut
+            $stmt = $this->db->prepare("
+            UPDATE users 
+            SET status = 'inactive',
+                suspended_until = :suspended_until,
+                suspension_reason = :reason
+            WHERE id = :id
+        ");
+
+            $stmt->execute([
+                ':id' => $userId,
+                ':suspended_until' => $suspendedUntil,
+                ':reason' => $reason ?: 'Compte suspendu par un administrateur'
+            ]);
+
+            // Journalisation
+            $this->logActivity(
+                'user_suspended',
+                "Utilisateur #$userId suspendu pour $duration heures" . ($reason ? " (Raison: $reason)" : ''),
+                $userId,
+                $user['role'],
+                $_SERVER['REMOTE_ADDR'],
+                $_SERVER['HTTP_USER_AGENT']
+            );
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Utilisateur suspendu avec succès',
+                'suspended_until' => $suspendedUntil
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Réactiver un utilisateur
+     */
+    public function unsuspendUser($userId)
+    {
+        try {
+            $this->validateMethod('POST');
+
+            $userId = (int)$userId;
+
+            // Vérifier si l'utilisateur existe
+            $user = $this->getUserById($userId);
+            if (!$user) {
+                throw new Exception('Utilisateur non trouvé', 404);
+            }
+
+            // Réactiver l'utilisateur
+            $stmt = $this->db->prepare("
+            UPDATE users 
+            SET status = 'active',
+                suspended_until = NULL,
+                suspension_reason = NULL,
+                failed_attempts = 0,
+                locked_until = NULL
+            WHERE id = :id
+        ");
+
+            $stmt->execute([':id' => $userId]);
+
+            // Journalisation
+            $this->logActivity('user_unsuspended', "Utilisateur #$userId réactivé", $userId, $user['role'], $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+
+            $this->jsonResponse(['success' => true, 'message' => 'Utilisateur réactivé avec succès']);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Réinitialiser le mot de passe d'un utilisateur
+     */
+    public function resetUserPassword($userId, $newPassword = null)
+    {
+        try {
+            $this->validateMethod('POST');
+
+            $userId = (int)$userId;
+
+            // Vérifier si l'utilisateur existe
+            $user = $this->getUserById($userId);
+            if (!$user) {
+                throw new Exception('Utilisateur non trouvé', 404);
+            }
+
+            // Générer un mot de passe aléatoire si aucun n'est fourni
+            if (empty($newPassword)) {
+                $newPassword = bin2hex(random_bytes(8)); // Mot de passe de 16 caractères
+            }
+
+            // Hacher le nouveau mot de passe
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+
+            // Mettre à jour le mot de passe
+            $stmt = $this->db->prepare("
+            UPDATE users 
+            SET password = :password,
+                password_changed_at = NOW(),
+                failed_attempts = 0,
+                locked_until = NULL
+            WHERE id = :id
+        ");
+
+            $stmt->execute([
+                ':id' => $userId,
+                ':password' => $hashedPassword
+            ]);
+
+            // Journalisation
+            $this->logActivity('password_reset', "Reset du mot de passe de l'utilisateur #$userId", $userId, $user['role'], $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Mot de passe réinitialisé avec succès',
+                'new_password' => $newPassword // À supprimer en production, à utiliser avec précaution
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Débloquer un compte verrouillé
+     */
+    public function unlockUserAccount($userId)
+    {
+        try {
+            $this->validateMethod('POST');
+
+            $userId = (int)$userId;
+
+            // Vérifier si l'utilisateur existe
+            $user = $this->getUserById($userId);
+            if (!$user) {
+                throw new Exception('Utilisateur non trouvé', 404);
+            }
+
+            // Débloquer le compte
+            $stmt = $this->db->prepare("
+            UPDATE users 
+            SET failed_attempts = 0,
+                locked_until = NULL
+            WHERE id = :id
+        ");
+
+            $stmt->execute([':id' => $userId]);
+
+            // Journalisation
+            $this->logActivity('account_unlocked', 
+            "Compte utilisateur #$userId débloqué",
+            $userId,
+            $user['role'],
+            $_SERVER['REMOTE_ADDR'],
+            $_SERVER['HTTP_USER_AGENT']);
+
+            $this->jsonResponse(['success' => true, 'message' => 'Compte débloqué avec succès']);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Méthode utilitaire pour récupérer un utilisateur par son ID
+     */
+    private function getUserById($userId)
+    {
+        $stmt = $this->db->prepare("
+        SELECT * FROM users WHERE id = :id
+    ");
+
+        $stmt->execute([':id' => (int)$userId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function getBearerToken(): ?string
     {
         // D'abord essayer le header Authorization
@@ -158,6 +424,8 @@ class AdminController extends Controller
             $data['updated_at'] = date('Y-m-d H:i:s');
             $this->AdminUser->update($Adminid, $data);
 
+            $this->logActivity('update_admin', 'Mise à jour d\'un admin par ' . $this->TokenManager->getCurrentUserId(), $data, 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Profil admin mis à jour avec succès'
@@ -186,12 +454,23 @@ class AdminController extends Controller
                 'user_id' => $id,
                 'ip' => $_SERVER['REMOTE_ADDR'],
                 'user_agent' => $_SERVER['HTTP_USER_AGENT'],
-                'identifier' => $_SESSION['user']?['identifier'] : null,
-                'email' => $_SESSION['user']?['email'] : null,
-                'role' => $_SESSION['user']?['role'] : null,
-                'logged_in' => $_SESSION['user']?['logged_in'] : null,
-                'last_activity' => $_SESSION['user']?['last_activity'] : null,
+                'identifier' => $_SESSION['user'] ? ['identifier'] : null,
+                'email' => $_SESSION['user'] ? ['email'] : null,
+                'role' => $_SESSION['user'] ? ['role'] : null,
+                'logged_in' => $_SESSION['user'] ? ['logged_in'] : null,
+                'last_activity' => $_SESSION['user'] ? ['last_activity'] : null,
             ], $_SESSION['user_id'], 'info');
+
+            $this->logActivity('delete_user', 'Utilisateur supprimé', [
+                'user_id' => $id,
+                'ip' => $_SERVER['REMOTE_ADDR'],
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'],
+                'identifier' => $_SESSION['user'] ? ['identifier'] : null,
+                'email' => $_SESSION['user'] ? ['email'] : null,
+                'role' => $_SESSION['user'] ? ['role'] : null,
+                'logged_in' => $_SESSION['user'] ? ['logged_in'] : null,
+                'last_activity' => $_SESSION['user'] ? ['last_activity'] : null,
+            ], 'info_deletion', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
 
             $this->jsonResponse([
                 'success' => true,
@@ -607,32 +886,891 @@ class AdminController extends Controller
     }
 
     /**
-     * Récupère tous les utilisateurs
+     * Récupère les utilisateurs avec pagination
+     * 
+     * @param int $page Numéro de page
+     * @param int $perPage Nombre d'éléments par page
+     * @param string $search Terme de recherche
+     * @param string $status Filtre par statut
+     * @param string $role Filtre par rôle
+     * @param string $team Filtre par équipe
      */
-    public function getAllUsers()
+    public function getUsersPaginated()
     {
         try {
-            $this->validateMethod('GET');
+            // Récupérer les paramètres de la requête
+            $page = max(1, (int)($_GET['page'] ?? 1));
+            $perPage = min(50, max(5, (int)($_GET['per_page'] ?? 10))); // Entre 5 et 50 par page
+            $search = $_GET['search'] ?? '';
+            $status = $_GET['status'] ?? '';
+            $role = $_GET['role'] ?? '';
+            $team = $_GET['team'] ?? '';
 
-            // Modifié pour utiliser hackathon_participants
-            $query = "SELECT u.*,
-                    (SELECT COUNT(*) FROM hackathon_participants hp WHERE hp.user_id = u.id) as participations,
-                    (SELECT COUNT(*) FROM team_members tm WHERE tm.user_id = u.id) as teams
-                    FROM users u
-                    ORDER BY u.created_at DESC";
+            // Construction de la requête
+            $query = "SELECT SQL_CALC_FOUND_ROWS 
+                 u.*,
+                 (SELECT name FROM teams t JOIN team_members tm ON t.id = tm.team_id WHERE tm.user_id = u.id LIMIT 1) as team_name
+                 FROM users u 
+                 WHERE 1=1";
+
+            $params = [];
+
+            // Filtres
+            if (!empty($search)) {
+                $query .= " AND (u.username LIKE :search OR u.email LIKE :search1 OR u.fullname LIKE :search2)";
+                $params[':search'] = "%$search%";
+                $params[':search1'] = "%$search%";
+                $params[':search2'] = "%$search%";
+            }
+
+            if (!empty($status)) {
+                $query .= " AND u.status = :status";
+                $params[':status'] = $status;
+            }
+
+            if (!empty($role)) {
+                $query .= " AND u.role = :role";
+                $params[':role'] = $role;
+            }
+
+            if (!empty($team)) {
+                $query .= " AND EXISTS (SELECT 1 FROM team_members tm JOIN teams t ON tm.team_id = t.id WHERE tm.user_id = u.id AND t.id = :team)";
+                $params[':team'] = $team;
+            }
+
+            // Tri
+            $sortField = in_array($_GET['sort'] ?? 'created_at', ['username', 'email', 'role', 'status', 'created_at'])
+                ? $_GET['sort']
+                : 'created_at';
+
+            $sortOrder = strtoupper($_GET['order'] ?? 'desc') === 'ASC' ? 'ASC' : 'DESC';
+            $query .= " ORDER BY $sortField $sortOrder";
+
+            // Pagination
+            $offset = ($page - 1) * $perPage;
+            $query .= " LIMIT :offset, :perPage";
+            $params[':offset'] = $offset;
+            $params[':perPage'] = $perPage;
+
+            // Exécution de la requête
             $stmt = $this->db->prepare($query);
+            foreach ($params as $key => $value) {
+                $paramType = is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR;
+                $stmt->bindValue($key, $value, $paramType);
+            }
+
             $stmt->execute();
             $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+            // Nombre total d'utilisateurs correspondant aux filtres
+            $total = (int)$this->db->query("SELECT FOUND_ROWS()")->fetchColumn();
+            $lastPage = max(1, ceil($total / $perPage));
+
+            // Réponse
             $this->jsonResponse([
                 'success' => true,
-                'data' => $users
+                'data' => $users,
+                'meta' => [
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'last_page' => $lastPage,
+                    'from' => $total > 0 ? $offset + 1 : 0,
+                    'to' => min($offset + $perPage, $total)
+                ]
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Récupère les détails d'un utilisateur
+     */
+    public function getUser($userId)
+    {
+        try {
+            $query = "SELECT u.*, 
+                 (SELECT name FROM teams t JOIN team_members tm ON t.id = tm.team_id WHERE tm.user_id = u.id LIMIT 1) as team_name
+                 FROM users u 
+                 WHERE u.id = :id";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$user) {
+                throw new Exception('Utilisateur non trouvé', 404);
+            }
+
+            // Ne pas renvoyer le mot de passe
+            unset($user['password']);
+
+            $this->jsonResponse(['success' => true, 'data' => $user]);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Récupère les statistiques d'un utilisateur
+     */
+    public function getUserStats($userId)
+    {
+        header('Content-Type: application/json');
+
+        try {
+            $database = Database::getInstance();
+            $db = $database->getConnection();
+
+            // Vérifier l'existence de l'utilisateur
+            $userCheck = $db->prepare("SELECT id FROM users WHERE id = ?");
+            $userCheck->execute([$userId]);
+            $user = $userCheck->fetch(PDO::FETCH_ASSOC);
+            if (!$user) {
+                throw new Exception("Utilisateur non trouvé");
+            }
+
+            // Initialiser la structure de réponse
+            $response = [
+                'success' => true,
+                'data' => [
+                    'stats' => [
+                        'number-dev-challenges' => 0,
+                        'number-dev-challenges-on' => 0,
+                        'number-hacking-challenges' => 0,
+                        'number-hacking-challenges-validate' => 0,
+                        'number-submitted-projects' => 0,
+                        'total-points' => 0,
+                        'total-points-stat' => 0,
+                        'hacking-stat' => 0,
+                        'points-change' => 0,
+                        'points-change-percent' => 0
+                    ]
+                ]
+            ];
+
+            // Défis de développement (basé sur user_progress et snippets)
+            try {
+                $devQuery = $db->prepare("
+                    SELECT 
+                        COUNT(DISTINCT up.challenge_id) as total,
+                        COALESCE(SUM(CASE WHEN up.status = 'ongoing' THEN 1 ELSE 0 END), 0) as in_progress
+                    FROM user_progress up
+                    LEFT JOIN snippets s ON up.challenge_id = s.challenge_id
+                    WHERE up.user_id = ?
+                    AND (s.language IS NULL OR s.language IN ('java', 'python', 'js', 'bash'))
+                ");
+                $devQuery->execute([$userId]);
+                $devData = $devQuery->fetch(PDO::FETCH_ASSOC);
+
+                if ($devData) {
+                    $response['data']['stats']['number-dev-challenges'] = (int)$devData['total'];
+                    $response['data']['stats']['number-dev-challenges-on'] = (int)$devData['in_progress'];
+                }
+            } catch (Exception $e) {
+                error_log("Erreur dans la requête des défis de développement: " . $e->getMessage());
+            }
+
+            // Défis de hacking (basé sur validated_flags)
+            try {
+                $hackingQuery = $db->prepare("
+                    SELECT 
+                        COUNT(*) as total,
+                        COALESCE(SUM(CASE WHEN vf.is_valid = 1 THEN 1 ELSE 0 END), 0) as validated
+                    FROM validated_flags vf
+                    WHERE vf.user_id = ?
+                ");
+                $hackingQuery->execute([$userId]);
+                $hackingData = $hackingQuery->fetch(PDO::FETCH_ASSOC);
+
+                if ($hackingData) {
+                    $response['data']['stats']['number-hacking-challenges'] = (int)$hackingData['total'];
+                    $response['data']['stats']['number-hacking-challenges-validate'] = (int)$hackingData['validated'];
+
+                    if ($response['data']['stats']['number-hacking-challenges'] > 0) {
+                        $response['data']['stats']['hacking-stat'] = round(
+                            ($response['data']['stats']['number-hacking-challenges-validate'] /
+                                $response['data']['stats']['number-hacking-challenges']) * 100
+                        );
+                    }
+                }
+            } catch (Exception $e) {
+                error_log("Erreur dans la requête des défis de hacking: " . $e->getMessage());
+            }
+
+            // Projets soumis (basé sur team_members et teams)
+            try {
+                $projectsQuery = $db->prepare("
+                    SELECT * 
+                    FROM projects p
+                    WHERE status = 'submitted' AND team_id IN (
+                        SELECT team_id 
+                        FROM team_members 
+                        WHERE user_id = ?
+                    )
+                ");
+                $projectsQuery->execute([$userId]);
+                $projectsData = $projectsQuery->fetch(PDO::FETCH_ASSOC);
+
+                if ($projectsData) {
+                    $response['data']['stats']['number-submitted-projects'] = (int)$projectsData['submitted'];
+                }
+            } catch (Exception $e) {
+                error_log("Erreur dans la requête des projets soumis: " . $e->getMessage());
+            }
+
+            // Points totaux (basé sur validated_flags)
+            try {
+                $pointsQuery = $db->prepare("
+                    SELECT COALESCE(SUM(points_gained), 0) as total
+                    FROM validated_flags
+                    WHERE user_id = ? AND is_valid = 1
+                ");
+                $pointsQuery->execute([$userId]);
+                $pointsData = $pointsQuery->fetch(PDO::FETCH_ASSOC);
+
+                if ($pointsData) {
+                    $response['data']['stats']['total-points'] = (int)$pointsData['total'];
+                }
+
+                // Points gagnés depuis la dernière connexion
+                $pointsChangeQuery = $db->prepare("
+                    SELECT COALESCE(SUM(points_gained), 0) as total
+                    FROM validated_flags vf
+                    JOIN users u ON vf.user_id = u.id
+                    WHERE vf.user_id = ? AND vf.created_at > u.last_login
+                ");
+                $pointsChangeQuery->execute([$userId]);
+                $pointsChangeData = $pointsChangeQuery->fetch(PDO::FETCH_ASSOC);
+
+                if ($pointsChangeData) {
+                    $response['data']['stats']['points-change'] = (int)$pointsChangeData['total'];
+                    $response['data']['stats']['points-change-percent'] = $response['data']['stats']['total-points'] > 0
+                        ? round(($response['data']['stats']['points-change'] / $response['data']['stats']['total-points']) * 100)
+                        : 0;
+                }
+            } catch (Exception $e) {
+                error_log("Erreur dans la requête des points: " . $e->getMessage());
+            }
+
+            // Pourcentage de progression
+            $response['data']['stats']['total-points-stat'] = min(
+                100,
+                round(($response['data']['stats']['total-points'] / 1000) * 100)
+            );
+
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            exit;
+        } catch (PDOException $e) {
+            error_log("Erreur de base de données: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Erreur lors de la récupération des statistiques',
+                'code' => 500,
+                'details' => $e->getMessage()
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        } catch (Exception $e) {
+            error_log("Erreur générale: " . $e->getMessage());
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Erreur lors de la récupération des statistiques',
+                'code' => 500,
+                'details' => $e->getMessage()
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+
+    public function getNotifications($userId)
+    {
+        header('Content-Type: application/json');
+
+        try {
+            $currentUserId = $this->TokenManager->getCurrentUserId();
+            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                return;
+            }
+
+            $database = Database::getInstance();
+            $db = $database->getConnection();
+
+            // Récupérer les notifications de l'utilisateur
+            $stmt = $db->prepare("
+                SELECT
+                    id,
+                    message,
+                    read_status,
+                    created_at
+                FROM notifications
+                WHERE user_id = :user_id
+                ORDER BY created_at DESC
+                LIMIT 10
+            ");
+            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $stmt->execute();
+            $notificationsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Compter le nombre de notifications non lues
+            $unreadStmt = $db->prepare("
+                SELECT COUNT(*)
+                FROM notifications
+                WHERE user_id = :user_id AND read_status = 0
+            ");
+            $unreadStmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+            $unreadStmt->execute();
+            $unreadCount = (int) $unreadStmt->fetchColumn();
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => [
+                    'list' => $notificationsList,
+                    'unread_count' => $unreadCount
+                ]
+            ]);
+        } catch (PDOException $e) {
+            error_log("Erreur de base de données dans getNotifications: " . $e->getMessage());
+            $this->jsonResponse([
+                'success' => false,
+                'error' => 'Erreur lors de la récupération des notifications',
+                'code' => 500,
+                'details' => $e->getMessage()
+            ], 500);
+        } catch (Exception $e) {
+            error_log("Erreur générale dans getNotifications: " . $e->getMessage());
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Récupère les équipes de l'utilisateur et renvoie un JSON
+     */
+    public function getUserTeams($userId)
+    {
+        $db = $this->db;
+
+        $stmt = $db->prepare("SELECT e.* FROM team e JOIN team_members em ON e.id = em.team_id WHERE em.user_id = :user_id");
+        $stmt->execute([':user_id' => $userId]);
+
+        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        exit;
+    }
+
+    public function getAllActivities($userId)
+    {
+        try {
+            $currentUserId = $this->TokenManager->getCurrentUserId();
+            if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
+                $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
+                return;
+            }
+
+            $database = Database::getInstance();
+            $db = $database->getConnection();
+
+            try {
+                // Récupérer les activités récentes de l'utilisateur
+                $stmt = $db->prepare("
+                SELECT 
+                    user_id,
+                    action,
+                    description,
+                    data,
+                    level,
+                    ip_address,
+                    user_agent,
+                    created_at as timestamp
+                FROM activity_logs
+                WHERE user_id = :userId
+                ORDER BY created_at DESC
+            ");
+                $stmt->bindParam(':userId', $userId, PDO::PARAM_INT);
+                $stmt->execute();
+
+                $activities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                $this->jsonResponse([
+                    'success' => false,
+                    'error' => "Une erreur est survenue lors de la récupération des activités récentes !"
+                    // pour debug
+                    // . $e->getMessage()
+                ], 500);
+            }
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $activities
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Crée un nouvel utilisateur
+     */
+    public function createUser()
+    {
+        try {
+            $this->db->beginTransaction();
+            $this->validateMethod('POST');
+            $data = json_decode(file_get_contents('php://input'), true);
+
+            // Validation des données
+            $required = ['username', 'email', 'role', 'password', 'fullname', 'school', 'study_level', 'number', 'password_confirmation'];
+            foreach ($required as $field) {
+                if (empty($data[$field])) {
+                    throw new Exception("Le champ $field est obligatoire", 400);
+                }
+            }
+
+            // Vérifier si l'email existe déjà
+            $stmt = $this->db->prepare("SELECT id FROM users WHERE email = :email");
+            $stmt->bindParam(':email', $data['email']);
+            $stmt->execute();
+
+            if ($stmt->rowCount() > 0) {
+                throw new Exception("Un utilisateur avec cet email existe déjà", 409);
+            }
+
+            // Verifier la confirmation de mot de passe
+            if ($data['password'] !== $data['password_confirmation']) {
+                throw new Exception("Les mots de passe ne correspondent pas", 400);
+            }
+
+            // Hachage du mot de passe si fourni
+            $password = !empty($data['password'])
+                ? password_hash($data['password'], PASSWORD_BCRYPT)
+                : password_hash(bin2hex(random_bytes(8)), PASSWORD_BCRYPT); // Générer un mot de passe aléatoire si non fourni
+
+            // Insertion de l'utilisateur
+            $query = "INSERT INTO users (username, email, password, fullname, school, special_comp, study_level, number, role, bio, two_factor_enabled)
+                 VALUES (:username, :email, :password, :fullname, :school, :special_comp, :study_level, :number, :role, :bio, :two_factor_enabled)";
+
+            $stmt = $this->db->prepare($query);
+
+            $stmt->execute([
+                ':username' => $data['username'],
+                ':email' => $data['email'],
+                ':password' => $password ?? null,
+                ':fullname' => $data['fullname'] ?? '',
+                ':school' => $data['school'] ?? '',
+                ':special_comp' => $data['special_comp'] ?? '',
+                ':study_level' => $data['study_level'] ?? '',
+                ':number' => $data['number'] ?? '',
+                ':role' => $data['role'] ?? 'participant',
+                ':bio' => $data['bio'] ?? '',
+                ':two_factor_enabled' => $data['two_factor_enabled'] ?? false,
+            ]);
+            $userId = $this->db->lastInsertId();
+
+            $this->logActivity('create_user', 'Création d\'un utilisateur par ' . $this->TokenManager->getCurrentUserId(), $data, 'admin_create', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+            // Récupérer l'utilisateur créé
+            if ($this->db->inTransaction()) {
+                $this->db->commit();
+            }
+            $this->getUser($userId);
+
+            echo 'ici';
+            return;
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
+        } catch (PDOException $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Met à jour le statut d'un utilisateur
+     *
+     * @param int $userId ID de l'utilisateur
+     * @param string $status Nouveau statut
+     * @return bool Succès ou échec
+     */
+    public function updateUserStatus($userId, $status): void
+    {
+        try {
+            $query = "UPDATE users SET status = :status WHERE id = :id";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindValue(':id', $userId);
+            $stmt->bindValue(':status', $status);
+
+            $stmt->execute();
+            $this->jsonResponse(['success' => true, 'message' => 'Statut mis à jour avec succès']);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
+    }
+    /**
+     * Récupère les statistiques globales des utilisateurs
+     */
+    public function getAllUserStats()
+    {
+        try {
+            $this->validateMethod('GET');
+
+            // Initialisation de la réponse
+            $stats = [
+                'total_users' => 0,
+                'active_users' => 0,
+                'inactive_users' => 0,
+                'users_by_role' => [],
+                'users_by_status' => [],
+                'recent_users' => [],
+                'users_activity' => []
+            ];
+
+            // 1. Nombre total d'utilisateurs
+            $query = "SELECT COUNT(*) as total FROM users";
+            $stmt = $this->db->query($query);
+            $stats['total_users'] = (int)$stmt->fetchColumn();
+
+            // 2. Utilisateurs actifs/inactifs (basé sur last_login ou status) mais etant donne que last_login n'existe pas on ira sur status
+            $query = "SELECT 
+                    COUNT(CASE WHEN status = 'active' THEN 1 END) as active,
+                    COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive
+                  FROM users";
+            $stmt = $this->db->query($query);
+            $activity = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stats['active_users'] = (int)($activity['active'] ?? 0);
+            $stats['inactive_users'] = (int)($activity['inactive'] ?? 0);
+
+            // 3. Répartition par rôle
+            $query = "SELECT 
+                    role, 
+                    COUNT(*) as count 
+                  FROM users 
+                  GROUP BY role";
+            $stmt = $this->db->query($query);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $stats['users_by_role'][$row['role']] = (int)$row['count'];
+            }
+
+            // 4. Répartition par statut
+            $query = "SELECT 
+                    status, 
+                    COUNT(*) as count 
+                  FROM users 
+                  GROUP BY status";
+            $stmt = $this->db->query($query);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $stats['users_by_status'][$row['status']] = (int)$row['count'];
+            }
+
+            // 5. Derniers utilisateurs inscrits (30 derniers jours)
+            $query = "SELECT 
+                    id, 
+                    username, 
+                    email, 
+                    role, 
+                    status, 
+                    created_at
+                  FROM users 
+                  WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                  ORDER BY created_at DESC
+                  LIMIT 10";
+            $stmt = $this->db->query($query);
+            $stats['recent_users'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // 6. Activité des utilisateurs (30 derniers jours)
+            $query = "SELECT 
+                    DATE(created_at) as date, 
+                    COUNT(*) as signups
+                    -- ,(SELECT COUNT(*) FROM user_sessions 
+                    --  WHERE DATE(created_at) = DATE(users.created_at)) as logins
+                  FROM users 
+                  WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                  GROUP BY DATE(created_at)
+                  ORDER BY date DESC
+                  LIMIT 30";
+            $stmt = $this->db->query($query);
+            $stats['users_activity'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $stats
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => 'Erreur lors de la récupération des statistiques: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    /**
+     * Met à jour un utilisateur existant
+     */
+    public function updateUser($userId)
+    {
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+
+            // Vérifier si l'utilisateur existe
+            $user = $this->db->query("SELECT * FROM users WHERE id = " . (int)$userId)->fetch();
+            if (!$user) {
+                throw new Exception('Utilisateur non trouvé', 404);
+            }
+
+            // Mise à jour des champs
+            $updates = [];
+            $params = [':id' => $userId];
+
+            $allowedFields = ['username', 'email', 'first_name', 'last_name', 'role', 'status', 'bio'];
+
+            foreach ($allowedFields as $field) {
+                if (isset($data[$field])) {
+                    $updates[] = "$field = :$field";
+                    $params[":$field"] = $data[$field];
+                }
+            }
+
+            // Mise à jour du mot de passe si fourni
+            if (!empty($data['password'])) {
+                $updates[] = "password = :password";
+                $params[':password'] = password_hash($data['password'], PASSWORD_BCRYPT);
+            }
+
+            if (empty($updates)) {
+                throw new Exception('Aucune donnée à mettre à jour', 400);
+            }
+
+            $query = "UPDATE users SET " . implode(', ', $updates) . ", updated_at = NOW() WHERE id = :id";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute($params);
+
+            // Récupérer l'utilisateur mis à jour
+            $this->getUser($userId);
+
+            // Journalisation de l'action
+            $this->logActivity('update_user', 'Mise à jour d\'un utilisateur par ' . $this->TokenManager->getCurrentUserId(), $data, 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Met à jour le rôle d'un utilisateur
+     */
+    public function updateUserRole($userId, $role)
+    {
+        try {
+            // Vérifier si l'utilisateur existe
+            $user = $this->db->query("SELECT * FROM users WHERE id = " . (int)$userId)->fetch(PDO::FETCH_ASSOC);
+            if (!$user) {
+                throw new Exception('Utilisateur non trouvé', 404);
+            }
+
+            // Mettre à jour le rôle
+            $stmt = $this->db->prepare("UPDATE users SET role = :role WHERE id = :id");
+            $stmt->execute([':role' => $role, ':id' => $userId]);
+
+            // Récupérer l'utilisateur mis à jour
+            $this->getUser($userId);
+
+            // Journalisation de l'action
+            $this->logActivity('update_user_role', 'Mise à jour du rôle d\'un utilisateur par ' . $this->TokenManager->getCurrentUserId(), ['role' => $role], 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+        } catch (Exception $e) {
+            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Supprime un utilisateur et l'archive
+     * 
+     * @param int $userId ID de l'utilisateur à supprimer
+     * @return void
+     */
+    public function deleteUser($userId)
+    {
+        try {
+            // Vérifier si l'utilisateur existe
+            $user = $this->db->query("SELECT * FROM users WHERE id = " . (int)$userId)->fetch(PDO::FETCH_ASSOC);
+            if (!$user) {
+                throw new Exception('Utilisateur non trouvé', 404);
+            }
+
+            // Ne pas permettre la suppression de l'utilisateur actuel
+            $currentUserId = $this->TokenManager->getCurrentUserId();
+            if ($currentUserId && $currentUserId == $userId) {
+                throw new Exception('Vous ne pouvez pas supprimer votre propre compte', 403);
+            }
+
+            // Démarrer une transaction
+            $this->db->beginTransaction();
+
+            try {
+                // 1. Archiver l'utilisateur
+                $stmt = $this->db->prepare("
+                INSERT INTO users_archive (
+                    id, username, email, role, status, bio, 
+                    created_at, updated_at, deleted_at, deleted_by, original_data
+                ) VALUES (
+                    :id, :username, :email, :role, :status, :bio,
+                    :created_at, :updated_at, NOW(), :deleted_by, :original_data
+                )
+            ");
+
+                $stmt->execute([
+                    ':id' => $user['id'],
+                    ':username' => $user['username'],
+                    ':email' => $user['email'],
+                    ':role' => $user['role'],
+                    ':status' => $user['status'],
+                    ':bio' => $user['bio'] ?? null,
+                    ':created_at' => $user['created_at'],
+                    ':updated_at' => $user['updated_at'] ?? null,
+                    ':deleted_by' => $currentUserId,
+                    ':original_data' => json_encode($user) // Sauvegarde complète des données
+                ]);
+
+                // 2. Supprimer les relations de l'utilisateur
+                $tables = [
+                    'team_members',
+                    'hackathon_participants',
+                    'hackathon_qualifications',
+                    'challenge_submissions',
+                    'notifications',
+                    'teams_adhesions',
+                    'user_tokens',
+                    'validated_flags'
+                ];
+
+                foreach ($tables as $table) {
+                    $stmt = $this->db->prepare("DELETE FROM $table WHERE user_id = :user_id");
+                    $stmt->execute([':user_id' => $userId]);
+                }
+
+                // 3. Supprimer l'utilisateur
+                $stmt = $this->db->prepare("DELETE FROM users WHERE id = :id");
+                $stmt->execute([':id' => $userId]);
+
+                // Valider la transaction
+                $this->db->commit();
+
+                // Journalisation de l'action
+                $logData = array_intersect_key($user, array_flip(['id', 'username', 'email', 'role']));
+                $this->logActivity(
+                    'delete_user',
+                    "Utilisateur supprimé: {$user['username']} (ID: $userId)",
+                    $logData,
+                    'admin_delete',
+                    $_SERVER['REMOTE_ADDR'],
+                    $_SERVER['HTTP_USER_AGENT']
+                );
+
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => 'Utilisateur supprimé et archivé avec succès'
+                ]);
+            } catch (Exception $e) {
+                $this->db->rollBack();
+                throw $e;
+            }
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], (int) $e->getCode() ?: 500);
+        }
+    }
+
+    /**
+     * Effectue une action sur plusieurs utilisateurs
+     */
+    public function bulkUserAction($input)
+    {
+        try {
+            $this->validateMethod('POST');
+
+            $data = $input;
+            $action = $data['action'] ?? '';
+            $userIds = $data['user_ids'] ?? [];
+
+            if (empty($userIds)) {
+                throw new Exception('Aucun utilisateur sélectionné', 400);
+            }
+
+            switch ($action) {
+                case 'delete':
+                    foreach ($userIds as $userId) {
+                        $this->deleteUser($userId);
+                    }
+                    break;
+                case 'activate':
+                    foreach ($userIds as $userId) {
+                        $this->updateUserStatus($userId, 'active');
+                    }
+                    break;
+                case 'deactivate':
+                    foreach ($userIds as $userId) {
+                        $this->updateUserStatus($userId, 'inactive');
+                    }
+                    break;
+                case 'ban':
+                    foreach ($userIds as $userId) {
+                        $this->banUser($userId);
+                    }
+                    $this->jsonResponse([
+                        'success' => true,
+                        'message' => 'Action non pris en charge pour le moment'
+                    ]);
+                    break;
+                case 'unlock':
+                    foreach ($userIds as $userId) {
+                        $this->unlockUserAccount($userId);
+                    }
+                    $this->jsonResponse([
+                        'success' => true,
+                        'message' => 'Comptes débloqués avec succès'
+                    ]);
+                    break;
+                case 'suspend':
+                    foreach ($userIds as $userId) {
+                        $this->suspendUser($userId);
+                    }
+                    $this->jsonResponse([
+                        'success' => true,
+                        'message' => 'Comptes suspendus avec succès'
+                    ]);
+                    break;
+                case 'change_role':
+                    foreach ($userIds as $userId) {
+                        $this->updateUserRole($userId, $data['role']);
+                    }
+                    break;
+                default:
+                    throw new Exception('Action non reconnue ' . print_r($action, true), 400);
+            }
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Action effectuée sur les utilisateurs sélectionnés'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], (int) $e->getCode() ?: 500);
         }
     }
 
@@ -662,7 +1800,7 @@ class AdminController extends Controller
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 500);
+            ], (int) $e->getCode() ?: 500);
         }
     }
 
@@ -747,6 +1885,11 @@ class AdminController extends Controller
         $stmt->bindValue(':id', $hackathonId);
         $stmt->bindValue(':status', $status);
 
+        $stmt->execute();
+
+        // Journalisation de l'action
+        $this->logActivity('update_hackathon_status', 'Mise à jour du statut d\'un hackathon par ' . $this->TokenManager->getCurrentUserId(), $hackathonId, 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+
         echo json_encode($stmt->execute()) !== false ? $stmt->execute() : [];
         exit;
     }
@@ -771,25 +1914,31 @@ class AdminController extends Controller
     {
         try {
             $this->validateMethod('GET');
-            
+
             // Récupération des paramètres de requête
             $status = $_GET['status'] ?? null;
             $hackathonId = isset($_GET['hackathon_id']) ? (int)$_GET['hackathon_id'] : null;
-            $difficulty = $_GET['difficulty'] ?? null;  
+            $difficulty = $_GET['difficulty'] ?? null;
             $search = $_GET['search'] ?? null;
             $page = max(1, (int)($_GET['page'] ?? 1));
             $limit = max(1, min(100, (int)($_GET['limit'] ?? 20)));
             $sort = $_GET['sort'] ?? 'submitted_at';
             $order = strtoupper($_GET['order'] ?? 'DESC');
             $order = in_array($order, ['ASC', 'DESC']) ? $order : 'DESC';
-            
+
             // Validation du champ de tri
             $allowedSorts = [
-                'submitted_at', 'username', 'challenge_title', 'difficulty', 
-                'points', 'status', 'execution_time_ms', 'memory_used_bytes'
+                'submitted_at',
+                'username',
+                'challenge_title',
+                'difficulty',
+                'points',
+                'status',
+                'execution_time_ms',
+                'memory_used_bytes'
             ];
             $sort = in_array($sort, $allowedSorts) ? $sort : 'submitted_at';
-            
+
             // Construction de la requête de base
             $baseQuery = "FROM challenge_submissions cs
                         LEFT JOIN users u ON cs.user_id = u.id
@@ -798,23 +1947,23 @@ class AdminController extends Controller
                         LEFT JOIN team_members tm ON u.id = tm.user_id
                         LEFT JOIN teams t ON tm.team_id = t.id
                         WHERE 1=1";
-            
+
             $params = [];
             $types = '';
-            
+
             // Filtres
             if ($status) {
                 $baseQuery .= " AND cs.status = ?";
                 $params[] = $status;
                 $types .= 's';
             }
-            
+
             if ($hackathonId) {
                 $baseQuery .= " AND h.id = ?";
                 $params[] = $hackathonId;
                 $types .= 'i';
             }
-            
+
             if ($difficulty) {
                 $baseQuery .= " AND c.difficulty = ?";
                 $params[] = $difficulty;
@@ -832,34 +1981,33 @@ class AdminController extends Controller
                 $params = array_merge($params, array_fill(0, 5, $searchTerm));
                 $types .= str_repeat('s', 5);
             }
-            
+
             // Compte total des résultats (pour la pagination)
             $countQuery = "SELECT COUNT(*) as total $baseQuery";
             error_log("Requête de comptage: $countQuery");
             error_log("Params: " . print_r($params, true));
-            
+
             try {
                 $stmt = $this->db->prepare($countQuery);
-                
+
                 // Exécution avec les paramètres
                 if (!empty($params)) {
                     $stmt->execute($params);
                 } else {
                     $stmt->execute();
                 }
-                
+
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
                 $totalItems = $row ? (int)$row['total'] : 0;
                 error_log("Total items: $totalItems");
-                
+
                 $totalPages = ceil($totalItems / $limit);
                 $offset = ($page - 1) * $limit;
-                
             } catch (PDOException $e) {
                 error_log("Erreur PDO: " . $e->getMessage());
                 throw new Exception("Erreur lors de l'exécution de la requête de comptage: " . $e->getMessage());
             }
-            
+
             try {
                 // Requête des données avec pagination et tri
                 $dataQuery = "SELECT 
@@ -885,21 +2033,20 @@ class AdminController extends Controller
                             $baseQuery
                             ORDER BY $sort $order
                             LIMIT ? OFFSET ?";
-                
+
                 // Ajout des paramètres de pagination au tableau de paramètres
                 $params[] = (int)$limit;
                 $params[] = (int)$offset;
-                
+
                 // Préparation et exécution de la requête
                 $stmt = $this->db->prepare($dataQuery);
                 $stmt->execute($params);
                 $submissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
             } catch (PDOException $e) {
                 error_log("Erreur PDO (requête de données): " . $e->getMessage());
                 throw new Exception("Erreur lors de la récupération des données: " . $e->getMessage());
             }
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => [
@@ -927,16 +2074,16 @@ class AdminController extends Controller
     {
         try {
             $this->validateMethod('GET');
-            
+
             $query = "SELECT id, name, start_date, end_date 
                      FROM hackathons 
                      ORDER BY start_date DESC";
-            
+
             $stmt = $this->db->prepare($query);
             $stmt->execute();
             $result = $stmt->get_result();
             $hackathons = [];
-            
+
             while ($row = $result->fetch_assoc()) {
                 $hackathons[] = [
                     'id' => (int)$row['id'],
@@ -945,12 +2092,11 @@ class AdminController extends Controller
                     'end_date' => $row['end_date']
                 ];
             }
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $hackathons
             ]);
-            
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
@@ -958,7 +2104,7 @@ class AdminController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * Récupère les statistiques des soumissions
      */
@@ -990,7 +2136,7 @@ class AdminController extends Controller
             $stmt = $this->db->prepare($completedQuery);
             $stmt->execute();
             $completed = (int)$stmt->fetchColumn();
-            
+
             // Calcul du taux de réussite basé sur les tests passés
             $successRate = $total > 0 ? round(($completed / $total) * 100) : 0;
 
@@ -1047,7 +2193,7 @@ class AdminController extends Controller
             $stmt = $this->db->prepare($challengesQuery);
             $stmt->execute();
             $challengesCount = (int)$stmt->fetchColumn();
-            
+
             // Statistiques d'exécution moyennes
             $executionStatsQuery = "SELECT 
                                     ROUND(AVG(execution_time_ms), 2) as avg_execution_time,
@@ -1058,7 +2204,7 @@ class AdminController extends Controller
             $stmt = $this->db->prepare($executionStatsQuery);
             $stmt->execute();
             $executionStats = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             // Répartition par statut
             $statusDistributionQuery = "SELECT 
                                         status, 
@@ -1352,14 +2498,14 @@ class AdminController extends Controller
 
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
-                ':code_name' => $input['code_name']??null,
+                ':code_name' => $input['code_name'] ?? null,
                 ':title' => $input['title'],
                 ':type' => $input['type'],
                 ':category' => $input['category'] ?? null,
                 ':description' => $input['description'],
                 ':hint' => isset($input['hint']) && $input['hint'] !== ''
-                ? json_encode($input['hint'])
-                : null,
+                    ? json_encode($input['hint'])
+                    : null,
                 ':difficulty' => $input['difficulty'],
                 ':url_path' => $input['url_path'] ?? null,
                 ':resource_link' => $input['resource_link'] ?? null,
@@ -1367,12 +2513,12 @@ class AdminController extends Controller
                 ':points' => $input['points'],
                 ':is_active' => $input['is_active'] ?? 1,
                 ':is_dynamic' => $input['is_dynamic'] ?? 0,
-                ':created_by' => $_SESSION['user']['id'],
+                ':created_by' => $input['created_by'] ?? null,
                 ':hackathon_id' => $input['hackathon_id'],
                 ':phase_id' => $input['phase_id'] ?? null,
                 ':algo_config' => isset($input['algo_config']) && $input['algo_config'] !== ''
-                ? json_encode($input['algo_config'])
-                : null
+                    ? json_encode($input['algo_config'])
+                    : null
             ]);
 
             $challengeId = $this->db->lastInsertId();
@@ -1398,6 +2544,17 @@ class AdminController extends Controller
             }
 
             $this->db->commit();
+
+            // Journalisation de l'action
+            logSecurity($userId, 'create_challenge', [
+                'challenge_id' => $challengeId,
+                'user_id' => $userId,
+                'action' => 'L\'admin ' . $userId . ' a créé un challenge : ' . $input['title'],
+                'details' => "Création du challenge #$challengeId"
+            ]);
+
+            $this->logActivity('create_challenge', 'Création d\'un challenge par ' . $this->TokenManager->getCurrentUserId(), $input, 'admin_create', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Challenge créé avec succès',
@@ -1626,6 +2783,16 @@ class AdminController extends Controller
             // Tout s'est bien passé, on valide la transaction
             if ($this->db->inTransaction()) $this->db->commit();
 
+            // Journalisation de l'action
+            logSecurity($userId, 'update_challenge', [
+                'challenge_id' => $id,
+                'user_id' => $userId,
+                'action' => 'update_challenge',
+                'details' => "Mise à jour du challenge #$id"
+            ]);
+
+            $this->logActivity('update_challenge', 'Mise à jour d\'un challenge par ' . $this->TokenManager->getCurrentUserId(), $input, 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Challenge mis à jour avec succès'
@@ -1645,12 +2812,12 @@ class AdminController extends Controller
     /**
      * Supprimer un challenge
      */
-    public function deleteChallenge($id)
+    public function deleteChallenge($id, $userId = null)
     {
         try {
             $this->validateMethod('DELETE');
 
-            $user_id = $this->TokenManager->getCurrentUserId();
+            $user_id = $userId ?? $this->TokenManager->getCurrentUserId();
             if (!$this->isAdmin($user_id)) {
                 throw new Exception('Non autorisé ' . $user_id);
             }
@@ -1698,6 +2865,15 @@ class AdminController extends Controller
                 // Valider la transaction
                 $this->db->commit();
 
+                // Journalisation de l'action
+                $userId = $userId ?? $this->TokenManager->getCurrentUserId();
+                logSecurity($userId, 'delete_challenge', [
+                    'challenge_id' => $id,
+                    'user_id' => $userId,
+                    'action' => 'delete_challenge',
+                    'details' => "Suppression du challenge #$id"
+                ]);
+
                 $this->jsonResponse([
                     'success' => true,
                     'message' => 'Challenge supprimé avec succès'
@@ -1709,6 +2885,16 @@ class AdminController extends Controller
                 }
                 // Réactiver la vérification des clés étrangères en cas d'erreur
                 $this->db->exec('SET FOREIGN_KEY_CHECKS=1');
+                $userId = $userId ?? $this->TokenManager->getCurrentUserId();
+                // Journalisation de l'action
+                logSecurity($userId, 'delete_challenge', [
+                    'challenge_id' => $id,
+                    'user_id' => $userId,
+                    'action' => 'delete_challenge',
+                    'details' => "Suppression du challenge #$id"
+                ]);
+
+                $this->logActivity('delete_challenge', 'Suppression d\'un challenge par ' . $this->TokenManager->getCurrentUserId(), $id, 'admin_delete', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
 
                 throw $e; // Relancer l'exception pour le catch externe
             }
@@ -1743,7 +2929,7 @@ class AdminController extends Controller
                 ':initial_points' => $flag['points'] ?? 100,
                 ':min_points' => $flag['min_points'] ?? 50,
                 ':decay' => $flag['decay'] ?? 10,
-                ':is_dynamic' => $flag['is_dynamic'] ?? 0
+                ':is_dynamic' => $flag['is_dynamic'] ? 1 : 0
             ]);
         }
     }
@@ -1975,11 +3161,11 @@ class AdminController extends Controller
         }
 
         foreach ($flags as $flag) {
-            if (empty($flag['flag'])) {
+            if (empty($flag['value'])) {
                 throw new Exception('Le contenu du flag ne peut pas être vide');
             }
 
-            if (strlen($flag['flag']) > 255) {
+            if (strlen($flag['value']) > 255) {
                 throw new Exception('Le flag ne peut pas dépasser 255 caractères');
             }
         }
@@ -2077,33 +3263,6 @@ class AdminController extends Controller
         $validDifficulties = ['easy', 'medium', 'hard', 'expert'];
         if (!in_array($input['difficulty'], $validDifficulties)) {
             throw new Exception("Niveau de difficulté invalide");
-        }
-    }
-
-    /**
-     * Journalise une action
-     */
-    private function logAction($userId, $action, $details = '')
-    {
-        try {
-            $stmt = $this->db->prepare("
-            INSERT INTO audit_log (user_id, action, details, ip_address, user_agent)
-            VALUES (?, ?, ?, ?, ?)
-        ");
-
-            $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
-
-            $stmt->execute([
-                $userId,
-                $action,
-                $details,
-                $ip,
-                $userAgent
-            ]);
-        } catch (Exception $e) {
-            // Ne pas faire échouer l'opération principale en cas d'échec de journalisation
-            error_log("Échec de la journalisation: " . $e->getMessage());
         }
     }
 }

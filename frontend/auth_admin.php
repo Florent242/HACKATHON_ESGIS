@@ -143,11 +143,39 @@ if (empty($_SESSION['csrf_token'])) {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Initialisation des icônes Lucide
-            if (window.lucide && typeof lucide.createIcons === 'function') {
-                lucide.createIcons();
+            let __lucideInitDone = false;
+
+            function ensureLucideIcons() {
+                try {
+                    if (window.lucide && typeof lucide.createIcons === 'function') {
+                        lucide.createIcons();
+                        __lucideInitDone = true;
+                    }
+                } catch (_) {}
+            }
+            // Try on DOM ready
+            ensureLucideIcons();
+            // Try again on window load (in case lucide is loaded after auth.js)
+            window.addEventListener('load', ensureLucideIcons, {
+                once: true
+            });
+            // Poll briefly if still not initialized
+            if (!__lucideInitDone) {
+                let tries = 0;
+                const maxTries = 40; // ~2s at 50ms
+                const iv = setInterval(() => {
+                    tries++;
+                    ensureLucideIcons();
+                    if (__lucideInitDone || tries >= maxTries) clearInterval(iv);
+                }, 50);
             }
 
             // Gestion de l'affichage du mot de passe avec animation
+
+            // Disable native HTML5 validation on auth forms to avoid UA "not focusable" edge cases
+            if (loginForm) loginForm.setAttribute('novalidate', 'novalidate');
+            if (registerForm) registerForm.setAttribute('novalidate', 'novalidate');
+
             const togglePasswordBtn = document.getElementById('togglePasswordBtn');
             const passwordInput = document.getElementById('password_user');
 

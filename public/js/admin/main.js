@@ -2,7 +2,7 @@
 function initApp() {
     try {
         console.log('Initialisation de l\'application...');
-        
+
         // Initialiser uniquement les composants nécessaires
         // Vérifier les dropdowns personnalisés (sauf ceux de Bootstrap)
         const customDropdowns = document.querySelectorAll('.dropdown:not(.bootstrap-dropdown)');
@@ -10,46 +10,43 @@ function initApp() {
             console.log(`Initialisation de ${customDropdowns.length} menus déroulants personnalisés`);
             initDropdowns();
         }
-        
+
         // Vérifier les modaux personnalisés (sauf ceux de Bootstrap)
         const customModals = document.querySelectorAll('.modal:not(.bootstrap-modal)');
         if (customModals.length > 0) {
             console.log(`Initialisation de ${customModals.length} modaux personnalisés`);
             initModals();
         }
-        
+
         // Initialiser les autres composants si nécessaire
         if (document.querySelector('[data-search]')) {
             initSearchFilters();
         }
-        
+
         // Initialiser les autres fonctionnalités
         initFileUploads();
         initFormValidation();
         initTooltips();
         initTablesSort();
-        
+
         // Marquer les menus déroulants Bootstrap pour éviter les conflits
         document.querySelectorAll('.dropdown[data-bs-toggle="dropdown"]').forEach(el => {
             el.classList.add('bootstrap-dropdown');
         });
-        
+
         // Marquer les modaux Bootstrap pour éviter les conflits
         document.querySelectorAll('.modal[data-bs-toggle="modal"]').forEach(el => {
             el.classList.add('bootstrap-modal');
         });
-        
+
         // Ajouter la classe 'loaded' au body pour les animations d'entrée
         document.body.classList.add('loaded');
-        
+
         console.log('Initialisation terminée');
     } catch (error) {
         console.error('Erreur lors de l\'initialisation de l\'application:', error);
     }
 }
-
-// Attendre que le DOM soit chargé
-document.addEventListener('DOMContentLoaded', initApp);
 
 // Gérer le cas où le DOM est déjà chargé
 if (document.readyState === 'interactive' || document.readyState === 'complete') {
@@ -57,26 +54,26 @@ if (document.readyState === 'interactive' || document.readyState === 'complete')
 }
 
 // Gestionnaire d'erreurs global
-window.addEventListener('error', function(event) {
-    console.error('Erreur non gérée:', event.error || event.message, event);
-    
-    // Afficher un message d'erreur convivial à l'utilisateur
-    const errorMessage = `Une erreur s'est produite: ${event.message || 'Erreur inconnue'}`;
-    showNotification(errorMessage, 'Veuillez recharger la page et réessayer.', 'error');
-    
-    // Empêcher la propagation de l'erreur
-    event.preventDefault();
-    return false;
-});
+// window.addEventListener('error', function(event) {
+//     console.error('Erreur non gérée:', event.error || event.message, event);
+
+//     // Afficher un message d'erreur convivial à l'utilisateur
+//     const errorMessage = `Une erreur s'est produite: ${event.message || 'Erreur inconnue'}`;
+//     showNotification(errorMessage, 'Veuillez recharger la page et réessayer.', 'error');
+
+//     // Empêcher la propagation de l'erreur
+//     event.preventDefault();
+//     return false;
+// });
 
 // Gestionnaire pour les promesses non gérées
-window.addEventListener('unhandledrejection', function(event) {
+window.addEventListener('unhandledrejection', function (event) {
     console.error('Promesse rejetée non gérée:', event.reason);
-    
+
     // Afficher un message d'erreur convivial à l'utilisateur
     const errorMessage = event.reason?.message || 'Une erreur est survenue lors du chargement des données';
     showNotification('Erreur', errorMessage, 'error');
-    
+
     // Empêcher la propagation de l'erreur
     event.preventDefault();
 });
@@ -199,15 +196,15 @@ function initDropdowns() {
     dropdownToggles.forEach(toggle => {
         // Vérifier si le toggle a déjà un gestionnaire d'événements
         if (toggle.hasAttribute('data-dropdown-initialized')) return;
-        
+
         // Marquer comme initialisé
         toggle.setAttribute('data-dropdown-initialized', 'true');
-        
+
         // Ajouter un ID unique si non défini
         if (!toggle.id) {
             toggle.id = 'dropdown-toggle-' + Math.random().toString(36).substr(2, 9);
         }
-        
+
         // Ajouter l'écouteur d'événements
         toggle.addEventListener('click', function (e) {
             // Ne pas empêcher le comportement par défaut pour les liens
@@ -221,7 +218,7 @@ function initDropdowns() {
                 console.warn('Élément parent .dropdown non trouvé pour', this);
                 return;
             }
-            
+
             // Trouver le menu déroulant correspondant
             let menu = dropdown.querySelector('.dropdown-menu');
             if (!menu) {
@@ -230,7 +227,7 @@ function initDropdowns() {
                 if (menuId) {
                     menu = document.getElementById(menuId);
                 }
-                
+
                 if (!menu) {
                     console.warn('Menu déroulant non trouvé pour', this);
                     return;
@@ -396,7 +393,7 @@ function closeModal(modal) {
 
     // Fermer le modal après l'animation
     setTimeout(() => {
-        modal.classList.remove('show'); 
+        modal.classList.remove('show');
         document.body.classList.remove('modal-open');
 
         // Réinitialiser les formulaires dans le modal
@@ -666,156 +663,6 @@ function initTablesSort() {
 }
 
 /**
- * Affiche une notification.
- * @param {string} message - Le message à afficher.
- * @param {string} details - Les détails de la notification (optionnel).
- * @param {string} type - Le type de notification ('success', 'error', 'info', 'warning').
- * @param {number} duration - Durée en millisecondes avant disparition (optionnel).
- */
-let activeNotifications = [];
-const NOTIFICATION_OFFSET = 10; // Espacement entre les notifications en pixels
-
-function updateNotificationsPosition() {
-    let topPosition = 70; // Position de départ en haut
-
-    // Parcourir toutes les notifications visibles
-    activeNotifications.forEach(notification => {
-        if (document.body.contains(notification)) {
-            notification.style.top = `${topPosition}px`;
-            // Ajouter la hauteur de la notification + l'espacement pour la prochaine
-            topPosition += notification.offsetHeight + NOTIFICATION_OFFSET;
-        }
-    });
-}
-/**
-* Fonction pour afficher une notification
-*/
-function showNotification(message, details = null, type = 'info', duration = 5000) {
-    const notification = document.createElement('div');
-    notification.className = `fixed right-4 bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 max-md:p-2 flex items-start justify-between gap-3 animate-fade-in z-[100000] cursor-pointer min-h-[4rem] max-h-[6rem] w-[45vw] sm:w-[45vw] md:w-[35vw] lg:w-[35vw]`;
-
-    let timeoutId;
-    const startTimer = () => {
-        timeoutId = setTimeout(() => {
-            hideNotification(notification);
-        }, duration);
-    };
-
-    const pauseTimer = () => {
-        clearTimeout(timeoutId);
-    };
-
-    // Démarrer le timer initial
-    startTimer();
-
-    // Gestion du survol
-    notification.addEventListener('mouseenter', pauseTimer);
-    notification.addEventListener('mouseleave', startTimer);
-
-    // Conteneur d'icône
-    const iconContainer = document.createElement('div');
-    iconContainer.className = 'flex-shrink-0 pt-0.5';
-
-    // Icône Lucide
-    const icon = document.createElement('i');
-    icon.setAttribute('data-lucide',
-        type === 'success' ? 'check-circle' :
-            type === 'error' ? 'x-circle' :
-                type === 'warning' ? 'alert-triangle' :
-                    'info'
-    );
-    icon.className = `w-4 h-4 sm:w-5 sm:h-5 ${type === 'success' ? 'text-green-400' :
-        type === 'error' ? 'text-red-400' :
-            type === 'warning' ? 'text-yellow-400' :
-                'text-blue-400'
-        }`;
-
-    iconContainer.appendChild(icon);
-    notification.appendChild(iconContainer);
-
-    // Contenu du texte
-    const textContainer = document.createElement('div');
-    textContainer.className = 'flex-1';
-
-    // Message principal avec clamp
-    const messageElement = document.createElement('p');
-    messageElement.className = 'text-white font-medium text-sm max-md:text-xs line-clamp-1';
-    messageElement.innerText = message;
-    messageElement.title = message;
-    textContainer.appendChild(messageElement);
-
-    // Message de détails (en option)
-    if (details) {
-        const detailsElement = document.createElement('p');
-        detailsElement.className = 'text-gray-300/90 font-normal text-xs max-md:text-[0.6rem] mt-1 line-clamp-2 max-md:line-clamp-3';
-        detailsElement.innerText = details;
-        detailsElement.title = details;
-        textContainer.appendChild(detailsElement);
-    }
-
-    notification.appendChild(textContainer);
-
-    // Bouton de fermeture
-    const closeContainer = document.createElement('div');
-    closeContainer.className = 'flex-shrink-0 pt-0.5';
-
-    const closeButton = document.createElement('button');
-    closeButton.className = 'text-gray-400 hover:text-white transition-colors focus:outline-none';
-
-    const closeIcon = document.createElement('i');
-    closeIcon.setAttribute('data-lucide', 'x');
-    closeIcon.className = 'w-4 h-4 max-sm:w-3 max-sm:h-3';
-
-    closeButton.appendChild(closeIcon);
-    closeButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        hideNotification(notification);
-    });
-
-    closeContainer.appendChild(closeButton);
-    notification.appendChild(closeContainer);
-
-    notification.addEventListener('click', () => {
-        hideNotification(notification);
-    });
-
-    // Ajouter la notification au DOM
-    document.body.appendChild(notification);
-
-    // Ajouter à la liste des notifications actives
-    activeNotifications.push(notification);
-    updateNotificationsPosition();
-
-    // Initialiser Lucide pour les nouvelles icônes
-    if (window.lucide) {
-        window.lucide.createIcons();
-    }
-
-    // Nettoyer le timeout si la notification est supprimée
-    notification.addEventListener('animationend', (e) => {
-        if (e.animationName === 'fadeOut') {
-            clearTimeout(timeoutId);
-        }
-    });
-
-    return notification;
-}
-
-function closeNotification(notification) {
-    notification.classList.add('animate-fade-out');
-    notification.addEventListener('animationend', () => {
-        // Retirer la notification du DOM
-        if (notification.parentNode) {
-            notification.parentNode.removeChild(notification);
-        }
-        // Retirer de la liste des notifications actives
-        activeNotifications = activeNotifications.filter(n => n !== notification);
-        // Mettre à jour la position des notifications restantes
-        updateNotificationsPosition();
-    }, { once: true });
-}
-
-/**
 * Fonction pour confirmer une action
 */
 function confirmAction(message, callback) {
@@ -877,4 +724,353 @@ function confirmAction(message, callback) {
             }, 300);
         }
     });
+
 }
+
+
+/**
+ * @description Fonction pour initialiser les tooltips
+ * @returns {void}
+ * @usage initializeTooltips();
+ * @prerequis mettre en place les tooltips dans le HTML avec le data-tooltip
+ */
+function initializeTooltips() {
+    const tooltipElements = document.querySelectorAll('[data-tooltip]');
+
+    tooltipElements.forEach(el => {
+        let tooltipEl;
+        let hideTimeout;
+
+        const show = () => {
+            clearTimeout(hideTimeout);
+
+            const tooltip = el.getAttribute('data-tooltip');
+            if (!tooltip) return;
+
+            // Si déjà un tooltip affiché, on le supprime
+            if (tooltipEl) tooltipEl.remove();
+
+            tooltipEl = document.createElement('div');
+            tooltipEl.className = `
+                fixed px-2 py-2 text-sm rounded-lg shadow-lg border
+                border-slate-700 bg-slate-900/95 backdrop-blur-sm text-white
+                opacity-0 transition-all duration-200 transform scale-95
+                pointer-events-none z-[100001]! max-w-xs break-words
+                text-left font-normal leading-normal
+            `;
+            tooltipEl.textContent = tooltip;
+            tooltipEl.setAttribute("role", "tooltip");
+            tooltipEl.setAttribute("aria-hidden", "true");
+
+            document.body.appendChild(tooltipEl);
+
+            // Calculate positions with viewport boundaries
+            const rect = el.getBoundingClientRect();
+            const tooltipRect = tooltipEl.getBoundingClientRect();
+            const viewportPadding = 12;
+
+            // Default position: centered above the element
+            let top = rect.top - tooltipRect.height - 10;
+            let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+            let arrowPosition = '';
+
+            // Check for viewport collisions
+            // Horizontal adjustment
+            if (left < viewportPadding) {
+                left = viewportPadding;
+            } else if (left + tooltipRect.width > window.innerWidth - viewportPadding) {
+                left = window.innerWidth - tooltipRect.width - viewportPadding;
+            }
+
+            // Vertical adjustment
+            if (top < viewportPadding) {
+                // Not enough space above, position below
+                top = rect.bottom + 10;
+                arrowPosition = 'bottom';
+            } else {
+                arrowPosition = 'top';
+            }
+
+            // Add arrow class based on position
+            tooltipEl.classList.add(`tooltip-arrow-${arrowPosition}`);
+
+            // Apply final position
+            tooltipEl.style.top = `${Math.max(viewportPadding, Math.min(top, window.innerHeight - tooltipRect.height - viewportPadding))}px`;
+            tooltipEl.style.left = `${Math.max(viewportPadding, Math.min(left, window.innerWidth - tooltipRect.width - viewportPadding))}px`;
+
+            // Trigger reflow and animate in
+            void tooltipEl.offsetWidth; // Force reflow
+            tooltipEl.style.opacity = '1';
+            tooltipEl.style.transform = 'scale(1)';
+        };
+
+        const hide = () => {
+            if (tooltipEl) {
+                tooltipEl.classList.add("opacity-0", "scale-95");
+                hideTimeout = setTimeout(() => {
+                    tooltipEl?.remove();
+                    tooltipEl = null;
+                }, 200);
+            }
+        };
+
+        el.addEventListener('mouseenter', show);
+        el.addEventListener('mouseleave', hide);
+        el.addEventListener('blur', hide);   // accessibilité (clavier)
+        el.addEventListener('click', hide);  // si clic sur élément
+    });
+}
+
+function showTooltip(e) {
+    const tooltip = this.getAttribute('data-tooltip');
+    if (!tooltip) return;
+
+    const tooltipEl = document.createElement('div');
+    tooltipEl.className = 'tooltip';
+    tooltipEl.textContent = tooltip;
+
+    // Positionnement
+    const rect = this.getBoundingClientRect();
+    tooltipEl.style.position = 'fixed';
+    tooltipEl.style.left = `${rect.left + (rect.width / 2)}px`;
+    tooltipEl.style.top = `${rect.top - 40}px`;
+    tooltipEl.style.transform = 'translateX(-50%)';
+    tooltipEl.style.zIndex = '1000';
+    tooltipEl.style.pointerEvents = 'none';
+    tooltipEl.classList.add('bg-slate-800', 'text-white', 'text-xs', 'px-2', 'py-1', 'rounded', 'shadow-lg', 'border', 'border-slate-700');
+
+    document.body.appendChild(tooltipEl);
+    this._tooltip = tooltipEl;
+}
+
+function hideTooltip() {
+    if (this._tooltip) {
+        this._tooltip.remove();
+        this._tooltip = null;
+    }
+}
+
+// ========== Security helpers (XSS) ==========
+/**
+ * Encode plain text to HTML entities (safe for text insertion)
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeHTML(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
+ * Sanitize an HTML string with a conservative whitelist.
+ * - Removes disallowed tags and attributes
+ * - Strips event handlers (on*) and javascript: URLs
+ * - Keeps only safe URL protocols (http, https, mailto, tel)
+ * @param {string} dirtyHTML
+ * @param {{allowedTags?: string[], allowedAttrs?: Record<string,string[]>, allowDataImages?: boolean}} [opts]
+ * @returns {string}
+ */
+function sanitizeHTML(dirtyHTML, opts = {}) {
+    if (!dirtyHTML) return '';
+
+    const DEFAULT_ALLOWED_TAGS = ['b','i','em','strong','u','s','br','p','ul','ol','li','blockquote','code','pre','span','a'];
+    const DEFAULT_ALLOWED_ATTRS = {
+        a: ['href','title','target','rel'],
+        span: ['class'],
+        code: ['class'],
+        pre: ['class']
+    };
+    const allowedTags = new Set((opts.allowedTags || DEFAULT_ALLOWED_TAGS).map(t => t.toLowerCase()));
+    const allowedAttrs = opts.allowedAttrs || DEFAULT_ALLOWED_ATTRS;
+    const allowDataImages = Boolean(opts.allowDataImages);
+
+    const SAFE_URL = /^(https?:|mailto:|tel:)/i;
+    const DATA_IMAGE = /^data:image\/(png|jpeg|jpg|gif|webp);base64,/i;
+
+    const template = document.createElement('template');
+    template.innerHTML = dirtyHTML;
+
+    const sanitizeNode = (node) => {
+        // Remove comment nodes
+        if (node.nodeType === Node.COMMENT_NODE) {
+            node.remove();
+            return;
+        }
+        // Text nodes are safe
+        if (node.nodeType === Node.TEXT_NODE) {
+            return;
+        }
+        // Element nodes
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            const tag = node.tagName.toLowerCase();
+            if (!allowedTags.has(tag)) {
+                // Replace disallowed element with its text content
+                const text = document.createTextNode(node.textContent || '');
+                node.replaceWith(text);
+                return;
+            }
+            // Clone allowed attributes safely
+            [...node.attributes].forEach(attr => {
+                const name = attr.name.toLowerCase();
+                const value = attr.value;
+
+                // Strip all event handlers (on*) and style attributes
+                if (name.startsWith('on') || name === 'style') {
+                    node.removeAttribute(attr.name);
+                    return;
+                }
+
+                const tagAllowed = (allowedAttrs[tag] || []).map(a => a.toLowerCase());
+                if (!tagAllowed.includes(name)) {
+                    node.removeAttribute(attr.name);
+                    return;
+                }
+
+                // Special handling for URL-bearing attributes
+                if ((tag === 'a' && name === 'href')) {
+                    const val = value.trim();
+                    const safe = SAFE_URL.test(val) || (allowDataImages && DATA_IMAGE.test(val));
+                    if (!safe) {
+                        node.removeAttribute(attr.name);
+                    } else {
+                        // Security: enforce rel and target safety
+                        if (!node.getAttribute('rel')) node.setAttribute('rel', 'noopener noreferrer');
+                        if (/_blank/i.test(node.getAttribute('target') || '')) {
+                            node.setAttribute('rel', 'noopener noreferrer');
+                        }
+                    }
+                }
+            });
+        }
+        // Recurse children (use slice to avoid live collection issues if nodes removed)
+        Array.from(node.childNodes).forEach(sanitizeNode);
+    };
+
+    Array.from(template.content.childNodes).forEach(sanitizeNode);
+    return template.innerHTML;
+}
+
+/**
+ * Safely set innerHTML: sanitize first
+ * @param {HTMLElement} el
+ * @param {string} html
+ * @param {Parameters<typeof sanitizeHTML>[1]} [opts]
+ */
+function setSafeHTML(el, html, opts) {
+    if (!el) return;
+    el.innerHTML = sanitizeHTML(html, opts);
+}
+// ========== End Security helpers ==========
+
+/**
+ * Affiche une notification.
+ * @param {string} message - Le message à afficher.
+ * @param {string} details - Les détails de la notification (optionnel).
+ * @param {string} type - Le type de notification ('success', 'error', 'info', 'warning').
+ * @param {number} duration - Durée en millisecondes avant disparition (optionnel).
+ */
+let activeNotifications = [];
+const NOTIFICATION_OFFSET = 10; // Espacement entre les notifications en pixels
+
+function updateNotificationsPosition() {
+    let topPosition = 70; // Position de départ en haut
+
+    // Parcourir toutes les notifications visibles
+    activeNotifications.forEach(notification => {
+        if (document.body.contains(notification)) {
+            notification.style.top = `${topPosition}px`;
+            // Ajouter la hauteur de la notification + l'espacement pour la prochaine
+            topPosition += notification.offsetHeight + NOTIFICATION_OFFSET;
+        }
+    });
+}
+
+// Fonctions d'affichage/masquage des erreurs
+/**
+ * @description Affiche et anime un message d'erreur
+ * @param {HTMLElement} inputElement 
+ * @param {HTMLElement} errorElement 
+ * @param {string} message 
+ */
+function showError(inputElement, errorElement, message) {
+    // Ajouter la classe d'erreur à l'input
+    inputElement.parentElement.classList.add('input-error');
+
+    // Afficher et animer le message d'erreur
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden', 'fade-out');
+}
+
+/**
+ * @description Masque et anime un message d'erreur
+ * @param {HTMLElement} inputElement 
+ * @param {HTMLElement} errorElement 
+ */
+function hideError(inputElement, errorElement) {
+    // Retirer la classe d'erreur de l'input
+    inputElement.parentElement.classList.remove('input-error');
+
+    // Vérifier si l'erreur est déjà masquée
+    if (errorElement.classList.contains('hidden')) return;
+
+    // Supprimer l'ancienne animation si elle est encore en cours
+    errorElement.classList.remove('fade-in');
+
+    // Ajouter la classe de disparition
+    errorElement.classList.add('fade-out');
+
+    // Attendre la fin de l'animation avant de cacher complètement
+    errorElement.addEventListener('animationend', function () {
+        errorElement.classList.add('hidden');
+        errorElement.classList.remove('fade-out'); // Nettoyage après animation
+    }, { once: true });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    initApp();
+    // initialisation des tooltips
+    initializeTooltips();
+    // initialisation des notifications
+    const notificationElement = document.getElementById('notification-data');
+    if (notificationElement) {
+        try {
+            // TODO: nettoyer la notification de la session après affichage 
+            fetch('clearNotification.php', { method: 'POST' })
+            const notificationData = JSON.parse(notificationElement.getAttribute('data-notification'));
+            if (notificationData) {
+                showNotification(
+                    notificationData.message,
+                    notificationData.details || null,
+                    notificationData.type || 'info'
+                );
+                // Supprimer la notification de la session après affichage
+                fetch('clearNotification.php', { method: 'POST' })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erreur lors de la suppression de la notification');
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            }
+            const flashMessage = getFlashMessage();
+            if (flashMessage) {
+                showNotification(
+                    flashMessage.message,
+                    flashMessage.details || null,
+                    flashMessage.type || 'info'
+                );
+                // Supprimer le message après l'avoir affiché
+                localStorage.removeItem('flashMessage');
+            }
+        } catch (e) {
+            console.error('Erreur lors du parsing des données de notification:', e);
+        }
+    }
+
+});

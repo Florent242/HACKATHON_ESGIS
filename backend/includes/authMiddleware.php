@@ -18,6 +18,18 @@ if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/../includes/functions.php';
 }
 
+if (!defined('SESSION_LIFETIME')) {
+    define('SESSION_LIFETIME', 86400); // 24 heures
+}
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+if (!isset($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 class AuthMiddleware
 {
     private $key;

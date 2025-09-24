@@ -3,12 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token']; ?>">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Gestion des Challenges</title>
     <link rel="stylesheet" href="/css/styles/admin/challenges.css">
-    <link rel="stylesheet" href="/css/styles/admin/header.css">
-    <link rel="stylesheet" href="/css/dist/output.css">
+    <?php require_once '../includes/admin/head.php'; ?>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/paraiso-dark.min.css">
@@ -288,6 +286,14 @@
                                 </select>
                             </div>
                         </div>
+
+                        <!-- autheur -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="created_by">Auteur *</label>
+                                <input type="text" id="created_by" name="created_by" class="form-control" required>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Onglet Contenu -->
@@ -297,16 +303,16 @@
                             <textarea id="description" name="description" class="form-control" rows="6" required></textarea>
                         </div>
                         <div class="form-group">
-                            <label for="instructions">Instructions</label>
+                            <label for="instructions">Instructions (Dev uniquement)</label>
                             <textarea id="instructions" name="instructions" class="form-control" rows="4"></textarea>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="url_path">URL du challenge</label>
+                                <label for="url_path">URL du challenge (CTF uniquement)</label>
                                 <input type="text" id="url_path" name="url_path" class="form-control">
                             </div>
                             <div class="form-group">
-                                <label for="resource_link">Lien de ressource</label>
+                                <label for="resource_link">Lien de ressource (CTF uniquement)</label>
                                 <input type="text" id="resource_link" name="resource_link" class="form-control">
                             </div>
                         </div>
@@ -320,14 +326,14 @@
                     <div class="tab-content" id="configurationTab">
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="is_dynamic">Scoring dynamique</label>
+                                <label for="is_dynamic">Scoring dynamique (CTF uniquement)</label>
                                 <select id="is_dynamic" name="is_dynamic" class="form-control">
                                     <option value="0">Non</option>
                                     <option value="1">Oui</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="algo_config">Configuration Algo (JSON)</label>
+                                <label for="algo_config">Configuration Algo (JSON) (Algo uniquement)</label>
                                 <textarea id="algo_config" name="algo_config" class="form-control" rows="4" placeholder='{"time_limit": 2000, "memory_limit": 128, "allowed_languages": ["python", "java", "cpp"]}'></textarea>
                             </div>
                         </div>

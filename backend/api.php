@@ -35,67 +35,74 @@ if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/includes/functions.php';
 }
 
-
-// ✅ Inclure les classes seulement si elles n'existent pas déjà
-$files = [
-    'Database'            => '/models/Database.php',
-    'Controller'          => '/controllers/Controller.php',
-    'AuthController'      => '/controllers/AuthController.php',
-    'UserController'      => '/controllers/UserController.php',
-    'HackathonController' => '/controllers/HackathonController.php',
-    'TeamController'      => '/controllers/TeamController.php',
-    'ProjectController'   => '/controllers/ProjectController.php',
-    'ChallengeController' => '/controllers/ChallengeController.php',
-    'EvaluationController' => '/controllers/EvaluationController.php',
-    'AdminController'     => '/controllers/AdminController.php',
-    'TokenManager'        => '/models/TokenManager.php'
-];
-
-foreach ($files as $class => $path) {
-    if (!class_exists($class)) {
-        require_once __DIR__ . $path;
-    }
-}
-
-// Configurer CORS pour toutes les requêtes API
-configureCors();
-
-// Initialisation de la base de données
-$db = Database::getInstance()->getConnection();
-
-$key = 'your-secret-key';
-
-// Pour les requêtes OPTIONS, renvoyer directement une réponse
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit();
-}
-
-
-// Récupération de la méthode HTTP et de l'URL
-$method = $_SERVER['REQUEST_METHOD'];
-$uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$uri = str_replace('/api/', '/', $uri); // Nettoyer l'URI
-$request = explode('/', trim($uri, '/'));
-
-// Extraction des composants de l'URL
-$endpoint = $request[0] ?? '';
-$id = $request[1] ?? null;
-$action = $request[2] ?? null;
-
-// Lecture des données du corps de la requête
-$rawInput = file_get_contents('php://input');
-$input = json_decode($rawInput, true);
-
-// Si c'est une requête POST et que le JSON n'est pas valide, utiliser $_POST
-if ($input === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input = $_POST;
-}
-
-// Initialisation du gestionnaire de token
-$tokenManager = new TokenManager($key, $db);
-
 try {
+    try {
+        // ✅ Inclure les classes seulement si elles n'existent pas déjà
+        $files = [
+            'Database'            => '/models/Database.php',
+            'Controller'          => '/controllers/Controller.php',
+            'AuthController'      => '/controllers/AuthController.php',
+            'UserController'      => '/controllers/UserController.php',
+            'HackathonController' => '/controllers/HackathonController.php',
+            'TeamController'      => '/controllers/TeamController.php',
+            'ProjectController'   => '/controllers/ProjectController.php',
+            'ChallengeController' => '/controllers/ChallengeController.php',
+            'EvaluationController' => '/controllers/EvaluationController.php',
+            'AdminController'     => '/controllers/AdminController.php',
+            'TokenManager'        => '/models/TokenManager.php'
+        ];
+
+        foreach ($files as $class => $path) {
+            if (!class_exists($class)) {
+                require_once __DIR__ . $path;
+            }
+        }
+    } catch (Exception $e) {
+        jsonResponse([
+            'success' => false,
+            'error' => $e->getMessage()
+        ], $e->getCode() ?: 500);
+        exit();
+    }
+    // Configurer CORS pour toutes les requêtes API
+    configureCors();
+
+    // Initialisation de la base de données
+    $db = Database::getInstance()->getConnection();
+
+    $key = 'your-secret-key';
+
+    // Pour les requêtes OPTIONS, renvoyer directement une réponse
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        http_response_code(200);
+        exit();
+    }
+
+
+    // Récupération de la méthode HTTP et de l'URL
+    $method = $_SERVER['REQUEST_METHOD'];
+    $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $uri = str_replace('/api/', '/', $uri); // Nettoyer l'URI
+    $request = explode('/', trim($uri, '/'));
+
+    // Extraction des composants de l'URL
+    $endpoint = $request[0] ?? '';
+    $id = $request[1] ?? null;
+    $action = $request[2] ?? null;
+
+    // Lecture des données du corps de la requête
+    $rawInput = file_get_contents('php://input');
+    $input = json_decode($rawInput, true);
+
+    // Si c'est une requête POST et que le JSON n'est pas valide, utiliser $_POST
+    if ($input === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $input = $_POST;
+    }
+
+    // Initialisation du gestionnaire de token
+    $tokenManager = new TokenManager($key, $db);
+
+
     switch ($endpoint) {
         case 'auth':
             $controller = new AuthController($db);
@@ -134,22 +141,22 @@ try {
                     }
                     break;
 
-                case 'register':
-                    try {
-                        $controller->register();
-                    } catch (Exception $e) {
-                        if (isAjaxRequest()) {
-                            header('Content-Type: application/json');
-                            http_response_code(400);
-                            echo json_encode(['error' => $e->getMessage()]);
-                        } else
-                            setFlashMessage('error', 'Inscription echouée', $e->getMessage());
+                // case 'register':
+                //     try {
+                //         $controller->register();
+                //     } catch (Exception $e) {
+                //         if (isAjaxRequest()) {
+                //             header('Content-Type: application/json');
+                //             http_response_code(400);
+                //             echo json_encode(['error' => $e->getMessage()]);
+                //         } else
+                //             setFlashMessage('error', 'Inscription echouée', $e->getMessage());
 
-                        //redirection vers la page d'inscription
-                        header('Location: ' . '/auth');
-                        exit();
-                    }
-                    break;
+                //         //redirection vers la page d'inscription
+                //         header('Location: ' . '/auth');
+                //         exit();
+                //     }
+                //     break;
                 case 'logout':
                     $controller->logout();
                     break;
@@ -165,6 +172,7 @@ try {
             break;
 
         case 'admin':
+            // Initialisation du contrôleur admin
             $controllerAdmin = new AdminController($db, $tokenManager);
 
             // Vérification du token JWT pour toutes les routes sauf OPTIONS
@@ -222,7 +230,67 @@ try {
                     $controllerAdmin->getAdminNotifications();
                     break;
                 case 'users':
-                    $controllerAdmin->getAllUsers();
+                    if ($method === 'GET' && !isset($action)) {
+                        // GET /api/admin/users - Liste des utilisateurs avec pagination
+                        $page = $_GET['page'] ?? 1;
+                        $perPage = $_GET['per_page'] ?? 10;
+                        $search = $_GET['search'] ?? '';
+                        $status = $_GET['status'] ?? '';
+                        $role = $_GET['role'] ?? '';
+
+                        $controllerAdmin->getUsersPaginated();
+                    } elseif ($method === 'POST' && !isset($action)) {
+                        // POST /api/admin/users - Créer un utilisateur
+                        $controllerAdmin->createUser();
+                    } elseif ($method === 'GET' && isset($action) && $action == 'stats') {
+                        // GET /api/admin/users/stats - Détails d'un utilisateur
+                        $controllerAdmin->getAllUserStats();
+                    } elseif ($method === 'POST' && isset($action) && $action == 'bulk') {
+                        // GET /api/admin/users/bulk - Détails d'un utilisateur
+                        $controllerAdmin->bulkUserAction($input);
+                    } elseif (isset($action) && is_numeric($action)) {
+
+                        if ($method === 'GET' && !isset($request[3])) {
+                            // GET /api/admin/users/{id} - Détails d'un utilisateur
+                            $controllerAdmin->getUser($action);
+                        } elseif ($method === 'PUT' && !isset($request[3])) {
+                            // PUT/PATCH /api/admin/users/{id} - Mettre à jour un utilisateur
+                            $controllerAdmin->updateUser($action);
+                        } elseif ($method === 'DELETE' && !isset($request[3])) {
+                            // DELETE /api/admin/users/{id} - Supprimer un utilisateur
+                            $controllerAdmin->deleteUser($action);
+                        } elseif ($method === 'GET' && isset($request[3]) && $request[3] === 'stats') {
+                            // GET /api/admin/users/{id}/stats - Stats des utilisateurs
+                            $controllerAdmin->getUserStats($action);
+                        } elseif ($method === 'GET' && isset($request[3]) && $request[3] === 'notifications') {
+                            // GET /api/admin/users/{id}/notifications - Notifications des utilisateurs
+                            $controllerAdmin->getNotifications($action);
+                        } elseif ($method === 'GET' && isset($request[3]) && $request[3] === 'teams') {
+                            // GET /api/admin/users/{id}/teams - Equipes des utilisateurs
+                            $controllerAdmin->getUserTeams($action);
+                        } elseif ($method === 'GET' && isset($request[3]) && $request[3] === 'activities') {
+                            // GET /api/admin/users/{id}/activity - Activités des utilisateurs
+                            $controllerAdmin->getAllActivities($action);
+                        } elseif ($method === 'PUT' && isset($request[3]) && $request[3] === 'status') {
+                            // GET /api/admin/users/{id}/status - Statut des utilisateurs
+                            if ($input['status'] === 'active' || $input['status'] === 'inactive') {
+                                $controllerAdmin->updateUserStatus($action, $input['status']);
+                            } else {
+                                jsonResponse(['success' => false, 'error' => 'Statut invalide'], 400);
+                                exit();
+                            }
+                        } elseif ($method === 'PUT' || $method === 'POST' && isset($request[3]) && $request[3] === 'reset-password') {
+                            // GET /api/admin/users/{id}/reset-password - Reset mot de passe des utilisateurs
+                            jsonResponse(['success' => false, 
+                            'message' => 'Instruction non pris en charge, essayez de modifier simplement le profile'], 403);
+                        } else {
+                            jsonResponse(['success' => false, 'error' => 'Endpoint non trouvé'], 404);
+                            exit();
+                        }
+                    } else {
+                        jsonResponse(['success' => false, 'error' => 'Endpoint non trouvé'], 404);
+                        exit();
+                    }
                     break;
                 case 'hackathons':
                     // GET /api/admin/hackathons

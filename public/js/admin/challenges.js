@@ -63,7 +63,8 @@ const ELEMENTS = {
         resource_link: "#resource_link",
         hint: "#hint",
         is_dynamic: "#is_dynamic",
-        algo_config: "#algo_config"
+        algo_config: "#algo_config",
+        created_by: "#created_by"
     },
     tabs: {
         general: "#generalTab",
@@ -1060,6 +1061,7 @@ function populateForm(challenge) {
     document.querySelector(ELEMENTS.form.hint).value = challenge.hint || '';
     document.querySelector(ELEMENTS.form.is_dynamic).value = challenge.is_dynamic ? '1' : '0';
     document.querySelector(ELEMENTS.form.algo_config).value = challenge.algo_config || '';
+    document.querySelector(ELEMENTS.form.created_by).value = challenge.created_by || '';
     
     // Déclencher les changements pour afficher les onglets appropriés
     handleTypeChange({ target: { value: challenge.type } });

@@ -72,7 +72,7 @@ define('APP_VERSION', '1.0.0');
 // Configuration des sessions
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_secure', 0); // Mettre à 1 en production avec HTTPS
+ini_set('session.cookie_secure', 1); // Mettre à 1 en production avec HTTPS
 
 // Configuration du fuseau horaire
 date_default_timezone_set('Africa/Porto-Novo');
@@ -81,9 +81,9 @@ date_default_timezone_set('Africa/Porto-Novo');
 error_reporting(E_ALL);
 //verifier si le serveur est en production ou en développement
 if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
-    ini_set('display_errors', 0); // Mettre à 0 en production
+    ini_set('display_errors', 1); // Mettre à 0 en production
 } else {
-    ini_set('display_errors', 0); // Mettre à 1 en développement
+    ini_set('display_errors', 1); // Mettre à 1 en développement
 }
 
 // Démarrer la session si elle n'est pas déjà démarrée

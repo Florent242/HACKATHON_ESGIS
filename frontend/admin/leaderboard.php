@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EsgisHub - Leaderboard</title>
+    <?php require_once '../includes/admin/head.php'; ?>
     <link rel="stylesheet" href="/css/styles/admin/classement.css">
     <link rel="stylesheet" href="/css/styles/admin/header.css">
     <link rel="stylesheet" href="/css/dist/output.css">

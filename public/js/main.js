@@ -109,7 +109,7 @@ class AuthService {
             console.error('Logout failed:', error);
         }
     }
-
+hanf
     // Redirige vers l'accueil visiteur après déconnexion
     static redirectToVisitorHome() {
         window.location.href = this.ROUTES.visitor;
@@ -232,29 +232,115 @@ function getFlashMessage() {
     }
     return null;
 }
-// Fonction utilitaire pour gérer les requêtes API
+
+/**
+ * @description Fonction utilitaire pour gérer les requêtes API
+ * @param {string} endpoint 
+ * @param {Object} options 
+ * @returns {Promise<Object>}
+ */
 async function apiRequest(endpoint, options = {}) {
     try {
+
+        const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
+
         const headers = {
-            'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': getCsrfToken(),
+            ...(options.headers || {})
         };
-
-        const response = await fetch(`/api${endpoint}`, {
-            ...options,
-            headers: { ...headers, ...options.headers }
-        });
-
-        if (!response.ok) {
-            throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
+        if (!headers['Content-Type']) {
+            headers['Content-Type'] = 'application/json';
         }
 
-        const data = await response.json();
-        return data;  // Retourne bien les données récupérées
+        let response = await fetch(`/api${endpoint}`, {
+            ...options,
+            headers
+        });
+        const responseText = await response.text();
+        // Si le token CSRF a expiré (403)
+        if (response.status === 403) {
+            let errorData = {};
+            try {
+                errorData = responseText ? JSON.parse(responseText) : {};
+            } catch (e) {
+                console.error('Erreur lors du parsing de la réponse d\'erreur:', e);
+            }
+            if (errorData.error?.includes('controller') || errorData.error?.includes('csrf') || errorData.requires_refresh) {
+                const newToken = await refreshCsrfToken();
+
+                options.body.csrf_token ? options.body.csrf_token = newToken : options.body.csrf_token = newToken;
+                // On réessaye avec le nouveau token
+                response = await fetch(`/api${endpoint}`, {
+                    ...options,
+                    headers: {
+                        ...headers,
+                        'X-CSRF-TOKEN': newToken,
+                        ...(options.headers || {})
+                    }
+                });
+                // Avant la ligne 395, ajoutez cette vérification
+                if (response.status === 403) {
+                    const error = new Error('Validation du token de session echouée. Veuillez recharger la page. Si le problème persiste, contactez le support.');
+                    error.status = 403;
+                    throw error;
+                }
+            }
+        }
+
+        // Nettoyer la réponse des messages de déprication PHP
+        const cleanedResponse = responseText.replace(/^(<br \/>\n<b>Deprecated<\/b>:.*?<br \/>\n)+/g, '').trim();
+
+        // Parser le JSON nettoyé
+        let data;
+        try {
+            data = JSON.parse(cleanedResponse);
+        } catch (e) {
+            console.error('Erreur de parsing JSON:', e);
+            console.error('Réponse brute:', responseText);
+            throw new Error('Erreur lors de l\'analyse de la réponse du serveur');
+        }
+
+        // Gérer les erreurs de debug
+        if (data.debug_message) {
+            console.group('⚠️ Debug Info');
+            console.log('Message:', data.debug_message);
+            console.log('File:', data.debug_file);
+            console.log('Line:', data.debug_line);
+            if (data.debug_trace) console.log('Trace:', data.debug_trace);
+            console.groupEnd();
+        }
+        // Si la réponse n'est pas OK, lancer une erreur
+        if (response.status !== 400 && response.status !== 401 && response.status !== 200 && response.status !== 404 && response.status !== 500) {
+            const error = new Error(data.message || data.error || 'Une erreur est survenue');
+            error.response = response;
+            error.data = data;
+            throw error;
+        }
+
+        return data;
     } catch (error) {
-        handleError('Erreur lors de la requête API', error, 'error');
-        throw error;
+        // Si c'est une erreur réseau, on la gère différemment
+        if (error instanceof TypeError && error.message === 'Failed to fetch') {
+            handleError('Erreur réseau', { message: 'Impossible de se connecter au serveur' }, 'error');
+            return {
+                success: false,
+                status: 'network_error',
+                message: 'Erreur de connexion au serveur',
+                data: null
+            };
+        }
+
+        if (error instanceof Error) {
+            handleError('Erreur lors de la requête API', error, 'error');
+        }
+        return {
+            success: false,
+            status: error.status || 'client_error',
+            message: error.message || 'Erreur inconnue',
+            data: error.data || null
+        };
     }
 }
 
@@ -312,6 +398,44 @@ async function getUserId() {
         return null;
     }
 }
+
+/**
+ * @description Fonction utilitaire pour gérer les erreurs
+ * @param {string} message 
+ * @param {Error} error 
+ * @param {string} type 
+ */
+function handleError(message, error, type = 'error') {
+    // Log détaillé dans la console
+    console.group('🔴 Erreur API');
+    console.error('Message:', message);
+    console.error('Erreur:', error);
+
+    // Si l'erreur a des propriétés de debug, les afficher
+    if (error && typeof error === 'object') {
+        if (error.debug_message) console.error('Debug message:', error.debug_message);
+        if (error.debug_file) console.error('Debug file:', error.debug_file);
+        if (error.debug_line) console.error('Debug line:', error.debug_line);
+        if (error.debug_trace) console.error('Debug trace:', error.debug_trace);
+        if (error.stack) console.error('Stack:', error.stack);
+    }
+    console.groupEnd();
+
+    // Préparer le message pour la notification
+    let notificationMessage = message;
+    let notificationDetails = error?.message || error?.error || error?.data?.error || error?.data?.message || "Erreur inconnue";
+
+    // Si on a des infos de debug, les ajouter aux détails
+    if (error && error.debug_message) {
+        notificationDetails = `${error.debug_message}`;
+        if (error.debug_file && error.debug_line) {
+            notificationDetails += ` (${error.debug_file}:${error.debug_line})`;
+        }
+    }
+
+    showNotification(notificationMessage, notificationDetails, type);
+}
+
 // Fonction pour mettre à jour les éléments du DOM
 function updateDOM(elements, data) {
     Object.entries(elements).forEach(([key, selector]) => {
