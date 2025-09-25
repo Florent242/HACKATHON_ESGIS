@@ -1,3 +1,215 @@
+// Gestion des actions de notification
+class NotificationActionManager {
+  constructor() {
+    this.actions = [];
+    this.container = document.getElementById('notificationActions');
+    this.setupEventListeners();
+  }
+
+  setupEventListeners() {
+    const addButton = document.getElementById('addActionBtn');
+    if (!addButton) return;
+
+    // Supprimer d'abord tous les écouteurs existants
+    addButton.replaceWith(addButton.cloneNode(true));
+
+    document.getElementById('addActionBtn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.addAction();
+    });
+  }
+
+  addAction(action = null) {
+    const actionId = Date.now();
+    const actionData = action || { type: 'link', label: '', url: '' };
+
+    const actionElement = document.createElement('div');
+    actionElement.className = 'p-3 bg-slate-700/50 rounded-lg';
+    actionElement.dataset.id = actionId;
+
+    actionElement.innerHTML = `
+      <div class="flex justify-between items-center mb-2">
+        <select class="action-type-select border-slate-600 bg-slate-700 text-white rounded">
+          <option value="link" ${actionData.type === 'link' ? 'selected' : ''}>Lien</option>
+          <option value="modal" ${actionData.type === 'modal' ? 'selected' : ''}>Modal</option>
+          <option value="api" ${actionData.type === 'api' ? 'selected' : ''}>API Call</option>
+        </select>
+        <button type="button" class="remove-action text-red-400 hover:text-red-300">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="action-config"></div>
+    `;
+
+    this.container.appendChild(actionElement);
+    this.updateActionConfig(actionElement, actionData);
+    this.setupActionEventListeners(actionElement, actionId, actionData);
+
+    lucide.createIcons();
+  }
+
+  updateActionConfig(element, actionData) {
+    const configContainer = element.querySelector('.action-config');
+    let configHtml = '';
+
+    switch (actionData.type) {
+      case 'link':
+        configHtml = `
+          <div class="space-y-2">
+            <input type="text" class="action-label w-full bg-slate-700 border-slate-600 text-white rounded" 
+                   placeholder="Texte du bouton" value="${actionData.label || ''}">
+            <input type="text" class="action-url w-full bg-slate-700 border-slate-600 text-white rounded mt-1" 
+                   placeholder="URL" value="${actionData.url || ''}">
+            <select class="action-target w-full bg-slate-700 border-slate-600 text-white rounded mt-1">
+              <option value="_self" ${actionData.target === '_self' ? 'selected' : ''}>Même onglet</option>
+              <option value="_blank" ${actionData.target === '_blank' ? 'selected' : ''}>Nouvel onglet</option>
+            </select>
+          </div>
+        `;
+        break;
+      case 'modal':
+        configHtml = `
+          <div class="space-y-2">
+            <input type="text" class="action-label w-full bg-slate-700 border-slate-600 text-white rounded" 
+                   placeholder="Texte du bouton" value="${actionData.label || ''}">
+            <input type="text" class="action-modal-id w-full bg-slate-700 border-slate-600 text-white rounded mt-1" 
+                   placeholder="ID de la modal" value="${actionData.modal_id || ''}">
+            <textarea class="action-params w-full bg-slate-700 border-slate-600 text-white rounded mt-1" 
+                     placeholder="Paramètres (JSON)">${actionData.params ? JSON.stringify(actionData.params, null, 2) : ''}</textarea>
+          </div>
+        `;
+        break;
+      case 'api':
+        configHtml = `
+          <div class="space-y-2">
+            <input type="text" class="action-label w-full bg-slate-700 border-slate-600 text-white rounded" 
+                   placeholder="Texte du bouton" value="${actionData.label || ''}">
+            <input type="text" class="action-endpoint w-full bg-slate-700 border-slate-600 text-white rounded mt-1" 
+                   placeholder="Endpoint" value="${actionData.endpoint || ''}">
+            <select class="action-method w-full bg-slate-700 border-slate-600 text-white rounded mt-1">
+              <option value="GET" ${actionData.method === 'GET' ? 'selected' : ''}>GET</option>
+              <option value="POST" ${actionData.method === 'POST' ? 'selected' : ''}>POST</option>
+              <option value="PUT" ${actionData.method === 'PUT' ? 'selected' : ''}>PUT</option>
+              <option value="DELETE" ${actionData.method === 'DELETE' ? 'selected' : ''}>DELETE</option>
+            </select>
+            <textarea class="action-params w-full bg-slate-700 border-slate-600 text-white rounded mt-1" 
+                     placeholder="Paramètres (JSON)">${actionData.params ? JSON.stringify(actionData.params, null, 2) : ''}</textarea>
+          </div>
+        `;
+        break;
+    }
+
+    configContainer.innerHTML = configHtml;
+    lucide.createIcons();
+  }
+
+  setupActionEventListeners(element, actionId, actionData) {
+    const typeSelect = element.querySelector('.action-type-select');
+    const removeBtn = element.querySelector('.remove-action');
+
+    typeSelect.addEventListener('change', (e) => {
+      actionData.type = e.target.value;
+      this.updateActionConfig(element, actionData);
+    });
+
+    removeBtn.addEventListener('click', () => {
+      element.remove();
+      this.actions = this.actions.filter(a => a.id !== actionId);
+    });
+  }
+
+  getActions() {
+    const actions = [];
+    const actionElements = this.container.querySelectorAll('[data-id]');
+
+    actionElements.forEach(element => {
+      const type = element.querySelector('.action-type-select').value;
+      const action = { type };
+
+      switch (type) {
+        case 'link':
+          action.label = element.querySelector('.action-label')?.value || '';
+          action.url = element.querySelector('.action-url')?.value || '';
+          action.target = element.querySelector('.action-target')?.value || '_self';
+          break;
+
+        case 'modal':
+          action.label = element.querySelector('.action-label')?.value || '';
+          action.modal_id = element.querySelector('.action-modal-id')?.value || '';
+          try {
+            const params = element.querySelector('.action-params')?.value;
+            action.params = params ? JSON.parse(params) : {};
+          } catch (e) {
+            console.error('Erreur de parsing des paramètres JSON', e);
+            action.params = {};
+          }
+          break;
+
+        case 'api':
+          action.label = element.querySelector('.action-label')?.value || '';
+          action.endpoint = element.querySelector('.action-endpoint')?.value || '';
+          action.method = element.querySelector('.action-method')?.value || 'POST';
+          try {
+            const params = element.querySelector('.action-params')?.value;
+            action.params = params ? JSON.parse(params) : {};
+          } catch (e) {
+            console.error('Erreur de parsing des paramètres JSON', e);
+            action.params = {};
+          }
+          break;
+      }
+
+      actions.push(action);
+    });
+
+    return actions;
+  }
+
+  validateActions() {
+    const actions = this.getActions();
+    let isValid = true;
+
+    actions.forEach((action, index) => {
+      const element = this.container.querySelector(`[data-id]:nth-child(${index + 1})`);
+
+      if (!action.label) {
+        showError(element.querySelector('.action-label') || element, 'Le libellé est requis');
+        isValid = false;
+      }
+
+      switch (action.type) {
+        case 'link':
+          if (!action.url) {
+            showError(element.querySelector('.action-url'), 'L\'URL est requise');
+            isValid = false;
+          }
+          break;
+        case 'modal':
+          if (!action.modal_id) {
+            showError(element.querySelector('.action-modal-id'), 'L\'ID de la modal est requis');
+            isValid = false;
+          }
+          break;
+        case 'api':
+          if (!action.endpoint) {
+            showError(element.querySelector('.action-endpoint'), 'L\'endpoint est requis');
+            isValid = false;
+          }
+          break;
+      }
+    });
+
+    return isValid;
+  }
+}
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', () => {
+  if (!window.notificationActionManager) {
+    window.notificationActionManager = new NotificationActionManager();
+  }
+});
 // Configuration
 const ITEMS_PER_PAGE = 10;
 let currentPage = 1;
@@ -169,6 +381,9 @@ function setupEventListeners() {
       case 'change_role':
         warning = 'Le rôle sera changé pour tous les utilisateurs sélectionnés.';
         break;
+      case 'send_notification':
+        warning = 'Une notification sera envoyée aux utilisateurs sélectionnés.';
+        break;
     }
 
     if (warning) {
@@ -200,7 +415,276 @@ function setupEventListeners() {
     validatePasswordMatch(e);
   });
 
+  document.getElementById('createNotificationBtn')?.addEventListener('click', () => {
+    // Réinitialiser le formulaire
+    const form = document.getElementById('notificationForm');
+    if (form) form.reset();
+
+    // Réinitialiser le gestionnaire d'actions si nécessaire
+    if (window.notificationActionManager) {
+      window.notificationActionManager = new NotificationActionManager();
+    }
+
+    // Ouvrir le modal
+    openNotificationModal();
+
+    // Optionnel : Mettre le focus sur le premier champ
+    const firstInput = document.querySelector('#notificationModal input, #notificationModal select, #notificationModal textarea');
+    if (firstInput) firstInput.focus();
+  });
+
+  // Gestionnaires d'événements
+  document.getElementById('closeNotificationModal')?.addEventListener('click', closeNotificationModal);
+  document.getElementById('cancelNotificationBtn')?.addEventListener('click', closeNotificationModal);
+
+  // Gestionnaire d'événement pour le bouton d'envoi
+  document.addEventListener('click', async function (e) {
+    // Gestion du clic sur le bouton d'envoi de notification dans le menu
+    if (e.target.closest('.send-notification')) {
+      e.preventDefault();
+      const userId = parseInt(e.target.closest('tr').getAttribute('data-user-id'));
+      if (userId) {
+        selectedUsers.clear();
+        selectedUsers.add(userId);
+        openNotificationModal([userId]);
+      }
+    }
+
+    // Gestion du clic sur le bouton "Envoyer la notification" dans le modal
+    if (e.target.closest('#sendNotificationBtn')) {
+      const form = document.getElementById('notificationForm');
+      const formData = new FormData(form);
+
+      if (!formData.get('title') || !formData.get('message')) {
+        showNotification('Attention', 'Veuillez remplir tous les champs obligatoires', 'error');
+        return;
+      }
+
+      await handleSendNotification(e);
+    }
+  });
+
+  document.getElementById('notificationScope')?.addEventListener('change', handleScopeChange);
+
+  // Gestion de l'envoi de notification
+  document.getElementById('sendNotificationBtn')?.addEventListener('click', (e) => handleSendNotification(e));
+
+  // Initialisation du formulaire de notification
+  initNotificationForm();
+
   lucide.createIcons();
+}
+
+// Fonction pour gérer le changement de scope
+function handleScopeChange() {
+  const scope = this.value;
+  const userField = document.getElementById('userField');
+  const teamField = document.getElementById('teamField');
+  const hackathonField = document.getElementById('hackathonField');
+
+  // Masquer tous les champs
+  userField.classList.add('hidden');
+  teamField.classList.add('hidden');
+  hackathonField.classList.add('hidden');
+
+  // Afficher le champ correspondant au scope
+  if (scope === 'user') {
+    userField.classList.remove('hidden');
+    if (!window.usersLoaded) {
+      loadUsersForSelect();
+    }
+  } else if (scope === 'team') {
+    teamField.classList.remove('hidden');
+    if (!window.teamsLoaded) {
+      loadTeamsForSelect();
+    }
+  } else if (scope === 'hackathon') {
+    hackathonField.classList.remove('hidden');
+    if (!window.hackathonsLoaded) {
+      loadHackathonsForSelect();
+    }
+  }
+}
+
+// Fonction pour charger les utilisateurs dans le select
+async function loadUsersForSelect() {
+  try {
+    const select = document.getElementById('notificationUser');
+    if (!select) return;
+
+    const response = await apiRequest('/users/all?limit=1000');
+    select.innerHTML = response.data.map(user =>
+      `<option value="${user.id}">${user.username || user.email} == (${user.role || 'Utilisateur'})</option>`
+    ).join('');
+    usersLoaded = true;
+  } catch (error) {
+    console.error('Erreur lors du chargement des utilisateurs:', error);
+    throw error;
+  }
+}
+
+
+// Fonction pour charger les équipes dans le select
+async function loadTeamsForSelect() {
+  try {
+    const response = await apiRequest('/teams');
+    const select = document.getElementById('notificationTeam');
+    select.innerHTML = response.data.map(team =>
+      `<option value="${team.id}">${team.name}</option>`
+    ).join('');
+    window.teamsLoaded = true;
+  } catch (error) {
+    console.error('Erreur lors du chargement des équipes:', error);
+  }
+}
+
+// Fonction pour charger les hackathons dans le select
+async function loadHackathonsForSelect() {
+  try {
+    const response = await apiRequest('/hackathons');
+    const select = document.getElementById('notificationHackathon');
+    select.innerHTML = response.data.map(hackathon =>
+      `<option value="${hackathon.id}">${hackathon.name} (${new Date(hackathon.start_date).getFullYear()})</option>`
+    ).join('');
+    window.hackathonsLoaded = true;
+  } catch (error) {
+    console.error('Erreur lors du chargement des hackathons:', error);
+  }
+}
+
+// Fonction pour gérer l'envoi de notification
+async function handleSendNotification(e) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  // Valider les actions
+  if (!window.notificationActionManager.validateActions()) {
+    showNotification('Erreur dans les actions', 'Veuillez corriger les erreurs dans les actions', 'error');
+    return;
+  }
+
+  const form = document.getElementById('notificationForm');
+  const formData = new FormData(form);
+
+  // Validation
+  if (!formData.get('title') || !formData.get('message')) {
+    showNotification('Formulaire invalide', 'Veuillez remplir tous les champs obligatoires', 'error');
+    return;
+  }
+
+  try {
+    const actions = window.notificationActionManager.getActions();
+    const notificationData = {
+      scope: formData.get('scope'),
+      title: formData.get('title'),
+      message: formData.get('message'),
+      type: formData.get('type'),
+      important: formData.get('important') === 'on',
+      send_email: formData.get('send_email') === 'on',
+      action: actions.length > 0 ? actions[0] : null
+    };
+
+    // Ajouter les paramètres spécifiques au scope
+    if (notificationData.scope === 'user') {
+      notificationData.user_id = formData.get('user_id');
+    } else if (notificationData.scope === 'team') {
+      notificationData.team_id = formData.get('team_id');
+    } else if (notificationData.scope === 'hackathon') {
+      notificationData.hackathon_id = formData.get('hackathon_id');
+    } else if (notificationData.scope === 'selected') {
+      notificationData.user_ids = Array.from(selectedUsers).join(',');
+    }
+
+    const response = await apiRequest('/notifications/user', {
+      method: 'POST',
+      body: JSON.stringify(notificationData)
+    });
+
+    if (response.success) {
+      showNotification('Succès', 'Notification(s) envoyée(s) avec succès', 'success');
+      closeNotificationModal();
+    } else {
+      throw new Error(response.error || 'Erreur lors de l\'envoi de la notification');
+    }
+  } catch (error) {
+    console.error('Erreur:', error);
+    showNotification('Erreur', error.message || 'Une erreur est survenue', 'error');
+  }
+}
+
+// Fonction pour ouvrir le modal de notification
+function openNotificationModal(userIds = []) {
+  const modal = document.getElementById('notificationModal');
+  const scopeSelect = document.getElementById('notificationScope');
+  const recipientsInfo = document.getElementById('notificationRecipientsInfo');
+  const recipientsCount = document.getElementById('notificationRecipientsCount');
+
+  if (!modal || !scopeSelect || !recipientsInfo || !recipientsCount) {
+    console.error('Éléments du modal de notification introuvables');
+    return;
+  }
+
+  // Réinitialiser le formulaire
+  const form = document.getElementById('notificationForm');
+  if (form) form.reset();
+
+  // Si des IDs sont fournis, on présélectionne le scope "Sélection d'utilisateurs"
+  if (userIds && userIds.length > 0) {
+    scopeSelect.value = 'selected';
+    if (recipientsInfo) {
+      recipientsInfo.textContent = `${userIds.length} utilisateur(s) sélectionné(s)`;
+      recipientsInfo.classList.remove('hidden');
+    }
+    if (recipientsCount) {
+      recipientsCount.textContent = userIds.length;
+    }
+  } else {
+    scopeSelect.value = 'user';
+    recipientsInfo.classList.add('hidden');
+    recipientsCount.textContent = '0';
+  }
+
+  // Déclencher le changement de scope
+  const event = new Event('change');
+  scopeSelect.dispatchEvent(event);
+
+  // Afficher le modal
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+// Fonction pour fermer le modal de notification
+function closeNotificationModal() {
+  const modal = document.getElementById('notificationModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  selectedUsers.clear();
+  refreshDisplayedData();
+  updateBulkActions();
+}
+
+// Gestionnaire pour le bouton d'annulation
+document.getElementById('cancelNotificationBtn')?.addEventListener('click', closeNotificationModal);
+
+// Fermer en cliquant en dehors du modal
+document.getElementById('notificationModal')?.addEventListener('click', (e) => {
+  if (e.target === document.getElementById('notificationModal')) {
+    closeNotificationModal();
+  }
+});
+
+// Initialisation du formulaire de notification
+function initNotificationForm() {
+  const scopeSelect = document.getElementById('notificationScope');
+  if (scopeSelect) {
+    // Charger les données nécessaires
+    loadUsersForSelect();
+    loadTeamsForSelect();
+    loadHackathonsForSelect();
+  }
 }
 
 // Chargement des données
@@ -234,42 +718,6 @@ async function loadUsers(page = 1) {
     showNotification('Impossible de charger les utilisateurs - ' + error.message, null, 'error');
     showEmptyTable();
   }
-}
-
-
-/**
- * Applique les filtres aux utilisateurs
- */
-function applyFilters(users) {
-  const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase();
-  const roleFilter = document.getElementById('roleFilter')?.value;
-  const statusFilter = document.getElementById('statusFilter')?.value;
-  const teamFilter = document.getElementById('teamFilter')?.value;
-
-  console.log('Filters - Search:', searchTerm, 'Role:', roleFilter, 'Status:', statusFilter, 'Team:', teamFilter); // Debug
-
-
-  const filtered = users.filter(user => {
-    // Filtre de recherche
-    const matchesSearch = !searchTerm ||
-      (user.username && user.username.toLowerCase().includes(searchTerm)) ||
-      (user.email && user.email.toLowerCase().includes(searchTerm)) ||
-      (user.fullname && user.fullname.toLowerCase().includes(searchTerm));
-
-    // Filtre par rôle
-    const matchesRole = !roleFilter || user.role === roleFilter;
-
-    // Filtre par statut
-    const matchesStatus = !statusFilter || user.status === statusFilter;
-
-    // Filtre par équipe
-    const matchesTeam = !teamFilter || (user.team_id && user.team_id.toString() === teamFilter);
-
-    return matchesSearch && matchesRole && matchesStatus && matchesTeam;
-  });
-
-  console.log('Users after filtering:', filtered.length); // Debug
-  return filtered;
 }
 
 /**
@@ -427,13 +875,23 @@ function setupUserRowEventListeners(row, user) {
       e.preventDefault();
       e.stopPropagation();
       if (e.target.checked) {
-        selectedUsers.add(user.id);
+        if (!selectedUsers.has(user.id)) selectedUsers.add(user.id);
       } else {
         selectedUsers.delete(user.id);
       }
       updateBulkActions();
     });
   }
+
+  // Cocher case si ligne cliquer
+  row.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const checkbox = row.querySelector('.user-checkbox');
+    if (checkbox) {
+      checkbox.checked = !checkbox.checked;
+      checkbox.dispatchEvent(new Event('change'));
+    }
+  });
 
   // Menu déroulant
   const menuButton = row.querySelector('[aria-haspopup="true"]');
@@ -945,7 +1403,6 @@ async function showUserModal(userId = null, activeTab = 'profile') {
         document.getElementById('number').value = user.number || '';
         document.getElementById('study_level').value = user.study_level || '';
 
-
         // Si l'onglet d'activité est actif, charger les activités
         if (activeTab === 'activity') {
           loadUserActivity(userId);
@@ -1128,9 +1585,14 @@ function validatePasswordMatch() {
 async function toggleUserStatus(userId, status, username) {
   const actionText = status === 'inactive' ? 'suspendre' : 'activer';
 
-  if (!confirm(`Êtes-vous sûr de vouloir ${actionText} l'utilisateur "${username}" ?`)) {
-    return;
-  }
+  const confirmed = await showConfirmDialog(
+    `Êtes-vous sûr de vouloir ${actionText} l'utilisateur "${username}" ?`,
+    'Confirmer le statut',
+    'Confirmer',
+    'Annuler'
+  );
+
+  if (!confirmed) return;
 
   try {
     const response = await apiRequest(`/admin/users/${userId}/status`, {
@@ -1160,9 +1622,14 @@ async function toggleUserStatus(userId, status, username) {
 }
 
 async function resetUserPassword(userId, username) {
-  if (!confirm(`Voulez-vous vraiment réinitialiser le mot de passe de l'utilisateur "${username}" ?\n\nUn email lui sera envoyé avec les instructions.`)) {
-    return;
-  }
+  const confirmed = await showConfirmDialog(
+    `Voulez-vous vraiment réinitialiser le mot de passe de l'utilisateur "${username}" ?\n\nUn email lui sera envoyé avec les instructions.`,
+    'Confirmer la réinitialisation',
+    'Confirmer',
+    'Annuler'
+  );
+
+  if (!confirmed) return;
 
   try {
     const response = await apiRequest(`/admin/users/${userId}/reset-password`, {
@@ -1339,6 +1806,10 @@ async function handleBulkAction() {
   const userIds = Array.from(selectedUsers);
   let confirmMessage = `Êtes-vous sûr de vouloir effectuer cette action sur ${userIds.length} utilisateur(s) ?`;
 
+  if (action === 'send_notification') {
+    openNotificationModal(userIds);
+    return;
+  }
   // Messages de confirmation spécifiques
   switch (action) {
     case 'delete':
@@ -1398,10 +1869,9 @@ async function handleBulkAction() {
       document.getElementById('bulkActionsModal').classList.add('hidden');
       document.body.classList.remove('overflow-hidden');
 
-      const data = response.data;
       showNotification(
         'Action effectuée avec succès',
-        `${data.updated_count} utilisateur(s) mis à jour${data.failed_count > 0 ? `, ${data.failed_count} échec(s)` : ''}`,
+        response.message || response.error || 'Action effectuée avec succès',
         'success'
       );
 

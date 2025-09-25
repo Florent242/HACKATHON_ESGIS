@@ -66,16 +66,17 @@ class Notification {
         // $rows = [['user_id'=>1,'title'=>'','message'=>'','type'=>'info'], ...]
         if (empty($rows)) return 0;
 
-        $sql = "INSERT INTO {$this->table} (user_id, title, message, type, read_status, created_at)
+        $sql = "INSERT INTO {$this->table} (user_id, title, message, type, read_status, created_at, action)
                 VALUES ";
         $vals = [];
         $params = [];
         foreach ($rows as $i => $r) {
-            $vals[] = "( :user_id_$i, :title_$i, :message_$i, :type_$i, 0, NOW() )";
+            $vals[] = "( :user_id_$i, :title_$i, :message_$i, :type_$i, 0, NOW(), :action_$i )";
             $params[":user_id_$i"] = (int)$r['user_id'];
             $params[":title_$i"]   = $r['title']   ?? 'Notification';
             $params[":message_$i"] = $r['message'];
             $params[":type_$i"]    = $r['type']    ?? 'info';
+            $params[":action_$i"]  = json_encode($r['action'])  ?? null;
         }
         $sql .= implode(',', $vals);
         $stmt = $this->db->prepare($sql);

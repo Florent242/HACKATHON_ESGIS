@@ -49,7 +49,8 @@ try {
             'ChallengeController' => '/controllers/ChallengeController.php',
             'EvaluationController' => '/controllers/EvaluationController.php',
             'AdminController'     => '/controllers/AdminController.php',
-            'TokenManager'        => '/models/TokenManager.php'
+            'TokenManager'        => '/models/TokenManager.php',
+            'NotificationController' => '/controllers/NotificationController.php'
         ];
 
         foreach ($files as $class => $path) {
@@ -282,7 +283,7 @@ try {
                         } elseif ($method === 'PUT' || $method === 'POST' && isset($request[3]) && $request[3] === 'reset-password') {
                             // GET /api/admin/users/{id}/reset-password - Reset mot de passe des utilisateurs
                             jsonResponse(['success' => false, 
-                            'message' => 'Instruction non pris en charge, essayez de modifier simplement le profile'], 403);
+                            'message' => 'Instruction non pris en charge pour l\'instant, essayez de modifier simplement le profile'], 403);
                         } else {
                             jsonResponse(['success' => false, 'error' => 'Endpoint non trouvé'], 404);
                             exit();
@@ -500,7 +501,7 @@ try {
                 // Route /api/users
                 switch ($method) {
                     case 'GET':
-                        if ($request[1] === 'me') {
+                        if ($id === 'me') {
                             // Vérifier l'authentification
                             if (!$currentUserId) {
                                 jsonResponse(['error' => 'Non authentifié. api'], 401);
@@ -511,6 +512,22 @@ try {
                             try {
                                 $controller->get($currentUserId);
                                 $controller->getUserStats($currentUserId);
+                            } catch (Exception $e) {
+                                if (isAjaxRequest()) {
+                                    jsonResponse([
+                                        'success' => false,
+                                        'error' => 'api.php ' . $e->getMessage()
+                                    ], $e->getCode() ?: 404);
+                                } else {
+                                    setFlashMessage('error', 'Erreur de connexion', $e->getMessage());
+                                    header('Location: ' . '/user');
+                                    exit();
+                                }
+                            }
+                        } elseif ($id === 'all') {
+                            // GET /api/users/all
+                            try {
+                                $controller->getAll();
                             } catch (Exception $e) {
                                 if (isAjaxRequest()) {
                                     jsonResponse([
@@ -957,12 +974,12 @@ try {
 
         case 'notifications':
             $controller = new NotificationController($db, $tokenManager);
-            if ($id === 'user' && is_numeric($action)) {
-                if ($method === 'GET') {
+            if ($id === 'user') {
+                if ($method === 'GET' && is_numeric($action)) {
                     // GET /api/notifications/user/{user_id}
                     $controller->listForCurrentUser($action);
                 } elseif ($method === 'POST' || $method === 'PUT') {
-                    // POST || PUT /api/notifications/user/{user_id}
+                    // POST || PUT /api/notifications/user
                     $controller->create($input);
                 } else {
                     throw new Exception('Méthode non autorisée', 405);

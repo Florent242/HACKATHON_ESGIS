@@ -82,7 +82,7 @@ class AdminController extends Controller
     /**
      * Bannir un utilisateur
      */
-    public function banUser($userId, $reason = '')
+    public function banUser($userId, $reason = '', $isbulk = false)
     {
         try {
             $this->validateMethod('POST');
@@ -132,7 +132,7 @@ class AdminController extends Controller
     /**
      * Suspendre un utilisateur
      */
-    public function suspendUser($userId, $duration = 24, $reason = '')
+    public function suspendUser($userId, $duration = 24, $reason = '', $isbulk = false)
     {
         try {
             $this->validateMethod('POST');
@@ -177,6 +177,9 @@ class AdminController extends Controller
                 $_SERVER['HTTP_USER_AGENT']
             );
 
+            if ($isbulk) {
+                return;
+            }
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Utilisateur suspendu avec succès',
@@ -289,7 +292,7 @@ class AdminController extends Controller
     /**
      * Débloquer un compte verrouillé
      */
-    public function unlockUserAccount($userId)
+    public function unlockUserAccount($userId, $isbulk = false)
     {
         try {
             $this->validateMethod('POST');
@@ -320,6 +323,9 @@ class AdminController extends Controller
             $_SERVER['REMOTE_ADDR'],
             $_SERVER['HTTP_USER_AGENT']);
 
+            if ($isbulk) {
+                return;
+            }
             $this->jsonResponse(['success' => true, 'message' => 'Compte débloqué avec succès']);
         } catch (Exception $e) {
             $this->jsonResponse([
@@ -1268,7 +1274,7 @@ class AdminController extends Controller
         exit;
     }
 
-    public function getAllActivities($userId)
+    public function getAllActivities($userId, $isbulk = false)
     {
         try {
             $currentUserId = $this->TokenManager->getCurrentUserId();
@@ -1407,7 +1413,7 @@ class AdminController extends Controller
      * @param string $status Nouveau statut
      * @return bool Succès ou échec
      */
-    public function updateUserStatus($userId, $status): void
+    public function updateUserStatus($userId, $status, $isbulk = false): void
     {
         try {
             $query = "UPDATE users SET status = :status WHERE id = :id";
@@ -1416,7 +1422,14 @@ class AdminController extends Controller
             $stmt->bindValue(':status', $status);
 
             $stmt->execute();
-            $this->jsonResponse(['success' => true, 'message' => 'Statut mis à jour avec succès']);
+
+            if ($isbulk) {
+                return;
+            }
+            $this->jsonResponse(['success' => true, 'message' => 'Statut mis à jour avec succès',
+            'data' => [
+                'updated_count' => $stmt->rowCount(),
+            ]]);
         } catch (Exception $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
         }
@@ -1520,7 +1533,7 @@ class AdminController extends Controller
     /**
      * Met à jour un utilisateur existant
      */
-    public function updateUser($userId)
+    public function updateUser($userId, $isbulk = false)
     {
         try {
             $data = json_decode(file_get_contents('php://input'), true);
@@ -1563,6 +1576,14 @@ class AdminController extends Controller
 
             // Journalisation de l'action
             $this->logActivity('update_user', 'Mise à jour d\'un utilisateur par ' . $this->TokenManager->getCurrentUserId(), $data, 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+
+            if ($isbulk) {
+                return;
+            }
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Utilisateur mis à jour avec succès'
+            ]);
         } catch (Exception $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
         }
@@ -1571,7 +1592,7 @@ class AdminController extends Controller
     /**
      * Met à jour le rôle d'un utilisateur
      */
-    public function updateUserRole($userId, $role)
+    public function updateUserRole($userId, $role, $isbulk = false)
     {
         try {
             // Vérifier si l'utilisateur existe
@@ -1589,6 +1610,14 @@ class AdminController extends Controller
 
             // Journalisation de l'action
             $this->logActivity('update_user_role', 'Mise à jour du rôle d\'un utilisateur par ' . $this->TokenManager->getCurrentUserId(), ['role' => $role], 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+            
+            if ($isbulk) {
+                return;
+            }
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Rôle de l\'utilisateur mis à jour avec succès'
+            ]);
         } catch (Exception $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
         }
@@ -1600,7 +1629,7 @@ class AdminController extends Controller
      * @param int $userId ID de l'utilisateur à supprimer
      * @return void
      */
-    public function deleteUser($userId)
+    public function deleteUser($userId, $isbulk = false)
     {
         try {
             // Vérifier si l'utilisateur existe
@@ -1678,6 +1707,9 @@ class AdminController extends Controller
                     $_SERVER['HTTP_USER_AGENT']
                 );
 
+                if ($isbulk) {
+                    return;
+                }
                 $this->jsonResponse([
                     'success' => true,
                     'message' => 'Utilisateur supprimé et archivé avec succès'
@@ -1713,31 +1745,43 @@ class AdminController extends Controller
             switch ($action) {
                 case 'delete':
                     foreach ($userIds as $userId) {
-                        $this->deleteUser($userId);
-                    }
-                    break;
-                case 'activate':
-                    foreach ($userIds as $userId) {
-                        $this->updateUserStatus($userId, 'active');
-                    }
-                    break;
-                case 'deactivate':
-                    foreach ($userIds as $userId) {
-                        $this->updateUserStatus($userId, 'inactive');
-                    }
-                    break;
-                case 'ban':
-                    foreach ($userIds as $userId) {
-                        $this->banUser($userId);
+                        $this->deleteUser($userId, true);
                     }
                     $this->jsonResponse([
                         'success' => true,
-                        'message' => 'Action non pris en charge pour le moment'
+                        'message' => 'Utilisateurs supprimés et archivés avec succès'
+                    ]);
+                    break;
+                case 'activate':
+                    foreach ($userIds as $userId) {
+                        $this->updateUserStatus($userId, 'active', true);
+                    }
+                    $this->jsonResponse([
+                        'success' => true,
+                        'message' => 'Utilisateurs activés avec succès'
+                    ]);
+                    break;
+                case 'deactivate':
+                    foreach ($userIds as $userId) {
+                        $this->updateUserStatus($userId, 'inactive', true);
+                    }
+                    $this->jsonResponse([
+                        'success' => true,
+                        'message' => 'Utilisateurs desactivés avec succès'
+                    ]);
+                    break;
+                case 'ban':
+                    foreach ($userIds as $userId) {
+                        $this->banUser($userId, true);
+                    }
+                    $this->jsonResponse([
+                        'success' => true,
+                        'message' => 'Action non pris en charge pour le moment. Veuillez contacter le support ou tout simplement desactiver le compte'
                     ]);
                     break;
                 case 'unlock':
                     foreach ($userIds as $userId) {
-                        $this->unlockUserAccount($userId);
+                        $this->unlockUserAccount($userId, true);
                     }
                     $this->jsonResponse([
                         'success' => true,
@@ -1746,7 +1790,7 @@ class AdminController extends Controller
                     break;
                 case 'suspend':
                     foreach ($userIds as $userId) {
-                        $this->suspendUser($userId);
+                        $this->suspendUser($userId, $input['duration'] ?? 24, $input['reason'] ?? 'Suspension par un Administrateur', isbulk: true);
                     }
                     $this->jsonResponse([
                         'success' => true,
@@ -1755,8 +1799,12 @@ class AdminController extends Controller
                     break;
                 case 'change_role':
                     foreach ($userIds as $userId) {
-                        $this->updateUserRole($userId, $data['role']);
+                        $this->updateUserRole($userId, $data['role'], true);
                     }
+                    $this->jsonResponse([
+                        'success' => true,
+                        'message' => 'Rôles des utilisateurs modifiés avec succès'
+                    ]);
                     break;
                 default:
                     throw new Exception('Action non reconnue ' . print_r($action, true), 400);

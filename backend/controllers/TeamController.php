@@ -20,11 +20,13 @@ if(!class_exists('Controller')) {
 class TeamController extends Controller {
     private $team;
     private $db;
+    private $tokenManager;
 
     public function __construct($db, $tokenManager) {
         parent::__construct($tokenManager);
         $this->db = $db;
         $this->team = new Team($this->db);
+        $this->tokenManager = $tokenManager;
     }
 
     /**
@@ -33,7 +35,8 @@ class TeamController extends Controller {
     public function getAll() {
         try {
             $this->validateMethod('GET');
-            $teams = $this->team->getAll();
+            $userId = $this->tokenManager->getCurrentUserId();
+            $teams = $this->team->getAll($userId);
 
             $this->jsonResponse([
                 'success' => true,

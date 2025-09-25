@@ -1,76 +1,88 @@
 <?php
+
 namespace Auth\Controller;
 
 use Exception;
 use Auth\Model\Notification;
 use PDO;
 
-if(!defined('CONFIG_INCLUDED')) {
+if (!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
 }
-if(!defined('FUNCTIONS_INCLUDED')) {
+if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/../includes/functions.php';
 }
-if(!class_exists('Notification')) {
+if (!class_exists('Notification')) {
     require_once __DIR__ . '/../models/Notification.php';
 }
-if(!class_exists('Controller')) {
+if (!class_exists('Controller')) {
     require_once __DIR__ . '/Controller.php';
 }
 
-class NotificationController extends Controller {
+class NotificationController extends Controller
+{
     private $notification;
     private $db;
-    
-    public function __construct($db, $tokenManager) {
+
+    public function __construct($db, $tokenManager)
+    {
         parent::__construct($tokenManager);
         $this->db = $db;
         $this->notification = new Notification($this->db);
     }
 
-    public function create($data) {
+    public function create($data)
+    {
         try {
             $this->validateMethod('POST');
-    
+
             // Vérification du scope
-            if (empty($data['scope']) || !in_array($data['scope'], ['user', 'team', 'hackathon', 'global'])) {
-                throw new Exception("Scope invalide (user|team|hackathon|global)");
+            if (empty($data['scope']) || !in_array($data['scope'], ['user', 'team', 'hackathon', 'global', 'selected'])) {
+                throw new Exception("Scope manquant ou invalide");
             }
-    
+
             if (empty($data['message'])) {
                 throw new Exception("Le message est requis");
             }
             if (empty($data['type']) || !in_array($data['type'], ['info', 'success', 'warning', 'error'])) {
                 throw new Exception("Type de notification invalide");
             }
-    
+
             // Résoudre les destinataires selon le scope
             $recipients = [];
             switch ($data['scope']) {
                 case 'user':
                     if (empty($data['user_id'])) throw new Exception("user_id requis pour scope=user");
-                    $recipients = [ (int)$data['user_id'] ];
+                    $recipients = [(int)$data['user_id']];
                     break;
-    
+
                 case 'team':
                     if (empty($data['team_id'])) throw new Exception("team_id requis pour scope=team");
                     $recipients = $this->getTeamMemberIds($data['team_id']);
                     break;
-    
+
                 case 'hackathon':
                     if (empty($data['hackathon_id'])) throw new Exception("hackathon_id requis pour scope=hackathon");
                     $recipients = $this->getHackathonParticipantIds($data['hackathon_id']);
                     break;
-    
+
                 case 'global':
                     $recipients = $this->getAllActiveUserIds();
                     break;
+
+                case 'selected':
+                    if (empty($data['user_ids'])) throw new Exception("user_ids requis pour scope=selected");
+                    $recipients = array_map('intval', explode(',', $data['user_ids']));
+                    break;
+
+                default:
+                    throw new Exception("Scope invalide (user|team|hackathon|global|selected)");
             }
-    
+
             if (empty($recipients)) {
                 throw new Exception("Aucun destinataire trouvé");
             }
-    
+
             // Fan-out via createBulk()
             $rows = [];
             foreach ($recipients as $uid) {
@@ -79,16 +91,16 @@ class NotificationController extends Controller {
                     'title'   => $data['title'] ?? 'Notification',
                     'message' => $data['message'],
                     'type'    => $data['type'],
+                    'action'  => $data['action'] ?? null
                 ];
             }
             $count = $this->notification->createBulk($rows);
-    
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Notifications créées avec succès',
                 'data' => ['sent' => $count]
             ]);
-    
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
@@ -97,14 +109,16 @@ class NotificationController extends Controller {
         }
     }
 
-    private function getTeamMemberIds(int $teamId): array {
+    private function getTeamMemberIds(int $teamId): array
+    {
         $sql = "SELECT DISTINCT user_id FROM team_members WHERE team_id = :tid";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([':tid' => $teamId]);
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
-    private function getHackathonParticipantIds(int $hackathonId): array {
+    private function getHackathonParticipantIds(int $hackathonId): array
+    {
         // privilégie la table hackathon_participants si elle existe
         $sql = "SELECT DISTINCT user_id FROM hackathon_participants WHERE hackathon_id = :hid";
         $stmt = $this->db->prepare($sql);
@@ -112,17 +126,19 @@ class NotificationController extends Controller {
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
 
-    private function getAllActiveUserIds(): array {
+    private function getAllActiveUserIds(): array
+    {
         $sql = "SELECT id FROM users WHERE status = 'active'";
         $stmt = $this->db->query($sql);
         return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
     }
-    
+
     /**
      * Récupère toutes les notifications d'un utilisateur
      * @param int $userId ID de l'utilisateur
      */
-    public function listForCurrentUser($userId, $limit = 10, $offset = 0) {
+    public function listForCurrentUser($userId, $limit = 10, $offset = 0)
+    {
         try {
             $this->validateMethod('GET');
             $uid = (int)$userId;
@@ -148,7 +164,8 @@ class NotificationController extends Controller {
      * Récupère une notification par son ID
      * @param int $id ID de la notification
      */
-    public function getNotification($id) {
+    public function getNotification($id)
+    {
         try {
             $this->validateMethod('GET');
 
@@ -178,7 +195,8 @@ class NotificationController extends Controller {
      * Met à jour une notification
      * @param int $id ID de la notification
      */
-    public function update($id, $data) {
+    public function update($id, $data)
+    {
         try {
             $this->validateMethod('POST');
 
@@ -222,7 +240,8 @@ class NotificationController extends Controller {
         }
     }
 
-    public function getUnreadCount($userId) {
+    public function getUnreadCount($userId)
+    {
         try {
             $this->validateMethod('GET');
             $count = $this->notification->getUnreadCount($userId);
@@ -238,7 +257,8 @@ class NotificationController extends Controller {
         }
     }
 
-    public function markAsRead($id) {
+    public function markAsRead($id)
+    {
         try {
             $this->validateMethod('POST');
 
@@ -256,7 +276,8 @@ class NotificationController extends Controller {
         }
     }
 
-    public function markAllAsRead($userId) {
+    public function markAllAsRead($userId)
+    {
         try {
             $this->validateMethod('POST');
 
@@ -274,7 +295,8 @@ class NotificationController extends Controller {
         }
     }
 
-    public function delete($id) {
+    public function delete($id)
+    {
         try {
             $this->validateMethod('POST');
 
@@ -292,7 +314,8 @@ class NotificationController extends Controller {
         }
     }
 
-    public function deleteAll($userId) {
+    public function deleteAll($userId)
+    {
         try {
             $this->validateMethod('POST');
 

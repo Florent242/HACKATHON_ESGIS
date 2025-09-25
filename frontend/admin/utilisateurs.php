@@ -18,8 +18,8 @@
         <div class="mb-8">
             <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6 mb-8">
                 <div class="space-y-2">
-                    <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Gestion des Utilisateurs</h1>
-                    <p class="text-slate-600">Gérez et administrez tous les utilisateurs de la plateforme</p>
+                    <h1 class="text-3xl font-bold text-slate-400 tracking-tight">Gestion des Utilisateurs</h1>
+                    <p class="text-slate-300">Gérez et administrez tous les utilisateurs de la plateforme</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
                     <button id="bulkActionsBtn"
@@ -33,6 +33,12 @@
                         <i data-lucide="download" class="w-4 h-4"></i>
                         <span>Exporter</span>
                     </button>
+                    <button id="createNotificationBtn"
+                        class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:bg-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                        <i data-lucide="bell-plus" class="w-4 h-4 mr-2"></i>
+                        Créer une notification
+                    </button>
+
                     <button id="addUserBtn"
                         class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
                         <i data-lucide="user-plus" class="w-4 h-4"></i>
@@ -254,7 +260,7 @@
 
             <!-- Footer avec pagination améliorée -->
             <div class="bg-slate-600/50 px-6 py-4 border-t border-slate-200">
-                <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0" >
+                <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
                     <div class="flex items-center space-x-2 text-sm text-slate-400" id="paginationContainer">
                         <i data-lucide="info" class="w-4 h-4"></i>
                         <span id="tableInfo">Affichage de 0 à 0 sur 0 utilisateur(s)</span>
@@ -394,7 +400,7 @@
                                             </select>
                                             <div class="schoolError absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                                                 <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
-                                            </div> 
+                                            </div>
                                         </div>
                                     </div>
 
@@ -404,9 +410,9 @@
                                         </label>
                                         <div class="relative">
                                             <input type="tel"
-                                            placeholder="+XXX XX XX XX XX XX"
-                                            id="number" name="number" required
-                                            class="block w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none">
+                                                placeholder="+XXX XX XX XX XX XX"
+                                                id="number" name="number" required
+                                                class="block w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none">
                                             <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                                                 <i data-lucide="phone" class="w-4 h-4 text-slate-400"></i>
                                             </div>
@@ -583,12 +589,12 @@
                                 <select id="bulkAction"
                                     class="block w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white appearance-none">
                                     <option value="">Sélectionner une action</option>
+                                    <option value="send_notification">Envoyer une notification</option>
                                     <option value="activate">Activer</option>
                                     <option value="deactivate">Désactiver</option>
                                     <option value="suspend">Suspendre</option>
                                     <option value="ban">Bannir</option>
                                     <option value="change_role">Changer le rôle</option>
-                                    <option value="send_notification">Envoyer une notification</option>
                                     <option value="delete">Supprimer définitivement</option>
                                 </select>
                                 <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
@@ -635,6 +641,216 @@
                             <span id="bulkActionText">Confirmer</span>
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de notification -->
+    <div id="notificationModal" class="fixed inset-0 z-50 hidden">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"></div>
+        <div class="fixed inset-0 mx-auto overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative w-full max-w-2xl bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl shadow-2xl transform transition-all duration-300 border border-slate-700/50">
+                    <!-- Header -->
+                    <div class="px-6 py-4 border-b border-slate-700">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-blue-500/20">
+                                    <i data-lucide="bell" class="w-5 h-5 text-blue-400"></i>
+                                </div>
+                                <h3 class="ml-3 text-lg font-semibold text-white">
+                                    Nouvelle notification
+                                </h3>
+                            </div>
+                            <button type="button" id="closeNotificationModal"
+                                class="rounded-full p-1.5 text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors duration-200">
+                                <i data-lucide="x" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <p class="ml-13 mt-1 text-sm text-slate-400">
+                            <span id="notificationRecipientsCount" class="font-medium text-blue-400">0</span> destinataire(s)
+                        </p>
+                    </div>
+
+                    <!-- Contenu -->
+                    <form id="notificationForm" class="p-6 space-y-6">
+                        <input type="hidden" id="notificationRecipients" name="recipients">
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Type de notification -->
+                            <div class="space-y-2">
+                                <label for="notificationType" class="block text-sm font-medium text-slate-300">
+                                    Type de notification <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <select id="notificationType" name="type"
+                                        class="block w-full pl-3 pr-10 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none">
+                                        <option value="info" class="bg-slate-800">Information</option>
+                                        <option value="success" class="bg-slate-800">Succès</option>
+                                        <option value="warning" class="bg-slate-800">Avertissement</option>
+                                        <option value="error" class="bg-slate-800">Erreur</option>
+                                        <option value="announcement" class="bg-slate-800">Annonce</option>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Destinataires -->
+                            <div class="space-y-2" id="scopeSection">
+                                <label for="notificationScope" class="block text-sm font-medium text-slate-300">
+                                    Destinataires <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <select id="notificationScope" name="scope"
+                                        class="block w-full pl-3 pr-10 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none">
+                                        <option value="user">Utilisateur spécifique</option>
+                                        <option value="selected">Sélection d'utilisateurs</option>
+                                        <option value="team">Équipe</option>
+                                        <option value="hackathon">Hackathon</option>
+                                        <option value="global">Tous les utilisateurs</option>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                                    </div>
+                                </div>
+
+                                <!-- Message d'information pour la sélection -->
+                                <p id="notificationRecipientsInfo" class="text-sm text-blue-400 hidden flex items-center mt-1">
+                                    <i data-lucide="info" class="w-4 h-4 mr-1"></i>
+                                    <span></span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Champs dynamiques -->
+                        <div id="dynamicFields" class="space-y-4">
+                            <!-- Champs utilisateur -->
+                            <div id="userField" class="hidden">
+                                <label class="block text-sm font-medium text-slate-300 mb-1">
+                                    Utilisateur <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <select id="notificationUser" name="user_id"
+                                        class="block w-full pl-3 pr-10 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none">
+                                        <!-- Les utilisateurs seront chargés dynamiquement -->
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <i data-lucide="user" class="w-4 h-4 text-slate-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Champs équipe -->
+                            <div id="teamField" class="hidden">
+                                <label class="block text-sm font-medium text-slate-300 mb-1">
+                                    Équipe <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <select id="notificationTeam" name="team_id"
+                                        class="block w-full pl-3 pr-10 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none">
+                                        <!-- Les équipes seront chargées dynamiquement -->
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <i data-lucide="users" class="w-4 h-4 text-slate-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Champs hackathon -->
+                            <div id="hackathonField" class="hidden">
+                                <label class="block text-sm font-medium text-slate-300 mb-1">
+                                    Hackathon <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <select id="notificationHackathon" name="hackathon_id"
+                                        class="block w-full pl-3 pr-10 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm appearance-none">
+                                        <!-- Les hackathons seront chargés dynamiquement -->
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <i data-lucide="trophy" class="w-4 h-4 text-slate-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-slate-300 mb-2">Actions</label>
+                            <div id="notificationActions" class="space-y-3">
+                                <!-- Les actions seront ajoutées ici dynamiquement -->
+                            </div>
+                            <button type="button" id="addActionBtn"
+                                class="mt-2 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-100 bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                                <i data-lucide="plus" class="w-4 h-4 mr-1"></i> Ajouter une action
+                            </button>
+                        </div>
+
+                        <!-- Titre -->
+                        <div class="space-y-2">
+                            <label for="notificationTitle" class="block text-sm font-medium text-slate-300">
+                                Titre <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <input type="text" id="notificationTitle" name="title"
+                                    class="block w-full pl-3 pr-10 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    placeholder="Titre de la notification" required>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <i data-lucide="type" class="w-4 h-4 text-slate-400"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Message -->
+                        <div class="space-y-2">
+                            <label for="notificationMessage" class="block text-sm font-medium text-slate-300">
+                                Message <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <textarea id="notificationMessage" name="message" rows="4"
+                                    class="block w-full pl-3 pr-10 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                    placeholder="Contenu de la notification" required></textarea>
+                                <div class="absolute top-3 right-3">
+                                    <i data-lucide="message-square" class="w-4 h-4 text-slate-400"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Options -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                            <div class="flex items-center">
+                                <input id="importantNotification" name="important" type="checkbox"
+                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-700 rounded bg-slate-800">
+                                <label for="importantNotification" class="ml-2 block text-sm text-slate-300">
+                                    Notification importante
+                                </label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="sendEmailNotification" name="send_email" type="checkbox"
+                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-700 rounded bg-slate-800">
+                                <label for="sendEmailNotification" class="ml-2 block text-sm text-slate-300">
+                                    Envoyer par email
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="pt-4">
+                            <div class="flex justify-end space-x-3">
+                                <button type="button" id="cancelNotificationBtn"
+                                    class="px-4 py-2.5 text-sm font-medium rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                                    Annuler
+                                </button>
+                                <button type="submit" id="sendNotificationBtn"
+                                    class="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                                    <i data-lucide="send" class="w-4 h-4 mr-2"></i>
+                                    Envoyer
+                                </button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -696,6 +912,10 @@
                             <button class="toggle-status flex items-center w-full px-4 py-2 text-sm text-slate-300 hover:bg-slate-700/50 transition-colors duration-150" role="menuitem">
                                 <i data-lucide="user-x" class="w-4 h-4 mr-3 text-red-400"></i>
                                 Désactiver
+                            </button>
+                            <button class="send-notification flex items-center w-full px-4 py-2 text-sm text-slate-300 hover:bg-slate-700/50 transition-colors duration-150" role="menuitem">
+                                <i data-lucide="message-square" class="w-4 h-4 mr-3 text-red-400"></i>
+                                Envoyer une notification
                             </button>
                             <div class="my-1 border-t border-slate-700"></div>
                             <button class="delete-user flex items-center w-full px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition-colors duration-150" role="menuitem">

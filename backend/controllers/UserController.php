@@ -84,6 +84,32 @@ class UserController extends Controller
         }
     }
 
+    public function getAll()
+    {
+        try {
+            $this->validateMethod('GET');
+
+            // Verifier si l'utilisateur est admin
+            if (!$this->isAdmin($this->tokenManager->getCurrentUserId())) {
+                throw new Exception('Non autorisé', 403);
+            }
+
+            $users = $this->user->getAll();
+            if (!$users) {
+                throw new Exception('Aucun utilisateur trouvé');
+            }
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $users
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => 'UserController.php ' . $e->getMessage()
+            ], 404);
+        }
+    }
     /**
      * Récupère le token JWT depuis les headers
      */
@@ -156,7 +182,7 @@ class UserController extends Controller
      */
     public function validateToken(string $token): array
     {
-        $tokenManager = new TokenManager($this->db, $this->key);
+        $tokenManager = new TokenManager( $this->key, $this->db);
         return $tokenManager->validateToken($token);
     }
 
