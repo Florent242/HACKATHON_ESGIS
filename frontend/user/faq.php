@@ -35,13 +35,13 @@
                                 <i data-lucide="chevron-down" class="accordion-icon"></i>
                             </div>
                             <div class="accordion-content">
-                                <p>Pour participer, il suffit de créer un compte sur notre plateforme, former ou rejoindre une équipe, et s'inscrire aux événements qui vous intéressent. Les hackathons peuvent être en présentiel ou en ligne. Notre équipe est là pour vous guider à chaque étape du processus.</p>
+                                <p>Pour participer, il suffit de créer un compte sur notre plateforme, former ou rejoindre une équipe, et s'inscrire aux événements qui vous intéressent. Notre équipe est là pour vous guider à chaque étape du processus.</p>
                             </div>
                         </div>
 
                         <div class="accordion-item" data-aos="fade-up" data-aos-delay="50">
                             <div class="accordion-header">
-                                <h3>Quel est le processus de sélection des équipes ?</h3>
+                                <h3>Quel est le processus de sélection des équipes pour se qualifier ?</h3>
                                 <i data-lucide="chevron-down" class="accordion-icon"></i>
                             </div>
                             <div class="accordion-content">
@@ -49,13 +49,85 @@
                             </div>
                         </div>
 
-                        <div class="accordion-item" data-aos="fade-up" data-aos-delay="100">
+                        <div class="accordion-item" data-aos="fade-up" data-aos-delay="50">
                             <div class="accordion-header">
-                                <h3>Y a-t-il des prérequis techniques ?</h3>
+                                <h3> Combien de hackathons avez-vous ?</h3>
                                 <i data-lucide="chevron-down" class="accordion-icon"></i>
                             </div>
                             <div class="accordion-content">
-                                <p>Les prérequis varient selon les hackathons. Certains sont ouverts aux débutants, d'autres nécessitent des compétences spécifiques. Chaque événement précise clairement ses prérequis dans sa description. Nous proposons également des ressources d'apprentissage pour vous aider à vous préparer.</p>
+                                <p>Nous organisons actuellement 2 hackathons, un côté dev et un autre côté ctf</p>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item" data-aos="fade-up" data-aos-delay="50">
+                            <div class="accordion-header">
+                                <h3>Comment se déroulera les hackathons ?</h3>
+                                <i data-lucide="chevron-down" class="accordion-icon"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <p>Les hackathons se dérouleront en ligne sur notre plateforme. 
+                                L'hackathon du ctf se déroulera en 2 phases : une phase de qualification et une phase finale.
+                                L'hackathon du dev se déroulera en 3 phases : une phase de qualification, une phase de développement et une phase finale.</p>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item" data-aos="fade-up" data-aos-delay="50">
+                            <div class="accordion-header">
+                                <h3>En quoi consiste les phases de l'hackathon du ctf ?</h3>
+                                <i data-lucide="chevron-down" class="accordion-icon"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <p>La phase de qualification consiste à résoudre des défis CTF dont les 05 premiers se qualifient pour la phase finale. La phase finale se déroulera en présentiel et consistera à trouver des flags dans une machine virtuelle. Plus d'informations sur la phases finale vous seront données au moment du lancement.</p>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item" data-aos="fade-up" data-aos-delay="50">
+                            <div class="accordion-header">
+                                <h3>Quelle est la durée des phases de l'hackathon du ctf ?</h3>
+                                <i data-lucide="chevron-down" class="accordion-icon"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <p>La phase de qualification dure 10 jours et la phase finale dure 24 heures.</p>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item" data-aos="fade-up" data-aos-delay="50">
+                            <div class="accordion-header">
+                                <h3>Comment sont déterminés les gagnants de l'hackathon ctf ?</h3>
+                                <i data-lucide="chevron-down" class="accordion-icon"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <p>Les gagnants de l'hackathon ctf seront déterminés par le nombre de points obtenus durant la phase finale. A la fin de cette phase, les deux premières équipes sont récompensées.</p>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item" data-aos="fade-up" data-aos-delay="100">
+                            <div class="accordion-header">
+                                <h3>En quoi consiste les phases de l'hackathon du dev ?</h3>
+                                <i data-lucide="chevron-down" class="accordion-icon"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <p>La phase de qualification consiste à résoudre des défis en Algorithme (semblables au coding game) dont chaque defis octroie des points. Le quota de points est de 3000 points pour se qualifier. Les qualifiés participent à une seconde phase qui consiste à développer un projet. Et la phase finale ......................................................</p>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item" data-aos="fade-up" data-aos-delay="50">
+                            <div class="accordion-header">
+                                <h3>Quelle est la durée des phases de l'hackathon du dev ?</h3>
+                                <i data-lucide="chevron-down" class="accordion-icon"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <p>La phase de qualification dure 24 heures, la phase de développement dure 10 jours et la phase finale dure 24 heures.</p>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item" data-aos="fade-up" data-aos-delay="50">
+                            <div class="accordion-header">
+                                <h3>Comment sont déterminés les gagnants de l'hackathon dev ?</h3>
+                                <i data-lucide="chevron-down" class="accordion-icon"></i>
+                            </div>
+                            <div class="accordion-content">
+                                <p>Les gagnants de l'hackathon dev seront déterminés par XXXXXXXXXXXXXXX. A la fin de cette phase, les deux premières équipes sont récompensées.</p>
                             </div>
                         </div>
 
@@ -65,17 +137,18 @@
                                 <i data-lucide="chevron-down" class="accordion-icon"></i>
                             </div>
                             <div class="accordion-content">
-                                <p>Les points sont attribués en fonction de plusieurs critères : la participation aux événements, la qualité des projets soumis, les victoires dans les hackathons, et les contributions à la communauté. Les récompenses peuvent inclure des prix en espèces, du matériel, des stages ou des opportunités professionnelles avec nos partenaires.</p>
+                                <p>Les points sont attribués en fonction des défis. 
+                                Les récompenses pour chacun des deux hackathons sont : Top 1 : 600 000 FCFA, Top 2 : 350 000 FCFA</p>
                             </div>
                         </div>
 
                         <div class="accordion-item" data-aos="fade-up" data-aos-delay="200">
                             <div class="accordion-header">
-                                <h3>Comment trouver des coéquipiers ?</h3>
+                                <h3>De combien sont composées les équipes ?</h3>
                                 <i data-lucide="chevron-down" class="accordion-icon"></i>
                             </div>
                             <div class="accordion-content">
-                                <p>Vous pouvez trouver des coéquipiers via notre plateforme en utilisant la section 'Teams', en participant aux événements de networking pré-hackathon, ou en rejoignant notre communauté Discord. Nous organisons également des sessions de team building pour faciliter les rencontres.</p>
+                                <p>Les équipes pour le ctf sont composées de 2-4 membres tandis que les équipes pour le dev sont composées de 2-5 membres.</p>
                             </div>
                         </div>
 
@@ -85,29 +158,20 @@
                                 <i data-lucide="chevron-down" class="accordion-icon"></i>
                             </div>
                             <div class="accordion-content">
-                                <p>Les projets peuvent couvrir un large éventail de domaines : développement web/mobile, intelligence artificielle, IoT, blockchain, développement durable, etc. Chaque hackathon a ses propres thèmes et objectifs spécifiques. Nous encourageons l'innovation et la créativé dans tous les domaines technologiques.</p>
+                                <p>Les projets peuvent couvrir un large éventail de domaines : développement web/mobile, intelligence artificielle, IoT, blockchain, développement durable, etc. Chaque phases a ses propres thèmes et objectifs spécifiques. Nous encourageons l'innovation et la créativé dans tous les domaines technologiques.</p>
                             </div>
                         </div>
 
                         <div class="accordion-item" data-aos="fade-up" data-aos-delay="300">
                             <div class="accordion-header">
-                                <h3>Comment se déroule le mentorat ?</h3>
+                                <h3>Est il possible de participer aux deux hackathons ?</h3>
                                 <i data-lucide="chevron-down" class="accordion-icon"></i>
                             </div>
                             <div class="accordion-content">
-                                <p>Des mentors expérimentés sont disponibles pendant les hackathons pour guider les équipes. Ils peuvent aider sur des aspects techniques, business, ou design. Vous pouvez les solliciter via la plateforme ou pendant les sessions dédiées. Nous organisons également des ateliers et des conférences pour enrichir votre expérience.</p>
+                                <p>Non, vous pouvez participer à un hackathon à la fois.</p>
                             </div>
                         </div>
 
-                        <div class="accordion-item" data-aos="fade-up" data-aos-delay="350">
-                            <div class="accordion-header">
-                                <h3>Quelle est la durée typique d'un hackathon ?</h3>
-                                <i data-lucide="chevron-down" class="accordion-icon"></i>
-                            </div>
-                            <div class="accordion-content">
-                                <p>La durée varie selon l'événement. Les hackathons classiques durent généralement 24 à 48 heures. Nous organisons aussi des hackathons plus longs (1 semaine) ou plus courts (12 heures) selon les objectifs. Les détails précis sont toujours indiqués dans la description de chaque événement.</p>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
