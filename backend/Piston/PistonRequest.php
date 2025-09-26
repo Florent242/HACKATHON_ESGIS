@@ -193,14 +193,37 @@ class PistonRequest
                 '/popen/i',
                 '/fopen\s*\(/i',
                 '/remove\s*\(/i'
-            ]
+            ],
+            'php' => [
+                '/exec\s*\(/i',
+                '/shell_exec\s*\(/i',
+                '/system\s*\(/i',
+                '/passthru\s*\(/i',
+                '/proc_open\s*\(/i',
+                '/popen\s*\(/i',
+            ],
+            'ruby' => [
+                
+            ],
+            'go' => [
+
+            ],
+            'bash' => [
+
+            ],
+            'typescript' => [
+
+            ],
+            'pascal' => [
+
+            ],
         ];
 
         $patterns = $dangerousPatterns[$this->language] ?? [];
         
         foreach ($patterns as $pattern) {
             if (preg_match($pattern, $sourceCode)) {
-                throw new \InvalidArgumentException("Code potentiellement dangereux détecté: pattern non autorisé");
+                throw new \InvalidArgumentException("Code potentiellement dangereux détecté: pattern non autorisé :" . $pattern);
             }
         }
 

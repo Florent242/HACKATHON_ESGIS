@@ -113,15 +113,17 @@ try {
         $input = $_POST;
     }
 
+    $isAuth = $method === 'POST' && in_array($id, ['check-email', 'check-username', 'login', 'register']);
+    $inputInspectionService = new InputInspectionService();
     // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
     try {
         $headers = function_exists('getallheaders') ? getallheaders() : [];
-        $input = InputInspectionService::inspectInput($input, [
+        $input = $inputInspectionService->inspectInput($input, [
             'method' => $method,
             'headers' => $headers,
             'raw' => $rawInput,
             'max_body_bytes' => 1024 * 1024,
-        ]);
+        ], $isAuth);
     } catch (Exception $e) {
         if (isAjaxRequest()) {
             header('Content-Type: application/json');
@@ -147,7 +149,7 @@ try {
 
                 case 'login':
                     try {
-                        $controller->login();
+                        $controller->login($input);
                     } catch (Exception $e) {
                         if (isAjaxRequest()) {
                             header('Content-Type: application/json');
@@ -177,7 +179,7 @@ try {
 
                 case 'register':
                     try {
-                        $controller->register();
+                        $controller->register($input);
                     } catch (Exception $e) {
                         if (isAjaxRequest()) {
                             header('Content-Type: application/json');

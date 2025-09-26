@@ -397,6 +397,46 @@ class User
     }
 
     /**
+     * Récupère l'ID de l'utilisateur par son email ou son username
+     * @param string $identifier Email ou username de l'utilisateur
+     * @return array|bool Les données de l'utilisateur ou false si non trouvé
+     */
+    public function getId($identifier)
+    {
+        try {
+            $query = "SELECT id FROM {$this->table} WHERE email = :email OR username = :username LIMIT 1";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':email', $identifier);
+            $stmt->bindParam(':username', $identifier);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception("Erreur lors de la récupération de l'ID de l'utilisateur : " 
+            // . $e->getMessage()
+        );
+        }
+    }
+
+    /**
+     * Met à jour la dernière connexion de l'utilisateur
+     * @param mixed $id
+     */
+    public function updateLastLogin($id)
+    {
+        try {
+            $query = "UPDATE {$this->table} SET last_login_at = NOW(), last_ip = :last_ip WHERE id = :id";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->bindParam(':last_ip', $_SERVER['REMOTE_ADDR'], PDO::PARAM_STR);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            jsonResponse(['error' => 'Erreur lors de la mise à jour de la dernière connexion de l\'utilisateur'], 500);
+            error_log('Erreur lors de la mise à jour de la dernière connexion de l\'utilisateur: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Obtient des statistiques sur les utilisateurs
      * @return array Statistiques des utilisateurs
      */

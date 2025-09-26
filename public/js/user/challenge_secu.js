@@ -714,6 +714,12 @@ function openModal(card) {
     if (launchInstanceButton && challengeDetails.instance) {
         launchInstanceButton.setAttribute("data-instance", challengeDetails.instance);
         launchInstanceButton.disabled = false;
+        launchInstanceButton.addEventListener('click', handleInstanceCopy);
+        launchInstanceButton.setAttribute("data-tooltip", challengeDetails.instance);
+
+        if (typeof initializeTooltips === "function") {
+            initializeTooltips();
+        }
     } else {
         launchInstanceButton.setAttribute("data-instance", "");
         launchInstanceButton.textContent = "Instance non disponible";
@@ -773,6 +779,20 @@ function openModal(card) {
     modalContainer.classList.add('scale-in-center');
     modal.classList.remove('fade-out-bck');
 
+}
+
+// Déplacer cette fonction en dehors de openModal
+async function handleInstanceCopy(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+        const instance = e.currentTarget.getAttribute('data-instance');
+        await navigator.clipboard.writeText(instance);
+        showNotification("Copié", "Lien de l'instance copié dans le presse-papiers", "success");
+    } catch (err) {
+        console.error("Erreur lors de la copie du lien de l'instance :", err);
+        showNotification("Erreur", "Impossible de copier le lien de l'instance", "error");
+    }
 }
 
 function safeJsonParse(jsonString) {

@@ -793,10 +793,11 @@ class ChallengeController extends Controller
 
         // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
         try {
+            $inputInspectionService = new InputInspectionService();
             $rawInput = $input;
             $method = $_SERVER['REQUEST_METHOD'];
             $headers = function_exists('getallheaders') ? getallheaders() : [];
-            $data = InputInspectionService::inspectInput($data, [
+            $data = $inputInspectionService->inspectInput($data, [
                 'method' => $method,
                 'headers' => $headers,
                 'raw' => $rawInput,

@@ -296,6 +296,7 @@ class TokenManager
             ]);
         } catch (Exception $e) {
             error_log('Failed to log security event: ' . $e->getMessage());
+            jsonResponse(500, ['error' => 'Failed to log security event: ' . $e->getMessage()]);
         }
     }
 

@@ -622,6 +622,8 @@ function logActivity($action, $description, $data = [], $userId = null, $level =
 
 function logSecurity($action, $description, $data = [], $userId = null, $level = 'info')
 {
+
+    // Vérifier si la variable $db est définie dans le scop global du script
     global $db;
 
     try {

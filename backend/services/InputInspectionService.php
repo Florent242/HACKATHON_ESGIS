@@ -3,9 +3,29 @@
 namespace Auth\Service;
 
 use Exception;
+use Auth\Model\TokenManager;
+use Auth\Model\Database;
+
+if (!defined('CONFIG_INCLUDED')) {
+    require_once __DIR__ . '/../includes/config.php';
+}
+if (!defined('FUNCTIONS_INCLUDED')) {
+    require_once __DIR__ . '/../includes/functions.php';
+}
+if (!class_exists('TokenManager')) {
+    require_once __DIR__ . '/../models/TokenManager.php';
+}
 
 class InputInspectionService
 {
+    private $TokenManager;
+    private $db;
+
+    public function __construct()
+    {
+        $this->db = Database::getInstance()->getConnection();
+        $this->TokenManager = new TokenManager($this->db);
+    }
     /**
      * Inspect and sanitize incoming input.
      * - Validates Content-Type vs body usage
@@ -18,7 +38,7 @@ class InputInspectionService
      * @return array Sanitized input (array)
      * @throws Exception if the request is clearly malicious or violates constraints
      */
-    public static function inspectInput($input, array $context = []): array
+    public function inspectInput($input, array $context = [], $isAuthAttempt = false): array
     {
         $method = $context['method'] ?? ($_SERVER['REQUEST_METHOD'] ?? 'GET');
         $headers = $context['headers'] ?? [];
@@ -34,7 +54,7 @@ class InputInspectionService
         // If body is present for write methods, ensure content type is acceptable
         $hasBody = strlen($raw) > 0;
         if ($hasBody && in_array(strtoupper($method), ['POST', 'PUT', 'PATCH'])) {
-            $contentType = self::getHeader($headers, 'Content-Type');
+            $contentType = $this->getHeader($headers, 'Content-Type');
             if ($contentType && !preg_match('#^(application/json|multipart/form-data|application/x-www-form-urlencoded)#i', $contentType)) {
                 throw new Exception('Type de contenu non supporté', 415);
             }
@@ -53,21 +73,36 @@ class InputInspectionService
             $input = [];
         }
 
+        // gerer les cas de tentative de connexion ou de registration
+        $Id = $isAuthAttempt ? null: $this->TokenManager->getCurrentUserId() ;
         // Detect obvious threats in raw and fields
-        $issues = self::detectThreats($input, $raw);
+        $issues = $this->detectThreats($input, $raw);
         if (!empty($issues['critical'])) {
-            // Logically, the caller can catch and convert to JSON response
-            throw new Exception('Entrées dangereuses détectées', 400);
+            // Journalisation des menaces
+            logSecurity(
+                action: 'THREAT_DETECTED',
+                description: 'Menace détectée dans les données d\'entrée',
+                data: [
+                    'threat_type' => 'input_validation',
+                    'threat_details' => $issues,
+                    'user_id' => $Id ?? 000000,
+                    'context' => $context ?? 'Non défini',
+                    'timestamp' => date('Y-m-d H:i:s')
+                ],
+                userId: $Id ?? 000000,
+                level: 'warning'
+            );            // Logically, the caller can catch and convert to JSON response
+            throw new Exception('Entrées dangereuses détectées. Cette action sera reportée', 400);
         }
 
         // Sanitize
-        $sanitized = self::sanitizeArray($input);
+        $sanitized = $this->sanitizeArray($input);
 
         // Optionally attach metadata (not returned, but could be useful later)
         return $sanitized;
     }
 
-    private static function getHeader(array $headers, string $name): ?string
+    private function getHeader(array $headers, string $name): ?string
     {
         foreach ($headers as $k => $v) {
             if (strcasecmp($k, $name) === 0) {
@@ -85,7 +120,7 @@ class InputInspectionService
     /**
      * Recursively sanitize arrays by trimming strings and removing obvious script tags.
      */
-    public static function sanitizeArray($value, int $depth = 0)
+    public function sanitizeArray($value, int $depth = 0)
     {
         if ($depth > 50) { // avoid excessive nesting
             return null;
@@ -95,7 +130,7 @@ class InputInspectionService
             foreach ($value as $k => $v) {
                 // Normalize keys to strings without control chars
                 $key = is_string($k) ? preg_replace('/[\x00-\x1F\x7F]/', '', $k) : $k;
-                $out[$key] = self::sanitizeArray($v, $depth + 1);
+                $out[$key] = $this->sanitizeArray($v, $depth + 1);
             }
             return $out;
         }
@@ -116,7 +151,7 @@ class InputInspectionService
      * Heuristic detection of potentially dangerous content.
      * Returns ['critical' => [...], 'warnings' => [...]]
      */
-    public static function detectThreats(array $input, string $raw): array
+    public function detectThreats(array $input, string $raw): array
     {
         $critical = [];
         $warnings = [];

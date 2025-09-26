@@ -226,29 +226,108 @@ class AuthController
         return;
     }
 
+    /**
+     * Vérifie le statut de l'utilisateur
+     * 
+     * @param int $userId ID de l'utilisateur à vérifier
+     * @throws Exception Si l'utilisateur est inactif, suspendu ou supprimé
+     */
+    protected function checkUserStatus($userId)
+    {
+        if (empty($userId) || !is_numeric($userId)) {
+            throw new Exception('ID utilisateur manquant', 400);
+        }
+
+        $user = $this->getUserStatus($userId);
+
+        if (!$user) {
+            throw new Exception('Utilisateur non trouvé', 404);
+        }
+
+        // Vérifier si le compte est supprimé
+        if ($user['deleted_at'] !== null) {
+            logSecurity(
+                'account_access_attempt_deleted',
+                'Tentative d\'accès à un compte supprimé',
+                [],
+                $userId,
+                'warning'
+            );
+            throw new Exception('Ce compte a été supprimé', 403);
+        }
+
+        // Vérifier si le compte est inactif
+        if ($user['status'] === 'inactive') {
+            logSecurity(
+                'account_access_attempt_inactive',
+                'Tentative d\'accès à un compte inactif',
+                [],
+                $userId,
+                'warning'
+            );
+            throw new Exception('Ce compte est inactif', 403);
+        }
+
+        // Vérifier si le compte est suspendu
+        if ($user['suspended_until'] !== null && strtotime($user['suspended_until']) > time()) {
+            $suspensionTime = date('d/m/Y H:i', strtotime($user['suspended_until']));
+            logSecurity(
+                'account_access_attempt_suspended',
+                'Tentative d\'accès à un compte suspendu',
+                [],
+                $userId,
+                'warning'
+            );
+            throw new Exception("Ce compte est suspendu jusqu'au $suspensionTime", 403);
+        }
+
+        // Vérifier si le compte est verrouillé
+        if ($this->isAccountLocked($user)) {
+            logSecurity(
+                'account_access_attempt_locked',
+                'Tentative d\'accès à un compte verrouillé',
+                [],
+                $userId,
+                'warning'
+            );
+            throw new Exception('Trop de tentatives de connexion. Veuillez réessayer plus tard.', 403);
+        }
+    }
+    protected function isAccountLocked($user)
+    {
+        return $user['locked_until'] !== null && strtotime($user['locked_until']) > time();
+    }
+    protected function getUserStatus($userId)
+    {
+        $stmt = $this->db->prepare("
+        SELECT 
+            status, 
+            suspended_until, 
+            deleted_at,
+            locked_until,
+            two_factor_enabled,
+            two_factor_secret
+        FROM users 
+        WHERE id = :id
+    ");
+
+        $stmt->execute([':id' => $userId]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     // Traiter l'inscription
-    public function register()
+    public function register($input)
     {
         try {
             // Vérifier le token CSRF
             $this->validateCsrfToken();
 
             // Récupération et nettoyage des données
-            $data = [
-                'username'    => trim(filter_input(INPUT_POST, 'username', FILTER_DEFAULT) ?: ''),
-                'fullname'    => trim(filter_input(INPUT_POST, 'fullname', FILTER_DEFAULT) ?: ''),
-                'email'       => trim(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?: ''),
-                'school'      => trim(filter_input(INPUT_POST, 'school', FILTER_DEFAULT) ?: ''),
-                'password'    => trim(filter_input(INPUT_POST, 'password', FILTER_UNSAFE_RAW) ?: ''), // Ne pas filtrer le mot de passe
-                'number'      => trim(filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_NUMBER_INT) ?: ''),
-                'special_comp' => trim(filter_input(INPUT_POST, 'main_skill', FILTER_DEFAULT) ?: ''),
-                'study_level' => trim(filter_input(INPUT_POST, 'education_level', FILTER_DEFAULT) ?: ''),
-                'role'        => 'participant'
-            ];
+            $data = $input;
 
             // Validation des données
-            if (empty($data['username']) || empty($data['email']) || empty($data['password'])) {
-                throw new Exception("Tous les champs sont obligatoires: " . (empty($data['username']) ? 'Username' : (empty($data['email']) ? 'Email' : 'Password')));
+            if (empty($data['username']) || empty($data['email']) || empty($data['password']) || empty($data['number']) || empty($data['fullname']) || empty($data['school'])) {
+                throw new Exception("Tous les champs sont obligatoires: " . (empty($data['username']) ? 'Username' : (empty($data['email']) ? 'Email' : (empty($data['password']) ? 'Password' : (empty($data['number']) ? 'Number' : (empty($data['fullname']) ? 'Fullname' : 'School'))))));
             }
 
             // Validation de l'email
@@ -292,39 +371,13 @@ class AuthController
     }
 
     // Traiter la connexion
-    public function login()
+    public function login($input)
     {
         try {
             $clientIp = $_SERVER['REMOTE_ADDR'];
 
             // Identifier l'utilisateur pour bloquer par IP + identifiant
-            $data = json_decode(file_get_contents("php://input"), true);
-            if ($data === null && $_SERVER['REQUEST_METHOD'] === 'POST') {
-                $data = $_POST;
-            }
-
-            // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
-            try {
-                $rawInput = file_get_contents('php://input');
-                $method = $_SERVER['REQUEST_METHOD'];
-                $headers = function_exists('getallheaders') ? getallheaders() : [];
-                $data = InputInspectionService::inspectInput($data, [
-                    'method' => $method,
-                    'headers' => $headers,
-                    'raw' => $rawInput,
-                    'max_body_bytes' => 1024 * 1024,
-                ]);
-            } catch (Exception $e) {
-                if (isAjaxRequest()) {
-                    header('Content-Type: application/json');
-                    http_response_code($e->getCode() ?: 400);
-                    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-                } else {
-                    setFlashMessage('error', 'Entrée invalide', $e->getMessage());
-                    header('Location: ' . '/');
-                }
-                exit();
-            }
+            $data = $input;
 
             if (!isset($data['identifier']) || !isset($data['password'])) {
                 throw new Exception('Email et mot de passe requis');
@@ -332,11 +385,22 @@ class AuthController
 
             $identifier = trim(htmlspecialchars($data['identifier'], ENT_QUOTES, 'UTF-8'));
 
+            // Recuperer le userId a partir de l'identifiant puisuq e le token n'est pas accessible avant connexion
+            $userId = $this->user->getId($identifier)['id'];
+
+            // Vérifier si le compte est verrouillé
+            $this->checkUserStatus($userId);
+
             $redisKey = "login_attempts:{$clientIp}:{$identifier}";
 
             $attempts = (int) $this->redisManager->get($redisKey);
             if ($attempts >= 5) {
                 $ttl = $this->redisManager->ttl($redisKey);
+                $this->tokenManager->logSecurityEvent(
+                    $userId,
+                    'Login attempt limit exceeded',
+                    ['message' => 'Trop de tentatives de connexion.']
+                );
                 throw new Exception("Trop de tentatives. Réessayez dans " . ((int)($ttl / 60) < 1 ? "{$ttl} secondes" : (int)($ttl / 60) . " minutes."), 401);
             }
 
@@ -375,6 +439,16 @@ class AuthController
 
                 // Réinitialiser les tentatives après succès
                 $this->redisManager->delete($redisKey);
+
+                // Journakisation de la connexion
+                $this->tokenManager->logSecurityEvent(
+                    $user['id'],
+                    'login',
+                    ['message' => 'Connexion d\'un utilisateur : ' . $identifier]
+                );
+
+                // mise a jour des infos de connexion
+                $this->user->updateLastLogin($user['id']);
 
                 session_regenerate_id();
                 echo json_encode([
@@ -527,10 +601,11 @@ class AuthController
             $data = json_decode(file_get_contents('php://input'), true);
             // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
             try {
+                $inputInspectionService = new InputInspectionService();
                 $rawInput = file_get_contents('php://input');
                 $method = $_SERVER['REQUEST_METHOD'];
                 $headers = function_exists('getallheaders') ? getallheaders() : [];
-                $data = InputInspectionService::inspectInput($data, [
+                $data = $inputInspectionService->inspectInput($data, [
                     'method' => $method,
                     'headers' => $headers,
                     'raw' => $rawInput,
@@ -670,10 +745,11 @@ class AuthController
 
             // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
             try {
+                $inputInspectionService = new InputInspectionService();
                 $rawInput = file_get_contents('php://input');
                 $method = $_SERVER['REQUEST_METHOD'];
                 $headers = function_exists('getallheaders') ? getallheaders() : [];
-                $data = InputInspectionService::inspectInput($data, [
+                $data = $inputInspectionService->inspectInput($data, [
                     'method' => $method,
                     'headers' => $headers,
                     'raw' => $rawInput,

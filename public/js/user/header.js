@@ -122,7 +122,7 @@ document.querySelectorAll('.main-nav li').forEach(link => {
 });
 
 // Show the dropdown when mouse enters the dropdown area
-headerDropdown.addEventListener('mouseenter', function () {
+headerDropdown?.addEventListener('mouseenter', function () {
     this.classList.add('visible'); // Keep it visible
 });
 
@@ -132,7 +132,7 @@ document.querySelector('.nav-container').addEventListener('mouseleave', function
 });
 
 // Hide the dropdown when mouse leaves the dropdown area
-headerDropdown.addEventListener('mouseleave', function () {
+headerDropdown?.addEventListener('mouseleave', function () {
     this.classList.remove('visible'); // Hide it when mouse leaves
 });
 

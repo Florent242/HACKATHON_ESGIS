@@ -12,6 +12,9 @@ const teamScore = document.querySelector('#teamStats .score span');
 const aboutSection = document.querySelector('#ulOptionContentZone');
 let listItems = document.querySelectorAll('ul li');
 
+//Fixing XSS
+
+
 // Données globales
 let team = [];
 let userConnected = {};

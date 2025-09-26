@@ -302,10 +302,10 @@
                 <div class="space-y-3">
                     <h4 class="font-semibold text-base">Resources</h4>
                     <div class="flex gap-3 w-full justify-between max-md:justify-center max-md:flex-col max-md:items-center max-md:w-full">
-                        <button id="download-files-button" class="flex items-center gap-2 w-1/2 border border-white/10 px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-800 rounded-md text-sm max-md:w-full">
+                        <button id="download-files-button" class="flex items-center gap-2 w-1/2 border border-white/10 px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-800 rounded-md text-sm max-md:w-full cursor-pointer">
                             <i data-lucide="download" class="w-4 h-4"></i> Download files
                         </button>
-                        <button id="launch-instance-button" class="clamp-1 flex items-center gap-2 w-1/2 border border-white/10 px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-800 rounded-md text-sm max-md:w-full">
+                        <button id="launch-instance-button" class="flex items-center gap-2 w-1/2 border border-white/10 px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-800 rounded-md text-sm max-md:w-full cursor-pointer">
                             <i data-lucide="play-circle" class="w-4 h-4"></i> Launch instance
                         </button>
                     </div>

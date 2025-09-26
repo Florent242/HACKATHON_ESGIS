@@ -5,6 +5,7 @@ let userTeam = null;
 // État de chargement
 let isLoading = true;
 
+
 // Fonction pour créer l'animation de chargement
 const createLoadingAnimation = () => {
     // Créer l'overlay de chargement

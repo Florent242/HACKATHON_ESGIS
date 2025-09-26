@@ -55,10 +55,11 @@ class ResetPasswordController extends Controller
 
             // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
             try {
+                $inputInspectionService = new InputInspectionService();
                 $rawInput = file_get_contents('php://input');
                 $method = $_SERVER['REQUEST_METHOD'];
                 $headers = function_exists('getallheaders') ? getallheaders() : [];
-                $input = InputInspectionService::inspectInput($input, [
+                $input = $inputInspectionService->inspectInput($input, [
                     'method' => $method,
                     'headers' => $headers,
                     'raw' => $rawInput,
@@ -138,10 +139,11 @@ class ResetPasswordController extends Controller
 
             // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
             try {
+                $inputInspectionService = new InputInspectionService();
                 $rawInput = file_get_contents('php://input');
                 $method = $_SERVER['REQUEST_METHOD'];
                 $headers = function_exists('getallheaders') ? getallheaders() : [];
-                $input = InputInspectionService::inspectInput($input, [
+                $input = $inputInspectionService->inspectInput($input, [
                     'method' => $method,
                     'headers' => $headers,
                     'raw' => $rawInput,

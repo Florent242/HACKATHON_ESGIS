@@ -4,9 +4,15 @@ namespace Auth\Controller;
 
 use Exception;
 use Auth\Service\InputInspectionService;
+use Auth\Model\Database;
+use PDO;
 
 if (!class_exists('InputInspectionService')) {
     require_once __DIR__ . '/../services/InputInspectionService.php';
+}
+
+if (!class_exists('Database')) {
+    require_once __DIR__ . '/../models/Database.php';
 }
 
 class Controller
@@ -20,10 +26,12 @@ class Controller
         'auth/verify-email',
         'auth/check-auth'
     ];
+    private $db;
 
     public function __construct($tokenManager)
     {
         $this->tokenManager = $tokenManager;
+        $this->db = Database::getInstance()->getConnection();
 
         // Vérification CSRF pour les méthodes non-GET
         if ($_SERVER['REQUEST_METHOD'] !== 'GET' && !$this->validateCsrfToken()) {
@@ -33,17 +41,183 @@ class Controller
             ], 403);
         }
 
+        $isAuthenticated = $this->isAuthenticated();
         // Vérification d'authentification sauf pour les routes publiques
-        if (!$this->isPublicRoute() && !$this->isAuthenticated()) {
+        if (!$this->isPublicRoute() && !$isAuthenticated) {
             $this->jsonResponse([
                 'success' => false,
                 'error' => 'Authentification requise'
             ], 401);
         }
+
+        // Pour les utilisateurs connectés
+        if ($isAuthenticated) {
+            $userId = $_SESSION['user_id'] ?? $_SESSION['user']['id'] ?? null;
+            try {
+                $this->checkUserStatus($userId);
+            } catch (Exception $e) {
+                $this->jsonResponse([
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ], $e->getCode() ?: 403);
+                exit;
+            }
+        }
     }
 
 
+    public function logSecurityEvent(int $userId, string $eventType, array $details = [])
+    {
+        try {
+            $stmt = $this->db->prepare(
+                "INSERT INTO security_logs 
+                (user_id, event_type, ip_address, user_agent, details, created_at) 
+                VALUES (:user_id, :event_type, :ip, :ua, :details, NOW())"
+            );
 
+            $stmt->execute([
+                ':user_id' => $userId,
+                ':event_type' => $eventType,
+                ':ip' => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+                ':ua' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
+                ':details' => json_encode($details)
+            ]);
+        } catch (Exception $e) {
+            error_log('Failed to log security event: ' . $e->getMessage());
+        }
+    }
+
+    protected function logActivity($action, $description, $data, $level, $ip_address, $user_agent)
+    {
+        // Si aucune connexion à la base de données n'est disponible, essayer d'en créer une
+        if (!isset($this->db)) {
+            try {
+                $database = Database::getInstance();
+                $this->db = $database->getConnection();
+            } catch (Exception $e) {
+                error_log("Erreur de connexion à la base de données pour logActivity: " . $e->getMessage());
+                return false;
+            }
+        }
+
+        // Données utilisateur
+        $userId = isset($_SESSION['user']) && isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : $userId ?? $data['identifier'] ?? null;
+        $ipAddress = $ip_address ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $userAgent = $user_agent ?? $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+
+        // Données sérialisées
+        $dataJson = json_encode($data, JSON_UNESCAPED_UNICODE);
+
+        try {
+            // Insérer le log
+            $query = "INSERT INTO activity_logs (user_id, action, description, data, ip_address, user_agent, level)
+                  VALUES (:user_id, :action, :description, :data, :ip_address, :user_agent, :level)";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':user_id', $userId);
+            $stmt->bindParam(':action', $action);
+            $stmt->bindParam(':description', $description);
+            $stmt->bindParam(':data', $dataJson);
+            $stmt->bindParam(':ip_address', $ipAddress);
+            $stmt->bindParam(':user_agent', $userAgent);
+            $stmt->bindParam(':level', $level);
+
+            $result = $stmt->execute();
+
+            // Également, enregistrer dans le fichier de log
+            $logMessage = date('Y-m-d H:i:s') . " [$level] - $action - $description - " .
+                "User: $userId - IP: $ipAddress - Data: $dataJson";
+            error_log($logMessage);
+
+            return $result;
+        } catch (Exception $e) {
+            error_log("Erreur lors de l'enregistrement de l'activité: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Vérifie le statut de l'utilisateur
+     * 
+     * @param int $userId ID de l'utilisateur à vérifier
+     * @throws Exception Si l'utilisateur est inactif, suspendu ou supprimé
+     */
+    protected function checkUserStatus($userId)
+    {
+        if (empty($userId)) {
+            throw new Exception('ID utilisateur manquant', 400);
+        }
+
+        $user = $this->getUserStatus($userId);
+
+        if (!$user) {
+            throw new Exception('Utilisateur non trouvé', 404);
+        }
+
+        // Vérifier si le compte est supprimé
+        if ($user['deleted_at'] !== null) {
+            $this->logSecurityEvent(
+                $userId,
+                'account_access_attempt_deleted',
+                ['message' => 'Tentative d\'accès à un compte supprimé']
+            );
+            throw new Exception('Ce compte a été supprimé', 403);
+        }
+
+        // Vérifier si le compte est inactif
+        if ($user['status'] === 'inactive') {
+            $this->logSecurityEvent(
+                $userId,
+                'account_access_attempt_inactive',
+                ['message' => 'Tentative d\'accès à un compte inactif']
+            );
+            throw new Exception('Ce compte est inactif', 403);
+        }
+
+        // Vérifier si le compte est suspendu
+        if ($user['suspended_until'] !== null && strtotime($user['suspended_until']) > time()) {
+            $suspensionTime = date('d/m/Y H:i', strtotime($user['suspended_until']));
+            $this->logSecurityEvent(
+                $userId,
+                'account_access_attempt_suspended',
+                ['suspended_until' => $user['suspended_until']]
+            );
+            throw new Exception("Ce compte est suspendu jusqu'au $suspensionTime", 403);
+        }
+
+        // Vérifier si le compte est verrouillé
+        if ($this->isAccountLocked($user)) {
+            $this->logSecurityEvent(
+                $userId,
+                'account_access_attempt_locked',
+                ['locked_until' => $user['locked_until']]
+            );
+            throw new Exception('Trop de tentatives de connexion. Veuillez réessayer plus tard.', 403);
+        }
+    }
+
+    protected function getUserStatus($userId)
+{
+    $stmt = $this->db->prepare("
+        SELECT 
+            status, 
+            suspended_until, 
+            deleted_at,
+            locked_until,
+            two_factor_enabled,
+            two_factor_secret
+        FROM users 
+        WHERE id = :id
+    ");
+    
+    $stmt->execute([':id' => $userId]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+protected function isAccountLocked($user)
+{
+    return $user['locked_until'] !== null && strtotime($user['locked_until']) > time();
+}
     /**
      * Vérifie si la route actuelle est publique
      */
@@ -128,25 +302,25 @@ class Controller
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             return true;
         }
-    
+
         // 1. Récupération du token depuis différentes sources
-        $token = $_POST['_token'] 
-            ?? $_SERVER['HTTP_X_CSRF_TOKEN'] 
+        $token = $_POST['_token']
+            ?? $_SERVER['HTTP_X_CSRF_TOKEN']
             ?? $this->getTokenFromJsonInput();
-    
+
         // 2. Vérification de l'existence
         if (!$token) {
             return false;
         }
-    
+
         // 3. Vérification de la validité
         if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
             return false;
         }
-    
+
         return true;
     }
-    
+
     private function getTokenFromJsonInput(): ?string
     {
         $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
@@ -156,10 +330,11 @@ class Controller
 
             // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
             try {
+                $inputInspectionService = new InputInspectionService();
                 $rawInput = $rawData;
                 $method = $_SERVER['REQUEST_METHOD'];
                 $headers = function_exists('getallheaders') ? getallheaders() : [];
-                $data = InputInspectionService::inspectInput($data, [
+                $data = $inputInspectionService->inspectInput($data, [
                     'method' => $method,
                     'headers' => $headers,
                     'raw' => $rawInput,

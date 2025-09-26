@@ -74,7 +74,7 @@ class HeaderManager {
         window.addEventListener('resize', this.handleResize.bind(this));
 
         // Prévenir le scroll du body quand le menu mobile est ouvert
-        this.preventBodyScroll();
+        // this?.preventBodyScroll();
     }
 
     // Gestion du bouton Start Challenge avec effet de ripple
