@@ -116,24 +116,26 @@ try {
     $isAuth = $method === 'POST' && in_array($id, ['check-email', 'check-username', 'login', 'register']);
     $inputInspectionService = new InputInspectionService();
     // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
-    try {
-        $headers = function_exists('getallheaders') ? getallheaders() : [];
-        $input = $inputInspectionService->inspectInput($input, [
-            'method' => $method,
-            'headers' => $headers,
-            'raw' => $rawInput,
-            'max_body_bytes' => 1024 * 1024,
-        ], $isAuth);
-    } catch (Exception $e) {
-        if (isAjaxRequest()) {
-            header('Content-Type: application/json');
-            http_response_code($e->getCode() ?: 400);
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-        } else {
-            setFlashMessage('error', 'Entrée invalide', $e->getMessage());
-            header('Location: ' . '/');
+    if ($method !== 'GET') {
+        try {
+            $headers = function_exists('getallheaders') ? getallheaders() : [];
+            $input = $inputInspectionService->inspectInput($input, [
+                'method' => $method,
+                'headers' => $headers,
+                'raw' => $rawInput,
+                'max_body_bytes' => 1024 * 1024,
+            ], $isAuth);
+        } catch (Exception $e) {
+            if (isAjaxRequest()) {
+                header('Content-Type: application/json');
+                http_response_code($e->getCode() ?: 400);
+                echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            } else {
+                setFlashMessage('error', 'Entrée invalide', $e->getMessage());
+                header('Location: ' . '/');
+            }
+            exit();
         }
-        exit();
     }
 
     // Initialisation du gestionnaire de token
@@ -235,11 +237,11 @@ try {
             break;
         case 'check-qualification':
             $controller = new HackathonController($db, $tokenManager);
-            
+
             if ($method !== 'POST') {
                 throw new Exception('Méthode non autorisée', 405);
             }
-            
+
             // Vérifier que les paramètres nécessaires sont présents
             if (!isset($input['hackathon_id']) || !isset($input['phase_id'])) {
                 jsonResponse([
@@ -247,7 +249,7 @@ try {
                     'error' => 'Les paramètres hackathon_id et phase_id sont requis'
                 ], 400);
             }
-            
+
             // Appeler la méthode du contrôleur
             $controller->checkQualification($input['hackathon_id'], $input['phase_id']);
             break;
@@ -335,7 +337,7 @@ try {
                         'error' => 'Hackathon ID et phase ID requis.' . print_r($request, true)
                     ], 400);
                 }
-            } 
+            }
             // TODO : Instruction interdite aux participants
             // elseif ($method === 'POST' && is_numeric($id) && isset($id)) {
             //     // Route /api/scores/{hackathon_id}/{phase_id}
@@ -408,7 +410,7 @@ try {
                                     exit();
                                 }
                             }
-                        }else if ($request[1] === 'refresh-csrf-token') {
+                        } else if ($request[1] === 'refresh-csrf-token') {
                             // GET /api/users/refresh-csrf-token
                             $controller->refreshCsrfToken();
                         }
@@ -1028,7 +1030,7 @@ try {
                     $controller->submit($input);
                     exit;
                 }
-                
+
                 // GET /api/projects - Liste des projets (avec filtres optionnels)
                 if ($method === 'GET') {
                     try {
@@ -1045,7 +1047,7 @@ try {
                             ]) ?: null,
                             'status' => filter_input(INPUT_GET, 'status', FILTER_SANITIZE_STRING) ?: null
                         ];
-                        
+
                         $controller->getAll($filters);
                     } catch (Exception $e) {
                         jsonResponse([
@@ -1056,14 +1058,14 @@ try {
                     }
                     exit;
                 }
-                
+
                 jsonResponse([
                     'success' => false,
                     'error' => 'Méthode non autorisée',
                     'allowed_methods' => ['GET', 'POST']
                 ], 405);
             }
-            
+
             // Vérifier si l'ID est numérique et valide
             if (!is_numeric($id) || $id <= 0) {
                 jsonResponse([
@@ -1073,9 +1075,9 @@ try {
                 ], 400);
                 exit;
             }
-            
+
             $id = (int)$id; // Conversion en entier
-            
+
             // Routes avec ID de projet spécifique
             try {
                 switch ($action) {
@@ -1085,40 +1087,40 @@ try {
                             $controller->get($id);
                             exit;
                         }
-                        
+
                         // PUT /api/projects/{id} - Mettre à jour un projet
                         if ($method === 'PUT') {
                             $controller->update($id, $input);
                             exit;
                         }
-                        
+
                         // DELETE /api/projects/{id} - Supprimer un projet
                         if ($method === 'DELETE') {
                             $controller->delete($id);
                             exit;
                         }
-                        
+
                         jsonResponse([
                             'success' => false,
                             'error' => 'Méthode non autorisée',
                             'allowed_methods' => ['GET', 'PUT', 'DELETE']
                         ], 405);
                         break;
-                        
+
                     case 'download':
                         // GET /api/projects/{id}/download - Télécharger le fichier du projet
                         if ($method === 'GET') {
                             $controller->download($id);
                             exit;
                         }
-                        
+
                         jsonResponse([
                             'success' => false,
                             'error' => 'Méthode non autorisée',
                             'allowed_methods' => ['GET']
                         ], 405);
                         break;
-                        
+
                     default:
                         jsonResponse([
                             'success' => false,
