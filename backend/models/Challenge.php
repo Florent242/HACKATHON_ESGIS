@@ -898,8 +898,10 @@ class Challenge
     public function createSubmission($challengeId, $userId, $hackathonId, $language, $sourceCode, $teamId)
     {
         try {
+            $isAdmin = isAdmin($userId);
+            
             // Vérifier que l'utilisateur est inscrit au hackathon
-            if (!$this->isRegistered($userId, $hackathonId)) {
+            if (!$this->isRegistered($userId, $hackathonId) && !$isAdmin) {
                 throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
             }
 
@@ -915,7 +917,7 @@ class Challenge
             }
 
             // Verifier si la phase est active
-            if (!$this->isPhaseActive($hackathonId, $challenge['phase_id'])) {
+            if (!$this->isPhaseActive($hackathonId, $challenge['phase_id']) && !$isAdmin) {
                 throw new Exception("La phase n'est pas active !");
             }
 

@@ -162,24 +162,24 @@ class ChallengeSubmission {
 
         if (data.phase_type == 'qualified') {
             const isQualified = await this.checkQualification();
-            // if (!isQualified) {
+            if (!isQualified) {
 
-            //     this.showAlert('Vous devez être qualifié pour soumettre une solution', 'error');
+                this.showAlert('Vous devez être qualifié pour soumettre une solution', 'error');
 
-            //     formContainer.parentElement.querySelectorAll('button').forEach(button => {
-            //         button.disabled = true;
-            //     });
+                formContainer.parentElement.querySelectorAll('button').forEach(button => {
+                    button.disabled = true;
+                });
 
-            //     challengeInfo.classList.add('opacity-50');
+                challengeInfo.classList.add('opacity-50');
 
-            //     // Disable form
-            //     formContainer.style.opacity = '0.5';
-            //     formContainer.style.pointerEvents = 'none';
+                // Disable form
+                formContainer.style.opacity = '0.5';
+                formContainer.style.pointerEvents = 'none';
 
-            //     // Add blur effect
-            //     formContainer.classList.add('blur-sm');
-            //     return;
-            // }
+                // Add blur effect
+                formContainer.classList.add('blur-sm');
+                return;
+            }
         }
 
         const now = new Date();
@@ -204,12 +204,13 @@ class ChallengeSubmission {
                     csrf_token: this.getTokenCsrf(),
                     user_id: this.userId,
                     hackathon_id: this.challengeData.hackathon_id,
-                    challenge_id: this.challengeData.id
+                    challenge_id: this.challengeData.id,
+                    phase_id: this.phaseData.id
                 })
             });
 
             this.qualificationData = response.data;
-            return response.success;
+            return response.is_qualified;
         } catch (error) {
             console.error('Error loading qualification data:', error);
             this.showAlert('Erreur lors du chargement des données de qualification', 'error');
@@ -666,7 +667,7 @@ class ChallengeSubmission {
                         const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
                         this.updateProgress(percentCompleted);
                     }
-                });
+                }, true);
 
                 if (response.success) {
                     this.showSuccessMessage('Soumission réussie !');
@@ -904,7 +905,7 @@ class ChallengeSubmission {
             formContainer.classList.add('blur-sm');
 
             // Compte à rebours et redirection
-            let countdown = 6;
+            let countdown = 50;
             const countdownElement = alertContent.querySelector('.countdown');
             const timer = setInterval(() => {
                 countdown--;

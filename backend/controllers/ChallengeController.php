@@ -369,7 +369,7 @@ class ChallengeController extends Controller
             if (!isset($user_id) || !isset($hackathon_id)) {
                 throw new Exception('user_id et hackathon_id sont requis');
             }
-            $this->validateMethod('GET');
+           
             $isRegistered = $this->challenge->isRegistered($user_id, $hackathon_id);
 
             return $isRegistered;
@@ -454,15 +454,15 @@ class ChallengeController extends Controller
                 throw new Exception('Token manquant', 401);
             }
 
-            $isAdmin = isAdmin($userId);
+            $isAdmin = $this->isAdmin($userId);
             // Valider les entree requis
-            $this->validateRequiredFields([
+            $this->validateRequiredFields($input,[
                 'code',
                 'hackathon_id',
                 'phase_id',
                 'challenge_id',
                 'user_id'
-            ], $input);
+            ] );
 
             // Vérifier si l'utilisateur est inscrit au hackathon
             if (!$this->isRegistered($userId, $input['hackathon_id']) && !$isAdmin) {

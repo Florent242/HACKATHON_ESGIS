@@ -81,14 +81,7 @@ class NotificationController extends Controller {
                     'type'    => $data['type'],
                 ];
             }
-            $count = $this->notification->createBulk($rows);
-    
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Notifications créées avec succès',
-                'data' => ['sent' => $count]
-            ]);
-    
+            $this->notification->createBulk($rows);
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,

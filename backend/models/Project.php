@@ -59,7 +59,10 @@ class Project
             
         } catch (PDOException $e) {
             $this->db->rollBack();
-            throw new Exception("Erreur lors de la création du projet : " . $e->getMessage());
+            throw new Exception("Erreur lors de la création du projet." 
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 
@@ -105,7 +108,10 @@ class Project
             
         } catch (PDOException $e) {
             $this->db->rollBack();
-            throw new Exception("Erreur lors de la mise à jour du projet : " . $e->getMessage());
+            throw new Exception("Erreur lors de la mise à jour du projet." 
+            // Pour le debug
+            // . $e->getMessage()
+        );
         }
     }
 

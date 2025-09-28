@@ -55,7 +55,7 @@ class InputInspectionService
         $hasBody = strlen($raw) > 0;
         if ($hasBody && in_array(strtoupper($method), ['POST', 'PUT', 'PATCH'])) {
             $contentType = $this->getHeader($headers, 'Content-Type');
-            if ($contentType && !preg_match('#^(application/json|multipart/form-data|application/x-www-form-urlencoded)#i', $contentType)) {
+            if ($contentType && !preg_match('#^(application/json|multipart/form-data|application/x-www-form-urlencoded|text/plain;charset=UTF-8)#i', $contentType)) {
                 throw new Exception('Type de contenu non supporté', 415);
             }
         }

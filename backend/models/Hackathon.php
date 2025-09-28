@@ -38,6 +38,67 @@ class Hackathon
     }
 
     /**
+     * Vérifie si l'utilisateur fait partie d'une équipe pour ce hackathon
+     * @param int $userId ID de l'utilisateur
+     * @param int $hackathonId ID du hackathon
+     * @return array|bool Les données de l'équipe ou false si non trouvé
+     */
+    public function checkParticipation($userId, $hackathonId)
+    {
+        try {
+            // Vérifier si l'utilisateur est participant au hackathon
+            $query = "SELECT COUNT(*) FROM hackathon_participants 
+                     WHERE user_id = :user_id 
+                     AND hackathon_id = :hackathon_id 
+                     AND participation_status = 'accepted'";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([
+                ':user_id' => (int)$userId,
+                ':hackathon_id' => (int)$hackathonId
+            ]);
+
+            if (!$stmt->fetchColumn() > 0 && !isAdmin($userId)) {
+                return [
+                    'success' => false,
+                    'message' => 'Accès non autorisé ! Vous devez être participant au hackathon pour accéder à cette ressource.'
+                ];
+            }
+
+            // Vérifier si l'utilisateur est membre d'une equipe participant au hackathon
+            $query = "SELECT COUNT(*) FROM hackathon_teams ht
+                     INNER JOIN hackathon_participants hp ON ht.team_id = hp.team_id
+                     WHERE ht.hackathon_id = :hackathon_id 
+                     AND hp.user_id = :user_id";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([
+                ':hackathon_id' => (int)$hackathonId,
+                ':user_id' => (int)$userId
+            ]);
+
+            if (!$stmt->fetchColumn() > 0 && !isAdmin($userId)) {
+                return [
+                    'success' => false,
+                    'message' => 'Accès non autorisé ! Vous devez être membre d\'une equipe participant au hackathon pour accéder à cette ressource.'
+                ];
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Accès autorisé !'
+            ];
+        } catch (Exception $e) {
+            throw new Exception(
+                'Erreur lors de la vérification de participation: '
+                    // pour debuger
+                    . $e->getMessage(),
+                500
+            );
+        }
+    }
+
+    /**
      * Récupère tous les hackathons
      * @return array Liste des hackathons
      */

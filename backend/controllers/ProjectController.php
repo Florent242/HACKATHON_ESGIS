@@ -114,15 +114,23 @@ class ProjectController extends Controller
             $data['evaluation_criteria'] = $challenge['evaluation_criteria'];
 
             // Vérifier si l'utilisateur fait partie d'une équipe pour ce hackathon
-            $team = $this->team->getByUser($userId);
-            $team = $team[0];
-            $isRegistredToHackathon = $this->team->getByHackathon($team['id']);
-            if ((!$team || !$isRegistredToHackathon) && !$isAdmin ) {
+            $checkParticipation = $this->hackathon->checkParticipation($userId, $data['hackathon_id']);
+            if ((!$checkParticipation['success']) && !$isAdmin ) {
+                throw new Exception('Vous devez faire partie d\'une équipe pour ce hackathon', 403);
+            }
+
+            try {
+                $team = $this->team->getByUser($userId)[0];
+            } catch (Exception $e) {
+                error_log('Erreur lors de la récupération de l\'équipe: ' . $e->getMessage());
+            }
+            if (!$team && !$isAdmin) {
                 throw new Exception('Vous devez faire partie d\'une équipe pour ce hackathon', 403);
             }
 
             // Vérifier si l'équipe a déjà soumis un projet pour ce challenge
-            if ($this->project->hasTeamSubmittedForChallenge($team['id'], $data['challenge_id'])) {
+            // TODO: Voir si plustard on peut permettre un update du projet
+            if ($this->project->hasTeamSubmittedForChallenge($team['id'] ?? 0, $data['challenge_id'] ?? 0) && !$isAdmin) {
                 throw new Exception('Votre équipe a déjà soumis un projet pour ce challenge', 400);
             }
 
@@ -172,7 +180,7 @@ class ProjectController extends Controller
 
             // Préparer les données du projet
             $projectData = [
-                'team_id' => $team['id'],
+                'team_id' => $team['id']??0,
                 'hackathon_id' => $data['hackathon_id'],
                 'challenge_id' => $data['challenge_id'],
                 'name' => $data['name'],

@@ -65,6 +65,34 @@ class Controller
         }
     }
 
+    /**
+     * Vérifie si l'utilisateur est un administrateur
+     * @param int $userId ID de l'utilisateur
+     * @return bool True si l'utilisateur est admin, false sinon
+     */
+    public function isAdmin($userId)
+    {
+        if (!isset($userId)) {
+            return false;
+        }
+
+        // Vérification du rôle global
+        $query = "SELECT role FROM users WHERE id = :id";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([':id' => $userId]);
+        $role = $stmt->fetchColumn();
+
+        if (!in_array($role, ['admin', 'organisateur'])) {
+            return false;
+        }
+
+        // Vérification dans la whitelist
+        $query = "SELECT 1 FROM admin_whitelist WHERE user_id = :id AND (expires_at > NOW() OR expires_at IS NULL) LIMIT 1";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([':id' => $userId]);
+
+        return (bool) $stmt->fetchColumn();
+    }
 
     public function logSecurityEvent(int $userId, string $eventType, array $details = [])
     {

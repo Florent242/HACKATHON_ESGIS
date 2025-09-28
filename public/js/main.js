@@ -470,7 +470,7 @@ function getFlashMessage() {
  * @param {Object} options 
  * @returns {Promise<Object>}
  */
-async function apiRequest(endpoint, options = {}) {
+async function apiRequest(endpoint, options = {}, rejectAutoContentType = false) {
     try {
 
         const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
@@ -481,7 +481,7 @@ async function apiRequest(endpoint, options = {}) {
             'X-CSRF-TOKEN': getCsrfToken(),
             ...(options.headers || {})
         };
-        if (!headers['Content-Type']) {
+        if (!headers['Content-Type'] && !rejectAutoContentType) {
             headers['Content-Type'] = 'application/json';
         }
 
