@@ -723,7 +723,7 @@ try {
                     if ($method === 'GET') {
                         $controller->get($id);
                     } elseif ($method === 'POST' || $method === 'PUT') {
-                        $controller->update($id);
+                        $controller->update($id,$input);
                     } elseif ($method === 'DELETE') {
                         $controller->delete($id);
                     } else {
@@ -946,9 +946,6 @@ try {
                 if ($method === 'GET') {
                     // GET /api/evaluations
                     $controller->getAll();
-                } elseif ($method === 'POST' || $method === 'PUT') {
-                    // POST || PUT /api/evaluations
-                    $controller->create();
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
                 }
@@ -958,13 +955,7 @@ try {
                     if ($method === 'GET') {
                         // GET /api/evaluations/{id}
                         $controller->get($id);
-                    } elseif ($method === 'POST' || $method === 'PUT') {
-                        // POST || PUT /api/evaluations/{id}
-                        $controller->update($id);
-                    } elseif ($method === 'DELETE') {
-                        // DELETE /api/evaluations/{id}
-                        $controller->delete($id);
-                    } else {
+                    }  else {
                         throw new Exception('Méthode non autorisée', 405);
                     }
                 }
@@ -1029,7 +1020,7 @@ try {
                 if ($method === 'POST') {
                     $controller->submit($input);
                     exit;
-                }
+                } 
 
                 // GET /api/projects - Liste des projets (avec filtres optionnels)
                 if ($method === 'GET') {

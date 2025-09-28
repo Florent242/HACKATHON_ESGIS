@@ -43,6 +43,8 @@ body{
     user-select: none;
     text-transform: capitalize;
     z-index: 10;
+    height: max-content;
+    margin-top: 5px;
 }
 
 /* Couleurs par type */
@@ -169,6 +171,7 @@ textarea{
     border:none;
     border-radius:10px;
 }
+
 button{
     cursor:pointer;
     transition: 0.3s;
@@ -202,6 +205,9 @@ li{
     background:var(--card-bg);
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
+}
+#teamStats strong{
+    text-align: left;
 }
 
 /* Animation pour le contenu qui apparaît */
@@ -276,7 +282,7 @@ li:hover {
     background:var(--card-bg);
     border:solid 0.5px rgba(205, 205, 205, 0.1);
     margin:0 auto 20px auto;
-    padding:40px 70px;
+    padding:40px;
     display:flex;
     justify-content:space-between;
     gap:20px;
@@ -287,11 +293,11 @@ li:hover {
     display:flex;
     align-items:center;
     justify-content:center;
-    border-radius:240px;
+    border-radius:100%;
     background:white;
     border:solid 5px var(--primary);
-    width:120px;
-    height:120px;
+    width:100px;
+    height:100px;
     background:var(--card-bg);
     text-align: center;
     font-size:2.5em;
@@ -304,7 +310,6 @@ img::-webkit-file-upload-button{
 #teamStats{
     display:flex;
     flex-direction:column;
-    width:50%;
     justify-content:center;
     gap:10px;
 }
@@ -403,6 +408,8 @@ img::-webkit-file-upload-button{
 .icon{
     width: 35px;
     height:35px;
+    min-height: 35px!important;
+    min-width: 35px!important;
     border-radius:10px;
     padding:7px;
     gap:20px;
@@ -658,28 +665,27 @@ img::-webkit-file-upload-button{
 }
 
 /* Media Queries pour le responsive */
-@media screen and (max-width: 850px) {
+@media screen and (max-width: 1000px) {
     #invit{
         width: 100%;
     }
     #teamInfo {
-        width: 95%;
-        padding: 20px;
+        width: 90%;
+        padding: 20px 30px;
         flex-direction: column;
         align-items: center;
         text-align: center;
-        margin-top: 30px;
+        margin: 20px auto;
     }
 
     #teamAvatar {
         width: 100px;
-        height: 100px;
+        height: 90px;
         margin-bottom: 20px;
     }
 
     #teamStats {
         width: 100%;
-        align-items: center;
         gap: 15px;
     }
 
@@ -724,7 +730,7 @@ img::-webkit-file-upload-button{
     }
 
     .member-details {
-        align-items: center;
+        align-items: flex-start;
         margin: 10px 0;
     }
 
@@ -741,10 +747,6 @@ img::-webkit-file-upload-button{
         justify-content: center;
     }
     
-    .removeMemberBtn i, .promoteLeaderBtn i {
-        width: 14px;
-        height: 14px;
-    }
 
     .removeMemberBtn:hover{
         background: var(--red);
@@ -769,7 +771,7 @@ img::-webkit-file-upload-button{
 
     /* Ajustements pour la navigation */
     ul {
-        width: 95%;
+        width: 90%;
         flex-wrap: wrap;
         gap: 5px;
     }
@@ -781,14 +783,13 @@ img::-webkit-file-upload-button{
 
     /* Ajustements pour la section about */
     .about {
-        width: 95%;
+        width: 90%;
         padding: 20px;
     }
 
     .aboutFirstContainer {
         flex-direction: column;
         gap: 15px;
-        align-items: center;
     }
 
     .aboutFirstContainer p {
@@ -840,14 +841,15 @@ img::-webkit-file-upload-button{
 }
 
 /* Ajustements pour les très petits écrans */
-@media screen and (max-width: 400px) {
+@media screen and (max-width: 500px) {
     #teamInfo {
         padding: 15px;
     }
-
     #teamAvatar {
-        width: 80px;
-        height: 80px;
+        width: 90px!important;
+        height: 70px!important;
+        max-width: 80px;
+        max-height: 80px;
     }
 
     .name {
@@ -858,6 +860,13 @@ img::-webkit-file-upload-button{
         font-size: 0.8rem;
     }
 
+    #teamStats strong{
+        text-align: left;
+        font-size: 1.1rem;
+    }
+    .member, .score{
+        font-size: 0.9rem;
+    }
     .member-avatar {
         width: 50px;
         height: 50px;
@@ -897,6 +906,18 @@ img::-webkit-file-upload-button{
         min-width: 100px;
     }
 }
+@media (min-width:650px) and (max-width:940px){
+    #invit{
+        right:-40px;
+        top:50px;
+        width: max-content;             
+    }
+    #invit p{
+        width: max-content;
+    }
+    
+}
+
 @media (min-width: 850px) and (max-width: 970px){
     .member-card .promoteRemoveBtn{
         flex-direction: column;
@@ -905,7 +926,7 @@ img::-webkit-file-upload-button{
     }
 
     .member-details {
-        align-items: center;
+        align-items: flex-start;
         margin: 10px 0;
     }
 
@@ -924,19 +945,6 @@ img::-webkit-file-upload-button{
     .promoteRemoveBtn{
         width: 100%;
         justify-content: center;
-    }
-}
-@media (min-width:650px) and (max-width:940px){
-    #invit{
-        right:-40px;
-        top:50px;
-        width: max-content;             
-    }
-    #invit p{
-        width: max-content;
-    }
-    .score p{
-        width:50px;
     }
 }
 

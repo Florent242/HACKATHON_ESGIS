@@ -40,7 +40,7 @@ function isAdmin(int $userId)
     }
 
     // Vérification dans la whitelist
-    $query = "SELECT 1 FROM admin_whitelist WHERE user_id = :id LIMIT 1";
+    $query = "SELECT 1 FROM admin_whitelist WHERE user_id = :id AND (expires_at > NOW() OR expires_at IS NULL) LIMIT 1";
     $stmt = $db->prepare($query);
     $stmt->execute([':id' => $userId]);
 

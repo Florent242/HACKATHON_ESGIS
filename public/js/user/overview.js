@@ -14,6 +14,14 @@ let listItems = document.querySelectorAll('ul li');
 
 //Fixing XSS
 
+const purifyEntry = (entry)=>{
+    DOMPurify.setConfig( { 
+        SAFE_FOR_TEMPLATES: true,
+        ALLOWED_TAGS: [],
+        ALLOWED_ATTR: []
+    })
+    return DOMPurify.sanitize(entry)
+}
 
 // Données globales
 let team = [];
@@ -244,18 +252,20 @@ const renderMember = (member) => {
 
     // Détecter si on est sur mobile
     const isMobile = window.innerWidth <= 650;
-
+    
+    
     memberDiv.innerHTML = `
-        <div class="member-info gap-4 max-md:gap-2">
-            <div class="member-avatar">${member.profil_picture ? `<img src="${member.profil_picture}" alt="${member.username}">` : (member.username.charAt(0).toUpperCase() + member.username.charAt(1).toUpperCase())}
+        <div class="member-info gap-4 max-md:gap-2 relative w-full">
+            <div class="member-avatar">
+                ${member.profil_picture ? `<img src="${member.profil_picture}" alt="${member.username}">` : (purifyEntry(member.username).charAt(0).toUpperCase() + purifyEntry(member.username).charAt(1).toUpperCase())}
             </div>
             <div class="member-details">
                 <div class="member-header">
                     <h4 class="flexDivIcon gap-2 text-base max-md:text-xs">${member.username} ${team.leader_id === member.id ? '<i data-lucide="crown" class="w-3 h-3 stroke-current"></i>' : ''} <span class="role-badge ${team.leader_id === member.id ? 'captain' : 'member'} text-base max-md:text-xs">${team.leader_id === member.id ? 'Capitaine' : 'Membre'}</span></h4>                    
                 </div>
-                <p class="max-md:text-xs">${member.special_comp}</p>
+                <p class="max-md:text-xs align-left">${member.special_comp}</p>
             </div>
-            <div class="flex flex-col justify-end gap-2 items-center">
+            <div class="flex gap-2 h-max absolute right-0" style="top: 8px;">
                 <i data-lucide="chart-no-axes-combined" class="w-4 h-4 stroke-current"></i>
                 <span class="text-sm max-md:text-xs">${member.total_points || 0} pts</span>
             </div>
@@ -330,6 +340,11 @@ const renderJoinRequestsContent = () => {
     console.log(joinRequests);
     return joinRequests.map(request => {
         const initials = request?.username?.substring(0, 2)?.toUpperCase();
+        
+    for (const key of request){
+        request[key] = purifyEntry(request[key])
+    }
+
 
         return `
             <div class="request-card">
@@ -445,7 +460,7 @@ const handlePromoteLeader = async (id, username, validated = false) => {
     let name;
     team.members.forEach(member => {
         if (member.id === id) {
-            name = member.username;
+            name = purifyEntry(member.username);
         }
     });
     if (promoteLeader.success) {
@@ -902,6 +917,18 @@ const handleSettingsAction = () => {
 // ========================================
 // FONCTIONS DE GESTION DES DONNÉES
 // ========================================
+const renderTeamInfos=(waitTeam)=>{
+    team = waitTeam;
+    if (teamName) teamName.textContent = waitTeam.name;
+    if (teamCategory) {
+        teamCategory.textContent = waitTeam.type;
+        teamCategory.classList.add(waitTeam.type);
+    }
+    if (memberNumber) memberNumber.textContent = team.members?.length;
+    if (teamScore) teamScore.textContent = team.points + ' pts';
+    const aboutText = document.getElementById('aboutText');
+    if(aboutText) aboutText.textContent = waitTeam.description;
+}
 
 let defineTeamNameOverviewData = async () => {
     await getTeam();
@@ -922,13 +949,13 @@ let defineTeamNameOverviewData = async () => {
                 ${isMember ? `
                     <button id="editBtn" class="flexDivIcon" style="gap:10px; color:white;" onclick="handleAboutSection();">
                     <i data-lucide="edit"></i>
-                    <span>${team.description ? 'Modifier' : 'Créer une description'}</span>
+                    <span>${purifyEntry(team.description)? 'Modifier' : 'Créer une description'}</span>
                 </button>` : ''
             }
             </div>                
     
             <p id="aboutText">                
-                ${team.description ? team.description : 'Aucune description. Créez-en une.'}
+                ${team.description ? purifyEntry(team.description) : 'Aucune description.'}
             </p>
         `;
         },
@@ -987,16 +1014,7 @@ const getTeam = async () => {
     if (team.length === 0) {
         const waitTeam = await manageOverviewData.getTeamMembers() || null;
         if (waitTeam) {
-            team = waitTeam;
-            if (teamName) teamName.textContent = waitTeam.name;
-            if (teamCategory) {
-                teamCategory.textContent = waitTeam.type;
-                teamCategory.classList.add(waitTeam.type);
-            }
-            if (memberNumber) memberNumber.textContent = team.members.length;
-            if (teamScore) teamScore.textContent = team.points + ' pts';
-            const aboutText = document.getElementById('aboutText');
-            if (aboutText) aboutText.textContent = waitTeam.description;
+            renderTeamInfos(waitTeam)
         }
     }
 
@@ -1036,7 +1054,7 @@ const apiReq = async (apiRoute, method = 'GET', data = null) => {
         optionRequest.headers['X-CSRF-Token'] = document.querySelector('input[name="csrf_token"]').value;
     }
     console.log(optionRequest);
-    console.log(apiRoute);
+    // console.log(apiRoute);
     const reponse =
         await fetch('/api/' + apiRoute, optionRequest)
             .then(rep => rep.json())
@@ -1141,11 +1159,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (userConnected.id === team.leader_id) {
         const sectionTeamInfo = document.querySelector('#teamInfo');
         if (sectionTeamInfo) {
-            sectionTeamInfo.innerHTML += `
+            sectionTeamInfo.insertAdjacentHTML('beforeend',`
             <button id="invit" class="flexDivIcon" onclick="invitUser()">
                 <i data-lucide="user-plus"></i>
                 <p>Inviter un utilisateur</p>
-            </button>`;
+            </button>`);
         }
 
     }

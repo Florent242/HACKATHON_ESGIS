@@ -127,7 +127,7 @@ headerDropdown?.addEventListener('mouseenter', function () {
 });
 
 // Hide the dropdown when mouse leaves both the main nav and the dropdown
-document.querySelector('.nav-container').addEventListener('mouseleave', function () {
+document.querySelector('.nav-container')?.addEventListener('mouseleave', function () {
     headerDropdown.classList.remove('visible'); // Hide it when mouse leaves
 });
 
@@ -168,12 +168,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     //modal window for logout
-    decoInitModal.addEventListener('click', (e) => {
+    decoInitModal?.addEventListener('click', (e) => {
         e.preventDefault();
         showModal();
     });
 
-    annuler.addEventListener('click', () => {
+    annuler?.addEventListener('click', () => {
         hideModal();
     });
 
@@ -539,20 +539,21 @@ class NotificationManager {
     }
 
     renderNotifications() {
-        const list = this.dropdown.querySelector('.notifications-list');
-
-        if (this.notifications.length === 0) {
-            list.innerHTML = `
-                <div class="notifications-empty">
-                    <i data-lucide="bell-off"></i>
-                    <p>Aucune notification</p>
-                </div>
-            `;
-        } else {
-            list.innerHTML = this.notifications.map(notification =>
-                this.createNotificationHTML(notification)
-            ).join('');
-        }
+        const list = this?.dropdown?.querySelector('.notifications-list');
+        
+        if(list)
+            if (this.notifications.length === 0) {
+                list.innerHTML = `
+                    <div class="notifications-empty">
+                        <i data-lucide="bell-off"></i>
+                        <p>Aucune notification</p>
+                    </div>
+                `;
+            } else {
+                    list.innerHTML = this.notifications.map(notification =>
+                        this.createNotificationHTML(notification)
+                ).join('');
+            }
 
         // Réinitialiser les icônes Lucide
         if (window.lucide) {
@@ -615,9 +616,9 @@ class NotificationManager {
     }
 
     bindNotificationEvents() {
-        const items = this.dropdown.querySelectorAll('.notification-item');
+        const items = this.dropdown?.querySelectorAll('.notification-item');
 
-        items.forEach(item => {
+        items?.forEach(item => {
             // Marquer comme lu au clic
             item.addEventListener('click', async (e) => {
                 if (!e.target.classList.contains('notification-action')) {

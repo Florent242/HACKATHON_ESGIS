@@ -55,7 +55,16 @@ class AdminController extends Controller
         $stmt->execute([':id' => $userId]);
         $role = $stmt->fetchColumn();
 
-        return $role === 'admin' || $role === 'organisateur';
+        if (!in_array($role, ['admin', 'organisateur'])) {
+            return false;
+        }
+    
+        // Vérification dans la whitelist
+        $query = "SELECT 1 FROM admin_whitelist WHERE user_id = :id AND (expires_at > NOW() OR expires_at IS NULL) LIMIT 1";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([':id' => $userId]);
+    
+        return (bool) $stmt->fetchColumn();
     }
     public function validateToken(string $token): array
     {

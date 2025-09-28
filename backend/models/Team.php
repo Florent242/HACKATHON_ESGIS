@@ -248,12 +248,6 @@ class Team
             $fields = [];
             $params = [];
 
-            // Gérer la traduction des champs français/anglais
-            if (isset($data['nom'])) {
-                $data['name'] = $data['nom'];
-                unset($data['nom']);
-            }
-
             // Champs à mettre à jour
             $allowedFields = ['name', 'description', 'leader_id', 'invitation_code'];
 

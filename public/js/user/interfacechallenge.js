@@ -879,7 +879,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         showProgress('Soumission en cours...');
 
         try {
-            const response = await apiRequest(`/challenges/dev/${AppState.challenge.hackathon_id || 2}/1`, {
+            console.log(AppState.challenge.phase_id);
+            const response = await apiRequest(`/challenges/dev/${AppState.challenge.hackathon_id || 2}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -892,7 +893,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                     code: code,
                     language: AppState.currentLanguage,
                     action: 'submit',
-                    csrf_token: AppState.userData.csrf_token
+                    csrf_token: AppState.userData.csrf_token,
+                    phase_id: AppState.challenge.phase_id
                 })
             });
 

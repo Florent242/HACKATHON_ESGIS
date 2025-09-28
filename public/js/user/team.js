@@ -2,6 +2,17 @@
 let fetchedAllTeamsData = [];
 let currentUserId = null; // Variable pour stocker l'ID de l'utilisateur actuel
 
+//Fixing XSS
+
+const purifyEntry = (entry)=>{
+    DOMPurify.setConfig( { 
+        SAFE_FOR_TEMPLATES: true,
+        ALLOWED_TAGS: [],
+        ALLOWED_ATTR: []
+    })
+    return DOMPurify.sanitize(entry)
+}
+
 // Navigation entre les onglets (Toutes les équipes / Mes équipes)
 function initTabs() {
     const tabs = document.querySelectorAll('.nav-tab');
@@ -143,14 +154,14 @@ function createTeamCard(team) {
         <div class="team-header">
             <div class="team-avatar">${avatar}</div>
             <div class="team-info">
-                <h3>${team.name || 'Équipe sans nom'}</h3>
+                <h3>${purifyEntry(team.name) || 'N/A'}</h3>
                 <div class="team-meta">
                     ${roleTag}
                     ${membersCountTag}
                 </div>
             </div>
         </div>
-        <p class="team-description">${team.description || 'Description non disponible.'}</p>
+        <p class="team-description">${purifyEntry(team.description) || 'X3ysKFwiq9s4C7BwDescription non disponible.'}</p>
         <div class="team-actions">
             <button class="btn btn-primary view-team-btn">
                 <i data-lucide="square-arrow-out-up-right" class="w-4 h-4 align-middle"></i> Voir l'équipe

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <script defer src="/js/lucide.min.js"></script>
 <script defer src="/js/main.js"></script>
+<script defer src="/js/dist/purify.min.js"></script>
 <?php
 require_once __DIR__ . '/../backend/includes/authMiddleware.php';
 

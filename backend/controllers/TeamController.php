@@ -207,44 +207,35 @@ class TeamController extends Controller
         }
     }
 
-    public function update($teamId)
+    public function update($teamId, $input)
     {
-        error_log("Début de TeamController::update pour teamId: $teamId");
         try {
             $this->validateMethod('POST');
-            error_log("Méthode POST validée");
 
             $token = $this->getBearerToken();
             if (!$token) {
-                error_log("Token manquant");
                 throw new Exception('Token manquant');
             }
-            error_log("Token récupéré: $token");
 
             $tokenValidation = $this->tokenManager->validateToken($token);
             if (!$tokenValidation['valid']) {
-                error_log("Token invalide: " . ($tokenValidation['error'] ?? 'Aucun détail'));
                 throw new Exception('Token invalide: ' . ($tokenValidation['error'] ?? 'Aucun détail'));
             }
             $userId = $tokenValidation['user_id'];
-            error_log("Utilisateur validé: userId = $userId");
 
             // Vérifier si l'utilisateur est le leader
             $isLeader = $this->team->isLeader($teamId, $userId);
-            error_log("Vérification leader: isLeader = " . ($isLeader ? 'true' : 'false'));
             if (!$isLeader) {
                 error_log("Utilisateur $userId n'est pas leader de l'équipe $teamId");
                 throw new Exception('Seul le leader peut modifier l\'équipe');
             }
 
             // Récupérer les données envoyées
-            $data = $_POST;
-            error_log("Données reçues: " . print_r($data, true));
+            $data = $input;
             $name = $data['name'] ?? null;
             $description = $data['description'] ?? null;
 
             if (!$name) {
-                error_log("Nom de l'équipe manquant");
                 throw new Exception('Le nom de l\'équipe est requis');
             }
 
@@ -252,40 +243,21 @@ class TeamController extends Controller
             $query = "SELECT id FROM teams WHERE id = :teamId";
             $stmt = $this->db->prepare($query);
             if (!$stmt) {
-                error_log("Échec de la préparation de la requête SELECT: " . print_r($this->db->errorInfo(), true));
                 throw new Exception('Erreur de préparation de la requête');
             }
             $stmt->execute([':teamId' => $teamId]);
             if (!$stmt->fetch()) {
-                error_log("Équipe non trouvée pour teamId: $teamId");
                 throw new Exception('Équipe non trouvée');
             }
 
             // Mettre à jour l'équipe
-            $query = "UPDATE teams SET name = :name, description = :description WHERE id = :teamId";
-            $stmt = $this->db->prepare($query);
-            if (!$stmt) {
-                error_log("Échec de la préparation de la requête UPDATE: " . print_r($this->db->errorInfo(), true));
-                throw new Exception('Erreur de préparation de la requête');
-            }
-            $success = $stmt->execute([
-                ':name' => $name,
-                ':description' => $description,
-                ':teamId' => $teamId
-            ]);
-            $rowCount = $stmt->rowCount();
-            error_log("Requête SQL exécutée, succès: " . ($success ? 'true' : 'false') . ", lignes affectées: $rowCount");
-
+            $success = $this->team->update($teamId, $data);
             if (!$success) {
                 error_log("Échec de l'exécution de la requête UPDATE: " . print_r($this->db->errorInfo(), true));
                 throw new Exception('Échec de la mise à jour de l\'équipe');
             }
 
-            if ($rowCount === 0) {
-                error_log("Aucune ligne affectée pour teamId: $teamId");
-                throw new Exception('Aucune modification effectuée sur l\'équipe');
-            }
-
+            $this->logActivity('update_team', 'Mise à jour d\'une equipe', $success, 'info', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
             $response = [
                 'success' => true,
                 'message' => 'Équipe mise à jour avec succès'

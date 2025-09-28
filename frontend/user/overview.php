@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="/css/dist/output.css">
     <?php require_once '../includes/user/head.php'; ?>
 
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
     <!-- Ajout de Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="/js/user/overview.js" defer></script>
@@ -19,7 +18,7 @@
         Retour
     </button>
     <section id="teamInfo">
-        <div class="flex gap-5">
+        <div class="flex gap-5 justify-start w-full pl-10">
             <div id="teamAvatar">
                 
             </div>
