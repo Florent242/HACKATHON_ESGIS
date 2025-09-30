@@ -513,7 +513,7 @@ async function loadUsersForSelect() {
     if (!select) return;
 
     const response = await apiRequest('/users/all?limit=1000');
-    select.innerHTML = response.data.map(user =>
+    select.innerHTML = Array.from(response.data)?.map(user =>
       `<option value="${user.id}">${user.username || user.email} == (${user.role || 'Utilisateur'})</option>`
     ).join('');
     usersLoaded = true;
@@ -529,7 +529,7 @@ async function loadTeamsForSelect() {
   try {
     const response = await apiRequest('/teams');
     const select = document.getElementById('notificationTeam');
-    select.innerHTML = response.data.map(team =>
+    select.innerHTML = Array.from(response.data)?.map(team =>
       `<option value="${team.id}">${team.name}</option>`
     ).join('');
     window.teamsLoaded = true;
@@ -543,7 +543,7 @@ async function loadHackathonsForSelect() {
   try {
     const response = await apiRequest('/hackathons');
     const select = document.getElementById('notificationHackathon');
-    select.innerHTML = response.data.map(hackathon =>
+    select.innerHTML = Array.from(response.data)?.map(hackathon =>
       `<option value="${hackathon.id}">${hackathon.name} (${new Date(hackathon.start_date).getFullYear()})</option>`
     ).join('');
     window.hackathonsLoaded = true;
@@ -1453,6 +1453,7 @@ async function showUserModal(userId = null, activeTab = 'profile') {
   });
 
 }
+
 async function handleUserFormSubmit(e) {
   e.preventDefault();
 
@@ -1521,14 +1522,14 @@ async function handleUserFormSubmit(e) {
       loadUsers();
       loadUserStats();
     } else {
-      throw new Error(response.message || 'Erreur lors de l\'enregistrement');
+      throw new Error(response.message || response.error || 'Erreur lors de l\'enregistrement');
     }
 
   } catch (error) {
     console.error('Erreur:', error);
     showNotification(
       'Erreur lors de l\'enregistrement',
-      error.message,
+      error.message || error.error || 'Erreur lors de l\'enregistrement',
       'error'
     );
   } finally {

@@ -16,13 +16,15 @@
 
                 $navItems = [
                     '/admin' => ['Tableau de bord', 'layout-dashboard'],
-                    '/admin/hackathon' => ['Hackathons', 'laptop'],
+                    '/admin/hackathons' => ['Hackathons', 'laptop'],
                     '/admin/challenges' => ['Challenges', 'trophy'],
                     '/admin/utilisateurs' => ['Utilisateurs', 'users'],
                     '/admin/equipes' => ['Équipes', 'users-2'],
                     '/admin/resources' => ['Ressources', 'book-open'],
                     '/admin/logs' => ['Journaux', 'file-text'],
                     '/admin/soumissions' => ['Soumissions', 'file-code-2'],
+                    '/admin/validation_projet' => ['Validation', 'check-circle'],
+                    
                 ];
 
                 // Générer les éléments de navigation principaux

@@ -22,8 +22,12 @@ use Auth\Controller\UserController;
 use Auth\Controller\NotificationController;
 use Auth\Controller\ChallengeController;
 use Auth\Controller\EvaluationController;
+use Auth\Controller\PhaseController;
 use Auth\Controller\AdminController;
 use Auth\Model\TokenManager;
+use Auth\Controller\ParticipantController;
+use Auth\Controller\ScoreController;
+use Auth\Controller\ActivityLogController;
 
 // ✅ Inclure une seule fois le fichier de configuration
 if (!defined('CONFIG_INCLUDED')) {
@@ -48,9 +52,16 @@ try {
             'ProjectController'   => '/controllers/ProjectController.php',
             'ChallengeController' => '/controllers/ChallengeController.php',
             'EvaluationController' => '/controllers/EvaluationController.php',
+            'PhaseController' => '/controllers/PhaseController.php',
             'AdminController'     => '/controllers/AdminController.php',
             'TokenManager'        => '/models/TokenManager.php',
-            'NotificationController' => '/controllers/NotificationController.php'
+            'NotificationController' => '/controllers/NotificationController.php',
+            'Participant' => '/models/Participant.php',
+            'ParticipantController' => '/controllers/ParticipantController.php',
+            'ScoreController' => '/controllers/ScoreController.php',
+            'ActivityLogController' => '/controllers/ActivityLogController.php',
+            'ActivityLog' => '/models/ActivityLog.php',
+            'LogHelper' => '/models/LogHelper.php',
         ];
 
         foreach ($files as $class => $path) {
@@ -172,6 +183,59 @@ try {
             }
             break;
 
+        case 'participants':
+            $controller = new ParticipantController($db, $tokenManager);
+            // Route /api/participant
+            if ($method !== 'POST') {
+                throw new Exception('Méthode non autorisée', 405);
+            }
+            if ($id && $action === 'register-team' && $method === 'POST') {
+                // /api/participants/{hackathon_id}/register-team
+                $controller->registerTeam((int)$id, $input);
+            }
+            break;
+
+        case 'phases':
+            $controller = new PhaseController($db, $tokenManager);
+
+            if ($method === 'GET') {
+                if ($id === null) {
+                    // Route: GET /api/phases/{id}
+                    $controller->get($id);
+                } elseif ($id === 'active-phase') {
+                    // Route: GET /api/phases/active-phase/{user_id}
+                    $controller->getActivePhase($id, $userId);
+                } elseif ($action === 'all-phases' && is_numeric($id)) {
+                    // Route: GET /api/phases/{hackathon_id}/all-phases
+                    $controller->getAllPhases($id);
+                } elseif (is_numeric($id)) {
+                    // Route: GET /api/phases/{id}
+                    $controller->get($id);
+                }
+            } elseif ($method === 'POST' && isset($id) && is_numeric($id)) {
+                // Route: POST /api/phases/{hackathon_id}
+                $controller->addPhase($id, $input);
+            } elseif (isset($action) && is_numeric($action)) {
+                $phaseId = $action;
+                if ($method === 'PUT') {
+                    // Route: PUT /api/phases/{hackathon_id}/{phaseId}
+                    $controller->updatePhase($id, $phaseId, $input);
+                } elseif ($method === 'DELETE') {
+                    // Route: DELETE /api/phases/{hackathon_id}/{phaseId}
+                    // TODO: revoir les autorisations pour la suppression des phases
+                    jsonResponse([
+                        'success' => false,
+                        'message' => "Suppression des phases non autorisée pour l'instant"
+                    ], 403);
+                    // $controller->deletePhase($id, $phaseId);
+                } else {
+                    throw new Exception('Méthode non autorisée', 405);
+                }
+            } else {
+                throw new Exception('ID de phase non valide', 400);
+            }
+            break;
+
         case 'admin':
             // Initialisation du contrôleur admin
             $controllerAdmin = new AdminController($db, $tokenManager);
@@ -253,7 +317,11 @@ try {
 
                         if ($method === 'GET' && !isset($request[3])) {
                             // GET /api/admin/users/{id} - Détails d'un utilisateur
-                            $controllerAdmin->getUser($action);
+                            $data = $controllerAdmin->getUser($action);
+                            jsonResponse([
+                                'success' => true,
+                                'data' => $data
+                            ]);
                         } elseif ($method === 'PUT' && !isset($request[3])) {
                             // PUT/PATCH /api/admin/users/{id} - Mettre à jour un utilisateur
                             $controllerAdmin->updateUser($action);
@@ -282,8 +350,10 @@ try {
                             }
                         } elseif ($method === 'PUT' || $method === 'POST' && isset($request[3]) && $request[3] === 'reset-password') {
                             // GET /api/admin/users/{id}/reset-password - Reset mot de passe des utilisateurs
-                            jsonResponse(['success' => false, 
-                            'message' => 'Instruction non pris en charge pour l\'instant, essayez de modifier simplement le profile'], 403);
+                            jsonResponse([
+                                'success' => false,
+                                'message' => 'Instruction non pris en charge pour l\'instant, essayez de modifier simplement le profile'
+                            ], 403);
                         } else {
                             jsonResponse(['success' => false, 'error' => 'Endpoint non trouvé'], 404);
                             exit();
@@ -464,7 +534,55 @@ try {
             }
             break;
 
+        case 'scores':
 
+            $controller = new ScoreController($db, $tokenManager);
+
+            if ($method === 'GET' && is_numeric($id) && isset($id)) {
+                // Route /api/scores/{hackathon_id}/{action}
+                if (isset($action)) {
+
+                    switch ($action) {
+                        case 'phases':
+                            $controller->getPhases((int)$id);
+                            break;
+                        case 'leaderboard':
+                            // Route /api/scores/{hackathon_id}/{action}/{phase_id}
+                            if (isset($request[3]) && is_numeric($request[3])) {
+                                $controller->getLeaderboard((int)$id, (int)$request[3]);
+                            } else {
+                                return jsonResponse([
+                                    'success' => false,
+                                    'error' => 'Phase ID requis.'
+                                ], 400);
+                            }
+                            break;
+                        default:
+                            jsonResponse([
+                                'success' => false,
+                                'error' => 'Méthode non autorisée !!!!'
+                            ], 405);
+                    }
+                } else {
+                    jsonResponse([
+                        'success' => false,
+                        'error' => 'Hackathon ID et phase ID requis.' . print_r($request, true)
+                    ], 400);
+                }
+            }
+            // TODO : Instruction interdite aux participants
+            elseif ($method === 'POST' && is_numeric($id) && isset($id)) {
+                // Route /api/scores/{hackathon_id}/{phase_id}
+                if (isset($id) && is_numeric($id) && isset($action) && is_numeric($action) && isset($input['team_id']) && is_numeric($input['team_id'])) {
+                    $controller->updateScore($input['team_id'], (int)$id, (int)$action, $input);
+                } else {
+                    jsonResponse([
+                        'success' => false,
+                        'error' => 'Hackathon ID et phase ID requis.'
+                    ], 400);
+                }
+            }
+            break;
         case 'users':
             $controller = new UserController($db, $tokenManager);
             // Vérification du token JWT pour toutes les routes sauf OPTIONS
@@ -736,7 +854,10 @@ try {
                 if ($method === 'GET') {
                     $controller->getAll();
                 } elseif ($method === 'POST') {
-                    $controller->create();
+                    if (empty($input)) {
+                        throw new Exception('Aucune donnée reçue');
+                    }
+                    $controller->create($input);
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
                 }
@@ -746,9 +867,13 @@ try {
                     if ($method === 'GET') {
                         $controller->get($id);
                     } elseif ($method === 'POST' || $method === 'PUT') {
-                        $controller->update($id);
+                        if (empty($input)) {
+                            throw new Exception('Aucune donnée reçue');
+                        }
+                        $controller->update($id, $input);
                     } elseif ($method === 'DELETE') {
-                        $controller->delete($id);
+                        jsonResponse(['success' => false, 'error' => 'Action non autorisée. Il est interdit de supprimer un hackathon quelque soit le rôle !'], 405);
+                        // $controller->delete($id);
                     } else {
                         throw new Exception('Méthode non autorisée', 405);
                     }
@@ -785,7 +910,7 @@ try {
                 if ($method === 'GET') {
                     $controller->getAll();
                 } elseif ($method === 'POST') {
-                    $controller->create();
+                    $controller->create($input);
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
                 }
@@ -795,7 +920,7 @@ try {
                     if ($method === 'GET') {
                         $controller->get($id);
                     } elseif ($method === 'POST' || $method === 'PUT') {
-                        $controller->update($id);
+                        $controller->update($id, $input);
                     } elseif ($method === 'DELETE') {
                         $controller->delete($id);
                     } else {
@@ -803,20 +928,32 @@ try {
                     }
                 } else {
                     switch ($action) {
+                        case 'status':
+                            // Route /api/teams/{id}/status
+                            if ($method === 'GET') {
+                                $controller->getStatus($id);
+                            } elseif ($method === 'POST' || $method === 'PUT') {
+                                $controller->updateStatus($id, $input);
+                            } else {
+                                throw new Exception('Méthode non autorisée', 405);
+                            }
+                            break;
                         case 'members':
+                            // Route /api/teams/{id}/members
                             if ($method === 'GET') {
                                 $controller->getMembers($id);
                             } elseif (isset($request[3]) && $request[3] === 'add') {
-                                $controller->addMember($id);
+                                $controller->addMember($id, $input);
                             } elseif (isset($request[3]) && $request[3] === 'remove') {
-                                $controller->removeMember($id);
+                                $controller->removeMember($id, $input);
                             } else {
                                 throw new Exception('Action non reconnue', 404);
                             }
                             break;
                         case 'leader':
+                            // Route /api/teams/{id}/leader
                             if (isset($request[3]) && $request[3] === 'change') {
-                                $controller->changeLeader($id);
+                                $controller->changeLeader($id, $input);
                             } else {
                                 throw new Exception('Action non reconnue', 404);
                             }
@@ -1020,6 +1157,53 @@ try {
                 throw new Exception('Route non reconnue ou invalide', 400);
             }
             break;
+            case 'logs':                
+                // Vérification du token JWT
+                if ($method !== 'OPTIONS') {
+                    try {
+                        $token = getBearerToken();
+                        if (!$token) {
+                            throw new Exception('Token manquant', 401);
+                        }
+            
+                        $tokenValidation = $tokenManager->validateToken($token);
+                        if (!$tokenValidation['valid']) {
+                            throw new Exception('Token invalide', 401);
+                        }
+            
+                        $logUserId = $tokenValidation['user_id'];
+                        
+                        // Vérifier si admin
+                        $adminController = new AdminController($db, $tokenManager);
+                        if (!$adminController->isAdmin($logUserId)) {
+                            throw new Exception('Accès non autorisé', 403);
+                        }
+                    } catch (Exception $e) {
+                        jsonResponse([
+                            'success' => false,
+                            'error' => $e->getMessage()
+                        ], $e->getCode() ?: 401);
+                        exit();
+                    }
+                }
+            
+                // Routes
+                if ($method === 'GET' && !isset($id)) {
+                    // GET /api/logs
+                    $controller->getAll();
+                } elseif ($method === 'GET' && $id === 'stats') {
+                    // GET /api/logs/stats
+                    $controller->getStats();
+                } elseif ($method === 'GET' && $id === 'actions') {
+                    // GET /api/logs/actions
+                    $controller->getActions();
+                } elseif ($method === 'GET' && $id === 'export') {
+                    // GET /api/logs/export
+                    $controller->export();
+                } else {
+                    throw new Exception('Route non trouvée', 404);
+                }
+                break;
 
         default:
             throw new Exception('Endpoint non trouvé', 404);

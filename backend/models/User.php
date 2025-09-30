@@ -280,7 +280,7 @@ class User
         try {
             $query = "SELECT *,
                 (SELECT name FROM teams t JOIN team_members tm ON t.id = tm.team_id WHERE tm.user_id = u.id LIMIT 1) as team_name
-                FROM {$this->table} WHERE id = :id LIMIT 1";
+                FROM {$this->table} u WHERE u.id = :id LIMIT 1";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
@@ -293,7 +293,11 @@ class User
             return $user;
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération de l\'utilisateur: ' . $e->getMessage());
-            return false;
+            throw new Exception(
+                'Erreur lors de la récupération de l\'utilisateur !'
+                // Pour debuger
+                 . $e->getMessage()
+            );
         }
     }
 

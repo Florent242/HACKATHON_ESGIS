@@ -243,6 +243,7 @@ class TokenManager
                 }
             }else if($decoded->exp < time() + 86400) // < 24h
             {
+                // TODO: Refresh token dans TokenManager methode validateToken
                 // $refreshedToken = $this->refreshToken($decoded->jti);
                 // return [
                 //     'valid' => true,

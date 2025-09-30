@@ -1,32 +1,35 @@
 <?php
+
 namespace Auth\Controller;
 
 use Exception;
 use Auth\Model\Participant;
 use Auth\Model\Notification;
 
-if(!defined('CONFIG_INCLUDED')) {
+if (!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
 }
-if(!defined('FUNCTIONS_INCLUDED')) {
+if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/../includes/functions.php';
 }
-if(!class_exists('Participant')) {
+if (!class_exists('Participant')) {
     require_once __DIR__ . '/../models/Participant.php';
 }
-if(!class_exists('Controller')) {
+if (!class_exists('Controller')) {
     require_once __DIR__ . '/Controller.php';
 }
-if(!class_exists('Notification')) {
+if (!class_exists('Notification')) {
     require_once __DIR__ . '/../models/Notification.php';
 }
 
-class ParticipantController extends Controller {
+class ParticipantController extends Controller
+{
     private $participant;
     private $notification;
     private $db;
 
-    public function __construct($db, $tokenManager) {
+    public function __construct($db, $tokenManager)
+    {
         parent::__construct($tokenManager);
         $this->db = $db;
         $this->participant = new Participant($this->db);
@@ -34,7 +37,8 @@ class ParticipantController extends Controller {
     }
 
     // Afficher les participants d'un hackathon
-    public function index($hackathonId) {
+    public function index($hackathonId)
+    {
         try {
             // Vérifier si l'utilisateur est un organisateur
             if (!isAuthenticated() || !hasRole('organisateur')) {
@@ -64,7 +68,8 @@ class ParticipantController extends Controller {
     }
 
     // S'inscrire à un hackathon
-    public function register($hackathonId) {
+    public function register($hackathonId)
+    {
         try {
             // Vérifier si l'utilisateur est connecté
             if (!isAuthenticated()) {
@@ -77,11 +82,11 @@ class ParticipantController extends Controller {
 
             // Vérifier le token CSRF
             if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                throw new Exception('Token CSRF invalide');
+                throw new Exception('Token de session invalide');
             }
 
             // Enregistrer le participant
-            $participantId = $this->participant->create([
+            $participantId = $this->participant->register([
                 'user_id' => $_SESSION['user_id'],
                 'hackathon_id' => $hackathonId
             ]);
@@ -109,8 +114,68 @@ class ParticipantController extends Controller {
         }
     }
 
+    public function registerTeam($hackathonId, $input)
+    {
+        try {
+            if (!isAuthenticated()) {
+                throw new Exception('Non autorisé');
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Méthode non autorisée');
+            }
+
+            $teamId = $input['team_id'] ?? null;
+            if (!$teamId) {
+                throw new Exception("ID de l'équipe requis");
+            }
+
+            $captainId = $input['leader_id'];
+            
+            $success = $this->participant->registerTeam($hackathonId, $teamId, $captainId);
+
+            if (!$success) {
+                throw new Exception("Erreur lors de l'inscription de l'équipe");
+            }
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Équipe inscrite avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function unregisterTeam($hackathonId, $teamId)
+    {
+        try {
+            $this->validateMethod('POST');
+
+            if (!hasRole('admin')) {
+                throw new Exception("Action non autorisée");
+            }
+
+            $this->participant->unregisterTeam((int)$hackathonId, (int)$teamId);
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => "L’équipe a été désinscrite du hackathon"
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
     // Approuver une inscription
-    public function approve($id) {
+    public function approve($id)
+    {
         try {
             // Vérifier si l'utilisateur est un organisateur
             if (!isAuthenticated() || !hasRole('organisateur')) {
@@ -123,7 +188,7 @@ class ParticipantController extends Controller {
 
             // Vérifier le token CSRF
             if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                throw new Exception('Token CSRF invalide');
+                throw new Exception('Token de session invalide');
             }
 
             // Récupérer l'inscription
@@ -160,7 +225,8 @@ class ParticipantController extends Controller {
     }
 
     // Rejeter une inscription
-    public function reject($id) {
+    public function reject($id)
+    {
         try {
             // Vérifier si l'utilisateur est un organisateur
             if (!isAuthenticated() || !hasRole('organisateur')) {
@@ -173,7 +239,7 @@ class ParticipantController extends Controller {
 
             // Vérifier le token CSRF
             if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                throw new Exception('Token CSRF invalide');
+                throw new Exception('Token de session invalide');
             }
 
             // Récupérer l'inscription
@@ -215,7 +281,8 @@ class ParticipantController extends Controller {
     }
 
     // Annuler son inscription
-    public function cancel($id) {
+    public function cancel($id)
+    {
         try {
             // Vérifier si l'utilisateur est connecté
             if (!isAuthenticated()) {
@@ -228,7 +295,7 @@ class ParticipantController extends Controller {
 
             // Vérifier le token CSRF
             if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                throw new Exception('Token CSRF invalide');
+                throw new Exception('Token de session invalide');
             }
 
             // Récupérer l'inscription
@@ -238,7 +305,7 @@ class ParticipantController extends Controller {
             }
 
             // Vérifier si l'utilisateur est le propriétaire de l'inscription
-            if ($participant['user_id'] !== $_SESSION['user_id']) {
+            if ($participant['user_id'] !== $_SESSION['user']['id']) {
                 throw new Exception('Non autorisé à annuler cette inscription');
             }
 
@@ -258,7 +325,8 @@ class ParticipantController extends Controller {
     }
 
     // Afficher mes participations
-    public function myParticipations($jwt) {
+    public function myParticipations($jwt)
+    {
         try {
             // Vérifier si l'utilisateur est connecté
             if (!isAuthenticated()) {
@@ -266,7 +334,7 @@ class ParticipantController extends Controller {
             }
 
             // Récupérer les participations
-            $participations = $this->participant->getByUser($_SESSION['user_id'], $jwt);
+            $participations = $this->participant->getByUser($_SESSION['user']['id'], $jwt);
 
             $this->jsonResponse([
                 'success' => true,
@@ -282,44 +350,17 @@ class ParticipantController extends Controller {
         }
     }
 
-    public function create() {
-        try {
-            $this->validateMethod('POST');
-            
-            $requiredFields = ['hackathon_id', 'user_id'];
-            $this->validateRequiredFields($_POST, $requiredFields);
-
-            $data = [
-                'hackathon_id' => (int)$_POST['hackathon_id'],
-                'user_id' => (int)$_POST['user_id'],
-                'statut' => 'en_attente',
-                'created_at' => date('Y-m-d H:i:s')
-            ];
-
-            $participantId = $this->participant->create($data);
-
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Participation créée avec succès',
-                'data' => ['id' => $participantId]
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
-        }
-    }
-
-    public function get($id) {
+    // Récupérer un participant par son id
+    public function get($id)
+    {
         try {
             $this->validateMethod('GET');
-            
+
             $participant = $this->participant->find($id);
             if (!$participant) {
                 throw new Exception('Participant non trouvé');
             }
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $participant
@@ -332,12 +373,14 @@ class ParticipantController extends Controller {
         }
     }
 
-    public function getByHackathon($hackathonId) {
+    // Récupérer les participants d'un hackathon
+    public function getByHackathon($hackathonId)
+    {
         try {
             $this->validateMethod('GET');
-            
+
             $participants = $this->participant->getByHackathon($hackathonId);
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $participants
@@ -350,10 +393,12 @@ class ParticipantController extends Controller {
         }
     }
 
-    public function updateStatus($id) {
+    // Mettre à jour le statut d'un participant
+    public function updateStatus($id)
+    {
         try {
             $this->validateMethod('POST');
-            
+
             if (!hasRole('admin')) {
                 throw new Exception('Non autorisé');
             }
@@ -382,16 +427,18 @@ class ParticipantController extends Controller {
         }
     }
 
-    public function delete($id) {
+    // Supprimer un participant
+    public function delete($id)
+    {
         try {
             $this->validateMethod('POST');
-            
+
             if (!hasRole('admin')) {
                 throw new Exception('Non autorisé');
             }
 
             $this->participant->delete($id);
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Participant supprimé avec succès'
@@ -404,17 +451,19 @@ class ParticipantController extends Controller {
         }
     }
 
-    public function getStats($hackathonId) {
+    // Récupérer les statistiques d'un hackathon
+    public function getStats($hackathonId)
+    {
         try {
             $this->validateMethod('GET');
-            
+
             $stats = [
                 'total' => $this->participant->countByStatus($hackathonId, null),
                 'en_attente' => $this->participant->countByStatus($hackathonId, 'en_attente'),
                 'accepte' => $this->participant->countByStatus($hackathonId, 'accepte'),
                 'refuse' => $this->participant->countByStatus($hackathonId, 'refuse')
             ];
-            
+
             $this->jsonResponse([
                 'success' => true,
                 'data' => $stats

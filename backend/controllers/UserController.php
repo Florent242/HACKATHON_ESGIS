@@ -42,7 +42,7 @@ class UserController extends Controller
     private $user;
     private $db;
     private $key;
-    private $tokenManager;
+    protected $tokenManager;
 
     public function __construct($db, $tokenManager)
     {
@@ -66,7 +66,7 @@ class UserController extends Controller
 
             $user = $this->user->find($id);
             if (!$user) {
-                throw new Exception('Utilisateur non trouvé');
+                throw new Exception('Utilisateur non trouvé :' . $id);
             }
 
             unset($user['password']); // Ne pas renvoyer le mot de passe
@@ -126,8 +126,8 @@ class UserController extends Controller
             return $_COOKIE['long_term_token'];
         }
 
-        if (isset($_COOKIE['auth_token'])) {
-            return $_COOKIE['auth_token'];
+        if (isset($_COOKIE['jwt_token'])) {
+            return $_COOKIE['jwt_token'];
         }
 
         return null;
@@ -211,9 +211,10 @@ class UserController extends Controller
 
             // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
             try {
+                $inputInspectionService = new InputInspectionService();
                 $method = $_SERVER['REQUEST_METHOD'];
                 $headers = function_exists('getallheaders') ? getallheaders() : [];
-                $data = InputInspectionService::inspectInput($data, [
+                $data = $inputInspectionService->inspectInput($data, [
                     'method' => $method,
                     'headers' => $headers,
                     'raw' => $rawData,
@@ -284,9 +285,10 @@ class UserController extends Controller
 
             // Inspection et sanitation des entrées utilisateur (après fallback éventuel vers $_POST)
             try {
+                $inputInspectionService = new InputInspectionService();
                 $method = $_SERVER['REQUEST_METHOD'];
                 $headers = function_exists('getallheaders') ? getallheaders() : [];
-                $data = InputInspectionService::inspectInput($data, [
+                $data = $inputInspectionService->inspectInput($data, [
                     'method' => $method,
                     'headers' => $headers,
                     'raw' => $rawData,
@@ -382,7 +384,7 @@ class UserController extends Controller
         header('Content-Type: application/json');
 
         try {
-            $currentUserId = $this->getUserIdFromJWT($jwt);
+            $currentUserId = $this->tokenManager->getCurrentUserId($jwt);
             if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
                 $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                 return;
@@ -582,7 +584,7 @@ class UserController extends Controller
         header('Content-Type: application/json');
 
         try {
-            $currentUserId = $this->getUserIdFromJWT($jwt);
+            $currentUserId = $this->tokenManager->getCurrentUserId($jwt);
             if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
                 $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                 return;
@@ -615,7 +617,7 @@ class UserController extends Controller
         header('Content-Type: application/json');
 
         try {
-            $currentUserId = $this->getUserIdFromJWT($jwt);
+            $currentUserId = $this->tokenManager->getCurrentUserId($jwt);
             if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
                 $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                 return;
@@ -721,7 +723,7 @@ class UserController extends Controller
         header('Content-Type: application/json');
 
         try {
-            $currentUserId = $this->getUserIdFromJWT($jwt);
+            $currentUserId = $this->tokenManager->getCurrentUserId($jwt);
             if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
                 $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                 return;
@@ -824,7 +826,7 @@ class UserController extends Controller
     public function getCompletedChallenges($userId, $jwt)
     {
         try {
-            $currentUserId = $this->getUserIdFromJWT($jwt);
+            $currentUserId = $this->tokenManager->getCurrentUserId($jwt);
             if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
                 $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                 return;
@@ -894,7 +896,7 @@ class UserController extends Controller
     public function getRecentActivities($userId, $jwt)
     {
         try {
-            $currentUserId = $this->getUserIdFromJWT($jwt);
+            $currentUserId = $this->tokenManager->getCurrentUserId($jwt);
             if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
                 $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                 return;
@@ -992,7 +994,7 @@ class UserController extends Controller
     }
     public function getCurrentHackathons($userId, $jwt)
     {
-        $currentUserId = $this->getUserIdFromJWT($jwt);
+        $currentUserId = $this->tokenManager->getCurrentUserId($jwt);
         if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
             $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
             return;
@@ -1613,7 +1615,7 @@ class UserController extends Controller
         header('Content-Type: application/json');
 
         try {
-            $currentUserId = $this->getUserIdFromJWT($jwt);
+            $currentUserId = $this->tokenManager->getCurrentUserId($jwt);
             if ($currentUserId != $userId && !$this->isAdmin($currentUserId)) {
                 $this->jsonResponse(['success' => false, 'error' => 'Accès non autorisé'], 403);
                 return;
@@ -1624,14 +1626,14 @@ class UserController extends Controller
 
             // Récupérer les hackathons futurs
             $stmt = $db->prepare("
-            SELECT
-                h.id,
-                h.name,
-                h.start_date
-            FROM hackathons h
-            WHERE h.start_date > NOW()  
-            ORDER BY h.start_date ASC   
-        ");
+                SELECT
+                    h.id,
+                    h.name,
+                    h.start_date
+                FROM hackathons h
+                WHERE h.start_date > NOW()  
+                ORDER BY h.start_date ASC
+            ");
 
             // Exécution de la requête sans bindParam
             $stmt->execute();

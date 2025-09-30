@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php require_once '../includes/admin/head.php'; ?>
     <title>Gestion des Équipes</title>
-    <link rel="stylesheet" href="/css/styles/admin/equipes.css">
-    <script defer src="/js/admin/equipes.js"></script>
+    <!-- <link rel="stylesheet" href="/css/styles/admin/equipes.css"> -->
+    <script defer src="/js/admin/team.js"></script>
 </head>
 
 <body>
@@ -22,9 +22,9 @@
 
     <div class="stats-container">
         <div class="stat-card">
-            <div class="stat-info">
+            <div class="stat-info teams-count">
                 <h3>Total Équipes</h3>
-                <div class="number">4</div>
+                <div class="number"></div>
             </div>
             <div class="stat-icon purple">
                 <i class="fas fa-users"></i>
@@ -32,9 +32,9 @@
         </div>
 
         <div class="stat-card">
-            <div class="stat-info">
+            <div class="stat-info members-count">
                 <h3>Membres</h3>
-                <div class="number">18</div>
+                <div class="number"></div>
             </div>
             <div class="stat-icon purple">
                 <i class="fas fa-user"></i>
@@ -42,9 +42,9 @@
         </div>
 
         <div class="stat-card">
-            <div class="stat-info">
-                <h3>Participations</h3>
-                <div class="number">8</div>
+            <div class="stat-info hackathons-count">
+                <h3>Hackathons</h3>
+                <div class="number"></div>
             </div>
             <div class="stat-icon green">
                 <i class="fas fa-trophy"></i>
@@ -52,9 +52,9 @@
         </div>
 
         <div class="stat-card">
-            <div class="stat-info">
+            <div class="stat-info challenges-count">
                 <h3>Défis réalisés</h3>
-                <div class="number">33</div>
+                <div class="number"></div>
             </div>
             <div class="stat-icon orange">
                 <i class="fas fa-tasks"></i>

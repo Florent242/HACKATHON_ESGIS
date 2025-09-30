@@ -1017,7 +1017,7 @@ class AdminController extends Controller
             // Ne pas renvoyer le mot de passe
             unset($user['password']);
 
-            $this->jsonResponse(['success' => true, 'data' => $user]);
+            return $user;
         } catch (Exception $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
         }
@@ -1380,7 +1380,7 @@ class AdminController extends Controller
                 ':number' => $data['number'] ?? '',
                 ':role' => $data['role'] ?? 'participant',
                 ':bio' => $data['bio'] ?? '',
-                ':two_factor_enabled' => $data['two_factor_enabled'] ?? false,
+                ':two_factor_enabled' => $data['two_factor_enabled'] === '1' ? 1 : 0,
             ]);
             $userId = $this->db->lastInsertId();
 
@@ -1389,20 +1389,22 @@ class AdminController extends Controller
             if ($this->db->inTransaction()) {
                 $this->db->commit();
             }
-            $this->getUser($userId);
+            $data = $this->getUser($userId);
 
-            echo 'ici';
-            return;
+            jsonResponse([
+                'success' => true,
+                'data' => $data
+            ]);
         } catch (Exception $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
-            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
+            $this->jsonResponse(['success' => false, 'error' => 'Une erreur est survenue lors de la création de l\'utilisateur : ' . $e->getMessage()], $e->getCode() ?: 500);
         } catch (PDOException $e) {
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
-            $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], 500);
+            $this->jsonResponse(['success' => false, 'error' => 'Une erreur est survenue lors de la création de l\'utilisateur : ' . $e->getMessage()], 500);
         }
     }
 
@@ -1422,10 +1424,15 @@ class AdminController extends Controller
             $stmt->bindValue(':status', $status);
 
             $stmt->execute();
+            $data = [
+                'id' => $userId,
+                'status' => $status,
+            ];
 
             if ($isbulk) {
                 return;
             }
+            $this->logActivity('update_user_status', 'Mise à jour du statut d\'un utilisateur par ' . $this->TokenManager->getCurrentUserId(), $data, 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
             $this->jsonResponse(['success' => true, 'message' => 'Statut mis à jour avec succès',
             'data' => [
                 'updated_count' => $stmt->rowCount(),
@@ -1570,19 +1577,20 @@ class AdminController extends Controller
             $query = "UPDATE users SET " . implode(', ', $updates) . ", updated_at = NOW() WHERE id = :id";
             $stmt = $this->db->prepare($query);
             $stmt->execute($params);
-
-            // Récupérer l'utilisateur mis à jour
-            $this->getUser($userId);
-
+            
             // Journalisation de l'action
             $this->logActivity('update_user', 'Mise à jour d\'un utilisateur par ' . $this->TokenManager->getCurrentUserId(), $data, 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+            
+            // Récupérer l'utilisateur mis à jour
+            $data = $this->getUser($userId);
 
             if ($isbulk) {
                 return;
             }
             $this->jsonResponse([
                 'success' => true,
-                'message' => 'Utilisateur mis à jour avec succès'
+                'message' => 'Utilisateur mis à jour avec succès',
+                'data' => $data
             ]);
         } catch (Exception $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
@@ -1605,18 +1613,19 @@ class AdminController extends Controller
             $stmt = $this->db->prepare("UPDATE users SET role = :role WHERE id = :id");
             $stmt->execute([':role' => $role, ':id' => $userId]);
 
-            // Récupérer l'utilisateur mis à jour
-            $this->getUser($userId);
-
             // Journalisation de l'action
-            $this->logActivity('update_user_role', 'Mise à jour du rôle d\'un utilisateur par ' . $this->TokenManager->getCurrentUserId(), ['role' => $role], 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+            $this->logActivity('update_user_role', 'Mise à jour du rôle d\'un utilisateur par ' . $userId . ' (' . $user['username'] . ' - ' . $user['role'] . ')', ['role' => $role], 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
             
+            // Récupérer l'utilisateur mis à jour
+            $data = $this->getUser($userId);
+
             if ($isbulk) {
                 return;
             }
             $this->jsonResponse([
                 'success' => true,
-                'message' => 'Rôle de l\'utilisateur mis à jour avec succès'
+                'message' => 'Rôle de l\'utilisateur mis à jour avec succès',
+                'data' => $data
             ]);
         } catch (Exception $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);

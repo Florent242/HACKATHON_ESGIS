@@ -1,708 +1,321 @@
-// Configuration de base
-const API_BASE_URL = "/api"
+// Configuration
+const API_BASE = '/api';
+let currentPage = 1;
+let currentFilters = {
+    action: '',
+    level: '',
+    period: '',
+    search: ''
+};
 
-// Sélecteurs pour les éléments de la page
-const LOGS_ELEMENTS = {
-  loadingSpinner: "#global-loading-spinner",
-  stats: {
-    totalLogs: ".stat-card:nth-child(1) .number",
-    connections: ".stat-card:nth-child(2) .number",
-    teamActions: ".stat-card:nth-child(3) .number",
-    challenges: ".stat-card:nth-child(4) .number",
-  },
-  activityFeed: {
-    container: ".activity-feed",
-    items: ".activity-item",
-  },
-  searchInput: ".search-input",
-  exportButton: ".btn-primary",
-  filterDropdowns: ".dropdown-toggle",
+// Fonction pour obtenir le token
+function getToken() {
+    return localStorage.getItem('token');
 }
 
-/**
- * Initialise la page de logs
- */
-async function initializeLogsPage() {
-  try {
-    showLoading()
-
-    // Charger toutes les données en parallèle
-    await Promise.all([loadLogs(), loadLogStats()])
-
-    // Configurer les gestionnaires d'événements
-    setupEventListeners()
-  } catch (error) {
-    handleError("Erreur lors de l'initialisation de la page", error)
-  } finally {
-    hideLoading()
-  }
-}
-
-/**
- * Charge la liste des logs
- */
-async function loadLogs() {
-  try {
-    const response = await apiRequest("/admin/logs")
-
-    if (response.success && response.data) {
-      updateActivityFeed(response.data)
-    }
-  } catch (error) {
-    handleError("Erreur lors du chargement des logs", error)
-  }
-}
-
-/**
- * Met à jour le flux d'activité
- * @param {Array} logs - Liste des logs
- */
-function updateActivityFeed(logs) {
-  const container = document.querySelector(LOGS_ELEMENTS.activityFeed.container)
-
-  if (!container) return
-
-  // Vider le conteneur
-  container.innerHTML = ""
-
-  // Afficher l'état vide si aucun log
-  if (!logs || !logs.length) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-state-icon">
-          <i class="fas fa-history"></i>
-        </div>
-        <div class="empty-state-text">
-          <h3>Aucun log</h3>
-          <p>Les logs d'activité apparaîtront ici.</p>
-        </div>
-      </div>
-    `
-    return
-  }
-
-  // Ajouter chaque log
-  logs.forEach((log) => {
-    const logElement = createLogElement(log)
-    container.appendChild(logElement)
-  })
-}
-
-/**
- * Crée un élément de log
- * @param {Object} log - Données du log
- * @returns {HTMLElement} - Élément DOM du log
- */
-function createLogElement(log) {
-  const div = document.createElement("div")
-  div.className = "activity-item"
-
-  // Déterminer l'icône et la classe en fonction du type de log
-  let iconClass = "background-color: rgba(59, 130, 246, 0.2); color: #3b82f6;"
-  let iconName = "history"
-
-  // Adapter en fonction de la structure de données renvoyée par l'API
-  const logType = log.type || log.action_type || "default"
-
-  switch (logType) {
-    case "login":
-    case "connection":
-      iconName = "sign-in-alt"
-      iconClass = "background-color: rgba(59, 130, 246, 0.2); color: #3b82f6;"
-      break
-    case "team":
-    case "create_team":
-    case "join_team":
-      iconName = "users"
-      iconClass = "background-color: rgba(245, 158, 11, 0.2); color: #f59e0b;"
-      break
-    case "challenge":
-    case "create_challenge":
-    case "solve_challenge":
-      iconName = "trophy"
-      iconClass = "background-color: rgba(109, 40, 217, 0.2); color: #6d28d9;"
-      break
-    case "hackathon":
-    case "create_hackathon":
-      iconName = "calendar-alt"
-      iconClass = "background-color: rgba(109, 40, 217, 0.2); color: #6d28d9;"
-      break
-    case "submission":
-    case "submit_solution":
-      iconName = "file-code"
-      iconClass = "background-color: rgba(16, 185, 129, 0.2); color: #10b981;"
-      break
-    case "resource":
-    case "create_resource":
-      iconName = "file-alt"
-      iconClass = "background-color: rgba(109, 40, 217, 0.2); color: #6d28d9;"
-      break
-  }
-
-  // Formater la date
-  const date = log.timestamp || log.created_at ? formatDate(log.timestamp || log.created_at) : "Récemment"
-
-  // Déterminer le texte du log
-  const logText = log.description || log.action || "Activité inconnue"
-  const username = log.username || log.user_name || ""
-  const details = log.details || log.metadata || ""
-
-  div.innerHTML = `
-    <div class="activity-icon" style="${iconClass}">
-      <i class="fas fa-${iconName}"></i>
-    </div>
-    <div class="activity-content">
-      <div class="activity-title">${sanitizeText(username)}</div>
-      <div class="activity-subtitle">${sanitizeText(logText)}</div>
-      ${details ? `<div class="activity-subtitle" style="font-size: 0.75rem; color: #6b7280;">${sanitizeText(details)}</div>` : ""}
-    </div>
-    <div class="activity-time">
-      ${date}
-    </div>
-  `
-
-  return div
-}
-
-/**
- * Charge les statistiques des logs
- */
-async function loadLogStats() {
-  try {
-    const response = await apiRequest("/admin/log-stats")
-
-    if (response.success && response.data) {
-      updateLogStats(response.data)
-    }
-  } catch (error) {
-    handleError("Erreur lors du chargement des statistiques", error)
-  }
-}
-
-/**
- * Met à jour les statistiques des logs
- * @param {Object} stats - Statistiques à afficher
- */
-function updateLogStats(stats) {
-  if (!stats) return
-
-  // Mettre à jour les compteurs
-  const elements = LOGS_ELEMENTS.stats
-  Object.keys(elements).forEach((key) => {
-    const element = document.querySelector(elements[key])
-    if (element && stats[key] !== undefined) {
-      element.textContent = stats[key]
-    }
-  })
-}
-
-/**
- * Configure les gestionnaires d'événements
- */
-function setupEventListeners() {
-  // Gestionnaire pour le bouton d'exportation
-  const exportButton = document.querySelector(LOGS_ELEMENTS.exportButton)
-  if (exportButton) {
-    exportButton.addEventListener("click", exportLogs)
-  }
-
-  // Gestionnaire pour les dropdowns de filtre
-  document.querySelectorAll(LOGS_ELEMENTS.filterDropdowns).forEach((dropdown) => {
-    dropdown.addEventListener("click", (e) => {
-      e.preventDefault()
-      e.stopPropagation()
-      const menu = dropdown.nextElementSibling
-      menu.classList.toggle("show")
-    })
-  })
-
-  // Gestionnaire pour les éléments de dropdown
-  document.querySelectorAll(".dropdown-item").forEach((item) => {
-    item.addEventListener("click", (e) => {
-      e.preventDefault()
-      const dropdown = item.closest(".dropdown")
-      const toggleButton = dropdown.querySelector(".dropdown-toggle span")
-
-      // Mettre à jour le texte du bouton
-      if (toggleButton) {
-        toggleButton.textContent = item.textContent
-      }
-
-      // Fermer le dropdown
-      dropdown.querySelector(".dropdown-menu").classList.remove("show")
-
-      // Filtrer les logs
-      filterLogs()
-    })
-  })
-
-  // Gestionnaire pour la recherche
-  const searchInput = document.querySelector(LOGS_ELEMENTS.searchInput)
-  if (searchInput) {
-    searchInput.addEventListener("input", handleSearch)
-  }
-
-  // Initialiser les dropdowns
-  initializeDropdowns()
-}
-
-/**
- * Exporte les logs
- */
-async function exportLogs() {
-  try {
-    showLoading()
-
-    // Récupérer les logs
-    const response = await apiRequest("/admin/logs/export")
-
-    if (response.success && response.data) {
-      // Créer un fichier CSV
-      const csv = convertToCSV(response.data)
-
-      // Télécharger le fichier
-      downloadCSV(csv, "logs_export.csv")
-
-      // Afficher un message de succès
-      showNotification("Logs exportés avec succès", "success")
-    }
-  } catch (error) {
-    handleError("Erreur lors de l'exportation des logs", error)
-  } finally {
-    hideLoading()
-  }
-}
-
-/**
- * Convertit un tableau d'objets en CSV
- * @param {Array} data - Données à convertir
- * @returns {string} - Chaîne CSV
- */
-function convertToCSV(data) {
-  if (!data || !data.length) return ""
-
-  // Obtenir les en-têtes
-  const headers = Object.keys(data[0])
-
-  // Créer la ligne d'en-tête
-  let csv = headers.join(",") + "\n"
-
-  // Ajouter les lignes de données
-  data.forEach((row) => {
-    const values = headers.map((header) => {
-      const value = row[header]
-      // Échapper les virgules et les guillemets
-      return `"${String(value).replace(/"/g, '""')}"`
-    })
-    csv += values.join(",") + "\n"
-  })
-
-  return csv
-}
-
-/**
- * Télécharge un fichier CSV
- * @param {string} csv - Contenu CSV
- * @param {string} filename - Nom du fichier
- */
-function downloadCSV(csv, filename) {
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
-  const url = URL.createObjectURL(blob)
-
-  const link = document.createElement("a")
-  link.setAttribute("href", url)
-  link.setAttribute("download", filename)
-  link.style.visibility = "hidden"
-
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-}
-
-/**
- * Filtre les logs en fonction des sélections de dropdown
- */
-function filterLogs() {
-  // Récupérer les valeurs des filtres
-  const typeFilter = document.querySelector(".dropdown-toggle:nth-of-type(1) span").textContent
-  const periodFilter = document.querySelector(".dropdown-toggle:nth-of-type(2) span").textContent
-
-  // Récupérer tous les logs
-  const logs = document.querySelectorAll(".activity-item")
-
-  logs.forEach((log) => {
-    let showLog = true
-
-    // Filtrer par type
-    if (typeFilter !== "Tous les logs") {
-      const logText = log.textContent.toLowerCase()
-
-      switch (typeFilter) {
-        case "Connexions":
-          showLog = logText.includes("connecté") || logText.includes("connexion")
-          break
-        case "Actions utilisateurs":
-          showLog = logText.includes("utilisateur") || logText.includes("soumis") || logText.includes("inscrit")
-          break
-        case "Modifications système":
-          showLog = logText.includes("ajouté") || logText.includes("modifié") || logText.includes("supprimé")
-          break
-      }
-    }
-
-    // Filtrer par période
-    if (periodFilter !== "Toutes les périodes" && showLog) {
-      const dateText = log.querySelector(".activity-time").textContent.toLowerCase()
-
-      switch (periodFilter) {
-        case "Aujourd'hui":
-          showLog = dateText.includes("instant") || dateText.includes("minute") || dateText.includes("heure")
-          break
-        case "Cette semaine":
-          showLog =
-            dateText.includes("instant") ||
-            dateText.includes("minute") ||
-            dateText.includes("heure") ||
-            dateText.includes("jour")
-          break
-        case "Ce mois":
-          showLog = !dateText.includes("mois") || dateText.includes("ce mois")
-          break
-      }
-    }
-
-    // Afficher ou masquer le log
-    log.style.display = showLog ? "" : "none"
-  })
-}
-
-/**
- * Gère la recherche
- * @param {Event} e - Événement de saisie
- */
-function handleSearch(e) {
-  const searchTerm = e.target.value.toLowerCase()
-  const logs = document.querySelectorAll(".activity-item")
-
-  logs.forEach((log) => {
-    const text = log.textContent.toLowerCase()
-    log.style.display = text.includes(searchTerm) ? "" : "none"
-  })
-}
-
-/**
- * Initialise les dropdowns
- */
-function initializeDropdowns() {
-  document.querySelectorAll(".dropdown-toggle").forEach((button) => {
-    button.addEventListener("click", (e) => {
-      e.preventDefault()
-      e.stopPropagation()
-      const dropdown = button.nextElementSibling
-      dropdown.classList.toggle("show")
-    })
-  })
-
-  // Fermer les dropdowns quand on clique ailleurs
-  document.addEventListener("click", (e) => {
-    if (!e.target.matches(".dropdown-toggle")) {
-      document.querySelectorAll(".dropdown-menu.show").forEach((dropdown) => {
-        dropdown.classList.remove("show")
-      })
-    }
-  })
-}
-
-/**
- * Affiche le spinner de chargement
- */
-function showLoading() {
-  // Créer un spinner s'il n'existe pas déjà
-  let spinner = document.querySelector("#global-loading-spinner")
-  if (!spinner) {
-    spinner = document.createElement("div")
-    spinner.id = "global-loading-spinner"
-    spinner.className = "loading-spinner"
-    spinner.innerHTML = '<div class="spinner"></div>'
-    document.body.appendChild(spinner)
-
-    // Ajouter les styles nécessaires
-    const style = document.createElement("style")
-    style.textContent = `
-      .loading-spinner {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(255, 255, 255, 0.7);
-        z-index: 1000;
-      }
-      .loading-spinner .spinner {
-        width: 50px;
-        height: 50px;
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid #3498db;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      .hidden {
-        display: none !important;
-      }
-    `
-    document.head.appendChild(style)
-  }
-
-  spinner.classList.remove("hidden")
-}
-
-/**
- * Cache le spinner de chargement
- */
-function hideLoading() {
-  const spinner = document.querySelector("#global-loading-spinner")
-  if (spinner) {
-    spinner.classList.add("hidden")
-  }
-}
-
-/**
- * Affiche une notification
- * @param {string} message - Message à afficher
- * @param {string} type - Type de notification (success, error, warning, info)
- */
-function showNotification(message, type = "info") {
-  // Créer un conteneur de notification s'il n'existe pas déjà
-  let notifContainer = document.querySelector("#notification-container")
-  if (!notifContainer) {
-    notifContainer = document.createElement("div")
-    notifContainer.id = "notification-container"
-    notifContainer.style.position = "fixed"
-    notifContainer.style.top = "20px"
-    notifContainer.style.right = "20px"
-    notifContainer.style.zIndex = "1000"
-    document.body.appendChild(notifContainer)
-  }
-
-  // Créer la notification
-  const notification = document.createElement("div")
-  notification.className = `notification notification-${type}`
-  notification.innerHTML = `
-    <div class="notification-icon">
-      <i class="fas fa-${getNotificationIcon(type)}"></i>
-    </div>
-    <div class="notification-content">
-      <div class="notification-message">${message}</div>
-    </div>
-    <button class="notification-close">&times;</button>
-  `
-
-  // Ajouter les styles nécessaires
-  const style = document.createElement("style")
-  style.textContent = `
-    .notification {
-      display: flex;
-      align-items: center;
-      padding: 15px;
-      border-radius: 4px;
-      margin-bottom: 10px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      animation: slideIn 0.3s ease-out;
-    }
-    .notification-success {
-      background-color: #d4edda;
-      color: #155724;
-    }
-    .notification-error {
-      background-color: #f8d7da;
-      color: #721c24;
-    }
-    .notification-warning {
-      background-color: #fff3cd;
-      color: #856404;
-    }
-    .notification-info {
-      background-color: #d1ecf1;
-      color: #0c5460;
-    }
-    .notification-icon {
-      margin-right: 10px;
-    }
-    .notification-content {
-      flex: 1;
-    }
-    .notification-close {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 1.2rem;
-      color: inherit;
-    }
-    @keyframes slideIn {
-      from {
-        transform: translateX(100%);
-        opacity: 0;
-      }
-      to {
-        transform: translateX(0);
-        opacity: 1;
-      }
-    }
-  `
-  document.head.appendChild(style)
-
-  // Ajouter la notification au conteneur
-  notifContainer.appendChild(notification)
-
-  // Gestionnaire pour le bouton de fermeture
-  const closeButton = notification.querySelector(".notification-close")
-  closeButton.addEventListener("click", () => {
-    notification.remove()
-  })
-
-  // Supprimer la notification après 5 secondes
-  setTimeout(() => {
-    notification.style.animation = "slideOut 0.3s ease-in"
-    notification.style.opacity = "0"
-    setTimeout(() => {
-      notification.remove()
-    }, 300)
-  }, 5000)
-}
-
-/**
- * Obtient l'icône appropriée pour un type de notification
- * @param {string} type - Type de notification
- * @returns {string} - Nom de l'icône FontAwesome
- */
-function getNotificationIcon(type) {
-  switch (type) {
-    case "success":
-      return "check-circle"
-    case "error":
-      return "exclamation-circle"
-    case "warning":
-      return "exclamation-triangle"
-    case "info":
-    default:
-      return "info-circle"
-  }
-}
-
-/**
- * Gère les erreurs
- * @param {string} message - Message d'erreur
- * @param {Error} error - Objet d'erreur
- */
-function handleError(message, error) {
-  console.error(message, error)
-  showNotification(`${message}: ${error.message || "Erreur inconnue"}`, "error")
-}
-
-/**
- * Effectue une requête API
- * @param {string} endpoint - Point de terminaison de l'API
- * @param {Object} options - Options de la requête
- * @returns {Promise<Object>} - Réponse de l'API
- */
+// Fonction pour faire des requêtes API
 async function apiRequest(endpoint, options = {}) {
-  try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "X-Requested-With": "XMLHttpRequest",
-        ...options.headers,
-      },
-      credentials: "include",
-    })
+    const token = getToken();
+    const headers = {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+    };
+
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers
+    });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || errorData.error || `Erreur API: ${response.status} ${response.statusText}`)
+        throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    return await response.json()
-  } catch (error) {
-    handleError("Erreur lors de la requête API", error)
-    throw error
-  }
+    return await response.json();
 }
 
-/**
- * Nettoie le texte pour prévenir les attaques XSS
- * @param {string} text - Texte à nettoyer
- * @returns {string} - Texte nettoyé
- */
-function sanitizeText(text) {
-  if (!text) return ""
-  const div = document.createElement("div")
-  div.textContent = text
-  return div.innerHTML
-}
 
-/**
- * Formate une date
- * @param {string} dateString - Chaîne de date à formater
- * @param {boolean} shortFormat - Format court (jour mois année)
- * @returns {string} - Date formatée
- */
-function formatDate(dateString, shortFormat = false) {
-  try {
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return "Date invalide"
-
-    if (shortFormat) {
-      return date.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      })
-    }
-
-    // Calculer la différence de temps
-    const now = new Date()
-    const diffMs = now - date
-    const diffSec = Math.floor(diffMs / 1000)
-    const diffMin = Math.floor(diffSec / 60)
-    const diffHour = Math.floor(diffMin / 60)
-    const diffDay = Math.floor(diffHour / 24)
-
-    // Afficher un format relatif si c'est récent
-    if (diffDay < 1) {
-      if (diffHour < 1) {
-        if (diffMin < 1) {
-          return "À l'instant"
+// Charger les statistiques
+async function loadStats() {
+    try {
+        const response = await apiRequest('/logs/stats');
+        if (response.success) {
+            const stats = response.data;
+            document.getElementById('totalLogs').textContent = stats.total_logs || 0;
+            document.getElementById('connections').textContent = stats.connections || 0;
+            document.getElementById('teamActions').textContent = stats.team_actions || 0;
+            document.getElementById('challenges').textContent = stats.challenges || 0;
         }
-        return `Il y a ${diffMin} minute${diffMin > 1 ? "s" : ""}`
-      }
-      return `Il y a ${diffHour} heure${diffHour > 1 ? "s" : ""}`
-    } else if (diffDay < 7) {
-      return `Il y a ${diffDay} jour${diffDay > 1 ? "s" : ""}`
+    } catch (error) {
+        console.error('Erreur lors du chargement des stats:', error);
     }
-
-    // Sinon, afficher la date complète
-    return date.toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
-  } catch (e) {
-    console.error("Erreur de formatage de date", e)
-    return "Date inconnue"
-  }
 }
 
-// Initialiser la page lorsque le DOM est chargé
-document.addEventListener("DOMContentLoaded", () => {
-  // Initialiser la page
-  initializeLogsPage()
-})
+// Charger les actions disponibles
+async function loadActions() {
+    try {
+        const response = await apiRequest('/logs/actions');
+        if (response.success) {
+            const dropdown = document.getElementById('actionDropdown');
+            dropdown.innerHTML = '<a href="#" class="dropdown-item" data-action="">Toutes les actions</a>';
+            
+            response.data.forEach(action => {
+                const item = document.createElement('a');
+                item.href = '#';
+                item.className = 'dropdown-item';
+                item.dataset.action = action;
+                item.textContent = action;
+                dropdown.appendChild(item);
+            });
+        }
+    } catch (error) {
+        console.error('Erreur lors du chargement des actions:', error);
+    }
+}
+
+// Charger les logs
+async function loadLogs(page = 1) {
+    try {
+        currentPage = page;
+        const params = new URLSearchParams({
+            page: page,
+            per_page: 20,
+            ...currentFilters
+        });
+
+        // Gérer les périodes
+        if (currentFilters.period) {
+            const dates = getPeriodDates(currentFilters.period);
+            if (dates) {
+                params.set('date_from', dates.from);
+                params.set('date_to', dates.to);
+            }
+        }
+
+        const response = await apiRequest(`/logs?${params.toString()}`);
+        if (response.success) {
+            displayLogs(response.data);
+            displayPagination(response.pagination);
+            document.getElementById('totalEntries').textContent = response.pagination.total;
+        }
+    } catch (error) {
+        console.error('Erreur lors du chargement des logs:', error);
+        document.getElementById('logsContainer').innerHTML = 
+            '<p style="text-align: center; padding: 20px; color: var(--text-muted);">Erreur lors du chargement des logs</p>';
+    }
+}
+
+// Afficher les logs
+function displayLogs(logs) {
+    const container = document.getElementById('logsContainer');
+    
+    if (logs.length === 0) {
+        container.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-muted);">Aucun log trouvé</p>';
+        return;
+    }
+
+    container.innerHTML = logs.map(log => {
+        const iconClass = getIconClass(log.action);
+        const iconColor = getIconColor(log.level);
+        
+        return `
+            <div class="activity-item">
+                <div class="activity-icon" style="background-color: ${iconColor.bg}; color: ${iconColor.color};">
+                    <i class="${iconClass}"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">${log.user.fullname || log.user.username}</div>
+                    <div class="activity-subtitle">${log.description}</div>
+                    <div class="activity-subtitle" style="font-size: 0.75rem; color: #6b7280;">
+                        IP: ${log.ip_address || 'N/A'}, Navigateur: ${log.user_agent}
+                    </div>
+                </div>
+                <div class="activity-time">
+                    ${log.relative_time}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Afficher la pagination
+function displayPagination(pagination) {
+    const container = document.getElementById('pagination');
+    const { page, total_pages } = pagination;
+
+    if (total_pages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+
+    // Bouton précédent
+    if (page > 1) {
+        html += `<button class="btn btn-secondary" onclick="loadLogs(${page - 1})">
+            <i class="fas fa-chevron-left"></i> Précédent
+        </button>`;
+    }
+
+    // Numéros de page
+    html += `<span style="padding: 0 10px;">Page ${page} sur ${total_pages}</span>`;
+
+    // Bouton suivant
+    if (page < total_pages) {
+        html += `<button class="btn btn-secondary" onclick="loadLogs(${page + 1})">
+            Suivant <i class="fas fa-chevron-right"></i>
+        </button>`;
+    }
+
+    container.innerHTML = html;
+}
+
+// Obtenir les dates selon la période
+function getPeriodDates(period) {
+    const now = new Date();
+    let from, to;
+
+    switch (period) {
+        case 'today':
+            from = new Date(now.setHours(0, 0, 0, 0));
+            to = new Date(now.setHours(23, 59, 59, 999));
+            break;
+        case 'week':
+            from = new Date(now.setDate(now.getDate() - 7));
+            to = new Date();
+            break;
+        case 'month':
+            from = new Date(now.setMonth(now.getMonth() - 1));
+            to = new Date();
+            break;
+        default:
+            return null;
+    }
+
+    return {
+        from: from.toISOString().split('T')[0],
+        to: to.toISOString().split('T')[0]
+    };
+}
+
+// Obtenir l'icône selon l'action
+function getIconClass(action) {
+    if (action.includes('login') || action.includes('logout')) return 'fas fa-sign-in-alt';
+    if (action.includes('team')) return 'fas fa-users';
+    if (action.includes('challenge') || action.includes('flag')) return 'fas fa-trophy';
+    if (action.includes('project')) return 'fas fa-file-code';
+    if (action.includes('user') || action.includes('profile')) return 'fas fa-user';
+    if (action.includes('hackathon')) return 'fas fa-calendar-alt';
+    if (action.includes('submit')) return 'fas fa-paper-plane';
+    return 'fas fa-circle-info';
+}
+
+// Obtenir la couleur selon le niveau
+function getIconColor(level) {
+    const colors = {
+        'info': { bg: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6' },
+        'success': { bg: 'rgba(16, 185, 129, 0.2)', color: '#10b981' },
+        'warning': { bg: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b' },
+        'error': { bg: 'rgba(239, 68, 68, 0.2)', color: '#ef4444' }
+    };
+    return colors[level] || colors['info'];
+}
+
+// Exporter les logs
+async function exportLogs() {
+    try {
+        const params = new URLSearchParams(currentFilters);
+        
+        if (currentFilters.period) {
+            const dates = getPeriodDates(currentFilters.period);
+            if (dates) {
+                params.set('date_from', dates.from);
+                params.set('date_to', dates.to);
+            }
+        }
+
+        const token = getToken();
+        window.open(`${API_BASE}/logs/export?${params.toString()}&token=${token}`, '_blank');
+    } catch (error) {
+        console.error('Erreur lors de l\'export:', error);
+        alert('Erreur lors de l\'export des logs');
+    }
+}
+
+// Gestionnaires d'événements pour les filtres
+document.addEventListener('DOMContentLoaded', function() {
+    // Recherche avec debounce
+    let searchTimeout;
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            currentFilters.search = e.target.value;
+            loadLogs(1);
+        }, 500);
+    });
+
+    // Filtre par action
+    document.getElementById('actionDropdown').addEventListener('click', function(e) {
+        if (e.target.classList.contains('dropdown-item')) {
+            e.preventDefault();
+            currentFilters.action = e.target.dataset.action;
+            document.getElementById('actionFilterText').textContent = 
+                e.target.textContent;
+            loadLogs(1);
+        }
+    });
+
+    // Filtre par période
+    document.getElementById('periodDropdown').addEventListener('click', function(e) {
+        if (e.target.classList.contains('dropdown-item')) {
+            e.preventDefault();
+            currentFilters.period = e.target.dataset.period;
+            document.getElementById('periodFilterText').textContent = 
+                e.target.textContent;
+            loadLogs(1);
+        }
+    });
+
+    // Filtre par niveau
+    document.getElementById('levelDropdown').addEventListener('click', function(e) {
+        if (e.target.classList.contains('dropdown-item')) {
+            e.preventDefault();
+            currentFilters.level = e.target.dataset.level;
+            document.getElementById('levelFilterText').textContent = 
+                e.target.textContent;
+            loadLogs(1);
+        }
+    });
+
+    // Toggle dropdowns
+    document.querySelectorAll('.dropdown-toggle').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = this.nextElementSibling;
+            
+            // Fermer tous les autres dropdowns
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                if (menu !== dropdown) {
+                    menu.classList.remove('show');
+                }
+            });
+            
+            dropdown.classList.toggle('show');
+        });
+    });
+
+    // Fermer les dropdowns au clic extérieur
+    document.addEventListener('click', function() {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    });
+
+    // Bouton d'export
+    document.getElementById('exportLogsBtn').addEventListener('click', exportLogs);
+
+    // Chargement initial
+    loadStats();
+    loadActions();
+    loadLogs(1);
+});

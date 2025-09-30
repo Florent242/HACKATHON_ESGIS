@@ -1,3 +1,4 @@
+
 // Configuration de base
 const API_BASE_URL = "/api"
 
@@ -133,20 +134,6 @@ function updateTeamsTable(teams) {
   initializeDropdowns()
 }
 
-/**
- * Charge les statistiques des équipes
- */
-async function loadTeamStats() {
-  try {
-    const response = await apiRequest("/admin/team-stats")
-
-    if (response.success && response.data) {
-      updateTeamStats(response.data)
-    }
-  } catch (error) {
-    handleError("Erreur lors du chargement des statistiques", error)
-  }
-}
 
 /**
  * Met à jour les statistiques des équipes
@@ -279,6 +266,7 @@ function setupEventListeners() {
       e.preventDefault()
       const action = actionButton.dataset.action
       const id = actionButton.dataset.id
+      
 
       switch (action) {
         case "edit":
@@ -714,3 +702,68 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initialiser la page
   initializeTeamPage()
 })
+
+
+/* !!!!!!!!!!!!!!!!!! */
+
+const STATS = {
+  teamsCount: document.querySelector('.teams-count .number'),
+  membersCount: document.querySelector('.members-count .number'),
+  hacksCount: document.querySelector('.hackathons-count .number'),
+  challCount: document.querySelector('.challenges-count .number')
+}
+
+/**
+ * Charge les statistiques des équipes
+ */
+
+async function loadTeamStats(){
+  try{
+    await apiRequest('/admin/stats')
+    .then(stats => {
+        if(stats.success){
+          stats = stats.data; 
+          if(STATS.teamsCount)
+            STATS.teamsCount.textContent=stats?.teams_count;
+
+          if(STATS.membersCount)
+            STATS.membersCount.textContent=stats?.users_count;
+
+          if(STATS.hacksCount)
+            STATS.hacksCount.textContent=stats?.hackathons_count;
+
+          if(STATS.challCount)
+            STATS.challCount.textContent=stats?.challenges_count;
+        }
+    }).catch(err => handleError('Erreur lors du chargement des statistiques.', err))
+  }catch(err){
+    console.error(err)
+  }
+}
+
+function manageTeamsOptions(){
+  const dropdownButton = document.querySelectorAll('dropdown-toggle');
+  dropdownButton?.forEach(menu => {
+    menu?.addEventListener('click', (e)=>  {
+      const menu = document.querySelector('.dropdown-menu');
+      g
+      if(menu) menu.remove();
+        const div = document.createElement('div');
+          div.innerHTML=sanitizeText(`
+            <a href="#" class="dropdown-item action-button" data-action="edit" data-id="1">Modifier</a>
+            <a href="#" class="dropdown-item action-button" data-action="view" data-id="1">Voir détails</a>
+            <a href="#" class="dropdown-item action-button" data-action="delete" data-id="1">Supprimer</a>
+          `);
+          div.className = 'dropdown-menu';
+          document.body.insertAdjacentHTML('beforeend', div);
+          div.style.cssText=`
+            position: absolute;
+            top:${e.target.offsetTop - div.offsetHeight}px;
+            left:${e.target.offsetLeft - div.offsetWidth}px;
+          `
+    })
+  })
+  
+
+}
+

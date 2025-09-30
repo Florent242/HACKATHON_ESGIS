@@ -227,7 +227,7 @@
         </div>
 
         <!-- Table modernisée -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
+        <div class="bg-slate-800 rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-200">
                     <thead class="bg-slate-50/50">
@@ -244,7 +244,7 @@
                             <th scope="col" class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="usersTableBody" class="bg-white divide-y divide-slate-100">
+                    <tbody id="usersTableBody" class="bg-slate-800 divide-y divide-slate-100">
                         <!-- Loader initial -->
                         <tr>
                             <td colspan="7" class="px-6 py-12 text-center">
@@ -259,7 +259,7 @@
             </div>
 
             <!-- Footer avec pagination améliorée -->
-            <div class="bg-slate-600/50 px-6 py-4 border-t border-slate-200">
+            <div class="bg-slate-600/30 px-6 py-4 border-t border-slate-200">
                 <div class="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
                     <div class="flex items-center space-x-2 text-sm text-slate-400" id="paginationContainer">
                         <i data-lucide="info" class="w-4 h-4"></i>

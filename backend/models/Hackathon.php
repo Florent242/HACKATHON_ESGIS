@@ -1,52 +1,20 @@
 <?php
+
 namespace Auth\Model;
 
 use Exception;
 use PDO;
 use PDOException;
+use DateTime;
 
-class Hackathon {
+class Hackathon
+{
     private $db;
     private $table = 'hackathons';
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->db = $db;
-    }
-
-    /**
-     * Récupère tous les hackathons
-     * @return array Liste des hackathons
-     */
-    public function getAll() {
-        try {
-            $query = "SELECT * FROM {$this->table} ORDER BY start_date DESC";
-            $stmt = $this->db->prepare($query);
-            $stmt->execute();
-
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération des hackathons: ' . $e->getMessage());
-            return [];
-        }
-    }
-
-    /**
-     * Récupère un hackathon par son ID
-     * @param int $id ID du hackathon
-     * @return array|bool Les données du hackathon ou false si non trouvé
-     */
-    public function find($id) {
-        try {
-            $query = "SELECT * FROM {$this->table} WHERE id = :id LIMIT 1";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-            $stmt->execute();
-
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération du hackathon: ' . $e->getMessage());
-            return false;
-        }
     }
 
     /**
@@ -54,61 +22,166 @@ class Hackathon {
      * @param array $data Les données du hackathon
      * @return int|bool L'ID du nouveau hackathon ou false si erreur
      */
-    public function create($data) {
+    public function create($data)
+    {
         try {
-            // Validation des données
-            if (!isset($data['name']) || empty($data['name'])) {
-                throw new Exception('Le nom est requis');
-            }
-            if (!isset($data['description']) || empty($data['description'])) {
-                throw new Exception('La description est requise');
-            }
-            if (!isset($data['start_date']) || empty($data['start_date'])) {
-                throw new Exception('La date de début est requise');
-            }
-            if (!isset($data['end_date']) || empty($data['end_date'])) {
-                throw new Exception('La date de fin est requise');
-            }
-            if (!isset($data['rules']) || empty($data['rules'])) {
-                throw new Exception('Les règles sont requises');
-            }
-            if (!isset($data['created_by']) || empty($data['created_by'])) {
-                throw new Exception('L\'identifiant du créateur est requis');
+            // Validation des champs obligatoires
+            $requiredFields = ['name', 'description', 'start_date', 'end_date', 'type', 'status', 'visibility', 'created_by'];
+            foreach ($requiredFields as $field) {
+                if (empty($data[$field])) {
+                    throw new Exception("Le champ $field est requis");
+                }
             }
 
-            // Vérification des dates
-            $dateDebut = strtotime($data['start_date']);
-            $dateFin = strtotime($data['end_date']);
-
-            if ($dateDebut === false || $dateFin === false) {
-                throw new Exception('Format de date invalide');
+            // Validation du type
+            $validTypes = ['ctf', 'dev', 'mixte'];
+            if (!in_array($data['type'], $validTypes)) {
+                throw new Exception('Type de hackathon invalide. Les valeurs autorisées sont : ' . implode(', ', $validTypes));
             }
 
-            if ($dateDebut > $dateFin) {
-                throw new Exception('La date de début doit être antérieure à la date de fin');
+            // Validation du nom
+            if ($this->nameExists($data['name'])) {
+                throw new Exception('Le nom du hackathon est déjà utilisé');
             }
 
-            // Préparation de la requête
-            $query = "INSERT INTO {$this->table} (name, description, start_date, end_date, location, max_teams, max_team_members, rules, prizes, created_by)
-                     VALUES (:name, :description, :start_date, :end_date, :location, :max_teams, :max_team_members, :rules, :prizes, :created_by)";
+            // Validation des dates
+            $startDate = new DateTime($data['start_date']);
+            $endDate = new DateTime($data['end_date']);
 
+            if ($startDate >= $endDate) {
+                throw new Exception('La date de fin doit être postérieure à la date de début');
+            }
+
+            // Liste des champs autorisés
+            $allowedFields = [
+                'name',
+                'slug',
+                'theme',
+                'description',
+                'type',
+                'status',
+                'visibility',
+                'start_date',
+                'end_date',
+                'registration_deadline',
+                'location',
+                'max_teams',
+                'min_team_members',
+                'max_team_members',
+                'rules',
+                'eligibility_criteria',
+                'prizes',
+                'created_by'
+            ];
+
+            // Préparation des données pour la requête
+            $columns = [];
+            $placeholders = [];
+            $values = [];
+            $excludeFields = ['slug']; // Champs à gérer séparément
+
+            foreach ($allowedFields as $field) {
+                if (array_key_exists($field, $data) && !in_array($field, $excludeFields)) {
+                    $columns[] = "`$field`";
+                    $placeholders[] = ":$field";
+                    $values[":$field"] = is_array($data[$field]) ? json_encode($data[$field]) : $data[$field];
+                }
+            }
+
+            // Génération du slug si non fourni
+            if (empty($data['slug'])) {
+                $baseSlug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $data['name'])));
+                $slug = $baseSlug;
+                $counter = 1;
+
+                // Vérifier si le slug existe déjà
+                while ($this->slugExists($slug)) {
+                    $slug = $baseSlug . '-' . $counter;
+                    $counter++;
+                }
+
+                $columns[] = '`slug`';
+                $placeholders[] = ':slug';
+                $values[':slug'] = $slug;
+            }
+
+            // Construction de la requête
+            $query = "INSERT INTO `{$this->table}` (" . implode(', ', $columns) . ") 
+                     VALUES (" . implode(', ', $placeholders) . ")";
+
+            // Exécution de la requête
             $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':name', $data['name']);
-            $stmt->bindParam(':description', $data['description']);
-            $stmt->bindParam(':start_date', $data['start_date']);
-            $stmt->bindParam(':end_date', $data['end_date']);
-            $stmt->bindParam(':location', $data['location'] ?? null);
-            $stmt->bindParam(':max_teams', $data['max_teams'] ?? 10, PDO::PARAM_INT);
-            $stmt->bindParam(':max_team_members', $data['max_team_members'] ?? 4, PDO::PARAM_INT);
-            $stmt->bindParam(':rules', $data['rules']);
-            $stmt->bindParam(':prizes', $data['prizes'] ?? null);
-            $stmt->bindParam(':created_by', $data['created_by'], PDO::PARAM_INT);
 
-            $stmt->execute();
+            // Définition des types de paramètres
+            $types = [
+                'max_teams' => PDO::PARAM_INT,
+                'min_team_members' => PDO::PARAM_INT,
+                'max_team_members' => PDO::PARAM_INT,
+                'created_by' => PDO::PARAM_INT
+            ];
+
+            // Liaison des valeurs avec leur type
+            foreach ($values as $key => $value) {
+                $paramType = PDO::PARAM_STR;
+                foreach ($types as $field => $type) {
+                    if (strpos($key, $field) !== false) {
+                        $paramType = $type;
+                        break;
+                    }
+                }
+                $stmt->bindValue($key, $value, $paramType);
+            }
+
+            if (!$stmt->execute()) {
+                $errorInfo = $stmt->errorInfo();
+                throw new Exception("Erreur SQL: " . ($errorInfo[2] ?? 'Erreur inconnue'));
+            }
+
             return $this->db->lastInsertId();
         } catch (PDOException $e) {
-            error_log('Erreur lors de la création du hackathon: ' . $e->getMessage());
+            error_log('Erreur PDO lors de la création du hackathon: ' . $e->getMessage());
             throw new Exception('Erreur lors de la création du hackathon: ' . $e->getMessage());
+        } catch (Exception $e) {
+            error_log('Erreur lors de la création du hackathon: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    private function slugExists($slug, $excludeId = null)
+    {
+        try {
+            $query = "SELECT COUNT(*) FROM {$this->table} WHERE slug = :slug";
+            $params = [':slug' => $slug];
+
+            if ($excludeId !== null) {
+                $query .= " AND id != :id";
+                $params[':id'] = $excludeId;
+            }
+
+            $stmt = $this->db->prepare($query);
+            $stmt->execute($params);
+            return $stmt->fetchColumn() > 0;
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la vérification du slug: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Vérifie si un hackathon existe
+     * @param int $id ID du hackathon
+     * @return bool true si le hackathon existe, sinon false
+     */
+    public function nameExists($name)
+    {
+        try {
+            $query = "SELECT COUNT(*) FROM {$this->table} WHERE name = :name";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute([':name' => $name]);
+            return $stmt->fetchColumn() > 0;
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la vérification de l\'existence du hackathon: ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -118,7 +191,8 @@ class Hackathon {
      * @param array $data Les données à mettre à jour
      * @return bool true si succès, sinon false
      */
-    public function update($id, $data) {
+    public function update($id, $data)
+    {
         try {
             // Vérification si le hackathon existe
             $hackathon = $this->find($id);
@@ -126,31 +200,89 @@ class Hackathon {
                 throw new Exception('Hackathon non trouvé');
             }
 
-            // Vérification des dates
-            if (isset($data['start_date']) && isset($data['end_date'])) {
-                $dateDebut = strtotime($data['start_date']);
-                $dateFin = strtotime($data['end_date']);
+            // Si le nom est mis à jour, mettre à jour le slug
+            if (isset($data['name'])) {
+                $baseSlug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $data['name'])));
+                $slug = $baseSlug;
+                $counter = 1;
 
-                if ($dateDebut === false || $dateFin === false) {
-                    throw new Exception('Format de date invalide');
+                while ($this->slugExists($slug, $id)) { // Passez l'ID actuel pour l'exclure
+                    $slug = $baseSlug . '-' . $counter;
+                    $counter++;
                 }
 
-                if ($dateDebut > $dateFin) {
-                    throw new Exception('La date de début doit être antérieure à la date de fin');
+                $data['slug'] = $slug;
+            }
+
+            // Validation des dates si fournies
+            $startDate = isset($data['start_date']) ? new DateTime($data['start_date']) : null;
+            $endDate = isset($data['end_date']) ? new DateTime($data['end_date']) : null;
+
+            if ($startDate && $endDate && $startDate >= $endDate) {
+                throw new Exception('La date de fin doit être postérieure à la date de début');
+            }
+
+            // Validation de la date limite d'inscription
+            if (isset($data['registration_deadline']) && $startDate) {
+                $registrationDeadline = new DateTime($data['registration_deadline']);
+                if ($registrationDeadline > $startDate) {
+                    throw new Exception('La date limite d\'inscription doit être antérieure à la date de début');
+                }
+            }
+
+            // Validation du type si fourni
+            if (isset($data['type'])) {
+                $validTypes = ['ctf', 'dev', 'mixte'];
+                if (!in_array($data['type'], $validTypes)) {
+                    throw new Exception('Type de hackathon invalide');
+                }
+            }
+
+            // Validation du statut si fourni
+            if (isset($data['status'])) {
+                $validStatuses = ['draft', 'upcoming', 'inactive', 'active', 'ended', 'cancelled'];
+                if (!in_array($data['status'], $validStatuses)) {
+                    throw new Exception('Statut invalide');
+                }
+            }
+
+            // Validation de la visibilité si fournie
+            if (isset($data['visibility'])) {
+                $validVisibilities = ['public', 'private', 'unlisted'];
+                if (!in_array($data['visibility'], $validVisibilities)) {
+                    throw new Exception('Visibilité invalide');
                 }
             }
 
             // Construction de la requête
             $fields = [];
-            $params = [];
+            $params = [':id' => $id];
 
-            // Champs à mettre à jour
-            $allowedFields = ['name', 'description', 'start_date', 'end_date', 'location', 'max_teams', 'max_team_members', 'rules', 'prizes'];
+            // Liste des champs autorisés à être mis à jour
+            $allowedFields = [
+                'name',
+                'slug',
+                'theme',
+                'description',
+                'type',
+                'status',
+                'visibility',
+                'start_date',
+                'end_date',
+                'registration_deadline',
+                'location',
+                'max_teams',
+                'min_team_members',
+                'max_team_members',
+                'rules',
+                'eligibility_criteria',
+                'prizes'
+            ];
 
             foreach ($allowedFields as $field) {
-                if (isset($data[$field])) {
+                if (array_key_exists($field, $data)) {
                     $fields[] = "{$field} = :{$field}";
-                    $params[":{$field}"] = $data[$field];
+                    $params[":{$field}"] = is_array($data[$field]) ? json_encode($data[$field]) : $data[$field];
                 }
             }
 
@@ -158,15 +290,17 @@ class Hackathon {
                 throw new Exception('Aucune donnée à mettre à jour');
             }
 
-            $query = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
-            $params[':id'] = $id;
-
-            $stmt = $this->db->prepare($query);
-            foreach ($params as $key => $value) {
-                $stmt->bindValue($key, $value);
+            // Génération du slug si le nom est mis à jour
+            if (isset($data['name']) && empty($data['slug'])) {
+                $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $data['name'])));
+                $fields[] = "slug = :slug";
+                $params[":slug"] = $slug;
             }
 
-            return $stmt->execute();
+            $query = "UPDATE {$this->table} SET " . implode(', ', $fields) . " WHERE id = :id";
+            $stmt = $this->db->prepare($query);
+
+            return $stmt->execute($params);
         } catch (PDOException $e) {
             error_log('Erreur lors de la mise à jour du hackathon: ' . $e->getMessage());
             throw new Exception('Erreur lors de la mise à jour du hackathon: ' . $e->getMessage());
@@ -178,7 +312,8 @@ class Hackathon {
      * @param int $id ID du hackathon
      * @return bool true si succès, sinon false
      */
-    public function delete($id) {
+    public function delete($id)
+    {
         try {
             // Vérification si le hackathon existe
             $hackathon = $this->find($id);
@@ -198,10 +333,85 @@ class Hackathon {
     }
 
     /**
+     * Récupère tous les hackathons
+     * @return array Liste des hackathons
+     */
+    public function getAll()
+    {
+        try {
+            $query = "SELECT * FROM {$this->table} ORDER BY start_date DESC";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log(
+                'Erreur lors de la récupération des hackathons !'
+                // Pour debuger
+                //  . $e->getMessage()
+            );
+            return [];
+        }
+    }
+
+    /**
+     * Récupère tous les hackathons
+     * @return array Liste des hackathons
+     */
+    public function getPublicAll()
+    {
+        try {
+            $query = "SELECT h.id, h.name, h.description, h.type, h.start_date, h.end_date, h.registration_deadline, h.max_teams, h.min_team_members, h.max_team_members, h.status, h.location, h.created_at, h.updated_at 
+            FROM {$this->table} h 
+            ORDER BY start_date DESC";
+            $stmt = $this->db->prepare($query);
+            $stmt->execute();
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log(
+                'Erreur lors de la récupération des informations publics des hackathons !'
+                // Pour debuger
+                //  . $e->getMessage()
+            );
+            return [];
+        }
+    }
+
+    /**
+     * Récupère un hackathon par son ID
+     * @param int $id ID du hackathon
+     * @return array|bool Les données du hackathon ou false si non trouvé
+     */
+    public function find($id)
+    {
+        try {
+            $query = "SELECT h.*, 
+                     (SELECT COUNT(*) FROM hackathon_teams WHERE hackathon_id = h.id) as teams_count 
+                     FROM {$this->table} h 
+                     WHERE h.id = :id 
+                     LIMIT 1";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log(
+                'Erreur lors de la récupération du hackathon !'
+                // Pour debuger
+                //  . $e->getMessage()
+            );
+            return false;
+        }
+    }
+
+    /**
      * Récupère les hackathons actifs (en cours)
      * @return array Liste des hackathons actifs
      */
-    public function getActive() {
+    public function getActive()
+    {
         try {
             $now = date('Y-m-d H:i:s');
             $query = "SELECT * FROM {$this->table} WHERE start_date <= :now AND end_date >= :now ORDER BY start_date ASC";
@@ -220,7 +430,8 @@ class Hackathon {
      * Récupère les hackathons passés
      * @return array Liste des hackathons passés
      */
-    public function getPast() {
+    public function getPast()
+    {
         try {
             $now = date('Y-m-d H:i:s');
             $query = "SELECT * FROM {$this->table} WHERE end_date < :now ORDER BY end_date DESC";
@@ -239,7 +450,8 @@ class Hackathon {
      * Récupère les hackathons futurs
      * @return array Liste des hackathons futurs
      */
-    public function getFuture() {
+    public function getFuture()
+    {
         try {
             $now = date('Y-m-d H:i:s');
             $query = "SELECT * FROM {$this->table} WHERE start_date > :now ORDER BY start_date ASC";
@@ -259,16 +471,51 @@ class Hackathon {
      * @param int $id ID du hackathon
      * @return array Liste des équipes
      */
-    public function getTeams($id) {
+    public function getTeams($hackathonId)
+    {
         try {
-            $query = "SELECT t.* FROM teams t WHERE t.hackathon_id = :hackathon_id ORDER BY t.created_at";
+            $query = "
+                SELECT 
+                    t.*,
+                    u.username as leader_username,
+                    u.fullname as leader_name,
+                    u.profile_picture as leader_avatar,
+                    COUNT(tm.user_id) as member_count
+                FROM 
+                    teams t
+                    LEFT JOIN users u ON t.leader_id = u.id
+                    LEFT JOIN team_members tm ON t.id = tm.team_id
+                WHERE 
+                    t.hackathon_id = :hackathon_id
+                GROUP BY 
+                    t.id
+                ORDER BY 
+                    t.created_at DESC
+            ";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->execute(['hackathon_id' => $hackathonId]);
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            throw new Exception("Erreur lors de la récupération des équipes : " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Recuperer les equipe participantes d'un hackathon
+     */
+    public function getHackathonParticipants($id)
+    {
+        try {
+            $query = "SELECT hp.* FROM hackathon_participants hp WHERE hp.hackathon_id = :hackathon_id AND hp.participation_status = 'accepted' ORDER BY hp.created_at";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':hackathon_id', $id, PDO::PARAM_INT);
             $stmt->execute();
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log('Erreur lors de la récupération des équipes: ' . $e->getMessage());
+        } catch (Exception $e) {
+            error_log('Erreur lors de la récupération des participants: ' . $e->getMessage());
             return [];
         }
     }
@@ -278,7 +525,8 @@ class Hackathon {
      * @param int $id ID du hackathon
      * @return array Liste des projets
      */
-    public function getProjects($id) {
+    public function getProjects($id)
+    {
         try {
             $query = "SELECT p.* FROM projects p WHERE p.hackathon_id = :hackathon_id ORDER BY p.created_at";
             $stmt = $this->db->prepare($query);
@@ -297,7 +545,8 @@ class Hackathon {
      * @param int $id ID du hackathon
      * @return array Statistiques du hackathon
      */
-    public function getStats($id) {
+    public function getStats($id)
+    {
         try {
             // Vérification si le hackathon existe
             $hackathon = $this->find($id);
@@ -353,7 +602,11 @@ class Hackathon {
             ];
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des statistiques: ' . $e->getMessage());
-            throw new Exception('Erreur lors de la récupération des statistiques: ' . $e->getMessage());
+            throw new Exception(
+                'Erreur lors de la récupération des statistiques: '
+                // Pour debuger
+                //  . $e->getMessage()
+            );
         }
     }
 }

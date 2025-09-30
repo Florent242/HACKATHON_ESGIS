@@ -9,6 +9,9 @@ use Auth\Model\TokenManager;
 use PDO;
 use PDOException;
 use Auth\Model\RedisManager;
+use Auth\Helper\LogHelper;
+
+
 
 if (!class_exists('Auth\Model\TokenManager')) {
     require_once __DIR__ . '/../models/TokenManager.php';
@@ -257,6 +260,7 @@ class AuthController
                     'logged_in' => true,
                     'last_activity' => time()
                 ];
+                LogHelper::init($this->db);
 
                 // Génération des tokens
                 $token = $this->tokenManager->generateJwt($user['id'], redis: true);
@@ -267,6 +271,7 @@ class AuthController
                     $longTermTokenData = $this->tokenManager->generateLongTermToken($user['id']);
                     $longTermToken = $longTermTokenData['token'];
                 }
+                
 
                 // Auth cookies
                 $this->setAuthCookies($token, $longTermToken);
@@ -299,6 +304,8 @@ class AuthController
             } else {
                 // Échec : incrémenter les tentatives
                 $this->redisManager->increment($redisKey);
+                LogHelper::init($this->db);
+                LogHelper::logLoginFailed(email: $identifier, reason: 'Identifiants incorrects');
                 $this->redisManager->expire($redisKey, 600); // expire après 10 minutes
                 throw new Exception($auth['error'], 401);
             }
@@ -321,6 +328,8 @@ class AuthController
             }
             if (isset($_COOKIE['jwt_token'])) {
                 $this->tokenManager->revokeToken($_COOKIE['jwt_token']);
+                LogHelper::init($this->db);
+                LogHelper::logLogout($$_SESSION['user']['id'], $_SESSION['user']['email']);
             }
             $userId = isset($_SESSION['user']) && isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 
@@ -355,6 +364,7 @@ class AuthController
             // Vérifier si l'utilisateur est connecté
             if (!isAuthenticated()) {
                 redirect('/login');
+                LogHelper::init($this->db);
             }
 
             $user = $this->user->find($_SESSION['user_id']);

@@ -1,42 +1,51 @@
 <?php
+
 namespace Auth\Controller;
 
 use Exception;
 use Auth\Model\Team;
+use Throwable;
+use Auth\Helper\LogHelper;
 
-if(!defined('CONFIG_INCLUDED')) {
+
+if (!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
 }
-if(!defined('FUNCTIONS_INCLUDED')) {
+if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/../includes/functions.php';
 }
-if(!class_exists('Team')) {
+if (!class_exists('Team')) {
     require_once __DIR__ . '/../models/Team.php';
 }
-if(!class_exists('Controller')) {
+if (!class_exists('Controller')) {
     require_once __DIR__ . '/Controller.php';
 }
-
-class TeamController extends Controller {
+if (!class_exists('AuthController')) {
+    require_once __DIR__ . '/AuthController.php';
+}
+if (!class_exists('TokenManager')) {
+    require_once __DIR__ . '/../models/TokenManager.php';
+}
+class TeamController extends Controller
+{
     private $team;
     private $db;
-    private $tokenManager;
 
-    public function __construct($db, $tokenManager) {
+    public function __construct($db, $tokenManager)
+    {
         parent::__construct($tokenManager);
         $this->db = $db;
         $this->team = new Team($this->db);
-        $this->tokenManager = $tokenManager;
     }
 
     /**
      * Récupère toutes les équipes
      */
-    public function getAll() {
+    public function getAll()
+    {
         try {
             $this->validateMethod('GET');
-            $userId = $this->tokenManager->getCurrentUserId();
-            $teams = $this->team->getAll($userId);
+            $teams = $this->team->getAll($this->tokenManager->getCurrentUserId());
 
             $this->jsonResponse([
                 'success' => true,
@@ -46,7 +55,7 @@ class TeamController extends Controller {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 400);
+            ]);
         }
     }
 
@@ -54,7 +63,8 @@ class TeamController extends Controller {
      * Récupère les équipes d'un hackathon
      * @param int $hackathonId ID du hackathon
      */
-    public function getByHackathon($hackathonId) {
+    public function getByHackathon($hackathonId)
+    {
         try {
             $this->validateMethod('GET');
 
@@ -68,17 +78,44 @@ class TeamController extends Controller {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 400);
+            ]);
+        }
+    }
+
+    /**
+     * Récupère le nombre d'équipes d'un hackathon
+     * @param int $hackathonId ID du hackathon
+     */
+    public function countByHackathon($hackathonId)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            $teams = $this->team->countByHackathon($hackathonId);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $teams
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 
     /**
      * Récupère les équipes d'un utilisateur
-     * @param int $userId ID de l'utilisateur
      */
-    public function getByUser($userId) {
+    public function getByUser($userId)
+    {
         try {
             $this->validateMethod('GET');
+            $currentUserId = $this->tokenManager->getCurrentUserId();
+            if (!$currentUserId) {
+                throw new Exception('Utilisateur non authentifié');
+            }
 
             $teams = $this->team->getByUser($userId);
 
@@ -90,7 +127,30 @@ class TeamController extends Controller {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 400);
+            ]);
+        }
+    }
+
+    /**
+     * Récupère le status d'une équipe
+     * @param int $teamId ID de l'équipe
+     */
+    public function getStatus($teamId)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            $status = $this->team->getStatus($teamId);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $status
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 
@@ -98,11 +158,12 @@ class TeamController extends Controller {
      * Récupère une équipe par son ID
      * @param int $id ID de l'équipe
      */
-    public function get($id) {
+    public function get($id)
+    {
         try {
             $this->validateMethod('GET');
 
-            $team = $this->team->find($id);
+            $team = $this->team->find($id, $this->tokenManager->getCurrentUserId());
             if (!$team) {
                 throw new Exception('Équipe non trouvée');
             }
@@ -119,106 +180,253 @@ class TeamController extends Controller {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 404);
+            ]);
         }
     }
 
     /**
      * Crée une nouvelle équipe
      */
-    public function create() {
+    public function create($input)
+    {
         try {
             $this->validateMethod('POST');
 
-            $requiredFields = ['name', 'hackathon_id', 'leader_id'];
-            $this->validateRequiredFields($_POST, $requiredFields);
+            $requiredFields = ['nom', 'type'];
+            $this->validateRequiredFields($input, $requiredFields);
+            // Utiliser getCurrentUserId() de AuthController
+            $currentUserId = $this->tokenManager->getCurrentUserId();
+            if (!$currentUserId) {
+                throw new Exception('Utilisateur non authentifié');
+            }
 
             $data = [
-                'name' => $_POST['name'],
-                'hackathon_id' => (int)$_POST['hackathon_id'],
-                'leader_id' => (int)$_POST['leader_id']
+                'name' => $input['nom'],
+                'hackathon_id' => $input['hackathon_id'] ?? null,
+                'leader_id' => $currentUserId,
+                'type' => $input['type'],
+                'description' => $input['description'] ?? null,
+                'invitation_code' => $this->generateInvitationCode()
             ];
 
             $teamId = $this->team->create($data);
+            LogHelper::init($this->db);
+            LogHelper::logTeamCreate(
+                $currentUserId, 
+                $input['name'], 
+                $teamId
+            );
 
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Équipe créée avec succès',
-                'data' => ['id' => $teamId, 'name' => $data['name']]
+                'data' => [
+                    'id' => $teamId,
+                    'name' => $data['name'],
+                    'hackathon_id' => $data['hackathon_id'],
+                    'leader_id' => $data['leader_id'],
+                    'type' => $data['type'],
+                    'description' => $data['description'],
+                    'invitation_code' => $data['invitation_code']
+                ]
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 400);
+            ]);
+        }
+    }
+
+    public function update($teamId, $input)
+    {
+        try {
+            $this->validateMethod('POST');
+
+            $token = $this->getBearerToken();
+            if (!$token) {
+                throw new Exception('Token manquant');
+            }
+
+            $tokenValidation = $this->tokenManager->validateToken($token);
+            if (!$tokenValidation['valid']) {
+                throw new Exception('Token invalide: ' . ($tokenValidation['error'] ?? 'Aucun détail'));
+            }
+            $userId = $tokenValidation['user_id'];
+
+            // Vérifier si l'utilisateur est le leader
+            $isLeader = $this->team->isLeader($teamId, $userId);
+            if (!$isLeader && !$this->isAdmin($userId)) {
+                error_log("Utilisateur $userId n'est pas leader de l'équipe $teamId");
+                throw new Exception('Seul le leader peut modifier l\'équipe');
+            }
+
+            // Récupérer les données envoyées
+            $data = $input;
+            $name = $data['name'] ?? null;
+            $description = $data['description'] ?? null;
+
+            if (!$name) {
+                throw new Exception('Le nom de l\'équipe est requis');
+            }
+
+            // Vérifier si l'équipe existe
+            $query = "SELECT id FROM teams WHERE id = :teamId";
+            $stmt = $this->db->prepare($query);
+            if (!$stmt) {
+                throw new Exception('Erreur de préparation de la requête');
+            }
+            $stmt->execute([':teamId' => $teamId]);
+            if (!$stmt->fetch()) {
+                throw new Exception('Équipe non trouvée');
+            }
+
+            // Mettre à jour l'équipe
+            $success = $this->team->update($teamId, $data);
+            if (!$success) {
+                error_log("Échec de l'exécution de la requête UPDATE: " . print_r($this->db->errorInfo(), true));
+                throw new Exception('Échec de la mise à jour de l\'équipe');
+            }
+
+            $this->logActivity('update_team', 'Mise à jour d\'une equipe', $success, 'info', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
+            $response = [
+                'success' => true,
+                'message' => 'Équipe mise à jour avec succès'
+            ];
+            error_log("Réponse générée: " . json_encode($response));
+            $this->jsonResponse($response);
+        } catch (Exception $e) {
+            error_log("Erreur dans TeamController::update: " . $e->getMessage() . " (Code: " . $e->getCode() . ")");
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        } catch (Throwable $t) {
+            error_log("Erreur fatale dans TeamController::update: " . $t->getMessage() . " (Code: " . $t->getCode() . ")");
+            $this->jsonResponse([
+                'success' => false,
+                'error' => 'Erreur serveur interne: ' . $t->getMessage()
+            ]);
         }
     }
 
     /**
-     * Met à jour une équipe
-     * @param int $id ID de l'équipe
+     * Mettre a jour le status d'une equipe
+     * @param int $teamId ID de l'équipe
+     * @param array $input Données de l'équipe
      */
-    public function update($id) {
+    public function updateStatus($teamId, $input)
+    {
         try {
             $this->validateMethod('POST');
 
-            $updatableFields = ['name'];
-            $data = $this->filterData($_POST, $updatableFields);
-
-            if (empty($data)) {
-                throw new Exception('Aucune donnée à mettre à jour');
+            // Verifier si le status est present
+            if (!isset($input['status'])) {
+                throw new Exception('Le status est requis');
             }
 
-            $this->team->update($id, $data);
-
+            $this->team->updateStatus($teamId, $input['status']);
             $this->jsonResponse([
                 'success' => true,
-                'message' => 'Équipe mise à jour avec succès'
+                'message' => 'Status de l\'équipe mise à jour avec succès'
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 400);
+            ]);
         }
     }
 
     /**
      * Supprime une équipe
-     * @param int $id ID de l'équipe
+     * @param int $teamId ID de l'équipe
      */
-    public function delete($id) {
+    public function delete($teamId)
+    {
+        error_log("Tentative de suppression de l'équipe ID: $teamId");
         try {
-            $this->validateMethod('POST');
+            $this->validateMethod('DELETE');
+            $currentUserId = $this->tokenManager->getCurrentUserId();
 
-            // Vérifier si l'utilisateur a les droits
-            if (!hasRole('admin') && !hasRole('organizer')) {
-                throw new Exception('Non autorisé');
+            if (!$currentUserId) {
+                throw new Exception('Utilisateur non authentifié');
             }
 
-            $this->team->delete($id);
+            // Vérifier si l'utilisateur est le leader
+            if (!$this->team->isLeader($teamId, $currentUserId) && !$this->isAdmin($currentUserId)) {
+                throw new Exception('Seul le leader peut supprimer l\'équipe');
+            }
 
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Équipe supprimée avec succès'
-            ]);
+            // Vérifier si l'équipe existe
+            $team = $this->team->find($teamId);
+            if (!$team) {
+                throw new Exception('Équipe non trouvée');
+            }
+
+            $hackathonId = $team['hackathon_id'];
+
+            // Verifier si l'équipe est inscrite au hackathon
+            if ($hackathonId && $this->team->isRegisteredToHackathon($teamId, $hackathonId)) {
+                throw new Exception("L'équipe est déjà inscrite a un hackathon, plus aucune modification n'est autorisée !");
+            }
+            // Démarrer une transaction
+            $this->db->beginTransaction();
+
+            try {
+                // 0. Supprimer les entrées dans hackathon_teams
+                $query = "DELETE FROM hackathon_teams WHERE team_id = :teamId";
+                $stmt = $this->db->prepare($query);
+                $stmt->execute([':teamId' => $teamId]);
+
+                // 1. Supprimer toutes les entrées dans teams_adhesions liées à l'équipe ou au leader
+                $query = "DELETE FROM teams_adhesions WHERE teams_id = :teamId OR leader_id = :leaderId";
+                $stmt = $this->db->prepare($query);
+                $stmt->execute([':teamId' => $teamId, ':leaderId' => $team['leader_id']]);
+
+                // 2. Supprimer les membres de l'équipe
+                $query = "DELETE FROM team_members WHERE team_id = :teamId";
+                $stmt = $this->db->prepare($query);
+                $stmt->execute([':teamId' => $teamId]);
+
+                // 3. Supprimer l'équipe elle-même
+                $query = "DELETE FROM teams WHERE id = :teamId";
+                $stmt = $this->db->prepare($query);
+                $stmt->execute([':teamId' => $teamId]);
+
+                if ($stmt->rowCount() === 0) {
+                    throw new Exception('Aucune équipe supprimée');
+                }
+
+                $this->db->commit();
+
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => 'Équipe supprimée avec succès'
+                ]);
+            } catch (Exception $e) {
+                $this->db->rollBack();
+                error_log("Erreur PDO: " . $e->getMessage());
+                throw new Exception('Erreur lors de la suppression de l\'équipe: ' . $e->getMessage());
+            }
         } catch (Exception $e) {
+            error_log("Erreur: " . $e->getMessage());
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 400);
+            ]);
         }
     }
-
     /**
      * Récupère les membres d'une équipe
-     * @param int $id ID de l'équipe
+     * @param int $teamId ID de l'équipe
      */
-    public function getMembers($id) {
+    public function getMembers($teamId)
+    {
         try {
             $this->validateMethod('GET');
 
-            $members = $this->team->getMembers($id);
+            $members = $this->team->getMembers($teamId);
 
             $this->jsonResponse([
                 'success' => true,
@@ -228,178 +436,592 @@ class TeamController extends Controller {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 400);
+            ]);
         }
     }
 
     /**
      * Ajoute un membre à une équipe
-     * @param int $id ID de l'équipe
+     * @param int $teamId ID de l'équipe
      */
-    public function addMember($id) {
-        try {
-            $this->validateMethod('POST');
+    public function addMember($teamId, $input)
+{
+    try {
+        $this->validateMethod('POST');
 
-            if (empty($_POST['user_id'])) {
-                throw new Exception('ID utilisateur requis');
-            }
-
-            $userId = (int)$_POST['user_id'];
-            $this->team->addMember($id, $userId);
-
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Membre ajouté avec succès'
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
+        $currentUserId = $this->tokenManager->getCurrentUserId();
+        if (!$currentUserId) {
+            throw new Exception('Utilisateur non authentifié');
         }
+
+        if (!$this->team->isLeader($teamId, $currentUserId) && !$this->isAdmin($currentUserId)) {
+            throw new Exception('Non autorisé à ajouter un membre');
+        }
+
+        if (empty($input['user_id'])) {
+            throw new Exception('ID utilisateur requis');
+        }
+
+        $team = $this->team->find($teamId);
+        if (!$team) {
+            throw new Exception('Équipe non trouvée');
+        }
+
+        $hackathonId = $team['hackathon_id'];
+
+        // Verifier si l'équipe est inscrite au hackathon
+        if ($hackathonId && $this->team->isRegisteredToHackathon($teamId, $hackathonId) && !$this->isAdmin($currentUserId)) {
+            throw new Exception("L'équipe est déjà inscrite a un hackathon, plus aucune modification n'est autorisée !");
+        }
+
+        $targetUserId = (int)$input['user_id'];
+        
+        $stmt = $this->db->prepare("SELECT username FROM users WHERE id = ?");
+        $stmt->execute([$targetUserId]);
+        $targetUser = $stmt->fetch();
+        $memberName = $targetUser ? $targetUser['username'] : "Utilisateur #$targetUserId";
+        
+        $this->team->addMember($teamId, $targetUserId);
+        
+        LogHelper::init($this->db);
+        LogHelper::logTeamMemberAdd(
+            $currentUserId,
+            $memberName,
+            $team['name']
+        );
+
+        $this->jsonResponse([
+            'success' => true,
+            'message' => 'Membre ajouté avec succès'
+        ]);
+    } catch (Exception $e) {
+        $this->jsonResponse([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
     }
+}
 
     /**
      * Retire un membre d'une équipe
-     * @param int $id ID de l'équipe
+     * @param int $teamId ID de l'équipe
      */
-    public function removeMember($id) {
-        try {
-            $this->validateMethod('POST');
+    public function removeMember($teamId, $input)
+{
+    try {
+        $this->validateMethod('POST');
 
-            if (empty($_POST['user_id'])) {
-                throw new Exception('ID utilisateur requis');
-            }
-
-            $userId = (int)$_POST['user_id'];
-            $this->team->removeMember($id, $userId);
-
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Membre retiré avec succès'
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
+        $currentUserId = $this->tokenManager->getCurrentUserId();
+        if (!$currentUserId) {
+            throw new Exception('Utilisateur non authentifié');
         }
+
+        if (!$this->team->isLeader($teamId, $currentUserId) && !$this->isAdmin($currentUserId)) {
+            throw new Exception('Non autorisé à retirer un membre');
+        }
+
+        if (empty($input['user_id'])) {
+            throw new Exception('ID utilisateur requis');
+        }
+
+        $team = $this->team->find($teamId);
+        if (!$team) {
+            throw new Exception('Équipe non trouvée');
+        }
+
+        $hackathonId = $team['hackathon_id'] ?? 0;
+
+        // Verifier si l'équipe est inscrite au hackathon
+        if ($hackathonId && $this->team->isRegisteredToHackathon($teamId, $hackathonId) && !$this->isAdmin($currentUserId)) {
+            throw new Exception("L'équipe est déjà inscrite a un hackathon, plus aucune modification n'est autorisée !");
+        }
+
+        // Vérifier si l'utilisateur est le leader de l'équipe
+        if ($team && $team['leader_id'] == $currentUserId && !$this->isAdmin($currentUserId)) {
+            throw new Exception('Le leader de l\'équipe ne peut pas être retiré. Changez d\'abord de leader.');
+        }
+
+        $targetUserId = (int)$input['user_id'];
+        
+        $stmt = $this->db->prepare("SELECT username FROM users WHERE id = ?");
+        $stmt->execute([$targetUserId]);
+        $targetUser = $stmt->fetch();
+        $memberName = $targetUser ? $targetUser['username'] : "Utilisateur #$targetUserId";
+        
+        $this->team->removeMember($teamId, $targetUserId);
+        
+        LogHelper::init($this->db);
+        LogHelper::logTeamMemberRemove(
+            $currentUserId,
+            $memberName, 
+            $team['name']
+        );
+
+        $this->jsonResponse([
+            'success' => true,
+            'message' => 'Membre retiré avec succès'
+        ]);
+    } catch (Exception $e) {
+        $this->jsonResponse([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
     }
+}
 
     /**
      * Change le leader d'une équipe
      * @param int $id ID de l'équipe
      */
-    public function changeLeader($id) {
-        try {
-            $this->validateMethod('POST');
+    public function changeLeader($teamId, $input)
+{
+    try {
+        $this->validateMethod('POST');
 
-            if (empty($_POST['new_leader_id'])) {
-                throw new Exception('ID du nouveau leader requis');
-            }
-
-            $newLeaderId = (int)$_POST['new_leader_id'];
-            $this->team->changeLeader($id, $newLeaderId);
-
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Leader changé avec succès'
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
+        $currentUserId = $this->tokenManager->getCurrentUserId();
+        if (!$currentUserId) {
+            throw new Exception('Utilisateur non authentifié');
         }
-    }
 
-    public function acceptRequest($teamId, $userId) {
-        try {
-            $this->validateMethod('POST');
-
-            $this->team->acceptRequest($teamId, $userId);
-
-            $this->jsonResponse([
-                'success' => true,
-                'message' => 'Demande d\'adhésion acceptée avec succès'
-            ]);
-        } catch (Exception $e) {
-            $this->jsonResponse([
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 400);
+        if (!$this->team->isLeader($teamId, $currentUserId) && !$this->isAdmin($currentUserId)) {
+            throw new Exception('Non autorisé à changer le leader');
         }
+
+        if (empty($input['new_leader_id'])) {
+            throw new Exception('ID du nouveau leader requis');
+        }
+
+        $team = $this->team->find($teamId);
+        if (!$team) {
+            throw new Exception('Équipe non trouvée');
+        }
+
+        $hackathonId = $team['hackathon_id'];
+
+        // Verifier si l'équipe est inscrite au hackathon
+        if ($hackathonId && $this->team->isRegisteredToHackathon($teamId, $hackathonId) && !$this->isAdmin($currentUserId)) {
+            throw new Exception("L'équipe est déjà inscrite a un hackathon, plus aucune modification n'est autorisée !");
+        }
+
+        $newLeaderId = (int)$input['new_leader_id'];
+        
+        $stmt = $this->db->prepare("SELECT username FROM users WHERE id = ?");
+        $stmt->execute([$newLeaderId]);
+        $newLeader = $stmt->fetch();
+        $newLeaderName = $newLeader ? $newLeader['username'] : "Utilisateur #$newLeaderId";
+        
+        $this->team->changeLeader($teamId, $newLeaderId);
+        
+        LogHelper::init($this->db);
+        LogHelper::logTeamLeaderChange(
+            $currentUserId,
+            $newLeaderName,
+            $team['name']
+        );
+
+        $this->jsonResponse([
+            'success' => true,
+            'message' => 'Leader changé avec succès'
+        ]);
+    } catch (Exception $e) {
+        $this->jsonResponse([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
     }
+}
 
-    public function rejectRequest($teamId, $userId) {
-        try {
-            $this->validateMethod('POST');
 
-            $this->team->rejectRequest($teamId, $userId);
+    /**
+     * Accepte une demande d'adhésion
+     * @param int $teamId ID de l'équipe
+     * @param int $userId ID de l'utilisateur
+     */
+    public function acceptRequest($teamId, $userId)
+{
+    error_log("Appel de acceptRequest pour teamId: $teamId, userId: $userId");
+    try {
+        $this->validateMethod('POST');
+
+        $currentUserId = $this->tokenManager->getCurrentUserId();
+        if (!$currentUserId) {
+            throw new Exception('Utilisateur non authentifié');
+        }
+
+        if (!$this->team->isLeader($teamId, $currentUserId)) {
+            throw new Exception('Non autorisé à accepter une demande');
+        }
+
+        if (!$userId) {
+            throw new Exception('ID utilisateur manquant');
+        }
+
+        $isValid = $this->team->verificateTeamRequest($teamId, $userId);
+        if (!$isValid) {
+            error_log("Demande d'adhésion non trouvée pour teamId: $teamId, userId: $userId");
+            throw new Exception('Demande d\'adhésion non trouvée');
+        }
+
+        $team = $this->team->find($teamId);
+        if (!$team) {
+            throw new Exception('Équipe non trouvée');
+        }
+
+        $stmt = $this->db->prepare("SELECT username FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+        $userName = $user ? $user['username'] : "Utilisateur #$userId";
+
+        $this->team->acceptRequest($teamId, $userId);
+        
+        LogHelper::init($this->db);
+        LogHelper::logTeamRequestAccept(
+            $currentUserId,
+            $userName, 
+            $team['name']
+        );
+
+        $this->jsonResponse([
+            'success' => true,
+            'message' => 'Demande d\'adhésion acceptée avec succès'
+        ]);
+    } catch (Exception $e) {
+        error_log("Erreur dans acceptRequest: " . $e->getMessage());
+        $this->jsonResponse([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+}
+
+    /**
+     * Rejette une demande d'adhésion
+     * @param int $teamId ID de l'équipe
+     * @param int $userId ID de l'utilisateur
+     */
+    public function rejectRequest($teamId, $userId)
+{
+    try {
+        $this->validateMethod('POST');
+
+        $currentUserId = $this->tokenManager->getCurrentUserId();
+        if (!$currentUserId) {
+            throw new Exception('Utilisateur non authentifié');
+        }
+
+        if (!$this->team->isLeader($teamId, $currentUserId)) {
+            throw new Exception('Non autorisé à rejeter une demande');
+        }
+
+        if (!$userId) {
+            throw new Exception('ID utilisateur manquant');
+        }
+
+        $team = $this->team->find($teamId);
+        if (!$team) {
+            throw new Exception('Équipe non trouvée');
+        }
+
+        $result = $this->team->rejectRequest($teamId, $userId);
+
+        if ($result) {
+            LogHelper::init($this->db);
+            LogHelper::logTeamRequestReject(
+                $currentUserId,
+                $userId,
+                $team['name']
+            );
 
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Demande d\'adhésion rejetée avec succès'
             ]);
+        } else {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => 'Erreur lors du rejet de la demande d\'adhésion'
+            ]);
+        }
+    } catch (Exception $e) {
+        error_log("Erreur dans rejectRequest: " . $e->getMessage());
+        $this->jsonResponse([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+}
+
+    /**
+     * Soumet une demande d'adhésion
+     * @param int $teamId ID de l'équipe
+     */
+    public function teamRequest($teamId)
+{
+    try {
+        $this->validateMethod('POST');
+
+        $currentUserId = $this->tokenManager->getCurrentUserId();
+        if (!$currentUserId) {
+            throw new Exception('Utilisateur non authentifié');
+        }
+
+        
+        $team = $this->team->find($teamId);
+        $teamName = $team ? $team['name'] : "Équipe #$teamId";
+
+        $result = $this->team->teamRequest($teamId, $currentUserId);
+
+        if ($result['success']) {
+            LogHelper::init($this->db);
+            LogHelper::logTeamRequest(
+                $currentUserId,
+                $teamName,
+                $result['message']
+            );
+            $this->jsonResponse([
+                'success' => true,
+                'message' => $result['message']
+            ]);
+        } else {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $result['message']
+            ]);
+        }
+    } catch (Exception $e) {
+        error_log("Erreur dans teamRequest: " . $e->getMessage());
+        $this->jsonResponse([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+}
+
+    /**
+     * Vérifie une demande d'adhésion
+     * @param int $teamId ID de l'équipe
+     * @param int $userId ID de l'utilisateur
+     */
+    public function verificateTeamRequest($teamId, $userId)
+{
+    error_log("Appel de verificateTeamRequest pour teamId: $teamId, userId: $userId");
+    try {
+        $this->validateMethod('POST');
+
+        $currentUserId = $this->tokenManager->getCurrentUserId();
+        if (!$currentUserId) {
+            throw new Exception('Utilisateur non authentifié');
+        }
+
+        if (!$this->team->isLeader($teamId, $currentUserId) && !hasRole('admin') && !hasRole('organizer')) {
+            throw new Exception('Non autorisé à vérifier une demande');
+        }
+
+        if (!$userId) {
+            throw new Exception('ID utilisateur requis');
+        }
+
+        $isValid = $this->team->verificateTeamRequest($teamId, $userId);
+        if (!$isValid) {
+            error_log("Demande d'adhésion non trouvée pour teamId: $teamId, userId: $userId");
+            throw new Exception('Demande d\'adhésion non trouvée');
+        }
+
+        $team = $this->team->find($teamId);
+        $teamName = $team ? $team['name'] : "Équipe #$teamId";
+
+        $stmt = $this->db->prepare("SELECT username FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+        $userName = $user ? $user['username'] : "Utilisateur #$userId";
+
+        LogHelper::init($this->db);
+        LogHelper::logTeamRequestVerify(
+            $currentUserId,
+            $userName, 
+            $teamName
+        );
+        
+        $this->jsonResponse([
+            'success' => true,
+            'message' => 'Demande d\'adhésion vérifiée avec succès'
+        ]);
+    } catch (Exception $e) {
+        error_log("Erreur dans verificateTeamRequest: " . $e->getMessage());
+        $this->jsonResponse([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    }
+}
+
+    /**
+     * Met à jour le code d'invitation d'une équipe
+     * @param int $teamId ID de l'équipe
+     */
+
+    public function updateTeamCode($teamId)
+    {
+        error_log("Appel de updateTeamCode pour teamId: $teamId");
+        try {
+            $this->validateMethod('POST');
+            error_log("Méthode POST validée pour teamId: $teamId");
+            $userId = $this->tokenManager->getCurrentUserId();
+            error_log("UserId récupéré: $userId");
+
+            if (!$this->team->isLeader($teamId, $userId)) {
+                error_log("Utilisateur $userId n'est pas leader de l'équipe $teamId");
+                throw new Exception('Seul le leader peut mettre à jour le code d\'invitation');
+            }
+
+            $newCode = $this->generateInvitationCode();
+            error_log("Nouveau code généré: $newCode");
+            $this->team->updateTeamCode($teamId, $newCode);
+            error_log("Code mis à jour dans la base de données pour teamId: $teamId");
+
+            // Récupérer l'équipe mise à jour pour confirmer le code
+            $team = $this->team->find($teamId);
+                    if (!$team || $team['invitation_code'] !== $newCode) {
+                error_log("Échec de la vérification du nouveau code pour teamId: $teamId");
+                throw new Exception('Échec de la mise à jour du code d\'invitation');
+            }
+
+            $response = [
+                'success' => true,
+                'message' => 'Code d\'invitation mis à jour avec succès',
+                'data' => [
+                    'invitation_code' => $newCode
+                ]
+            ];
+            error_log("Réponse générée: " . json_encode($response));
+            $this->jsonResponse($response);
         } catch (Exception $e) {
+            error_log("Erreur dans updateTeamCode: " . $e->getMessage() . " (Code: " . ($e->getCode() ?: 400) . ")");
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 400);
+            ]);
         }
     }
 
-    public function teamRequest($teamId, $userId) {
-        try {
-            $this->validateMethod('POST');
+    /**
+     * Génère un code d'invitation unique
+     * @return string
+     */
+    private function generateInvitationCode()
+    {
+        $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        $code = '';
+        for ($i = 0; $i < 13; $i++) {
+            $code .= $chars[random_int(0, strlen($chars) - 1)];
+            if ($i % 4 === 3 && $i < 11) {
+                $code .= '-';
+            }
+        }
+        $sql = "SELECT id FROM teams WHERE invitation_code = ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$code]);
+        if ($stmt->fetch()) {
+            return $this->generateInvitationCode();
+        }
+        return $code;
+    }
 
-            $this->team->teamRequest($teamId, $userId);
+    /**
+     * Récupère toutes les demandes d'adhésion
+     */
+    public function getAllTeamRequests($teamId)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            $currentUserId = $this->tokenManager->getCurrentUserId();
+            if (!$currentUserId) {
+                throw new Exception('Utilisateur non authentifié');
+            }
+
+            //verifier si l'utilisateur est leader de l'équipe
+            $isLeader = $this->team->isLeader($teamId, $currentUserId);
+            if (!$isLeader) {
+                throw new Exception('Non autorisé à récupérer les demandes d\'adhésion');
+            }
+
+            $teamRequests = $this->team->getAllTeamRequests($teamId);
 
             $this->jsonResponse([
                 'success' => true,
-                'message' => 'Demande d\'adhésion envoyée avec succès'
+                'data' => $teamRequests
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 400);
+            ]);
         }
     }
-    //verifier que seul le leader accepte les demandes d'adhésion
-    public function verificateTeamRequest($teamId, $userId) {
+
+    /**
+     * Vérifie si l'utilisateur connecté est leader
+     * @param int $teamId ID de l'équipe
+     */
+    public function isLeader($teamId, $userId)
+    {
         try {
             $this->validateMethod('POST');
 
-            $this->team->verificateTeamRequest($teamId, $userId);
+            $currentUserId = $this->tokenManager->getCurrentUserId();
+            if (!$currentUserId) {
+                throw new Exception('Utilisateur non authentifié');
+            }
+
+            $isLeader = $this->team->isLeader($teamId, $userId);
 
             $this->jsonResponse([
                 'success' => true,
-                'message' => 'Demande d\'adhésion vérifiée avec succès'
+                'data' => ['is_leader' => $isLeader]
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 400);
+            ]);
         }
     }
-
-    public function isLeader($teamId, $userId) {
+    /**
+     * Allows a user to join a team using an invitation code
+     * @param string $code The invitation code
+     */
+    public function joinTeamViaCode($code)
+    {
+        error_log("Appel de joinTeamViaCode avec code: $code");
         try {
             $this->validateMethod('POST');
 
-            $this->team->isLeader($teamId, $userId);
+            $currentUserId = $this->tokenManager->getCurrentUserId();
+            if (!$currentUserId) {
+                throw new Exception('Utilisateur non authentifié');
+            }
+
+            if (empty($code)) {
+                throw new Exception('Code d\'invitation requis');
+            }
+
+            // Call the model to process the join request
+            $teamId = $this->team->joinTeamViaCode($code, $currentUserId);
 
             $this->jsonResponse([
                 'success' => true,
-                'message' => 'Demande d\'adhésion vérifiée avec succès'
+                'message' => 'Vous avez rejoint l\'équipe avec succès',
+                'data' => [
+                    'team_id' => $teamId
+                ]
             ]);
         } catch (Exception $e) {
+            error_log("Erreur dans joinTeamViaCode: " . $e->getMessage());
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
-            ], 400);
+            ]);
         }
     }
 }
