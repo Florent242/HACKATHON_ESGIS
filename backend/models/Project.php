@@ -302,13 +302,13 @@ class Project
             $sql = "SELECT p.*, 
                            t.name as team_name, 
                            h.name as hackathon_name, 
-                           c.title as challenge_title,
-                           u.username as created_by_username
+                           c.title as challenge_title
+                        --    u.username as created_by_username
                     FROM {$this->table} p
                     LEFT JOIN teams t ON p.team_id = t.id
                     LEFT JOIN hackathons h ON p.hackathon_id = h.id
                     LEFT JOIN challenges c ON p.challenge_id = c.id
-                    LEFT JOIN users u ON p.created_by = u.id
+                    -- LEFT JOIN users u ON p.created_by = u.id
                     WHERE 1=1";
             
             $params = [];

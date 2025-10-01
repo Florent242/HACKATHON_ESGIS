@@ -92,11 +92,6 @@
                                 <button class="dropdown-toggle">
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
-                                <div class="dropdown-menu">
-                                    <a href="#" class="dropdown-item action-button" data-action="edit" data-id="1">Modifier</a>
-                                    <a href="#" class="dropdown-item action-button" data-action="view" data-id="1">Voir détails</a>
-                                    <a href="#" class="dropdown-item action-button" data-action="delete" data-id="1">Supprimer</a>
-                                </div>
                             </div>
                         </td>
                     </tr>

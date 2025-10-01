@@ -11,16 +11,32 @@
 </head>
 
 <body>
-    <div class="container mx-auto px-4 py-8">
+    <div class="container mx-auto px-4! py-8!">
         <!-- Header -->
-        <div class="mb-8">
-            <div class="flex items-center justify-between mb-4">
+        <div class="mb-8 bg-gradient-to-r from-primary/10 to-primary/5 p-6 rounded-xl border border-border border-violet-500/20">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 class="text-3xl font-bold text-white mb-2" id="hackathonTitle">Chargement...</h1>
-                    <p class="text-text-muted" id="hackathonTheme"></p>
+                    <div class="flex items-center gap-3 mb-2">
+                        <h1 class="text-3xl font-bold text-white" id="hackathonTitle">Chargement...</h1>
+                        <span class="status-badge text-sm px-3 py-1" id="hackathonStatus"></span>
+                    </div>
+                    <p class="text-text-muted text-lg" id="hackathonTheme"></p>
+                    <div class="flex items-center gap-4 mt-3 text-sm text-text-muted">
+                        <span class="flex items-center gap-1">
+                            <i data-lucide="calendar" class="w-4 h-4"></i>
+                            <span id="infoDateRange"></span>
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <i data-lucide="map-pin" class="w-4 h-4"></i>
+                            <span id="infoLocation"></span>
+                        </span>
+                    </div>
                 </div>
-                <div>
-                    <span class="status-badge" id="hackathonStatus"></span>
+                <div class="flex gap-3">
+                    <button class="btn-secondary" id="editInfoBtn">
+                        <i data-lucide="edit" class="w-4 h-4"></i>
+                        <span>Modifier</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -64,9 +80,6 @@
             <div class="card">
                 <div class="card-header">
                     <h2 class="text-xl font-semibold text-white">Informations générales</h2>
-                    <button class="btn-icon" id="editInfoBtn">
-                        <i data-lucide="edit"></i>
-                    </button>
                 </div>
                 <div class="card-body">
                     <div class="info-grid">

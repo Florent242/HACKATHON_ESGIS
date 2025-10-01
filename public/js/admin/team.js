@@ -249,6 +249,7 @@ function updateFeaturedTeams(teams) {
  * Configure les gestionnaires d'événements
  */
 function setupEventListeners() {
+  manageTeamsOptions()
   // Gestionnaire pour le bouton "Créer une équipe"
   const createTeamButton = document.querySelector(".btn-primary")
   if (createTeamButton) {
@@ -275,7 +276,7 @@ function setupEventListeners() {
         case "view":
           viewTeam(id)
           break
-        case "delete":
+        case "delete":  
           deleteTeam(id)
           break
         case "activate":
@@ -763,7 +764,5 @@ function manageTeamsOptions(){
           `
     })
   })
-  
-
 }
 

@@ -86,14 +86,34 @@ class ProjectValidationManager {
         
         try {
             const response = await apiRequest('/projects');
-            console.log(response);
-            const data = await response.json();
-
-            if (data.success) {
-                this.renderProjectsTable(data.projects);
+            console.log('📡 Response received:', response);
+           
+            // Vérifier si la réponse est un tableau (données directes) ou un objet avec success
+            let projects = [];
+            
+            if (Array.isArray(response)) {
+                // Réponse directe (tableau de projets)
+                projects = response;
+                console.log('📊 Projects (array format):', projects);
+            } else if (response.success && response.data) {
+                // Format standard avec success
+                projects = response.data;
+                console.log('📊 Projects (object format):', projects);
+            } else if (response.success && Array.isArray(response.projects)) {
+                // Alternative : response.projects
+                projects = response.projects;
+                console.log('📊 Projects (projects field):', projects);
             } else {
-                this.showError('Erreur lors du chargement des projets');
+                throw new Error(response.error || 'Format de réponse invalide');
             }
+            
+            this.renderProjectsTable(projects);
+            this.updateStatsDisplay({
+                total: projects.length,
+                pending: projects.filter(p => p.status === 'submitted').length,
+                validated: projects.filter(p => p.status === 'validated').length,
+                rejected: projects.filter(p => p.status === 'rejected').length
+            });
         } catch (error) {
             console.error('Erreur lors du chargement:', error);
             this.showError('Erreur de connexion');
@@ -105,14 +125,36 @@ class ProjectValidationManager {
     renderProjectsTable(projects) {
         const tbody = document.getElementById('projectsTable');
         
-        if (!projects || projects.length === 0) {
+        // Traiter les critères d'évaluation (convertir string en objet si nécessaire)
+        projects = projects.map(project => {
+            if (typeof project.evaluation_criteria === 'string') {
+                try {
+                    project.evaluation_criteria = JSON.parse(project.evaluation_criteria);
+                } catch (e) {
+                    console.warn('Erreur parsing evaluation_criteria pour projet', project.id, e);
+                    project.evaluation_criteria = [];
+                }
+            }
+            return project;
+        });
+        
+        console.log('📋 Projets traités pour affichage:', projects);
+        
+        // Filtrer les projets évaluables (completed = soumis, ongoing = en cours mais évaluable pour test)
+        const evaluableProjects = projects.filter(p => 
+            ['ongoing', 'completed', 'submitted'].includes(p.status)
+        );
+        
+        console.log('📊 Projets évaluables:', evaluableProjects);
+        
+        if (!evaluableProjects || evaluableProjects.length === 0) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="8" class="text-center py-4">
                         <div class="empty-state">
                             <i class="fas fa-clipboard-check fa-3x text-muted mb-3"></i>
                             <h4>Aucun projet à évaluer</h4>
-                            <p>Tous les projets soumis ont été traités</p>
+                            <p>Aucun projet disponible pour l'évaluation</p>
                         </div>
                     </td>
                 </tr>
@@ -120,58 +162,150 @@ class ProjectValidationManager {
             return;
         }
 
-        tbody.innerHTML = projects.map(project => `
-            <tr data-project-id="${project.id}">
-                <td>
-                    <div class="project-info">
-                        <strong>${project.title}</strong>
-                        ${project.description ? `<br><small class="text-muted">${this.truncateText(project.description, 60)}</small>` : ''}
+        tbody.innerHTML = evaluableProjects.map((project, index) => `
+            <tr data-project-id="${project.id}" class="group hover:bg-gray-50 transition-all duration-200 ${this.getProjectRowClass(project.status)}">
+                <td class="px-4 py-4 border-b border-gray-200">
+                    <div class="max-w-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <h6 class="flex items-center text-sm font-semibold text-gray-900 mb-0">
+                                <i class="fas fa-folder-open text-blue-500 mr-2"></i>
+                                ${project.name}
+                            </h6>
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-purple-500 to-blue-600 text-white">
+                                #${project.id}
+                            </span>
+                        </div>
+                        ${project.description ? `
+                            <p class="text-xs text-gray-600 leading-relaxed mb-0">
+                                ${this.truncateText(project.description, 80)}
+                            </p>
+                        ` : ''}
                     </div>
                 </td>
-                <td>
-                    <div class="team-info">
-                        <span class="team-badge">${project.team_name}</span>
-                        <br><small>${project.team_members_count} membres</small>
+                <td class="px-4 py-4 border-b border-gray-200 text-center">
+                    <div class="space-y-2">
+                        <div>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium text-white ${this.getTailwindTeamBadgeColor(index)}">
+                                <i class="fas fa-users mr-1"></i>
+                                ${project.team_name}
+                            </span>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            <i class="fas fa-hashtag mr-1"></i>
+                            Équipe ${project.team_id}
+                        </div>
                     </div>
                 </td>
-                <td>
-                    <span class="challenge-badge ${project.challenge_difficulty}">
-                        ${project.challenge_title}
+                <td class="px-4 py-4 border-b border-gray-200">
+                    <div class="text-center space-y-2">
+                        <div>
+                            <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+                                <i class="fas fa-trophy mr-1"></i>
+                                ${this.truncateText(project.challenge_title, 30)}
+                            </span>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>
+                            ${project.hackathon_name}
+                        </div>
+                    </div>
+                </td>
+                <td class="px-4 py-4 border-b border-gray-200">
+                    <div class="flex flex-wrap justify-center gap-1">
+                        ${project.repository_url ? `
+                            <div class="flex items-center px-2 py-1 bg-gray-900 text-white rounded-md text-xs font-medium">
+                                <i class="fab fa-github mr-1"></i>
+                                <span>GitHub</span>
+                            </div>
+                        ` : ''}
+                        ${project.demo_url ? `
+                            <div class="flex items-center px-2 py-1 bg-green-600 text-white rounded-md text-xs font-medium">
+                                <i class="fas fa-external-link-alt mr-1"></i>
+                                <span>Démo</span>
+                            </div>
+                        ` : ''}
+                        ${project.zip_path ? `
+                            <div class="flex items-center px-2 py-1 bg-blue-600 text-white rounded-md text-xs font-medium">
+                                <i class="fas fa-file-archive mr-1"></i>
+                                <span>ZIP</span>
+                            </div>
+                        ` : ''}
+                        ${project.documentation_url ? `
+                            <div class="flex items-center px-2 py-1 bg-amber-600 text-white rounded-md text-xs font-medium">
+                                <i class="fas fa-book mr-1"></i>
+                                <span>Docs</span>
+                            </div>
+                        ` : ''}
+                        ${!project.repository_url && !project.demo_url && !project.zip_path && !project.documentation_url ? `
+                            <div class="flex items-center px-2 py-1 bg-gray-200 text-gray-600 rounded-md text-xs">
+                                <i class="fas fa-minus-circle mr-1"></i>
+                                <span>Aucun</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </td>
+                <td class="px-4 py-4 border-b border-gray-200">
+                    <div class="flex justify-center">
+                        ${project.score ? `
+                            <div class="w-16 h-16 rounded-full border-4 ${this.getTailwindScoreColor(project.score)} bg-white flex flex-col items-center justify-center shadow-sm">
+                                <span class="text-lg font-bold ${this.getTailwindScoreTextColor(project.score)}">${project.score}</span>
+                                <span class="text-xs opacity-70 ${this.getTailwindScoreTextColor(project.score)}">/100</span>
+                            </div>
+                        ` : `
+                            <div class="flex flex-col items-center text-amber-600">
+                                <i class="fas fa-clock text-xl mb-1"></i>
+                                <span class="text-xs text-gray-500">En attente</span>
+                            </div>
+                        `}
+                    </div>
+                </td>
+                <td class="px-4 py-4 border-b border-gray-200 text-center">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${this.getTailwindStatusColor(project.status)}">
+                        ${this.getStatusIcon(project.status)}
+                        <span class="ml-1 uppercase tracking-wider">${this.getStatusLabel(project.status)}</span>
                     </span>
                 </td>
-                <td>
-                    <div class="deliverables">
-                        ${project.repository_url ? '<i class="fab fa-github text-primary" title="Repository GitHub"></i>' : ''}
-                        ${project.demo_url ? '<i class="fas fa-external-link-alt text-success" title="Démo en ligne"></i>' : ''}
-                        ${project.zip_path ? '<i class="fas fa-file-archive text-info" title="Archive ZIP"></i>' : ''}
-                        ${project.documentation_url ? '<i class="fas fa-book text-warning" title="Documentation"></i>' : ''}
+                <td class="px-4 py-4 border-b border-gray-200 text-center">
+                    <div class="space-y-1">
+                        <div class="text-sm font-medium text-gray-700">
+                            ${this.formatDate(project.created_at)}
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            ${this.getTimeAgo(project.created_at)}
+                        </div>
                     </div>
                 </td>
-                <td>
-                    <div class="score-display">
-                        ${project.current_score ? `
-                            <span class="score-badge ${this.getScoreClass(project.current_score)}">${project.current_score}/100</span>
-                        ` : '<span class="text-muted">Non évalué</span>'}
-                    </div>
-                </td>
-                <td>
-                    <span class="status-badge ${project.status}">${this.getStatusLabel(project.status)}</span>
-                </td>
-                <td>
-                    <small>${this.formatDate(project.submitted_at)}</small>
-                </td>
-                <td>
-                    <div class="action-buttons">
+                <td class="px-4 py-4 border-b border-gray-200">
+                    <div class="flex items-center justify-center space-x-2">
                         <button onclick="validationManager.openEvaluationModal(${project.id})" 
-                                class="btn btn-primary btn-sm" 
-                                title="Évaluer le projet">
-                            <i class="fas fa-star"></i>
+                                class="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-white transition-colors duration-200 ${project.score ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-600 hover:bg-amber-700'}" 
+                                title="${project.score ? 'Modifier l\'évaluation' : 'Évaluer le projet'}">
+                            <i class="fas ${project.score ? 'fa-edit' : 'fa-star'} mr-1"></i>
+                            <span class="hidden sm:inline">${project.score ? 'Modifier' : 'Évaluer'}</span>
                         </button>
                         <button onclick="validationManager.viewProjectDetails(${project.id})" 
-                                class="btn btn-outline-info btn-sm" 
-                                title="Voir détails">
+                                class="inline-flex items-center p-2 border border-gray-300 rounded-md text-gray-600 bg-white hover:bg-gray-50 hover:text-gray-700 transition-colors duration-200" 
+                                title="Voir les détails du projet">
                             <i class="fas fa-eye"></i>
                         </button>
+                        <div class="relative inline-block">
+                            <button class="inline-flex items-center p-2 border border-gray-300 rounded-md text-gray-600 bg-white hover:bg-gray-50 transition-colors duration-200" 
+                                    onclick="toggleDropdown(${project.id})">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div id="dropdown-${project.id}" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                                <div class="py-1">
+                                    <a href="#" onclick="validationManager.downloadProject(${project.id})" 
+                                       class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-download mr-2"></i>Télécharger
+                                    </a>
+                                    <a href="#" onclick="validationManager.viewHistory(${project.id})" 
+                                       class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-history mr-2"></i>Historique
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </td>
             </tr>
@@ -455,7 +589,6 @@ class ProjectValidationManager {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.getAuthToken()}`
                 },
                 body: JSON.stringify(evaluationData)
             });
@@ -560,12 +693,70 @@ class ProjectValidationManager {
     getStatusLabel(status) {
         const labels = {
             'submitted': 'Soumis',
-            'in_evaluation': 'En évaluation',
+            'in_evaluation': 'En évaluation', 
             'validated': 'Validé',
             'rejected': 'Rejeté',
-            'needs_revision': 'Révision demandée'
+            'needs_revision': 'Révision demandée',
+            'ongoing': 'En cours',
+            'completed': 'Terminé'
         };
         return labels[status] || status;
+    }
+
+    getStatusIcon(status) {
+        const icons = {
+            'submitted': 'fas fa-paper-plane',
+            'in_evaluation': 'fas fa-hourglass-half',
+            'validated': 'fas fa-check-circle',
+            'rejected': 'fas fa-times-circle',
+            'needs_revision': 'fas fa-exclamation-triangle',
+            'ongoing': 'fas fa-play-circle',
+            'completed': 'fas fa-flag-checkered'
+        };
+        return `<i class="${icons[status] || 'fas fa-question-circle'}"></i>`;
+    }
+
+    getProjectRowClass(status) {
+        const classes = {
+            'submitted': 'row-submitted',
+            'in_evaluation': 'row-evaluating',
+            'validated': 'row-validated', 
+            'rejected': 'row-rejected',
+            'needs_revision': 'row-revision',
+            'ongoing': 'row-ongoing',
+            'completed': 'row-completed'
+        };
+        return classes[status] || 'row-default';
+    }
+
+    getTeamBadgeColor(index) {
+        const colors = ['primary', 'success', 'info', 'warning', 'secondary', 'dark'];
+        return colors[index % colors.length];
+    }
+
+    getScoreClass(score) {
+        if (score >= 80) return 'excellent';
+        if (score >= 60) return 'good';
+        if (score >= 40) return 'average';
+        return 'poor';
+    }
+
+    truncateText(text, maxLength) {
+        if (!text) return '';
+        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+
+    getTimeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) return "Aujourd'hui";
+        if (diffDays === 1) return "Hier";
+        if (diffDays < 7) return `Il y a ${diffDays} jours`;
+        if (diffDays < 30) return `Il y a ${Math.floor(diffDays / 7)} semaines`;
+        return `Il y a ${Math.floor(diffDays / 30)} mois`;
     }
 
     formatDate(dateString) {

@@ -183,18 +183,36 @@ try {
             }
             break;
 
-        case 'participants':
-            $controller = new ParticipantController($db, $tokenManager);
-            // Route /api/participant
-            if ($method !== 'POST') {
-                throw new Exception('Méthode non autorisée', 405);
-            }
-            if ($id && $action === 'register-team' && $method === 'POST') {
-                // /api/participants/{hackathon_id}/register-team
-                $controller->registerTeam((int)$id, $input);
-            }
-            break;
-
+            case 'participants':
+                $controller = new ParticipantController($db, $tokenManager);
+                
+                // Récupérer la méthode HTTP
+                $method = $_SERVER['REQUEST_METHOD'];
+                
+                // Route: GET /api/participants/{hackathon_id}
+                if ($id && $method === 'GET' && !$action) {
+                    $controller->index($id);
+                }
+                // Route: POST /api/participants/{hackathon_id}
+                elseif ($id && $method === 'POST' && !$action) {
+                    $controller->register($id);
+                }
+                // Route: POST /api/participants/{hackathon_id}/register-team
+                elseif ($id && $action === 'register-team' && $method === 'POST') {
+                    $controller->registerTeam($id, $input);
+                }
+                elseif ($id && $action === 'unregister-team' && $method === 'POST') {
+                    $controller->unregisterTeam($id, $input['team_id']);
+                }
+                // Route: POST /api/participants/{participant_id}/status
+                elseif ($id && $action === 'status' && $method === 'POST') {
+                    $controller->updateStatus($id, $input);
+                }
+                // Route non reconnue
+                else {
+                    throw new Exception('Endpoint non trouvé', 404);
+                }
+                break;
         case 'phases':
             $controller = new PhaseController($db, $tokenManager);
 
@@ -544,6 +562,7 @@ try {
 
                     switch ($action) {
                         case 'phases':
+                            // Route /api/scores/{hackathon_id}/{action}
                             $controller->getPhases((int)$id);
                             break;
                         case 'leaderboard':
@@ -872,6 +891,7 @@ try {
                         }
                         $controller->update($id, $input);
                     } elseif ($method === 'DELETE') {
+                        // Routes DELETE /api/hackathons/{id} non autorisées
                         jsonResponse(['success' => false, 'error' => 'Action non autorisée. Il est interdit de supprimer un hackathon quelque soit le rôle !'], 405);
                         // $controller->delete($id);
                     } else {
@@ -879,6 +899,22 @@ try {
                     }
                 } else {
                     switch ($action) {
+                        case 'leaderboard':
+                            // Route /api/hackathons/{hackathon_id}/leaderboard
+                            $controller->getLeaderboard($id);
+                            break;
+                        case 'participants':
+                            // Route /api/hackathons/{hackathon_id}/participants
+                            $controller->getHackathonParticipants($id);
+                            break;
+                        case 'challenges':
+                            // Route /api/hackathons/{hackathon_id}/challenges
+                            $controller->getChallenges($id);
+                            break;
+                        case 'registrations':
+                            // Route /api/hackathons/{hackathon_id}/registrations
+                            $controller->getRegistrations($id);
+                            break;
                         case 'teams':
                             $controller->getTeams($id);
                             break;

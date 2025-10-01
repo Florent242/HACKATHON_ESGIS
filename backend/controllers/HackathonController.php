@@ -73,17 +73,23 @@ class HackathonController extends Controller
             } catch (Exception $e) {
                 $current_user = $input['created_by'] ?? null;
             }
-    
+
             if (empty($input)) {
                 throw new Exception('Aucune donnée reçue');
             }
             // Validation des champs obligatoires
             $requiredFields = [
-                'name', 'description', 'start_date', 'end_date', 
-                'type', 'status', 'visibility', 'created_by'
+                'name',
+                'description',
+                'start_date',
+                'end_date',
+                'type',
+                'status',
+                'visibility',
+                'created_by'
             ];
             $this->validateRequiredFields($input, $requiredFields);
-    
+
             // Préparation des données
             $data = [
                 'name' => $input['name'],
@@ -105,29 +111,31 @@ class HackathonController extends Controller
                 'eligibility_criteria' => $input['eligibility_criteria'] ?? [],
                 'prizes' => $input['prizes'] ?? []
             ];
-    
+
             // Validation des dates
             if (strtotime($data['end_date']) <= strtotime($data['start_date'])) {
                 throw new Exception('La date de fin doit être postérieure à la date de début');
             }
-    
-            if (!empty($data['registration_deadline']) && 
-                strtotime($data['registration_deadline']) > strtotime($data['start_date'])) {
+
+            if (
+                !empty($data['registration_deadline']) &&
+                strtotime($data['registration_deadline']) > strtotime($data['start_date'])
+            ) {
                 throw new Exception('La date limite d\'inscription doit être antérieure à la date de début');
             }
-    
+
             // Validation du type
             $validTypes = ['ctf', 'dev', 'mixte'];
             if (!in_array($data['type'], $validTypes)) {
                 throw new Exception('Type de hackathon invalide');
             }
-    
+
             // Validation du statut
             $validStatuses = ['draft', 'upcoming', 'active', 'ended', 'cancelled'];
             if (!in_array($data['status'], $validStatuses)) {
                 throw new Exception('Statut invalide');
             }
-    
+
             // Validation de la visibilité
             $validVisibilities = ['public', 'private', 'unlisted'];
             if (!in_array($data['visibility'], $validVisibilities)) {
@@ -139,8 +147,8 @@ class HackathonController extends Controller
 
             $ip_address = $_SERVER['REMOTE_ADDR'];
             $user_agent = $_SERVER['HTTP_USER_AGENT'];
-            $this->logActivity('hackathon_create', 'Création d\'un hackathon par un admin : '. $current_user, $hackathonId, 'info', $ip_address, $user_agent);
-    
+            $this->logActivity('hackathon_create', 'Création d\'un hackathon par un admin : ' . $current_user, $hackathonId, 'info', $ip_address, $user_agent);
+
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Hackathon créé avec succès',
@@ -174,37 +182,50 @@ class HackathonController extends Controller
             if (empty($input)) {
                 throw new Exception('Aucune donnée reçue');
             }
-    
+
             // Récupération du hackathon existant
             $existingHackathon = $this->hackathon->find($id);
             if (!$existingHackathon) {
                 throw new Exception('Hackathon non trouvé');
             }
-    
+
             // Liste des champs autorisés à être mis à jour
             $updatableFields = [
-                'name', 'slug', 'theme', 'description', 'type', 'status', 'visibility',
-                'start_date', 'end_date', 'registration_deadline', 'location',
-                'max_teams', 'min_team_members', 'max_team_members',
-                'rules', 'eligibility_criteria', 'prizes'
+                'name',
+                'slug',
+                'theme',
+                'description',
+                'type',
+                'status',
+                'visibility',
+                'start_date',
+                'end_date',
+                'registration_deadline',
+                'location',
+                'max_teams',
+                'min_team_members',
+                'max_team_members',
+                'rules',
+                'eligibility_criteria',
+                'prizes'
             ];
-    
+
             // Filtrage des données
             $data = $this->filterData($input, $updatableFields);
-    
+
             if (empty($data)) {
                 throw new Exception('Aucune donnée à mettre à jour');
             }
-    
+
             // Validation des dates
             if (isset($data['start_date']) || isset($data['end_date'])) {
                 $startDate = isset($data['start_date']) ? $data['start_date'] : $existingHackathon['start_date'];
                 $endDate = isset($data['end_date']) ? $data['end_date'] : $existingHackathon['end_date'];
-    
+
                 if (strtotime($endDate) <= strtotime($startDate)) {
                     throw new Exception('La date de fin doit être postérieure à la date de début');
                 }
-    
+
                 // Validation de la date limite d'inscription
                 if (isset($data['registration_deadline'])) {
                     if (strtotime($data['registration_deadline']) > strtotime($startDate)) {
@@ -212,7 +233,7 @@ class HackathonController extends Controller
                     }
                 }
             }
-    
+
             // Validation des types énumérés
             if (isset($data['type'])) {
                 $validTypes = ['ctf', 'dev', 'mixte'];
@@ -220,36 +241,35 @@ class HackathonController extends Controller
                     throw new Exception('Type de hackathon invalide');
                 }
             }
-    
+
             if (isset($data['status'])) {
                 $validStatuses = ['draft', 'upcoming', 'inactive', 'active', 'ended', 'cancelled'];
                 if (!in_array($data['status'], $validStatuses)) {
                     throw new Exception('Statut invalide');
                 }
             }
-    
+
             if (isset($data['visibility'])) {
                 $validVisibilities = ['public', 'private', 'unlisted'];
                 if (!in_array($data['visibility'], $validVisibilities)) {
                     throw new Exception('Visibilité invalide');
                 }
             }
-    
+
             // Mise à jour du hackathon
             $this->hackathon->update($id, $data);
-    
+
             // Récupération des données mises à jour
             $updatedHackathon = $this->hackathon->find($id);
-    
+
             $ip_address = $_SERVER['REMOTE_ADDR'];
             $user_agent = $_SERVER['HTTP_USER_AGENT'];
-            $this->logActivity('hackathon_update', 'Mise a jour d\'un hackathon par un admin : '. $current_user, $updatedHackathon, 'info', $ip_address, $user_agent);
+            $this->logActivity('hackathon_update', 'Mise a jour d\'un hackathon par un admin : ' . $current_user, $updatedHackathon, 'info', $ip_address, $user_agent);
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Hackathon mis à jour avec succès',
                 'data' => $updatedHackathon
             ]);
-    
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
@@ -279,7 +299,7 @@ class HackathonController extends Controller
             $current_user = $this->tokenManager->getCurrentUserId();
             $ip_address = $_SERVER['REMOTE_ADDR'];
             $user_agent = $_SERVER['HTTP_USER_AGENT'];
-            $this->logActivity('hackathon_delete', 'Suppression d\'un hackathon par un admin : '. $current_user, $id, 'info', $ip_address, $user_agent);
+            $this->logActivity('hackathon_delete', 'Suppression d\'un hackathon par un admin : ' . $current_user, $id, 'info', $ip_address, $user_agent);
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Hackathon supprimé avec succès'
@@ -536,6 +556,85 @@ class HackathonController extends Controller
             $this->jsonResponse([
                 'success' => true,
                 'data' => $projects
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function getHackathonParticipants($id)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            $participants = $this->hackathon->getHackathonParticipants($id);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $participants
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function getLeaderboard($hackathonId, $phaseId = null)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            $leaderboard = $this->hackathon->getLeaderboard(
+                (int)$hackathonId,
+                $phaseId ? (int)$phaseId : null
+            );
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $leaderboard
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getChallenges($id)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            $challenges = $this->hackathon->getChallenges($id);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $challenges
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function getRegistrations($id)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            $registrations = $this->hackathon->getRegistrations($id);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $registrations
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([

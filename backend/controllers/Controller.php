@@ -173,7 +173,7 @@ class Controller
     protected function checkUserStatus($userId)
     {
         if (empty($userId)) {
-            throw new Exception('ID utilisateur manquant', 400);
+            throw new Exception('ID utilisateur manquant - controller', 400);
         }
 
         $user = $this->getUserStatus($userId);
@@ -306,7 +306,7 @@ protected function isAccountLocked($user)
     /**
      * Récupère le header Authorization
      */
-    private function getAuthorizationHeader(): ?string
+    protected function getAuthorizationHeader(): ?string
     {
         $headers = null;
 

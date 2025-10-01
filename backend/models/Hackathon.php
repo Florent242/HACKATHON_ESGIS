@@ -6,15 +6,22 @@ use Exception;
 use PDO;
 use PDOException;
 use DateTime;
+use Auth\Model\Notification;
+
+if (!class_exists('Notification')) {
+    require_once __DIR__ . '/Notification.php';
+}
 
 class Hackathon
 {
     private $db;
     private $table = 'hackathons';
+    private $notification;
 
     public function __construct($db)
     {
         $this->db = $db;
+        $this->notification = new Notification($db);
     }
 
     /**
@@ -467,6 +474,43 @@ class Hackathon
     }
 
     /**
+     * Met à jour le statut d'un participant
+     * @param int $participantId ID du participant
+     * @param string $status Statut du participant
+     * @return bool True si la mise à jour a réussi, false sinon
+     */
+    // public function updateStatus($participantId, $status)
+    // {
+    //     // Vérifier que le statut est valide
+    //     $allowedStatuses = ['pending', 'accepted', 'rejected', 'disqualified'];
+    //     if (!in_array($status, $allowedStatuses)) {
+    //         throw new Exception('Statut invalide');
+    //     }
+
+    //     // Mettre à jour le statut dans la base de données
+    //     $stmt = $this->db->prepare("
+    //     UPDATE hackathon_participants 
+    //     SET status = :status 
+    //     WHERE id = :id
+    // ");
+
+    //     $success = $stmt->execute([
+    //         ':id' => $participantId,
+    //         ':status' => $status
+    //     ]);
+
+    //     if ($success) {
+    //         // Envoyer une notification si nécessaire
+    //         $this->notification->create([
+    //             'user_id' => $participantId,
+    //             'title' => 'Statut mis à jour',
+    //             'message' => 'Votre statut de participation au hackathon "'. $hackathonName . '" a été mis à jour',
+    //             'type' => 'success'
+    //         ]);
+    //     }
+    // }
+
+    /**
      * Récupère les équipes d'un hackathon
      * @param int $id ID du hackathon
      * @return array Liste des équipes
@@ -508,7 +552,12 @@ class Hackathon
     public function getHackathonParticipants($id)
     {
         try {
-            $query = "SELECT hp.* FROM hackathon_participants hp WHERE hp.hackathon_id = :hackathon_id AND hp.participation_status = 'accepted' ORDER BY hp.created_at";
+            $query = "SELECT hp.*, u.username, u.fullname, u.email, u.school 
+            FROM hackathon_participants hp 
+            INNER JOIN users u ON hp.user_id = u.id
+            WHERE hp.hackathon_id = :hackathon_id 
+            -- AND hp.participation_status = 'accepted' 
+            ORDER BY hp.joined_at";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':hackathon_id', $id, PDO::PARAM_INT);
             $stmt->execute();
@@ -516,10 +565,186 @@ class Hackathon
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
             error_log('Erreur lors de la récupération des participants: ' . $e->getMessage());
-            return [];
+            throw new Exception(
+                "Erreur lors de la récupération des participants"
+                    // Pour le debug
+                    . $e->getMessage()
+            );
         }
     }
 
+    // Hackathon.php
+
+    /**
+     * Récupère tous les participants d'un hackathon
+     */
+    public function getParticipants($hackathonId)
+    {
+        $query = "
+        SELECT 
+            u.id, 
+            u.username,
+            u.fullname,
+            u.email,
+            u.profile_picture,
+            t.name as team_name
+        FROM users u
+        INNER JOIN team_members tm ON u.id = tm.user_id
+        INNER JOIN teams t ON tm.team_id = t.id
+        WHERE t.hackathon_id = :hackathon_id
+        ORDER BY t.name, u.fullname
+    ";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->execute(['hackathon_id' => $hackathonId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getChallenges($hackathonId)
+    {
+        try {
+            $query = "
+                SELECT 
+                    c.*,
+                    (
+                        SELECT COUNT(DISTINCT vf.id) 
+                        FROM validated_flags vf 
+                        WHERE vf.challenge_id = c.id
+                    ) as flag_submissions,
+                    (
+                        SELECT COUNT(DISTINCT cs.id) 
+                        FROM challenge_submissions cs 
+                        WHERE cs.challenge_id = c.id
+                    ) as challenge_submissions,
+                    (
+                        SELECT COUNT(DISTINCT p.id) 
+                        FROM projects p 
+                        WHERE p.challenge_id = c.id
+                    ) as project_submissions
+                FROM challenges c
+                WHERE c.hackathon_id = :hackathon_id
+                ORDER BY c.created_at DESC
+            ";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->execute(['hackathon_id' => $hackathonId]);
+            $challenges = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Formater les données pour le frontend
+            return array_map(function ($challenge) {
+                // Calculer le total des soumissions
+                $totalSubmissions =
+                    (int)$challenge['flag_submissions'] +
+                    (int)$challenge['challenge_submissions'] +
+                    (int)$challenge['project_submissions'];
+
+                return [
+                    'id' => $challenge['id'],
+                    'title' => $challenge['title'],
+                    'description' => $challenge['description'],
+                    'difficulty' => $challenge['difficulty'],
+                    'type' => $challenge['type'],
+                    'points' => (int)$challenge['points'],
+                    'category' => $challenge['category'],
+                    'submission_count' => $totalSubmissions,
+                    'submissions' => [
+                        'flags' => (int)$challenge['flag_submissions'],
+                        'challenges' => (int)$challenge['challenge_submissions'],
+                        'projects' => (int)$challenge['project_submissions']
+                    ],
+                    'is_active' => (bool)$challenge['is_active'],
+                    'created_at' => $challenge['created_at'],
+                    'updated_at' => $challenge['updated_at']
+                ];
+            }, $challenges);
+        } catch (Exception $e) {
+            error_log('Erreur lors de la récupération des défis: ' . $e->getMessage());
+            throw new Exception("Erreur lors de la récupération des défis");
+        }
+    }
+
+    public function getLeaderboard($hackathonId, $phaseId = null)
+    {
+        try {
+            $params = [':hackathon_id' => $hackathonId];
+            $phaseCondition = '';
+
+            if ($phaseId) {
+                $phaseCondition = 'AND s.phase_id = :phase_id';
+                $params[':phase_id'] = $phaseId;
+            }
+
+            $query = "
+            SELECT 
+                t.id as team_id,
+                t.name as team_name,
+                COALESCE(SUM(s.total_points), 0) as total_score,
+                COUNT(DISTINCT s.id) as submissions_count
+            FROM teams t
+            LEFT JOIN scores s ON t.id = s.team_id
+            WHERE t.hackathon_id = :hackathon_id
+            $phaseCondition
+            GROUP BY t.id, t.name
+            ORDER BY total_score DESC, submissions_count DESC
+        ";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->execute($params);
+
+            // Ajouter le rang à chaque équipe
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $rank = 1;
+
+            return array_map(function ($row) use (&$rank) {
+                $row['rank'] = $rank++;
+                return $row;
+            }, $results);
+        } catch (Exception $e) {
+            error_log('Erreur lors de la récupération du classement: ' . $e->getMessage());
+            throw new Exception("Erreur lors de la récupération du classement" . $e->getMessage());
+        }
+    }
+
+    /**
+     * Récupère toutes les inscriptions à un hackathon
+     */
+    public function getRegistrations($hackathonId)
+    {
+        try {
+            $query = "
+            SELECT 
+                ht.*,
+                t.name as team_name,
+                t.leader_id,
+                u.id as user_id,
+                u.username,
+                u.fullname,
+                u.email,
+                u.profile_picture,
+                CASE 
+                    WHEN t.leader_id = u.id THEN 1 
+                    ELSE 0 
+                END as is_leader
+            FROM hackathon_teams ht
+            INNER JOIN teams t ON ht.team_id = t.id
+            INNER JOIN team_members tm ON t.id = tm.team_id
+            INNER JOIN users u ON tm.user_id = u.id
+            WHERE ht.hackathon_id = :hackathon_id AND ht.status = 'pending'
+            ORDER BY ht.registered_at DESC, t.name, is_leader DESC
+        ";
+
+            $stmt = $this->db->prepare($query);
+            $stmt->execute(['hackathon_id' => $hackathonId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log('Erreur lors de la récupération des inscriptions: ' . $e->getMessage());
+            throw new Exception(
+                "Erreur lors de la récupération des inscriptions"
+                // Pour le debug
+                . $e->getMessage()
+            );
+        }
+    }
     /**
      * Récupère les projets d'un hackathon
      * @param int $id ID du hackathon
@@ -536,7 +761,11 @@ class Hackathon
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération des projets: ' . $e->getMessage());
-            return [];
+            throw new Exception(
+                "Erreur lors de la récupération des projets"
+                // Pour le debug
+                // . $e->getMessage()
+            );
         }
     }
 

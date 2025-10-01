@@ -394,26 +394,24 @@ class ParticipantController extends Controller
     }
 
     // Mettre à jour le statut d'un participant
-    public function updateStatus($id)
+    public function updateStatus($id, $input)
     {
         try {
             $this->validateMethod('POST');
 
-            if (!hasRole('admin')) {
+            $currentUser = $this->tokenManager->getCurrentUserId();
+            if (!$this->isAdmin($currentUser)) {
                 throw new Exception('Non autorisé');
             }
 
-            $requiredFields = ['statut'];
-            $this->validateRequiredFields($_POST, $requiredFields);
+            $requiredFields = ['status'];
+            $this->validateRequiredFields($input, $requiredFields);
 
-            if (!in_array($_POST['statut'], ['en_attente', 'accepte', 'refuse'])) {
+            if (!in_array($input['status'], ['pending', 'accepted', 'rejected'])) {
                 throw new Exception('Statut invalide');
             }
 
-            $this->participant->update($id, [
-                'statut' => $_POST['statut'],
-                'updated_at' => date('Y-m-d H:i:s')
-            ]);
+            $this->participant->updateStatus($id, $input['status']);
 
             $this->jsonResponse([
                 'success' => true,
@@ -433,7 +431,8 @@ class ParticipantController extends Controller
         try {
             $this->validateMethod('POST');
 
-            if (!hasRole('admin')) {
+            $currentUser = $this->tokenManager->getCurrentUserId();
+            if (!$this->isAdmin($currentUser)) {
                 throw new Exception('Non autorisé');
             }
 
@@ -459,9 +458,9 @@ class ParticipantController extends Controller
 
             $stats = [
                 'total' => $this->participant->countByStatus($hackathonId, null),
-                'en_attente' => $this->participant->countByStatus($hackathonId, 'en_attente'),
-                'accepte' => $this->participant->countByStatus($hackathonId, 'accepte'),
-                'refuse' => $this->participant->countByStatus($hackathonId, 'refuse')
+                'pending' => $this->participant->countByStatus($hackathonId, 'pending'),
+                'accepted' => $this->participant->countByStatus($hackathonId, 'accepted'),
+                'refused' => $this->participant->countByStatus($hackathonId, 'refused')
             ];
 
             $this->jsonResponse([

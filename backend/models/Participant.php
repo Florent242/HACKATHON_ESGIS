@@ -161,7 +161,7 @@ class Participant
             throw new Exception(
                 "Erreur lors de l'inscription de l'équipe. Si le problème persiste, contactez le support. "
                 // pour le debugage
-                 . $e->getMessage()
+                //  . $e->getMessage()
             );
         }
     }
@@ -253,12 +253,8 @@ class Participant
     public function updateStatus($id, $status)
     {
         try {
-            if (!in_array($status, ['pending', 'approved', 'rejected'])) {
-                throw new Exception("Statut invalide");
-            }
-
             $sql = "UPDATE {$this->table}
-                    SET status = :status, updated_at = NOW()
+                    SET participation_status = :status, joined_at = NOW()
                     WHERE id = :id";
 
             $stmt = $this->db->prepare($sql);
@@ -304,7 +300,7 @@ class Participant
                     WHERE p.hackathon_id = :hackathon_id";
 
             if ($status) {
-                $sql .= " AND p.status = :status";
+                $sql .= " AND p.participation_status = :status";
             }
 
             $sql .= " ORDER BY p.created_at DESC";
@@ -357,10 +353,10 @@ class Participant
         try {
             if ($specificStatus === null) {
                 // Version originale qui retourne tous les statuts
-                $sql = "SELECT status, COUNT(*) as count
+                $sql = "SELECT participation_status, COUNT(*) as count
                         FROM {$this->table}
                         WHERE hackathon_id = :hackathon_id
-                        GROUP BY status";
+                        GROUP BY participation_status";
 
                 $stmt = $this->db->prepare($sql);
                 $stmt->execute([':hackathon_id' => $hackathonId]);
@@ -374,7 +370,7 @@ class Participant
                 $params = [':hackathon_id' => $hackathonId];
 
                 if ($specificStatus !== 'all') {
-                    $sql .= " AND status = :status";
+                    $sql .= " AND participation_status = :status";
                     $params[':status'] = $specificStatus;
                 }
 
@@ -416,7 +412,7 @@ class Participant
             throw new Exception(
                 "Erreur lors de la mise à jour du participant. Si le problème persiste, contactez le support."
                 // pour le debugage
-                //  . $e->getMessage()
+                 . $e->getMessage()
             );
         }
     }

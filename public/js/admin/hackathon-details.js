@@ -243,23 +243,39 @@ async function loadParticipants() {
     if (response.success && response.data && response.data.length > 0) {
       tbody.innerHTML = response.data.map(participant => `
                 <tr>
-                    <td>${participant.name || participant.full_name || 'N/A'}</td>
+                    <td>${participant.username || participant.fullname || 'N/A'}</td>
                     <td>${participant.email}</td>
                     <td>${participant.school || 'N/A'}</td>
-                    <td><span class="status-badge ${participant.status}">${participant.status}</span></td>
+                    <td><span class="status-badge ${participant.participation_status}">${participant.participation_status}</span></td>
                     <td>
-                        <div class="action-buttons">
-                            ${participant.status === 'pending' ? `
-                                <button class="btn-success btn-sm" onclick="updateParticipantStatus(${participant.id}, 'accepted')">
-                                    <i data-lucide="check" class="w-4 h-4"></i>
-                                    <span>Accepter</span>
-                                </button>
-                                <button class="btn-danger btn-sm" onclick="updateParticipantStatus(${participant.id}, 'rejected')">
-                                    <i data-lucide="x" class="w-4 h-4"></i>
-                                    <span>Refuser</span>
-                                </button>
-                            ` : ''}
-                        </div>
+                        <div class="action-buttons flex gap-2">
+                          ${participant.participation_status === 'pending' ? `
+                              <button class="btn-success btn-sm" onclick="updateParticipantStatus(${participant.id}, 'accepted')">
+                                  <i data-lucide="check" class="w-4 h-4"></i>
+                                  <span>Accepter</span>
+                              </button>
+                              <button class="btn-danger btn-sm" onclick="updateParticipantStatus(${participant.id}, 'rejected')">
+                                  <i data-lucide="x" class="w-4 h-4"></i>
+                                  <span>Refuser</span>
+                              </button>
+                          ` : ''}
+                          ${participant.participation_status === 'accepted' ? `
+                              <button class="btn-warning btn-sm" 
+                                      onclick="updateParticipantStatus(${participant.id}, 'rejected')"
+                                      title="Disqualifier le participant">
+                                  <i data-lucide="user-x" class="w-4 h-4"></i>
+                                  <span>Disqualifier</span>
+                              </button>
+                          ` : ''}
+                          ${participant.participation_status === 'rejected' ? `
+                              <button class="btn-primary btn-sm" 
+                                      onclick="updateParticipantStatus(${participant.id}, 'accepted')"
+                                      title="Réintégrer le participant">
+                                  <i data-lucide="user-check" class="w-4 h-4"></i>
+                                  <span>Réintégrer</span>
+                              </button>
+                          ` : ''}
+                      </div>
                     </td>
                 </tr>
             `).join('');
@@ -287,10 +303,10 @@ async function loadChallenges() {
     if (response.success && response.data && response.data.length > 0) {
       tbody.innerHTML = response.data.map(challenge => `
                 <tr>
-                    <td>${challenge.name}</td>
+                    <td>${challenge.title}</td>
                     <td>${challenge.type || 'N/A'}</td>
                     <td>${challenge.points || 0}</td>
-                    <td><span class="status-badge ${challenge.status}">${challenge.status}</span></td>
+                    <td><span class="status-badge ${challenge.is_active}">${challenge.is_active ? 'Actif' : 'Inactif'}</span></td>
                     <td>
                         <div class="action-buttons">
                             <button class="btn-primary btn-sm" onclick="viewChallenge(${challenge.id})">
@@ -361,9 +377,9 @@ async function loadRegistrations() {
     if (response.success && response.data && response.data.length > 0) {
       tbody.innerHTML = response.data.map(registration => `
                 <tr>
-                    <td>${registration.participant_name || registration.name || 'N/A'}</td>
+                    <td>${registration.team_name || registration.name || 'N/A'}</td>
                     <td>${registration.email}</td>
-                    <td>${formatDate(registration.created_at)}</td>
+                    <td>${formatDate(registration.registered_at)}</td>
                     <td>
                         <div class="action-buttons">
                             <button class="btn-success btn-sm" onclick="handleRegistration(${registration.id}, 'accept')">
@@ -420,6 +436,57 @@ function safeJsonParse(jsonString, defaultValue = []) {
   }
 }
 
+async function updateParticipantStatus(participantId, status) {
+  if (!confirm(`Êtes-vous sûr de vouloir ${getStatusActionText(status)} ce participant ?`)) {
+    return;
+  }
+
+  try {
+    const response = await apiRequest(
+      `/participants/${participantId}/status`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status })
+      }
+    );
+
+    if (response.success) {
+      showNotification('Succès', `Participant ${getStatusSuccessText(status)} avec succès`, 'success');
+      await loadParticipants(); // Recharger la liste des participants
+    } else {
+      throw new Error(response.error || 'Erreur lors de la mise à jour du statut');
+    }
+  } catch (error) {
+    console.error('Erreur:', error);
+    showNotification('Erreur', error.message || 'Erreur lors de la mise à jour du statut', 'error');
+  }
+}
+
+// Fonction utilitaire pour les textes des actions
+function getStatusActionText(status) {
+  const actions = {
+    'accepted': 'accepter',
+    'rejected': 'refuser',
+    'disqualified': 'disqualifier',
+    'pending': 'mettre en attente'
+  };
+  return actions[status] || 'modifier le statut de';
+}
+
+// Fonction utilitaire pour les messages de succès
+function getStatusSuccessText(status) {
+  const messages = {
+    'accepted': 'accepté',
+    'rejected': 'refusé',
+    'disqualified': 'disqualifié',
+    'pending': 'mis en attente'
+  };
+  return messages[status] || 'mis à jour';
+}
+
 async function handleEditInfoSubmit(e) {
   e.preventDefault();
   const form = e.target;
@@ -446,7 +513,6 @@ async function handleEditInfoSubmit(e) {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify(formData) // Convertir en chaîne JSON
       }
@@ -547,7 +613,7 @@ async function deletePhase(phaseId) {
   if (!confirm('Êtes-vous sûr de vouloir supprimer cette phase ?')) return;
 
   try {
-    const response = await apiRequest(`/phases/${phaseId}`, { _method: 'DELETE' });
+    const response = await apiRequest(`/phases/${currentHackathonId}/${phaseId}`, { method: 'DELETE' });
 
     if (response.success) {
       showNotification('Succès', 'Phase supprimée', 'success');
@@ -560,24 +626,9 @@ async function deletePhase(phaseId) {
   }
 }
 
-async function updateParticipantStatus(participantId, status) {
-  try {
-    const response = await apiRequest(`/participants/${participantId}`, { status });
-
-    if (response.success) {
-      showNotification('Succès', `Participant ${status === 'accepted' ? 'accepté' : 'refusé'}`, 'success');
-      await loadParticipants();
-    } else {
-      showNotification('Erreur', response.message || response.error || 'Erreur lors de la mise à jour', 'error');
-    }
-  } catch (error) {
-    showNotification('Erreur', 'Erreur de connexion', 'error');
-  }
-}
-
 async function handleRegistration(registrationId, action) {
   try {
-    const response = await apiRequest(`/registrations/${registrationId}`, {
+    const response = await apiRequest(`/participants/${registrationId}`, {
       action,
       status: action === 'accept' ? 'accepted' : 'rejected'
     });
@@ -594,7 +645,7 @@ async function handleRegistration(registrationId, action) {
 }
 
 function viewTeam(teamId) {
-  window.location.href = `/admin/teams#id=${teamId}`;
+  window.location.href = `/admin/equipes#id=${teamId}`;
 }
 
 function viewChallenge(challengeId) {

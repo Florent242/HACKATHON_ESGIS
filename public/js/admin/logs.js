@@ -8,33 +8,6 @@ let currentFilters = {
     search: ''
 };
 
-// Fonction pour obtenir le token
-function getToken() {
-    return localStorage.getItem('token');
-}
-
-// Fonction pour faire des requêtes API
-async function apiRequest(endpoint, options = {}) {
-    const token = getToken();
-    const headers = {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        ...options.headers
-    };
-
-    const response = await fetch(`${API_BASE}${endpoint}`, {
-        ...options,
-        headers
-    });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
-}
-
-
 // Charger les statistiques
 async function loadStats() {
     try {

@@ -34,11 +34,13 @@ if (!class_exists('Auth\Model\Database')) {
 class ScoreController extends Controller
 {
     protected $db;
+    protected $score;
 
     public function __construct($db, $tokenManager)
     {
         parent::__construct($tokenManager);
         $this->db = $db;
+        $this->score = new Score($db);
     }
 
     public function getLeaderboard($hackathon_id, $phase_id)
@@ -46,9 +48,11 @@ class ScoreController extends Controller
         try {
             $this->validateMethod('GET');
 
-            $score = new Score($this->db);
-            $leaderboard = $score->getLeaderboard($hackathon_id, $phase_id);
-
+            $leaderboard = $this->score->getLeaderboard(
+                (int)$hackathon_id,
+                $phase_id ? (int)$phase_id : null
+            );
+    
             jsonResponse([
                 'success' => true,
                 'leaderboard' => $leaderboard
@@ -65,8 +69,7 @@ class ScoreController extends Controller
     {
         try {
             $this->validateMethod('GET');
-            $score = new Score($this->db);
-            $phases = $score->getPhases((int)$hackathon_id);
+            $phases = $this->score->getPhases((int)$hackathon_id);
 
             jsonResponse([
                 'success' => true,
@@ -85,8 +88,7 @@ class ScoreController extends Controller
     {
         try {
             $this->validateMethod('POST');
-            $score = new Score($this->db);
-            $score->updateScore($team_id, $hackathon_id, $phase_id, $input);
+            $this->score->updateScore($team_id, $hackathon_id, $phase_id, $input);
 
             jsonResponse([
                 'success' => true,

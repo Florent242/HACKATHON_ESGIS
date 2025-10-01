@@ -724,13 +724,456 @@ input:focus {
     transition: var(--transition);
 }
 
+/* === STYLES AMÉLIORÉS POUR LE TABLEAU DES PROJETS === */
+
+/* Styles des lignes selon le statut */
+.project-row {
+    transition: all 0.2s ease;
+    border-left: 4px solid transparent;
+}
+
+.project-row:hover {
+    background-color: #f8fafc;
+    transform: translateX(2px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.row-submitted {
+    border-left-color: #3b82f6;
+    background-color: rgba(59, 130, 246, 0.02);
+}
+
+.row-ongoing {
+    border-left-color: #f59e0b;
+    background-color: rgba(245, 158, 11, 0.02);
+}
+
+.row-completed {
+    border-left-color: #10b981;
+    background-color: rgba(16, 185, 129, 0.02);
+}
+
+.row-validated {
+    border-left-color: #059669;
+    background-color: rgba(5, 150, 105, 0.02);
+}
+
+.row-rejected {
+    border-left-color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.02);
+}
+
+/* Styles des cellules */
+.project-cell,
+.team-cell,
+.challenge-cell,
+.deliverables-cell,
+.score-cell,
+.status-cell,
+.date-cell,
+.actions-cell {
+    padding: 16px 12px;
+    vertical-align: middle;
+}
+
+/* Carte d'information du projet */
+.project-info-card {
+    max-width: 300px;
+}
+
+.project-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.project-title {
+    color: #1f2937;
+    font-weight: 600;
+    margin: 0;
+}
+
+.project-id-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.project-description {
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+/* Carte d'information de l'équipe */
+.team-info-card {
+    text-align: center;
+}
+
+.team-badge-container {
+    margin-bottom: 4px;
+}
+
+.team-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 13px;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.team-badge.primary {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+
+.team-badge.success {
+    background: linear-gradient(135deg, #10b981, #047857);
+}
+
+.team-badge.info {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+}
+
+.team-badge.warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.team-badge.secondary {
+    background: linear-gradient(135deg, #6b7280, #374151);
+}
+
+.team-badge.dark {
+    background: linear-gradient(135deg, #1f2937, #111827);
+}
+
+.team-meta {
+    display: block;
+    font-size: 11px;
+}
+
+/* Badge de challenge */
+.challenge-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 16px;
+    font-weight: 500;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.hackathon-meta {
+    margin-top: 4px;
+}
+
+/* Grille des livrables */
+.deliverables-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+}
+
+.deliverable-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.deliverable-item.github {
+    background-color: #24292e;
+    color: white;
+}
+
+.deliverable-item.demo {
+    background-color: #10b981;
+    color: white;
+}
+
+.deliverable-item.archive {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.deliverable-item.docs {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.deliverable-item.empty {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+/* Affichage du score amélioré */
+.score-display-enhanced {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.score-circle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 3px solid;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.score-circle.excellent {
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.score-circle.good {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.score-circle.average {
+    border-color: #f59e0b;
+    color: #f59e0b;
+}
+
+.score-circle.poor {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.score-number {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.score-max {
+    font-size: 10px;
+    font-weight: 500;
+    opacity: 0.7;
+}
+
+.score-pending {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: #f59e0b;
+}
+
+/* Badge de statut moderne */
+.status-badge-modern {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge-modern.submitted {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #1d4ed8;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.status-badge-modern.ongoing {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #d97706;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.status-badge-modern.completed {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: #047857;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.status-badge-modern.validated {
+    background-color: rgba(5, 150, 105, 0.1);
+    color: #065f46;
+    border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.status-badge-modern.rejected {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+/* Affichage des dates */
+.date-info {
+    text-align: center;
+}
+
+.date-primary {
+    font-weight: 500;
+    color: #374151;
+    font-size: 13px;
+}
+
+.date-secondary {
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+/* Boutons d'action améliorés */
+.action-buttons-enhanced {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-evaluate {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-evaluate.pending {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+}
+
+.btn-evaluate.evaluated {
+    background: linear-gradient(135deg, #10b981, #047857);
+    color: white;
+}
+
+.btn-evaluate:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.btn-view {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-view:hover {
+    background: #f3f4f6;
+    color: #374151;
+    border-color: #d1d5db;
+}
+
+.btn-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-more:hover {
+    background: #f9fafb;
+    color: #374151;
+}
+
+/* Animations et effets */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.project-row {
+    animation: fadeInUp 0.3s ease forwards;
+}
+
+.project-row:nth-child(1) { animation-delay: 0.05s; }
+.project-row:nth-child(2) { animation-delay: 0.1s; }
+.project-row:nth-child(3) { animation-delay: 0.15s; }
+.project-row:nth-child(4) { animation-delay: 0.2s; }
+.project-row:nth-child(5) { animation-delay: 0.25s; }
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .deliverables-grid {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .action-buttons-enhanced {
+        flex-direction: column;
+        gap: 4px;
+    }
+}
+
+@media (max-width: 768px) {
+    .project-info-card,
+    .team-info-card,
+    .challenge-info {
+        text-align: center;
+    }
+    
+    .score-circle {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .score-number {
+        font-size: 14px;
+    }
+}
+
 /* Print styles */
 @media print {
 
     .modal,
     .notification,
     .loading-spinner,
-    .btn {
+    .btn,
+    .action-buttons-enhanced {
         display: none !important;
+    }
+    
+    .project-row {
+        border-left: 2px solid #000;
+        page-break-inside: avoid;
     }
 }
