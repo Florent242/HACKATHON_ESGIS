@@ -36,11 +36,7 @@ class Phase {
                         ON hq.phase_id = p.id AND hq.user_id = :uid
                     WHERE p.hackathon_id = :hid
                     AND p.start <= :now
-                    AND p.end >= :now
-                    AND (
-                        p.phase_type = 'open'
-                        OR (p.phase_type = 'qualified' AND hq.user_id IS NOT NULL)
-                    )
+                    AND p.end >= :now_
                     ORDER BY p.start ASC
                     LIMIT 1
                     ";
@@ -49,10 +45,16 @@ class Phase {
             $stmt->execute([
                 'hid' => $hackathonId,
                 'uid' => $userId,
-                'now' => $now
+                'now' => $now,
+                'now_' => $now
             ]);
+            $results = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($results === false) {
+                return null;
+            }
+
+            return $results;
         } catch (Exception $e) {
             throw new Exception("Erreur lors de la récupération de la phase active !"
             // pour debug

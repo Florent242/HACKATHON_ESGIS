@@ -197,8 +197,8 @@ function createHackathonCard(hackathon) {
                             <i data-lucide="map-pin" class="w-4 h-4"></i>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-white">
-                                ${getLocationDisplay(hackathon.location)}
+                            <p class="text-sm font-medium text-white flex items-center gap-1"> 
+                                ${hackathon.location ? getLocationDisplay(hackathon.location) : ' <i data-lucide="globe" class="w-4 h-4"></i> Localisation non définie'}
                             </p>
                             <p class="text-xs text-slate-400">
                                 ${hackathon.type === 'online' ? 'En ligne' : 'Présentiel'}
@@ -263,10 +263,10 @@ function formatDate(dateString) {
 
 // Get location display
 function getLocationDisplay(location) {
-    if (location.includes('online')) {
-        return '🌐 En ligne';
+    if (location?.includes('online')) {
+        return '<i data-lucide="globe" class="w-4 h-4"></i> En ligne';
     }
-    return location;
+    return location ?? '<i data-lucide="globe" class="w-4 h-4"></i> Localisation non définie';
 }
 
 // Handle search

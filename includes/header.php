@@ -17,7 +17,7 @@ if (!isset($_SESSION['csrf_token'])) {
 
 // Configuration du header
 $header_config = [
-    'site_name' => 'EsgisHub',
+    'site_name' => 'Hack & Stack',
     'logo_letter' => 'E',
     'show_notifications' => true,
     'sticky' => true
@@ -66,7 +66,7 @@ function isActivePage($url, $current_path)
             <!-- Logo -->
             <a href="/" class="logo" aria-label="Retour à l'accueil - <?= $header_config['site_name'] ?>">
                 <div class="logo-circle" aria-hidden="true">
-                    <img src="/assets/20ans-gold.png" alt="Logo EsgisHub" class="logo-img">
+                    <img src="/assets/20ans-gold.png" alt="Logo Hack & Stack" class="logo-img">
                 </div>
                 <span><?= htmlspecialchars($header_config['site_name']) ?></span>
             </a>
@@ -155,7 +155,7 @@ function getCurrentPageTitle($current_path, $nav_items)
 function generatePageMeta($current_path, $nav_items)
 {
     $title = getCurrentPageTitle($current_path, $nav_items);
-    $description = "EsgisHub - " . $title;
+    $description = "Hack & Stack - " . $title;
 
     echo "<meta name='description' content='" . htmlspecialchars($description) . "'>\n";
     echo "<meta property='og:title' content='" . htmlspecialchars($title) . "'>\n";

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EsgisHub - Profil</title>
+    <title>Hack & Stack - Profil</title>
     <link rel="stylesheet" href="/css/styles/user/profil.css">
     <?php require_once '../includes/user/head.php'; ?>
     <script defer src="/js/user/profil.js"></script>

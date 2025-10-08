@@ -19,7 +19,6 @@ body {
     align-items: center;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
 }
 
 
@@ -179,13 +178,14 @@ p{
     background: none;
     color: var(--blue);
     font-size: 1.5rem;
-    padding: 0;
+    padding: 0.2rem;
     width: auto;
     height: auto;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    margin-top: 10px;
+    border-radius: 50%;
+
 }
 
 .icon .lucide {

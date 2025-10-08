@@ -75,7 +75,7 @@ class Participant
 
             // Récupérer les limites de membres et la date limite d'inscription
             $stmt = $this->db->prepare("
-                SELECT min_team_members, max_team_members, registration_deadline 
+                SELECT min_team_members, max_team_members, registration_deadline, status, visibility 
                 FROM hackathons 
                 WHERE id = :hackathon_id 
                 LIMIT 1
@@ -114,13 +114,14 @@ class Participant
 
             // Inscription dans hackathon_teams
             $stmt = $this->db->prepare("
-                INSERT INTO hackathon_teams (hackathon_id, team_id, leader_id) 
-                VALUES (:hackathon_id, :team_id, :leader_id)
+                INSERT INTO hackathon_teams (hackathon_id, team_id, leader_id, status) 
+                VALUES (:hackathon_id, :team_id, :leader_id, :status)
             ");
             $stmt->execute([
                 ':hackathon_id' => $hackathonId,
                 ':team_id' => $teamId,
-                ':leader_id' => $captainId
+                ':leader_id' => $captainId,
+                ':status' => $hackathon['visibility'] === 'public' ? 'active' : 'pending'
             ]);
             logActivity('Team registration', "Inscription de l'équipe", [$captainId, $teamId, $hackathonId], $captainId, 'info');
 
@@ -132,7 +133,7 @@ class Participant
             // Préparer l'insertion des participants
             $insertStmt = $this->db->prepare("
                 INSERT INTO hackathon_participants (user_id, team_id, hackathon_id, participation_status) 
-                VALUES (:user_id, :team_id, :hackathon_id, 'accepted')
+                VALUES (:user_id, :team_id, :hackathon_id, :participation_status)
             ");
 
             foreach ($members as $memberId) {
@@ -140,7 +141,8 @@ class Participant
                     $insertStmt->execute([
                         ':user_id' => $memberId,
                         ':team_id' => $teamId,
-                        ':hackathon_id' => $hackathonId
+                        ':hackathon_id' => $hackathonId,
+                        ':participation_status' => $hackathon['visibility'] === 'public' ? 'active' : 'pending'
                     ]);
                     logActivity('Team registration', "Vous avez été automatiquement inscrit au hackathon via votre équipe", [
                         'memberId' => $memberId,
@@ -155,13 +157,13 @@ class Participant
             $stmt->execute([':hackathon_id' => $hackathonId, ':team_id' => $teamId]);
 
             $this->db->commit();
-            return true;
+            return [true, $hackathon['visibility'] === 'public' ? 'Vous avez été automatiquement inscrit au hackathon via votre équipe' : 'Votre demande d\'inscription a été envoyée et sera traitée par un administrateur'];
         } catch (PDOException $e) {
             $this->db->rollBack();
             throw new Exception(
                 "Erreur lors de l'inscription de l'équipe. Si le problème persiste, contactez le support. "
                 // pour le debugage
-                 . $e->getMessage()
+                //  . $e->getMessage()
             );
         }
     }

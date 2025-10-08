@@ -626,7 +626,40 @@ class Challenge
                 c.type = 'ctf'
                 AND c.is_active = 1
                 AND c.hackathon_id = :hackathon_id
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM challenge_dependencies d
+                    WHERE d.challenge_id = c.id
+                    AND (
+                        (d.dependency_type = 'user' 
+                            AND d.depends_on_id NOT IN (
+                                SELECT f2.challenge_id
+                                FROM validated_flags vf2
+                                INNER JOIN flags f2 ON vf2.flag_id = f2.id
+                                WHERE vf2.user_id = :user_id_1
+                                AND vf2.is_valid = 1
+                            )
+                        )
+                        OR
+                        (d.dependency_type = 'team'
+                            AND d.depends_on_id NOT IN (
+                                SELECT f2.challenge_id
+                                FROM validated_flags vf3
+                                INNER JOIN flags f2 ON vf3.flag_id = f2.id
+                                INNER JOIN team_members tm ON tm.user_id = vf3.user_id
+                                WHERE tm.team_id = (
+                                    SELECT tm2.team_id
+                                    FROM team_members tm2
+                                    WHERE tm2.user_id = :user_id_2
+                                    LIMIT 1
+                                )
+                                AND vf3.is_valid = 1
+                            )
+                        )
+                    )
+                )
             ";
+
             if ($phase_id !== null) {
                 $sql .= " AND c.phase_id = :phase_id";
             }
@@ -638,6 +671,8 @@ class Challenge
             $stmt = $this->db->prepare($sql);
             $stmt->bindParam(':hackathon_id', $hackathon_id, PDO::PARAM_INT);
             $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+            $stmt->bindParam(':user_id_1', $user_id, PDO::PARAM_INT);
+            $stmt->bindParam(':user_id_2', $user_id, PDO::PARAM_INT);
             if ($phase_id !== null) {
                 $stmt->bindParam(':phase_id', $phase_id, PDO::PARAM_INT);
             }
@@ -913,7 +948,7 @@ class Challenge
 
             // Verifier si le challenge est ouvert
             if (!$this->isChallengeOpen($challengeId)) {
-                throw new Exception("Le défi n'est pas ouvert !");
+                throw new Exception("Le hackathon auquel le défi appartient n'est pas ouvert !");
             }
 
             // Verifier si la phase est active

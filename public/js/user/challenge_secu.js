@@ -28,8 +28,8 @@ const CHALLENGE_ELEMENTS = {
     challengeEmptyState: "#challenges-empty-state"
 };
 
-const hackathonId = document.querySelector('meta[name="hackathon-id"]').content;
-const phaseId = document.querySelector('meta[name="phase-id"]').content;
+let hackathonId = document.querySelector('meta[name="hackathon-id"]').content;
+let phaseId = null;
 
 // Fonction utilitaire pour gérer les erreurs
 function handleError(title = 'Une erreur est survenue', error = null, type = 'error') {
@@ -909,13 +909,147 @@ async function initializeChallenges() {
     }
 }
 
+/**
+ * Vérifie si l'utilisateur est qualifie pour une phase
+ */
+async function checkPhaseQualification(hackathonId, phaseId) {
+    try {
+        if (!hackathonId || !phaseId) {
+            return {
+                success: false,
+                is_qualified: false,
+                message: 'Hackathon ID et/ou Phase ID manquant',
+                status: 'error'
+            };
+        }
+        const response = await apiRequest(`/check-qualification`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify({
+                hackathon_id: hackathonId,
+                phase_id: phaseId,
+            })
+        });
+
+        return {
+            success: response.success,
+            message: response.message || (response.success ? 'Accès autorisé' : 'Accès refusé'),
+            is_qualified: response.is_qualified?? null,
+            status: response.status ?? null,
+            action: response.action || null
+        };
+    } catch (error) {
+        console.error('Erreur lors de la vérification d\'accès:', error);
+        return {
+            success: false,
+            message: 'Erreur lors de la vérification d\'accès au hackathon',
+            is_qualified: false,
+            status: 'error',
+            action: null
+        };
+    }
+}
+
+/**
+ * Obtenire la phase actuelle du hackathon en cours
+ */
+async function getCurrentPhase(hackathonId) {
+    try {
+        const response = await apiRequest(`/phases/active-phase/${hackathonId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        if (response.success) {
+            return response.data?.id ?? null;
+        } else {
+            return null;
+        }
+    } catch (error) {
+        console.error('Erreur lors de la vérification d\'accès:', error);
+        return null;
+    }
+}
+
 // Démarrer l'application
 document.addEventListener('DOMContentLoaded', async () => {
-    const participationChecked = await checkHackathonAccess(1);
+    phaseId = await getCurrentPhase(hackathonId);
+    if ( !phaseId ) {
+        showPhaseInactiveState('Aucune phase active pour le moment');
+        return;
+    }
+
+    const participationChecked = await checkHackathonAccess(hackathonId);
     if (!participationChecked.success) {
         showAccessDeniedModal(participationChecked.message);
         return;
     }
+
+    // Vérifier si l'utilisateur est qualifie pour une phase
+    const phaseCheck = await checkPhaseQualification(hackathonId, phaseId);
+    if (phaseCheck?.success && phaseCheck?.action && phaseCheck?.action.includes('/')) {
+        // Créer une notification de redirection
+        const notification = document.createElement('div');
+        notification.className = 'fixed bottom-4 right-4 bg-purple-600/90 text-white p-4 rounded-lg shadow-lg z-50 max-w-md';
+        notification.innerHTML = `
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="ml-3 flex-1">
+                    <p class="text-sm font-medium">Vous êtes qualifié pour la phase suivante !</p>
+                    <p class="mt-1 text-sm opacity-90">Voulez-vous y accéder maintenant ?</p>
+                    <div class="mt-2 flex space-x-3">
+                        <a href="${phaseCheck.action}" class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-purple-700 bg-white hover:bg-purple-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500">
+                            Aller à la phase suivante
+                        </a>
+                        <button type="button" class="text-white hover:opacity-80 text-xs font-medium" onclick="this.closest('.fixed').remove()">
+                            Continuer ici
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="ml-4 flex-shrink-0 text-white hover:text-gray-200 focus:outline-none" onclick="this.closest('.fixed').remove()">
+                    <span class="sr-only">Fermer</span>
+                    <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        // Ajouter la notification au DOM
+        document.body.appendChild(notification);
+        
+        // Ajouter un bouton flottant si l'utilisateur ferme la notification
+        const floatingButton = document.createElement('a');
+        floatingButton.href = phaseCheck.action;
+        floatingButton.className = 'fixed bottom-4 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg z-40 hover:bg-blue-700 transition-colors duration-200';
+        floatingButton.title = 'Aller à la phase suivante';
+        floatingButton.innerHTML = `
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+        `;
+        
+        // Ajouter le bouton flottant après 5 secondes s'il n'est pas déjà là
+        setTimeout(() => {
+            if (!document.querySelector('.fixed[href="' + phaseCheck.action + '"]')) {
+                document.body.appendChild(floatingButton);
+            }
+        }, 5000);
+    } else if ( !phaseCheck?.success || !phaseCheck?.is_qualified ) {
+        showPhaseInactiveState('Vous n\'êtes pas qualifié pour la phase actuelle !');
+        return;
+    }
+
     initializeChallenges();
     lucide.createIcons();
 });

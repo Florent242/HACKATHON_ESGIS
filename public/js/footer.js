@@ -1,4 +1,4 @@
-// Footer JavaScript - EsgisHub
+// Footer JavaScript - Hack & Stack
 document.addEventListener('DOMContentLoaded', function() {
     
     // Initialiser les icônes Lucide

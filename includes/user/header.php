@@ -44,9 +44,9 @@
         <div class="mobile-nav-header">
             <div class="logo">
                 <div class="logo-circle">
-                    <img src="/assets/20ans-gold.png" alt="Logo EsgisHub" class="logo-img">
+                    <img src="/assets/20ans-gold.png" alt="Logo Hack & Stack" class="logo-img">
                 </div>
-                <span>EsgisHub</span>
+                <span>Hack & Stack</span>
             </div>
             <button class="close-mobile-nav">
                 <i data-lucide="x"></i>
@@ -131,9 +131,9 @@
         <div class="logo-nav">
             <div class="logo">
                 <div class="logo-circle">
-                    <img src="/assets/20ans-gold.png" alt="Logo EsgisHub" class="logo-img">
+                    <img src="/assets/20ans-gold.png" alt="Logo Hack & Stack" class="logo-img">
                 </div>
-                <span>EsgisHub</span>
+                <span>Hack & Stack</span>
             </div>
             <a href="/user">Dashboard</a>
             <div class="nav-container">

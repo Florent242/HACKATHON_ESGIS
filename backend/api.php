@@ -227,11 +227,15 @@ try {
                 throw new Exception('Méthode non autorisée', 405);
             }
 
+            $userId = $tokenManager->getCurrentUserId();
             if ($id === 'active-phase') {
-                $controller->getActivePhase($id, $userId);
+                // /api/phases/active-phase/{hackathon_id}
+                $controller->getActivePhase($action, $userId);
             } elseif ($id === 'all-phases') {
+                // /api/phases/all-phases
                 $controller->getAllPhases($id);
             } elseif (is_numeric($id)) {
+                // /api/phases/{id}
                 $controller->get($id);
             }
             break;

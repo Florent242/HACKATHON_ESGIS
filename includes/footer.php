@@ -75,11 +75,11 @@
                     <div class="w-8 h-8 bg-blue-400 rounded-lg flex items-center justify-center">
                         <i data-lucide="code-2" class="w-5 h-5 text-blue-900"></i>
                     </div>
-                    <span class="text-blue-200 font-semibold">EsgisHub</span>
+                    <span class="text-blue-200 font-semibold">Hack & Stack</span>
                 </div>
                 
                 <div class="text-center text-blue-300 text-sm">
-                    © 2025 EsgisHub. Tous droits réservés.
+                    © 2025 Hack & Stack. Tous droits réservés.
                 </div>
                 
                 <div class="flex items-center space-x-4 text-blue-300 text-sm">

@@ -136,7 +136,7 @@ class AuthMiddleware
                 self::$key = $_ENV['JWT_SECRET'] ?? 'your-secret-key';
             } catch (Exception $e) {
                 error_log("Erreur de connexion à la base de données : " . $e->getMessage());
-                throw new RuntimeException("Impossible de se connecter à la base de données");
+                throw new RuntimeException("Impossible de se connecter !");
             }
         }
     }

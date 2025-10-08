@@ -117,13 +117,7 @@ class ParticipantController extends Controller
     public function registerTeam($hackathonId, $input)
     {
         try {
-            if (!isAuthenticated()) {
-                throw new Exception('Non autorisé');
-            }
-
-            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-                throw new Exception('Méthode non autorisée');
-            }
+            $this->validateMethod('POST');
 
             $teamId = $input['team_id'] ?? null;
             if (!$teamId) {
@@ -134,13 +128,13 @@ class ParticipantController extends Controller
             
             $success = $this->participant->registerTeam($hackathonId, $teamId, $captainId);
 
-            if (!$success) {
+            if (!$success[0]) {
                 throw new Exception("Erreur lors de l'inscription de l'équipe");
             }
 
             $this->jsonResponse([
                 'success' => true,
-                'message' => 'Équipe inscrite avec succès'
+                'message' => $success[1] || 'Équipe inscrite avec succès'
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([

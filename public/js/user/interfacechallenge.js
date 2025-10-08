@@ -23,8 +23,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // ===== FONCTIONS D'INITIALISATION =====
     async function initializeApplication() {
-        console.log('Initialisation de l\'application...');
-
         // Récupérer les données utilisateur et CSRF token
         await initializeUserData();
 
@@ -41,11 +39,38 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         // Initialiser Monaco Editor
         await initializeMonacoEditor();
+        
+        // Désactiver le copier-coller dans l'éditeur
+        try{
+            if (AppState.editor) {
+                // Désactiver les actions de copier/coller dans l'éditeur
+                AppState.editor.addAction({
+                    id: 'no-copy',
+                    label: 'Copy Disabled',
+                    keybindings: [
+                        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC,
+                        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX,
+                        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV
+                    ],
+                    run: function() {
+                        showNotification('Le copier-coller est désactivé dans l\'éditeur', 'error');
+                        return null;
+                    }
+                });
+                
+                // Désactiver le menu contextuel
+                AppState.editor.onContextMenu(() => {
+                    return {
+                        dispose: () => {}
+                    };
+                });
+            }
+        } catch (e) {
+            console.error('Erreur dans l\'editeur : ', e);
+        }
 
         // Configurer les gestionnaires d'événements
         setupEventListeners();
-
-        console.log('Application initialisée avec succès');
     }
 
     async function initializeUserData() {
@@ -53,7 +78,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             AppState.userData.id = await getUserId();
             const csrfMeta = document.querySelector('meta[name="csrf-token"]');
             AppState.userData.csrf_token = csrfMeta ? csrfMeta.getAttribute('content') : null;
-            console.log('Données utilisateur initialisées:', AppState.userData);
         } catch (error) {
             console.error('Erreur lors de la récupération des données utilisateur:', error);
         }
@@ -135,8 +159,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         updateLoadingState(true, 'Chargement du défi...');
 
         try {
-            console.log('Chargement du défi ID:', challengeId);
-
             const response = await apiRequest(`/challenges/${challengeId}`, {
                 method: "GET",
                 headers: {
@@ -171,8 +193,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     async function initializeAlgorithmicInterface(challengeData) {
-        console.log('Initialisation interface algorithmique');
-
         // Afficher les informations du défi
         updateChallengeDisplay(challengeData);
 
@@ -188,8 +208,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     async function initializeClassicInterface(challengeData) {
-        console.log('Initialisation interface classique');
-
         // Afficher les informations du défi
         updateChallengeDisplay(challengeData);
 
@@ -274,7 +292,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         // Configurer le sélecteur de langage
         setupLanguageSelector(availableLanguages);
 
-        console.log('Langages configurés:', availableLanguages);
     }
 
     function extractAvailableLanguages(snippetData) {
@@ -384,8 +401,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             const template = AppState.challengeTemplates[language] || getDefaultTemplate(language);
             createMonacoEditor(monacoLang, template);
         }
-
-        console.log('Langage sélectionné:', language);
     }
 
     // ===== INITIALISATION DE MONACO EDITOR =====
@@ -443,7 +458,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             const initialLanguage = AppState.currentLanguage;
             const initialTemplate = AppState.challengeTemplates[initialLanguage] || getDefaultTemplate(initialLanguage);
             createMonacoEditor(getMonacoLanguage(initialLanguage), initialTemplate);
-            console.log('Monaco Editor initialisé avec succès');
         }
     }
 
@@ -517,7 +531,51 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     // ===== GESTIONNAIRES D'ÉVÉNEMENTS =====
-    function setupEventListeners() {
+    function preventCopyPaste(e) {
+    // Empêcher Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+Insert, Shift+Insert
+    if ((e.ctrlKey || e.metaKey) && 
+        (e.key === 'c' || e.key === 'x' || e.key === 'v' || e.key === 'C' || e.key === 'X' || e.key === 'V' || e.key === 'Insert')) {
+        e.preventDefault();
+        showNotification('Attention','Le copier-coller est désactivé sur cette page', 'warning');
+        return false;
+    }
+    
+    // Empêcher le clic droit
+    if (e.type === 'contextmenu') {
+        e.preventDefault();
+        return false;
+    }
+}
+
+function setupEventListeners() {
+    // Ajouter les écouteurs pour empêcher le copier-coller
+    document.addEventListener('copy', (e) => {
+        e.preventDefault();
+        showNotification('Attention !','Le copier-coller est interdit', 'warning');
+        return false;
+    });
+    
+    document.addEventListener('cut', (e) => {
+        e.preventDefault();
+        showNotification('Attention !','Le couper est interdit', 'warning');
+        return false;
+    });
+    
+    document.addEventListener('paste', (e) => {
+        e.preventDefault();
+        showNotification('Attention !','Le collage est interdit', 'warning');
+        return false;
+    });
+    
+    // Empêcher le clic droit
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        showNotification('Attention !','Le clic droit est interdit', 'warning');
+        return false;
+    });
+    
+    // Empêcher les raccourcis clavier
+    document.addEventListener('keydown', preventCopyPaste);
         // Bouton d'exécution du code
         const runCodeBtn = document.getElementById('runCode');
         if (runCodeBtn) {
@@ -590,7 +648,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             if (result) {
                 displayExecutionResult(result);
             } else {
-                showError('Aucune réponse du serveur');
+                showError('Aucune réponse');
             }
         } catch (error) {
             console.error('Erreur lors de l\'exécution:', error);
@@ -598,7 +656,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             // Créer un objet d'erreur standardisé pour l'affichage
             const errorResult = {
                 success: false,
-                error: error.message || 'Erreur de communication avec le serveur',
+                error: error.message || 'Erreur de communication',
                 data: {
                     language: AppState.currentLanguage
                 }
@@ -693,20 +751,17 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         return response;
     }
-    console.log('Réponse de l\'API:', response);
 
     function displayExecutionResult(result) {
         const consoleOutput = document.getElementById('consoleOutput');
         if (!consoleOutput) return;
-
-        console.log('Résultat d\'exécution:', result);
 
         // Vérification de sécurité pour éviter les erreurs
         if (!result) {
             consoleOutput.innerHTML = `
                 <div class="p-4 text-red-400 flex items-center gap-2">
                     <i data-lucide="alert-triangle" class="w-5 h-5"></i>
-                    <span>Aucun résultat reçu du serveur</span>
+                    <span>Aucun résultat reçu</span>
                 </div>
             `;
             lucide.createIcons();
@@ -823,8 +878,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         showProgress('Validation en cours...');
 
         try {
-            console.log('Exécution de la validation rapide pour le défi:', AppState.challenge.id);
-
             const response = await apiRequest(`/challenges/dev/${AppState.challenge.hackathon_id || 2}/${AppState.userData.id}`, {
                 method: 'POST',
                 headers: {
@@ -839,8 +892,6 @@ document.addEventListener('DOMContentLoaded', async function () {
                     csrf_token: AppState.userData.csrf_token
                 })
             });
-
-            console.log('Réponse de validation reçue:', response);
 
             if (response && response.success) {
                 if (response.data && response.data.success) {
@@ -858,7 +909,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         } catch (error) {
             console.error('Erreur lors de la validation:', error);
-            showError('Erreur de communication avec le serveur');
+            showError('Erreur de communication');
         } finally {
             updateLoadingState(false);
         }
@@ -879,8 +930,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         showProgress('Soumission en cours...');
 
         try {
-            console.log(AppState.challenge.phase_id);
-            const response = await apiRequest(`/challenges/dev/${AppState.challenge.hackathon_id || 2}/1`, {
+            const response = await apiRequest(`/challenges/dev/${AppState.challenge.hackathon_id || 2}/${AppState.userData.id}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -917,7 +967,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         } catch (error) {
             console.error('Erreur lors de la soumission:', error);
-            showError('Erreur de communication avec le serveur');
+            showError('Erreur de communication');
         } finally {
             updateLoadingState(false);
         }
@@ -1504,5 +1554,4 @@ document.addEventListener('DOMContentLoaded', async function () {
     window.initMonaco = createMonacoEditor;
     window.challengeTemplates = AppState.challengeTemplates;
 
-    console.log('Interface de challenge initialisée avec succès');
 });

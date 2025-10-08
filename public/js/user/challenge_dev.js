@@ -10,13 +10,19 @@ const DIFFICULTY_ORDER = { 'easy': 1, 'medium': 2, 'hard': 3 };
 const DIFFICULTY_LABELS = { 'easy': 'Facile', 'medium': 'Moyen', 'hard': 'Difficile' };
 
 const hackathonId = document.querySelector('meta[name="hackathon-id"]').content;
-const phaseId = document.querySelector('meta[name="phase-id"]').content;
-const nextPhaseId = parseInt(phaseId) + 1;
+let phaseId = null;
+let nextPhaseId = null;
 /**
  * Initialisation de l'application
  */
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        phaseId = await getCurrentPhase(hackathonId);
+        if ( !phaseId ) {
+            showPhaseInactiveState('Aucune phase active pour le moment');
+            return;
+        }
+        nextPhaseId = parseInt(phaseId) + 1;
         await initializeApp();
     } catch (error) {
         console.error('Erreur lors de l\'initialisation:', error);
@@ -44,8 +50,8 @@ async function initializeApp() {
     }
 
     // Vérifier si l'utilisateur est qualifie pour une phase
-    const phaseCheck = await checkPhaseQualification(hackathonId, nextPhaseId);
-    if (phaseCheck.success && phaseCheck.action && phaseCheck.action.includes('/')) {
+    const phaseCheck = await checkPhaseQualification(hackathonId, phaseId);
+    if (phaseCheck?.success && phaseCheck?.action && phaseCheck?.action.includes('/')) {
         // Créer une notification de redirection
         const notification = document.createElement('div');
         notification.className = 'fixed bottom-4 right-4 bg-blue-600/90 text-white p-4 rounded-lg shadow-lg z-50 max-w-md';
@@ -97,6 +103,9 @@ async function initializeApp() {
                 document.body.appendChild(floatingButton);
             }
         }, 5000);
+    } else if ( !phaseCheck?.success || !phaseCheck?.is_qualified ) {
+        showPhaseInactiveState('Vous n\'êtes pas qualifié pour la phase actuelle !');
+        return;
     }
     
     // Charger les challenges
@@ -104,10 +113,42 @@ async function initializeApp() {
 }
 
 /**
+ * Obtenire la phase actuelle du hackathon en cours
+ */
+async function getCurrentPhase(hackathonId) {
+    try {
+        const response = await apiRequest(`/phases/active-phase/${hackathonId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        if (response.success) {
+            return response.data?.id ?? null;
+        } else {
+            return null;
+        }
+    } catch (error) {
+        console.error('Erreur lors de la vérification d\'accès:', error);
+        return null;
+    }
+}
+
+/**
  * Vérifie si l'utilisateur est qualifie pour une phase
  */
 async function checkPhaseQualification(hackathonId, phaseId) {
     try {
+        if (!hackathonId || !phaseId) {
+            return {
+                success: false,
+                is_qualified: false,
+                message: 'Hackathon ID et/ou Phase ID manquant',
+                status: 'error'
+            };
+        }
         const response = await apiRequest(`/check-qualification`, {
             method: 'POST',
             headers: {
@@ -124,7 +165,8 @@ async function checkPhaseQualification(hackathonId, phaseId) {
         return {
             success: response.success,
             message: response.message || (response.success ? 'Accès autorisé' : 'Accès refusé'),
-            status: response.status,
+            is_qualified: response.is_qualified?? null,
+            status: response.status ?? null,
             action: response.action || null
         };
     } catch (error) {
@@ -132,11 +174,13 @@ async function checkPhaseQualification(hackathonId, phaseId) {
         return {
             success: false,
             message: 'Erreur lors de la vérification d\'accès au hackathon',
+            is_qualified: false,
             status: 'error',
             action: null
         };
     }
 }
+
 /**
  * Configure tous les event listeners
  */
@@ -201,6 +245,13 @@ function setupEventListeners() {
  */
 async function checkHackathonAccess(hackathonId) {
     try {
+        if (!hackathonId) {
+            return {
+                success: false,
+                message: 'Hackathon ID manquant',
+                status: 'error'
+            };
+        }
         const response = await apiRequest('/check-participation', {
             method: 'POST',
             headers: {
@@ -233,6 +284,14 @@ async function checkHackathonAccess(hackathonId) {
  */
 async function loadChallenges(hackathonId) {
     const grid = document.getElementById('challenges-grid');
+    if (!grid) {
+        return;
+    }
+
+    if (!hackathonId || !phaseId) {
+        showErrorState('Hackathon ID et/ou Phase ID manquant');
+        return;
+    }
     
     try {
         // Afficher l'état de chargement
@@ -257,7 +316,7 @@ async function loadChallenges(hackathonId) {
                 response.error?.includes("période de l'événement") ||
                 response.message?.includes("phase")
             ) {
-                showPhaseInactiveState(response.message || response.error || "Les challenges ne sont pas disponibles pour le moment.");
+                showPhaseInactiveState(response.message || response.error || "Aucun challenge disponible pour le moment.");
             } else {
                 handleError("Erreur lors de la récupération des challenges", response.message || response.error);
             }

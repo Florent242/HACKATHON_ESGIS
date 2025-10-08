@@ -195,6 +195,17 @@ const renderHackathonTechno = (hackathon) => {
     return hackathon.map((techno) => `<p class="techno">${techno}</p>`).join('');
 }
 
+/**
+ * Affiche les phases du hackathon
+ * @param {Array<string>} phases - Tableau de chaînes représentant les phases
+ * @example
+ * // Format attendu :
+ * [
+ *   "Phase 1: Inscription",
+ *   "Phase 2: Sélection des équipes",
+ *   "Phase 3: Développement"
+ * ]
+ */
 const renderHackathonPhases = (phases = []) => {
     if (phases.length)
         return phases.map((phase) => `<div class="hackathon-phase">${phase}</div>`).join('');
@@ -202,15 +213,33 @@ const renderHackathonPhases = (phases = []) => {
     return '<p style="color:var(--text-secondary);">Planning détaillé bientot disponible.</p>';
 }
 
+/**
+ * Affiche les prix du hackathon
+ * @returns {string} HTML des prix formatés
+ * @example
+ * // Format attendu dans hackathon.prizes (chaîne JSON) :
+ * [
+ *   { label: "1er Prix", reward: "Ordinateur portable" },
+ *   { label: "2ème Prix", reward: "Tablette" },
+ *   { label: "3ème Prix", reward: "Smartphone" }
+ * ]
+ */
 const renderHackathonPrize = () => {
-    const prizes = JSON.parse(hackathon.prizes);
-    const icon = ['🥇', '🥈', '🥉']
-    return prizes.map((prize, index) =>
-        `<div class="prize">
-        <p>${icon[index] + prize.label} </p>
-
-        <p style="margin:10px auto;">${prize.reward}</p>
-    </div>`).join('');
+    try {
+        // Nettoyer la chaîne JSON des caractères invisibles
+        const cleanedPrizes = hackathon.prizes.replace(/[\u200B-\u200D\uFEFF]/g, '');
+        const prizes = JSON.parse(cleanedPrizes);
+        const icon = ['🥇', '🥈', '🥉'];
+        return prizes.map((prize, index) =>
+            `<div class="prize">
+                <p>${icon[index] + prize.label}</p>
+                <p style="margin:10px auto;">${prize.reward}</p>
+            </div>`
+        ).join('');
+    } catch (error) {
+        console.error('Erreur lors du parsing des prix:', error);
+        return '<p class="error">Erreur lors du chargement des prix</p>';
+    }
 }
 
 const renderRules = () => {
@@ -311,7 +340,7 @@ const createHeader = () => {
     header.innerHTML = `
         <div class="flexDiv flag">
             <i data-lucide="zap" class="rounded" stroke="#fff"></i>
-            <strong>A venir</strong>
+            <strong>${getHackathonStatus(hackathon)}</strong>
         </div>
 
         <section class="flexDiv w-full" style="opacity: 0; transform: translateY(-30px);">
@@ -329,7 +358,7 @@ const createHeader = () => {
                     <span>${hackathon['teams_count']} équipes inscrites</span>
                </p>
 
-               <p class="flexDiv">Build innovation from EsgisHub to the world.</p>
+               <p class="flexDiv">Build innovation from Hack & Stack to the world.</p>
             </div>
             ${hackathon['image'] ? `<img id="hackathonImage" src="${hackathon['image']}" alt="Image du hackathon">` : ''}
         </section> 
@@ -827,6 +856,26 @@ const register = async () => {
         showRegistrationModal();
     });
 };
+const getHackathonStatus = (status) => {
+    switch (status) {
+        case 'active':
+            return 'En cours';
+            break;
+        case 'inactive':
+            return 'Inactif';
+            break;
+        case 'ended':
+            return 'Terminé';
+            break;
+        case 'draft':
+            return 'Brouillon';
+            break;
+        default:
+            return '';
+            break;
+    }
+};
+
 window.addEventListener('DOMContentLoaded', async () => {
     // Afficher l'animation de chargement immédiatement
     const loadingOverlay = createLoadingAnimation();

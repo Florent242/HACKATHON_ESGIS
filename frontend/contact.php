@@ -33,7 +33,7 @@
                         </div>
                             <div class="input-group">
                             <label for="email">Email</label>
-                            <input type="email" id="email" placeholder="esgishub@gmail.com..."><br>
+                            <input type="email" id="email" placeholder="Hack&Stack@gmail.com..."><br>
                         </div>
                     </div>
 
@@ -65,7 +65,7 @@
                     <span class="icon"><i data-lucide="mail"></i></span>
                     <div>
                         <h4>Email</h4>
-                        <p>esgishub@gmail.com</p>
+                        <p>esgis.benin@esgis.org</p>
                     </div>
                 </div>
 
@@ -73,7 +73,7 @@
                     <span class="icon"><i data-lucide="phone"></i></span>
                     <div>
                         <h4>Téléphone</h4>
-                        <p>+229 61 XX XX XX</p>
+                        <p>+229 01 61 27 13 13</p>
                     </div>
                 </div>
                 
@@ -88,7 +88,7 @@
                 </div>
 
                 <div class="button-container">
-                    <button class="button" onclick="alert('Support en direct indisponible pour le moment')">Démarrer le chat</button>
+                    <button class="button" onclick="window.location.href = 'https://discord.com/invite/FbztK5Uagd'">Contactez-nous sur Discord</button>
                 </div>  
             </div>
         </div>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EsgisHub - Hackathons</title>
+    <title>Hack & Stack - Hackathons</title>
     <?php require_once "../includes/head.php"; ?>
     <link rel="stylesheet" href="/css/styles/hackathons.css">
 </head>
@@ -15,7 +15,7 @@
         <section class="hero-section">
             <div class="container mx-auto px-6 text-center">
                 <h1 class="text-4xl md:text-6xl font-bold mb-4">
-                    Hackathons <span class="text-blue-light">EsgisHub</span>
+                    Hackathons <span class="text-blue-light">Hack & Stack</span>
                 </h1>
                 <p class="text-xl md:text-2xl mb-8 text-text-secondary">
                     Participez à des défis passionnants et repoussez vos limites

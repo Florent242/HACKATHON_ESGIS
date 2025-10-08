@@ -1,9 +1,9 @@
 /**
- * EsgisHub Landing Page JavaScript
+ * Hack & Stack Landing Page JavaScript
  * Gestion des interactions et animations
  */
 
-class EsgisHubLanding {
+class HackStackLanding {
     constructor() {
         this.init();
     }
@@ -350,7 +350,7 @@ class EsgisHubLanding {
  */
 document.addEventListener('DOMContentLoaded', () => {
     // Initialiser la classe principale
-    new EsgisHubLanding();
+    new HackStackLanding();
 
     // Initialiser les icônes Lucide si disponibles
     if (typeof lucide !== 'undefined') {

@@ -12,7 +12,7 @@ if (empty($_SESSION['csrf_token'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EsgisHub - Authentification</title>
+    <title>Hack & Stack - Authentification</title>
     <link rel="stylesheet" href="/css/styles/auth.css">
     <link rel="stylesheet" href="/css/styles/header.css">
     <link rel="stylesheet" href="/css/dist/output.css">
@@ -84,7 +84,7 @@ if (empty($_SESSION['csrf_token'])) {
 
             <div class="auth-form" id="registerForm">
                 <h1>Inscription</h1>
-                <p>Créez votre compte EsgisHub</p>
+                <p>Créez votre compte Hack & Stack</p>
                 <div class="steps-compact">
                     <div class="progress-track">
                         <div class="progress-fill" id="progressFill"></div>

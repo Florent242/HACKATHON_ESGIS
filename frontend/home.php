@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EsgisHub - Challenge Yourself</title>
+    <title>Hack & Stack - Challenge Yourself</title>
     <link rel="stylesheet" href="/css/styles/home.css">
     <?php require_once "../includes/head.php"; ?>
     <script defer src="/js/home.js"></script>
@@ -34,7 +34,7 @@
 
             <h1 class="hero-title text-5xl md:text-7xl font-black mb-6 fade-in">
                 Challengez-vous avec
-                <span class="highlight bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">EsgisHub</span>
+                <span class="highlight bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">Hack & Stack</span>
             </h1>
 
             <p class="hero-subtitle text-xl md:text-2xl text-slate-400 max-w-4xl mx-auto mb-12 leading-relaxed fade-in">
@@ -110,7 +110,7 @@
             <div class="text-center mb-16">
                 <h2 class="text-4xl md:text-5xl font-bold mb-6">
                     Pourquoi Choisir
-                    <span class="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">EsgisHub</span> ?
+                    <span class="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">Hack & Stack</span> ?
                 </h2>
                 <p class="text-xl text-slate-400 max-w-2xl mx-auto">
                     Découvrez les avantages qui font de notre plateforme le choix des professionnels

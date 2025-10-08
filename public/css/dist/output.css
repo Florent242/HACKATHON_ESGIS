@@ -63,10 +63,12 @@
     --color-indigo-600: oklch(51.1% 0.262 276.966);
     --color-indigo-700: oklch(45.7% 0.24 277.023);
     --color-violet-500: oklch(60.6% 0.25 292.717);
+    --color-purple-50: oklch(97.7% 0.014 308.299);
     --color-purple-100: oklch(94.6% 0.033 307.174);
     --color-purple-400: oklch(71.4% 0.203 305.504);
     --color-purple-500: oklch(62.7% 0.265 303.9);
     --color-purple-600: oklch(55.8% 0.288 302.321);
+    --color-purple-700: oklch(49.6% 0.265 301.924);
     --color-pink-500: oklch(65.6% 0.241 354.308);
     --color-slate-100: oklch(96.8% 0.007 247.896);
     --color-slate-200: oklch(92.9% 0.013 255.508);
@@ -703,6 +705,9 @@
   .h-full {
     height: 100%;
   }
+  .h-max {
+    height: max-content;
+  }
   .h-px {
     height: 1px;
   }
@@ -843,6 +848,12 @@
   }
   .max-w-\[60\%\] {
     max-width: 60%;
+  }
+  .max-w-\[200px\] {
+    max-width: 200px;
+  }
+  .max-w-\[1000px\] {
+    max-width: 1000px;
   }
   .max-w-\[1400px\] {
     max-width: 1400px;
@@ -1738,6 +1749,15 @@
       background-color: color-mix(in oklab, var(--color-purple-500) 20%, transparent);
     }
   }
+  .bg-purple-600 {
+    background-color: var(--color-purple-600);
+  }
+  .bg-purple-600\/90 {
+    background-color: color-mix(in srgb, oklch(55.8% 0.288 302.321) 90%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-purple-600) 90%, transparent);
+    }
+  }
   .bg-red-100 {
     background-color: var(--color-red-100);
   }
@@ -2495,6 +2515,9 @@
   .pb-5 {
     padding-bottom: calc(var(--spacing) * 5);
   }
+  .pl-10 {
+    padding-left: calc(var(--spacing) * 10);
+  }
   .pl-11 {
     padding-left: calc(var(--spacing) * 11);
   }
@@ -2794,6 +2817,9 @@
   .text-purple-600 {
     color: var(--color-purple-600);
   }
+  .text-purple-700 {
+    color: var(--color-purple-700);
+  }
   .text-red-200 {
     color: var(--color-red-200);
   }
@@ -2919,6 +2945,10 @@
   }
   .opacity-100 {
     opacity: 100%;
+  }
+  .shadow {
+    --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color, rgb(0 0 0 / 0.1)), 0 1px 2px -1px var(--tw-shadow-color, rgb(0 0 0 / 0.1));
+    box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   }
   .shadow-2xl {
     --tw-shadow: 0 25px 50px -12px var(--tw-shadow-color, rgb(0 0 0 / 0.25));
@@ -3171,6 +3201,16 @@
       }
     }
   }
+  .group-hover\:bg-blue-500\/30 {
+    &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        background-color: color-mix(in srgb, oklch(62.3% 0.214 259.815) 30%, transparent);
+        @supports (color: color-mix(in lab, red, red)) {
+          background-color: color-mix(in oklab, var(--color-blue-500) 30%, transparent);
+        }
+      }
+    }
+  }
   .group-hover\:bg-blue-800\/50 {
     &:is(:where(.group):hover *) {
       @media (hover: hover) {
@@ -3181,10 +3221,27 @@
       }
     }
   }
+  .group-hover\:bg-purple-500\/30 {
+    &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        background-color: color-mix(in srgb, oklch(62.7% 0.265 303.9) 30%, transparent);
+        @supports (color: color-mix(in lab, red, red)) {
+          background-color: color-mix(in oklab, var(--color-purple-500) 30%, transparent);
+        }
+      }
+    }
+  }
   .group-hover\:text-blue-400 {
     &:is(:where(.group):hover *) {
       @media (hover: hover) {
         color: var(--color-blue-400);
+      }
+    }
+  }
+  .group-hover\:text-purple-400 {
+    &:is(:where(.group):hover *) {
+      @media (hover: hover) {
+        color: var(--color-purple-400);
       }
     }
   }
@@ -3530,6 +3587,20 @@
     &:hover {
       @media (hover: hover) {
         background-color: var(--color-indigo-600);
+      }
+    }
+  }
+  .hover\:bg-purple-50 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-purple-50);
+      }
+    }
+  }
+  .hover\:bg-purple-700 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-purple-700);
       }
     }
   }
@@ -4097,6 +4168,11 @@
       }
     }
   }
+  .focus\:ring-purple-500 {
+    &:focus {
+      --tw-ring-color: var(--color-purple-500);
+    }
+  }
   .focus\:ring-purple-500\/50 {
     &:focus {
       --tw-ring-color: color-mix(in srgb, oklch(62.7% 0.265 303.9) 50%, transparent);
@@ -4339,12 +4415,6 @@
     @media (width < 48rem) {
       font-size: var(--text-3xl);
       line-height: var(--tw-leading, var(--text-3xl--line-height));
-    }
-  }
-  .max-md\:text-lg {
-    @media (width < 48rem) {
-      font-size: var(--text-lg);
-      line-height: var(--tw-leading, var(--text-lg--line-height));
     }
   }
   .max-md\:text-sm {

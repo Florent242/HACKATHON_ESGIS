@@ -161,7 +161,7 @@ function createTeamCard(team) {
                 </div>
             </div>
         </div>
-        <p class="team-description">${purifyEntry(team.description) || 'X3ysKFwiq9s4C7BwDescription non disponible.'}</p>
+        <p class="team-description">${purifyEntry(team.description) || 'Description non disponible.'}</p>
         <div class="team-actions">
             <button class="btn btn-primary view-team-btn">
                 <i data-lucide="square-arrow-out-up-right" class="w-4 h-4 align-middle"></i> Voir l'équipe

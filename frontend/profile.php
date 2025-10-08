@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EsgisHub - Profil</title>
+    <title>Hack & Stack - Profil</title>
     <link rel="stylesheet" href="/css/styles/profil.css">
     <link rel="stylesheet" href="/css/styles/header.css">
     <link rel="stylesheet" href="/css/dist/output.css">
@@ -30,7 +30,7 @@
             <!-- Statistics Card -->
             <div class="card">
                 <h2>Statistiques</h2>
-                <p class="subtitle">Vos accomplissements sur EsgisHub</p>
+                <p class="subtitle">Vos accomplissements sur Hack & Stack</p>
                 
                 <div class="stats-list">
                     <div class="stat-item">

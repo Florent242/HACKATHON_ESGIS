@@ -530,7 +530,7 @@ async function apiRequest(endpoint, options = {}, rejectAutoContentType = false)
         } catch (e) {
             console.error('Erreur de parsing JSON:', e);
             console.error('Réponse brute:', responseText);
-            throw new Error('Erreur lors de l\'analyse de la réponse du serveur');
+            throw new Error('Erreur lors de l\'analyse de la réponse');
         }
 
         // Gérer les erreurs de debug
@@ -554,11 +554,11 @@ async function apiRequest(endpoint, options = {}, rejectAutoContentType = false)
     } catch (error) {
         // Si c'est une erreur réseau, on la gère différemment
         if (error instanceof TypeError && error.message === 'Failed to fetch') {
-            handleError('Erreur réseau', { message: 'Impossible de se connecter au serveur' }, 'error');
+            handleError('Erreur réseau', { message: 'Erreur de connexion' }, 'error');
             return {
                 success: false,
                 status: 'network_error',
-                message: 'Erreur de connexion au serveur',
+                message: 'Erreur de connexion',
                 data: null
             };
         }

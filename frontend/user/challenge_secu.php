@@ -5,9 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="hackathon-id" content="1">
-    <meta name="phase-id" content="1">
     <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token']; ?>">
-    <title>EsgisHub - Challenges</title>
+    <title>Hack & Stack - Challenges</title>
     <link rel="stylesheet" href="/css/styles/user/challenge_secu.css">
     <?php require_once '../includes/user/head.php'; ?>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -141,10 +140,10 @@
                 </h3>
 
                 <ol id="top-hackers" class="flex flex-col gap-1">
-                    <li>Chargement...</li> <!-- Contenu remplacé dynamiquement -->
+                    <li></li>
                 </ol>
 
-                <div id="hacker-list-empty-state" class="py-4 hidden items-center justify-center flex-col">
+                <div id="hacker-list-empty-state" class="py-4 items-center justify-center flex-col">
                     <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100 mb-4">
                         <i data-lucide="user-x" class="w-6 h-6 text-gray-400"></i>
                     </div>

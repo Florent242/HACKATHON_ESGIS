@@ -7,7 +7,7 @@
   <meta name="hackathon-id" content="2">
   <meta name="phase-id" content="2">
   <meta name="csrf-token" content="<?php echo $_SESSION['csrf_token']; ?>">
-  <title>EsgisHub - Phase 1 : Challenges Algorithmiques</title>
+  <title>Hack & Stack - Phase 1 : Challenges Algorithmiques</title>
   <link rel="stylesheet" href="/css/styles/user/challenge_dev.css">
   <?php require_once '../includes/user/head.php'; ?>
   <script defer src="/js/user/challenge_dev.js"></script>

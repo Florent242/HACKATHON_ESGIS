@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EsgisHub - Challenge Yourself</title>
+    <title>Hack & Stack - Challenge Yourself</title>
     <?php require_once '../includes/user/head.php'; ?>
     <link rel="stylesheet" href="/css/styles/user/dashboard.css">
     <link rel="stylesheet" href="/css/dist/output.css">
@@ -39,22 +39,30 @@
                     </button>
                 </div>
             </div>
-            <div class="user-info flex flex-row gap-5 items-center justify-between p-3 w-full max-w-[1400px] rounded-xl max-md:flex-col card-bg border border-gray-700">
 
-                <div class="flex flex-row items-center gap-5 w-full max-md:flex-col">
+            <div class="action-cards flex flex-col sm:flex-row gap-3 w-full max-w-[1000px] mx-auto">
+                <!-- Carte Hackathons -->
+                <a href="/user/hackathon" class="card-bg border border-gray-700 rounded-xl p-4 hover:shadow-md transition-all duration-200 flex-1 flex items-center gap-3 group">
+                    <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex-shrink-0 flex items-center justify-center group-hover:bg-blue-500/30 transition-colors">
+                        <i data-lucide="trophy" class="w-5 h-5 text-blue-400"></i>
+                    </div>
+                    <div class="text-left">
+                        <h3 class="font-medium text-white">Hackathons</h3>
+                        <p class="text-xs text-gray-400">Participez aux défis</p>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 ml-auto text-gray-500 group-hover:text-blue-400 transition-colors"></i>
+                </a>
 
-                    <div class="user-circle rounded-full flex items-center justify-center">
-                        <i data-lucide="circle-user" class="w-24 h-24 stroke-current"></i>
+                <!-- Carte Communauté -->
+                <a href="https://discord.com/invite/FbztK5Uagd" target="_blank" rel="noopener noreferrer" class="card-bg border border-gray-700 rounded-xl p-4 hover:shadow-md transition-all duration-200 flex-1 flex items-center gap-3 group">
+                    <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex-shrink-0 flex items-center justify-center group-hover:bg-purple-500/30 transition-colors">
+                        <i data-lucide="users" class="w-5 h-5 text-purple-400"></i>
                     </div>
-                    <div class="user-info-text text-left flex flex-col justify-start max-md:text-center">
-                        <h2 class="Username text-xl font-semibold w-auto max-md:text-center max-md:text-lg">[Username]</h2>
-                        <p class="Email text-gray-400 text-sm max-md:text-center max-md:text-sm">[Email]</p>
+                    <div class="text-left">
+                        <h3 class="font-medium text-white">Communauté</h3>
+                        <p class="text-xs text-gray-400">Rejoignez-nous sur Discord</p>
                     </div>
-                </div>
-                <a href="/user/profile">
-                    <div class="modify-profile btn-primary btn-standard">
-                        <i data-lucide="user"></i> <span class="text-sm max-md:text-center text-center text-nowrap font-medium max-md:text-xs whitespace-nowrap">Modifier le profil</span>
-                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 ml-auto text-gray-500 group-hover:text-purple-400 transition-colors"></i>
                 </a>
             </div>
 
@@ -138,7 +146,6 @@
                                         <i data-lucide="calendar" class="w-4 h-4"></i> <span class="challenge-deadline">Date limite: 23 mai</span>
                                     </p>
                                 </div>
-                                <button class="cursor-pointer relative flex items-center justify-center mb-auto w-auto h-auto top-0 right-0 bg-blue-500 text-white px-3 py-1 rounded-2xl transition delay-150 duration-300 ease-in-out hover:bg-blue-600 hover:shadow-md hover:shadow-blue-500/50">Soumettre le projet</button>
                             </div>
                             
                             <div class="empty-stateflex flex-col items-center text-center gap-3 py-10 px-6" id="no-current-challenges">

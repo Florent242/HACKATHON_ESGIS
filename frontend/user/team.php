@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EsgisHub - Équipes</title>
+    <title>Hack & Stack - Équipes</title>
     <link rel="stylesheet" href="/css/styles/user/teams.css">
     <?php require_once '../includes/user/head.php'; ?>
 </head>
