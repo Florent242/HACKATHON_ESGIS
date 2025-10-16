@@ -40,7 +40,7 @@
                 </div>
             </div>
 
-            <div class="action-cards flex flex-col sm:flex-row gap-3 w-full max-w-[1000px] mx-auto">
+            <div class="action-cards flex flex-col sm:flex-row gap-3 w-full mx-auto">
                 <!-- Carte Hackathons -->
                 <a href="/user/hackathon" class="card-bg border border-gray-700 rounded-xl p-4 hover:shadow-md transition-all duration-200 flex-1 flex items-center gap-3 group">
                     <div class="w-10 h-10 rounded-lg bg-blue-500/20 flex-shrink-0 flex items-center justify-center group-hover:bg-blue-500/30 transition-colors">

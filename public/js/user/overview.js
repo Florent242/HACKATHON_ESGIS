@@ -14,8 +14,8 @@ let listItems = document.querySelectorAll('ul li');
 
 //Fixing XSS
 
-const purifyEntry = (entry)=>{
-    DOMPurify.setConfig( { 
+const purifyEntry = (entry) => {
+    DOMPurify.setConfig({
         SAFE_FOR_TEMPLATES: true,
         ALLOWED_TAGS: [],
         ALLOWED_ATTR: []
@@ -153,8 +153,8 @@ const handleNavBar = async () => {
         <li>
             <i data-lucide="bell"></i>
             <span>Demandes</span>  
-            ${joinRequests.length > 0 ? 
-            `<span id="requestNumber" class="ml-1.5 flex items-center justify-center min-w-5 h-5 px-2.5 border border-red-500 text-xs font-medium bg-gradient-to-br from-red-500/40 to-red-600/70 text-white rounded-full transform transition-all duration-200 hover:scale-110 shadow-md hover:shadow-red-500/30">
+            ${joinRequests.length > 0 ?
+                `<span id="requestNumber" class="ml-1.5 flex items-center justify-center min-w-5 h-5 px-2.5 border border-red-500 text-xs font-medium bg-gradient-to-br from-red-500/40 to-red-600/70 text-white rounded-full transform transition-all duration-200 hover:scale-110 shadow-md hover:shadow-red-500/30">
                 ${joinRequests.length}
             </span>` : ''}
         </li>`;
@@ -252,8 +252,8 @@ const renderMember = (member) => {
 
     // Détecter si on est sur mobile
     const isMobile = window.innerWidth <= 650;
-    
-    
+
+
     memberDiv.innerHTML = `
         <div class="member-info gap-4 max-md:gap-2 relative w-full">
             <div class="member-avatar">
@@ -271,7 +271,7 @@ const renderMember = (member) => {
             </div>
         </div>
         ${(team.leader_id !== member.id && userConnected.id === team.leader_id) ?
-        `<div class="flexDivIcon promoteRemoveBtn">
+            `<div class="flexDivIcon promoteRemoveBtn">
             <button class="promoteLeaderBtn flexDivIcon" onclick="handlePromoteLeader(${member.id}, '${member.username}')">
                 <i data-lucide="crown" class="w-4 h-4 stroke-current"></i>
                 <span class="text-base max-md:text-xs">Promouvoir</span>
@@ -340,10 +340,10 @@ const renderJoinRequestsContent = () => {
     console.log(joinRequests);
     return joinRequests.map(request => {
         const initials = request?.username?.substring(0, 2)?.toUpperCase();
-        
-    for (const key of request){
-        request[key] = purifyEntry(request[key])
-    }
+
+        for (const key in request) {
+            request[key] = purifyEntry(request[key])
+        }
 
 
         return `
@@ -474,7 +474,6 @@ const handlePromoteLeader = async (id, username, validated = false) => {
 };
 
 const handleJoinRequest = async (id, action, validate) => {
-
     if (!validate) {
         const modale = createModal(`
         <div>
@@ -492,7 +491,11 @@ const handleJoinRequest = async (id, action, validate) => {
         return;
     }
     closeModal();
-    const requestIndex = joinRequests.findIndex(r => r.user_id === id);
+    const requestIndex = joinRequests.findIndex((r) => {
+        let a = parseInt(r.user_id);
+        let b = parseInt(id);
+        return a === b;
+    });
 
     if (requestIndex === -1) { return; }
     const animateJoinRequest = (thisId) => {
@@ -501,8 +504,11 @@ const handleJoinRequest = async (id, action, validate) => {
         const requestCards = document.querySelectorAll('.request-card');
 
         const targetCard = Array.from(requestCards).find(card => {
-
-            card.querySelector('h4').textContent === joinRequests.find(r => r.user_id === thisId).username
+            card.querySelector('h4').textContent === joinRequests.find(r => {
+                let a = parseInt(r.user_id);
+                let b = parseInt(thisId);
+                return a === b;
+            }).username
         });
 
         if (targetCard) {
@@ -536,7 +542,7 @@ const handleJoinRequest = async (id, action, validate) => {
 
         result = await manageOverviewData.deleteRequest(id);
     }
-    console.log(result);
+
     // Supprimer la demande après l'animation
     setTimeout(() => {
         if (!result) {
@@ -917,7 +923,7 @@ const handleSettingsAction = () => {
 // ========================================
 // FONCTIONS DE GESTION DES DONNÉES
 // ========================================
-const renderTeamInfos=(waitTeam)=>{
+const renderTeamInfos = (waitTeam) => {
     team = waitTeam;
     if (teamName) teamName.textContent = waitTeam.name;
     if (teamCategory) {
@@ -927,7 +933,7 @@ const renderTeamInfos=(waitTeam)=>{
     if (memberNumber) memberNumber.textContent = team.members?.length;
     if (teamScore) teamScore.textContent = team.points + ' pts';
     const aboutText = document.getElementById('aboutText');
-    if(aboutText) aboutText.textContent = waitTeam.description;
+    if (aboutText) aboutText.textContent = waitTeam.description;
 }
 
 let defineTeamNameOverviewData = async () => {
@@ -949,9 +955,9 @@ let defineTeamNameOverviewData = async () => {
                 ${isMember ? `
                     <button id="editBtn" class="flexDivIcon" style="gap:10px; color:white;" onclick="handleAboutSection();">
                     <i data-lucide="edit"></i>
-                    <span>${purifyEntry(team.description)? 'Modifier' : 'Créer une description'}</span>
+                    <span>${purifyEntry(team.description) ? 'Modifier' : 'Créer une description'}</span>
                 </button>` : ''
-            }
+                }
             </div>                
     
             <p id="aboutText">                
@@ -1159,7 +1165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (userConnected.id === team.leader_id) {
         const sectionTeamInfo = document.querySelector('#teamInfo');
         if (sectionTeamInfo) {
-            sectionTeamInfo.insertAdjacentHTML('beforeend',`
+            sectionTeamInfo.insertAdjacentHTML('beforeend', `
             <button id="invit" class="flexDivIcon" onclick="invitUser()">
                 <i data-lucide="user-plus"></i>
                 <p>Inviter un utilisateur</p>

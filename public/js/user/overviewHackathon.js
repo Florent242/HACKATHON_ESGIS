@@ -165,12 +165,13 @@ const apiReq = async (apiRoute, method = 'GET', data = null) => {
     const optionRequest = {
         method: method,
         headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
         }
     }
     if (data && method !== "GET") {
-        data['csrf_token'] = document.querySelector('input[name="csrf_token"]').value;
+        data['csrf_token'] = document.querySelector('meta[name="csrf-token"]').content;
         optionRequest.body = JSON.stringify(data);
     }
 
@@ -237,7 +238,6 @@ const renderHackathonPrize = () => {
             </div>`
         ).join('');
     } catch (error) {
-        console.error('Erreur lors du parsing des prix:', error);
         return '<p class="error">Erreur lors du chargement des prix</p>';
     }
 }
@@ -334,7 +334,6 @@ const getUserTeams = async () => {
         userTeams = response.data
 }
 const createHeader = () => {
-    console.log(hackathon);
     const header = document.querySelector('#header');
 
     header.innerHTML = `
@@ -570,11 +569,9 @@ const closeModal = (modal, animation = null, callback = null) => {
 
 // Fonction pour obtenir l'équipe dont l'utilisateur est leader
 const getUserLeaderTeam = () => {
-    // console.log(userTeams)
     try {
         // Vérifier si userTeams est un tableau non vide
         if (!Array.isArray(userTeams) || userTeams.length === 0) {
-            console.log('Aucune équipe trouvée pour cet utilisateur');
             return null;
         }
 
@@ -582,7 +579,6 @@ const getUserLeaderTeam = () => {
         const leaderTeam = userTeams.find(team => team && team.leader_id === userConnected?.id);
 
         if (!leaderTeam) {
-            console.log('Utilisateur non trouvé comme leader d\'une équipe');
             return null;
         }
 
@@ -593,7 +589,6 @@ const getUserLeaderTeam = () => {
 
         return teamCopy;
     } catch (error) {
-        console.error('Erreur lors de la récupération de l\'équipe leader:', error);
         return null;
     }
 };
@@ -785,7 +780,7 @@ const showRegistrationModal = async () => {
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = 'Inscription en cours...';
 
-                const response = await apiReq(`participants/${hackathon.id}/register-team`, 'POST', userTeam);
+                const response = await apiRequest(`/participants/${hackathon.id}/register-team`, {method: 'POST', body: JSON.stringify(userTeam)});
                 if (response.success) {
                     closeModal(modal, 'slide-to-top', () => {
                         showNotification('Félicitations !', response.message || 'Inscription reussie', 'success');
@@ -800,7 +795,7 @@ const showRegistrationModal = async () => {
                     setTimeout(() => {
                         closeModal(modal)
                     }, 3000);
-                    handleError("Erreur d'inscription", response.message || response.error || response || "Erreur inconnue", 'error');
+                    handleError("Erreur d'inscription", response ?? "Erreur inconnue", 'error');
                 }
             } catch (error) {
                 setTimeout(() => {
@@ -811,7 +806,6 @@ const showRegistrationModal = async () => {
                 setTimeout(() => {
                     closeModal(modal)
                 }, 3000);
-                console.log(error)
             }
         });
     }
@@ -889,8 +883,6 @@ window.addEventListener('DOMContentLoaded', async () => {
                 getHackathon(window.location.href.split('/').pop())
             ]);
 
-        console.log(userConnected, userTeams);
-
         // Créer le contenu une fois les données chargées
         createHeader();
         createMain();
@@ -915,12 +907,8 @@ window.addEventListener('DOMContentLoaded', async () => {
         isLoading = false;
 
     } catch (error) {
-        console.error('Erreur lors du chargement:', error);
-
-        // Masquer l'animation de chargement
         hideLoadingAnimation(loadingOverlay);
 
-        // En cas d'erreur, afficher un message d'erreur
         const main = document.querySelector('main');
         if (main) {
             main.innerHTML = `

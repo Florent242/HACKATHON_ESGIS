@@ -109,6 +109,12 @@ class ChallengeController extends Controller
                 throw new Exception("L'utilisateur n'est pas qualifié pour cette phase !");
             }
 
+            // Vérifier si l'utilisateur a accès au challenge
+            $hasAccess = $this->challenge->checkChallengeAccess($input['challenge_id'] ?? 0, $user_id);
+
+            if (!$hasAccess['has_access']) {
+                throw new Exception($hasAccess['message']);
+            }
             // Appel à la méthode qui gère toute la logique (valide ou non, dynamique, etc)
             $result = $this->challenge->submitChallengeCTF($user_id, $input, $phase_id);
 
@@ -129,13 +135,114 @@ class ChallengeController extends Controller
             $this->tokenManager->logSecurityEvent(
                 $user_id ?? 0,
                 'submit_challenge_ctf_error',
-                $e->getMessage(),
-                isset($input['challenge_id']) ? ['challenge_id' => $input['challenge_id']] : []
-            );
+                [
+                    'error' => $e->getMessage(),
+                    'challenge_id' => $input['challenge_id'] ?? null
+                ]
+                );
             $this->jsonResponse([
                 'success' => false,
                 'error' => $e->getMessage()
             ]);
+        }
+    }
+
+    public function downloadResource($challengeId, $resourceLink)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            $userId = $this->tokenManager->getCurrentUserId();
+            // Recuperer le challenge
+            $challenge = $this->challenge->find($challengeId, $userId);
+
+            // Authentification JWT pure
+            $userId = $this->tokenManager->getCurrentUserId();
+            if (!$userId) {
+                throw new Exception('Token manquant', 401);
+            }
+
+            // Verifier si la ressource correspond a celle sur l'occurence du challenge
+            if ($challenge['resource_link'] !== $resourceLink) {
+                throw new Exception("L'URL de la ressource ne correspond pas à celle sur l'occurence du challenge");
+            }
+
+            // Vérifier si la phase est active
+            if ($challenge['phase_id'] !== null && !$this->challenge->isPhaseActive($challenge['hackathon_id'], $challenge['phase_id']) && !isAdmin($userId)) {
+                throw new Exception("Cette phase n'est pas active actuellement !");
+            }
+
+            // Vérifier si la période du hackathon est active
+            if (!$this->challenge->isChallengeLaunchPeriod($challenge['hackathon_id']) && !isAdmin($userId)) {
+                throw new Exception("Les ressources ne sont pas accessibles en dehors de la période de l'événement.");
+            }
+
+            // Vérifier s'il s'agit d'une phase pour qualifier
+            if ($challenge['phase_id'] !== null && !$this->phase->checkQualification($userId, $challenge['phase_id'], $challenge['hackathon_id']) && !isAdmin($userId)) {
+                throw new Exception("L'utilisateur n'est pas qualifié pour ce challenge !");
+            }
+
+            $hasAccess = $this->challenge->checkChallengeAccess($challengeId, $userId);
+
+            if (!$hasAccess['has_access']) {
+                throw new Exception($hasAccess['message']);
+            }
+
+            if (preg_match('#^[a-zA-Z0-9][\w\-\.]*[a-zA-Z0-9]?$#', $resourceLink, $matches)) {
+                $filename = basename($resourceLink, $matches[1]);
+                $path = "/opt/ctf-challenges/storage/ctf_ressources/$filename";
+
+                if (file_exists($path) && is_file($path) && is_readable($path)) {
+                    // Détection du type MIME
+                    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                    $mime_type = finfo_file($finfo, $path);
+                    finfo_close($finfo);
+
+                    // En-têtes de sécurité
+                    header('X-Content-Type-Options: nosniff');
+                    header('X-Frame-Options: DENY');
+                    header('X-XSS-Protection: 1; mode=block');
+
+                    // En-têtes de téléchargement
+                    header('Content-Description: File Transfer');
+                    header('Content-Type: ' . $mime_type);
+                    header('Content-Disposition: attachment; filename="' . basename($path) . '"');
+                    header('Content-Length: ' . filesize($path));
+                    header('Cache-Control: no-cache, must-revalidate');
+                    header('Pragma: no-cache');
+                    header('Expires: 0');
+
+                    // Nettoyage du buffer de sortie
+                    if (ob_get_level()) {
+                        ob_end_clean();
+                    }
+
+                    // Lecture et envoi du fichier
+                    readfile($path);
+                    exit;
+                } else {
+                    http_response_code(404);
+                    header('Content-Type: application/json');
+                    $this->jsonResponse([
+                        'success' => false,
+                        'error' => is_dir($path) ? "Le chemin $path spécifié est un répertoire, pas un fichier." : "Le chemin $path spécifié est introuvable ou inaccessible."
+                    ], 404);
+                    exit;
+                }
+            }
+        } catch (Exception $e) {
+            $this->tokenManager->logSecurityEvent(
+                $user_id ?? 0,
+                'download_resource_error',
+                [
+                    'error' => $e->getMessage(),
+                    'challenge_id' => $challengeId ?? null
+                ]
+            );
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], $e->getCode() ?: 400);
         }
     }
 
@@ -252,8 +359,8 @@ class ChallengeController extends Controller
             }
 
             // Vérifier si la période du hackathon est active
-            if ($valid = !$this->challenge->isChallengeLaunchPeriod($hackathon_id) && !isAdmin($user_id)) {
-                throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.(valid: " . ($valid ? 'true' : 'false') . ")");
+            if (!$this->challenge->isChallengeLaunchPeriod($hackathon_id) && !isAdmin($user_id)) {
+                throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
             }
 
             // Vérifier si l'utilisateur est qualifié pour la phase
@@ -369,7 +476,7 @@ class ChallengeController extends Controller
             if (!isset($user_id) || !isset($hackathon_id)) {
                 throw new Exception('user_id et hackathon_id sont requis');
             }
-           
+
             $isRegistered = $this->challenge->isRegistered($user_id, $hackathon_id);
 
             return $isRegistered;
@@ -456,13 +563,13 @@ class ChallengeController extends Controller
 
             $isAdmin = $this->isAdmin($userId);
             // Valider les entree requis
-            $this->validateRequiredFields($input,[
+            $this->validateRequiredFields($input, [
                 'code',
                 'hackathon_id',
                 'phase_id',
                 'challenge_id',
                 'user_id'
-            ] );
+            ]);
 
             // Vérifier si l'utilisateur est inscrit au hackathon
             if (!$this->isRegistered($userId, $input['hackathon_id']) && !$isAdmin) {
@@ -573,11 +680,11 @@ class ChallengeController extends Controller
                 } else {
                     if ($isAdmin) return;
                     // Insert
-                        $stmt = $this->db->prepare("
+                    $stmt = $this->db->prepare("
                             INSERT INTO scores (team_id, hackathon_id, phase_id, total_points)
                             VALUES (:team_id, :hackathon_id, :phase_id, :points)
                         ");
-                        $stmt->execute([
+                    $stmt->execute([
                         ':team_id' => $team_id,
                         ':hackathon_id' => $input['hackathon_id'] ?? 2,
                         ':phase_id' => $phase_id ?? 2,
@@ -705,7 +812,7 @@ class ChallengeController extends Controller
     public function validateCode($challengeId, $userId, $hackathonId)
     {
         try {
-            $this->validateMethod('POST');            
+            $this->validateMethod('POST');
             // Authentification JWT pure
             $token = $this->getBearerToken();
             if (!$token) {
@@ -734,15 +841,15 @@ class ChallengeController extends Controller
                 throw new Exception("La phase n'est pas active !", 401);
             }
 
-            
+
             // Vérifier si la phase est active
             if ($challenge['phase_id'] !== null && !$this->challenge->isPhaseActive($hackathonId, $challenge['phase_id']) && !$isAdmin) {
                 throw new Exception("Cette phase n'est pas active actuellement !");
             }
 
             // Vérifier si la période du hackathon est active
-            if ($valid = !$this->challenge->isChallengeLaunchPeriod($hackathonId) && !$isAdmin) {
-                throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.(valid: " . ($valid ? 'true' : 'false') . ")");
+            if (!$this->challenge->isChallengeLaunchPeriod($hackathonId) && !$isAdmin) {
+                throw new Exception("Les challenges ne sont pas accessibles en dehors de la période de l'événement.");
             }
 
             // Vérifier si l'utilisateur est qualifié pour la phase

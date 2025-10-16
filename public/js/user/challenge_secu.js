@@ -80,7 +80,9 @@ async function loadChallenges() {
                 data.message?.includes("phase")
             ) {
                 showPhaseInactiveState(data.message);
-            } else {
+            } else if (data.error) {
+                showAccessDeniedModal(data.error);
+            }else {
                 handleError("Erreur lors de la récupération des challenges", data.message);
             }
             return;
@@ -322,6 +324,9 @@ function renderTopHackers(hackers) {
         container.innerHTML = '';
         container.appendChild(item);
     });
+
+    emptyState.style.display = 'none';
+    container.style.display = 'flex';
 }
 
 // Fonction pour mettre à jour le nombre de résolutions
@@ -583,6 +588,7 @@ let downloadHandler = null;
 function setupModal() {
     const modal = document.querySelector(CHALLENGE_ELEMENTS.modal);
     const modalContainer = document.querySelector(CHALLENGE_ELEMENTS.modalContainer);
+
     if (!modal) {
         console.error('Modal not found');
         return;
@@ -615,17 +621,27 @@ function setupModal() {
 
         downloadHandler = async function (e) {
             e.preventDefault();
+            let challengeId = document.getElementById('challenge_id').value;
             const file = downloadBtn.getAttribute("data-resource_link");
             if (!file) {
                 showNotification("Oups !", "Aucun fichier à télécharger", "error");
                 return;
             }
 
-            const url = `/download/${encodeURIComponent(file)}`;
+            const url = `/api/challenges/${challengeId}/download/${encodeURIComponent(file)}`;
+
+            const getCsrfToken = () => document.querySelector('meta[name="csrf-token"]')?.content || '';
 
             try {
-                const response = await fetch(url, { method: "GET", credentials: "include" });
-                if (!response.ok) throw new Error("Erreur lors du téléchargement");
+                const response = await fetch(url, { method: "GET", credentials: "include", 
+                headers: { 'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': getCsrfToken()
+                } });
+                if (!response.ok) {
+                    let data = await response.json();
+                    throw new Error(data.error || data.message || "Erreur lors du téléchargement")
+                };
 
                 // Récupérer le content-type envoyé par PHP
                 const contentType = response.headers.get("Content-Type") || "application/octet-stream";
@@ -666,11 +682,9 @@ function openModal(card) {
     if (!card) return;
     const modal = document.querySelector(CHALLENGE_ELEMENTS.modal);
     const modalContainer = document.querySelector('#modal-container');
-    const timeAgo = card.getAttribute("data-created_at") ? `Il y a ${formatTimeDifference(card.getAttribute("data-created_at"))}` : 'Nouveau challenge';
 
     const challengeDetails = {
         author: card.getAttribute("data-created_by") || "Unknown",
-        time: timeAgo,
         hackers: "Resolu par " + card.getAttribute("data-solvers_count") + " hackers" || "0 hackers",
         title: card.getAttribute("data-title") || (card.querySelector("h3")?.textContent || ""),
         description: card.getAttribute("data-description") || (card.querySelector(".description")?.textContent || ""),
@@ -686,7 +700,6 @@ function openModal(card) {
 
     // Mise à jour de la modale
     document.getElementById("challenge_id").value = card.getAttribute("data-id");
-    document.getElementById("challenge-time").textContent = challengeDetails.time;
     document.getElementById("challenge-hackers").textContent = challengeDetails.hackers;
     document.getElementById("challenge-title").textContent = challengeDetails.title;
     document.getElementById("challenge-description").textContent = challengeDetails.description;
@@ -804,10 +817,10 @@ function safeJsonParse(jsonString) {
             .replace(/\n/g, '')      // Supprime les sauts de ligne
             .replace(/\\n/g, '')     // Supprime les \n échappés
             .trim();
-        
+
         // S'assure que c'est bien un tableau JSON
         if (!clean.startsWith('[')) clean = `[${clean}]`;
-        
+
         return JSON.parse(clean);
     } catch (e) {
         console.error("Erreur de parsing JSON:", e);
@@ -937,7 +950,7 @@ async function checkPhaseQualification(hackathonId, phaseId) {
         return {
             success: response.success,
             message: response.message || (response.success ? 'Accès autorisé' : 'Accès refusé'),
-            is_qualified: response.is_qualified?? null,
+            is_qualified: response.is_qualified ?? null,
             status: response.status ?? null,
             action: response.action || null
         };
@@ -980,7 +993,7 @@ async function getCurrentPhase(hackathonId) {
 // Démarrer l'application
 document.addEventListener('DOMContentLoaded', async () => {
     phaseId = await getCurrentPhase(hackathonId);
-    if ( !phaseId ) {
+    if (!phaseId) {
         showPhaseInactiveState('Aucune phase active pour le moment');
         return;
     }
@@ -1024,10 +1037,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </button>
             </div>
         `;
-        
+
         // Ajouter la notification au DOM
         document.body.appendChild(notification);
-        
+
         // Ajouter un bouton flottant si l'utilisateur ferme la notification
         const floatingButton = document.createElement('a');
         floatingButton.href = phaseCheck.action;
@@ -1038,14 +1051,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
         `;
-        
+
         // Ajouter le bouton flottant après 5 secondes s'il n'est pas déjà là
         setTimeout(() => {
             if (!document.querySelector('.fixed[href="' + phaseCheck.action + '"]')) {
                 document.body.appendChild(floatingButton);
             }
         }, 5000);
-    } else if ( !phaseCheck?.success || !phaseCheck?.is_qualified ) {
+    } else if (!phaseCheck?.success || !phaseCheck?.is_qualified) {
         showPhaseInactiveState('Vous n\'êtes pas qualifié pour la phase actuelle !');
         return;
     }

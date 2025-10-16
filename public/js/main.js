@@ -533,15 +533,6 @@ async function apiRequest(endpoint, options = {}, rejectAutoContentType = false)
             throw new Error('Erreur lors de l\'analyse de la réponse');
         }
 
-        // Gérer les erreurs de debug
-        if (data.debug_message) {
-            console.group('⚠️ Debug Info');
-            console.log('Message:', data.debug_message);
-            console.log('File:', data.debug_file);
-            console.log('Line:', data.debug_line);
-            if (data.debug_trace) console.log('Trace:', data.debug_trace);
-            console.groupEnd();
-        }
         // Si la réponse n'est pas OK, lancer une erreur
         if (response.status !== 400 && response.status !== 401 && response.status !== 200 && response.status !== 404 && response.status !== 500) {
             const error = new Error(data.message || data.error || 'Une erreur est survenue');
@@ -557,7 +548,7 @@ async function apiRequest(endpoint, options = {}, rejectAutoContentType = false)
             handleError('Erreur réseau', { message: 'Erreur de connexion' }, 'error');
             return {
                 success: false,
-                status: 'network_error',
+                status: 'erreur réseau',
                 message: 'Erreur de connexion',
                 data: null
             };
@@ -568,7 +559,7 @@ async function apiRequest(endpoint, options = {}, rejectAutoContentType = false)
         }
         return {
             success: false,
-            status: error.status || 'client_error',
+            status: error.status || 'erreur client',
             message: error.message || 'Erreur inconnue',
             data: error.data || null
         };
@@ -586,7 +577,7 @@ async function refreshCsrfToken() {
             }
         });
 
-        if (!response.ok) throw new Error('Failed to refresh CSRF token');
+        if (!response.ok) throw new Error('Erreur lors du rafraîchissement du token de session');
 
         const data = await response.json();
         if (data.csrf_token) {
@@ -595,7 +586,7 @@ async function refreshCsrfToken() {
             return data.csrf_token;
         }
     } catch (error) {
-        console.error('Error refreshing CSRF token:', error);
+        console.error('Erreur lors du rafraîchissement du token de session:', error);
         throw error;
     }
 }
@@ -657,10 +648,6 @@ async function initVerification() {
             AuthService.redirectToRoleHome(authCheck.userRole);
             return;
         }
-
-        // Ici l'utilisateur est bien authentifié et autorisé
-        console.log('Utilisateur connecté:', authCheck.authenticated);
-
     }
 }
 

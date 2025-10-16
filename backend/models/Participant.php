@@ -142,7 +142,7 @@ class Participant
                         ':user_id' => $memberId,
                         ':team_id' => $teamId,
                         ':hackathon_id' => $hackathonId,
-                        ':participation_status' => $hackathon['visibility'] === 'public' ? 'active' : 'pending'
+                        ':participation_status' => $hackathon['visibility'] === 'public' ? 'accepted' : 'pending'
                     ]);
                     logActivity('Team registration', "Vous avez été automatiquement inscrit au hackathon via votre équipe", [
                         'memberId' => $memberId,
@@ -157,7 +157,8 @@ class Participant
             $stmt->execute([':hackathon_id' => $hackathonId, ':team_id' => $teamId]);
 
             $this->db->commit();
-            return [true, $hackathon['visibility'] === 'public' ? 'Vous avez été automatiquement inscrit au hackathon via votre équipe' : 'Votre demande d\'inscription a été envoyée et sera traitée par un administrateur'];
+            $message = $hackathon['visibility'] === 'public' ? 'Vous avez été automatiquement inscrit au hackathon via votre équipe' : 'Votre demande d\'inscription a été envoyée et sera traitée par un administrateur';
+            return [true, $message];
         } catch (PDOException $e) {
             $this->db->rollBack();
             throw new Exception(

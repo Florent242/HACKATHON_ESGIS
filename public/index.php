@@ -20,46 +20,6 @@ if (session_status() === PHP_SESSION_NONE) {
 $url = $_SERVER['REQUEST_URI'] ?? "/";
 $url = parse_url($url, PHP_URL_PATH);
 
-// Remplacer la section de téléchargement par :
-if (preg_match('#^/download/([\w\-\.]+)$#', $url, $matches)) {
-    $filename = basename($matches[1]);
-    $path = __DIR__ . '/../storage/challenges_resources/' . $filename;
-
-    if (file_exists($path) && is_readable($path)) {
-        // Détection du type MIME
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mime_type = finfo_file($finfo, $path);
-        finfo_close($finfo);
-
-        // En-têtes de sécurité
-        header('X-Content-Type-Options: nosniff');
-        header('X-Frame-Options: DENY');
-        header('X-XSS-Protection: 1; mode=block');
-
-        // En-têtes de téléchargement
-        header('Content-Description: File Transfer');
-        header('Content-Type: ' . $mime_type);
-        header('Content-Disposition: attachment; filename="' . basename($path) . '"');
-        header('Content-Length: ' . filesize($path));
-        header('Cache-Control: no-cache, must-revalidate');
-        header('Pragma: no-cache');
-        header('Expires: 0');
-
-        // Nettoyage du buffer de sortie
-        if (ob_get_level()) {
-            ob_end_clean();
-        }
-
-        // Lecture et envoi du fichier
-        readfile($path);
-        exit;
-    } else {
-        http_response_code(404);
-        header('Content-Type: text/plain');
-        echo "Fichier introuvable ou inaccessible.";
-        exit;
-    }
-}
 // Vérifier l'URL et inclure le fichier correspondant
 switch ($url) {
     case '/':

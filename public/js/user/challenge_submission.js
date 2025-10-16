@@ -905,7 +905,7 @@ class ChallengeSubmission {
             formContainer.classList.add('blur-sm');
 
             // Compte à rebours et redirection
-            let countdown = 50;
+            let countdown = 10;
             const countdownElement = alertContent.querySelector('.countdown');
             const timer = setInterval(() => {
                 countdown--;

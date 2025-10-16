@@ -929,6 +929,14 @@ try {
                             throw new Exception('Méthode non autorisée', 405);
                         }
                         break;
+                    case 'download' :
+                        if ($method === 'GET' && isset($request[3]) && is_string($request[3])) {
+                            // GET /api/challenges/{id}/download/{resourceLink}
+                            $controller->downloadResource($id, $request[3]);
+                        } else {
+                            throw new Exception('Méthode non autorisée', 405);
+                        }
+                        break;
                     default:
                         throw new Exception('Action non reconnue', 400);
                 }

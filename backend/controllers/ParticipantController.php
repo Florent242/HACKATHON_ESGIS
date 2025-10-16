@@ -80,11 +80,6 @@ class ParticipantController extends Controller
                 throw new Exception('Méthode non autorisée');
             }
 
-            // Vérifier le token CSRF
-            if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                throw new Exception('Token de session invalide');
-            }
-
             // Enregistrer le participant
             $participantId = $this->participant->register([
                 'user_id' => $_SESSION['user_id'],
@@ -134,7 +129,7 @@ class ParticipantController extends Controller
 
             $this->jsonResponse([
                 'success' => true,
-                'message' => $success[1] || 'Équipe inscrite avec succès'
+                'message' => $success[1] ?? 'Équipe inscrite avec succès'
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([

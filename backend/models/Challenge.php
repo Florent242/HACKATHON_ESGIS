@@ -28,7 +28,7 @@ class Challenge
     public function find($id, $user_id = null)
     {
         try {
-            $isAdmin = isAdmin($user_id);
+            $isAdmin = $user_id ? isAdmin($user_id) : false;
             $sql = "SELECT c.id,
             c.code_name,
             c.title,
@@ -188,7 +188,6 @@ class Challenge
             if (!$isAdmin) {
                 $stmt = $this->db->prepare("UPDATE flags SET solves = solves + 1 WHERE id = :flag_id");
                 $stmt->execute([':flag_id' => $flag['id']]);
-
 
                 // Récupère solve_count pour ce flag
                 $stmt = $this->db->prepare("
@@ -1320,6 +1319,141 @@ class Challenge
                 // pour le debug
                 // . $e->getMessage()
             );
+        }
+    }
+
+    /**
+     * Vérifie si un utilisateur a accès à un challenge en fonction des dépendances
+     * @param int $challenge_id ID du challenge
+     * @param int $user_id ID de l'utilisateur
+     * @return array Tableau contenant 'has_access' (bool) et 'message' (string)
+     */
+    public function checkChallengeAccess($challenge_id, $user_id)
+    {
+        try {
+            // Vérifier si l'utilisateur est admin (les admins ont accès à tout)
+            if (isAdmin($user_id)) {
+                return [
+                    'has_access' => true,
+                    'message' => 'Accès accordé (admin)'
+                ];
+            }
+
+            // Vérifier si le challenge existe et est actif
+            $challenge = $this->find($challenge_id, $user_id);
+            if (!$challenge || !$challenge['is_active']) {
+                return [
+                    'has_access' => false,
+                    'message' => 'Challenge non trouvé ou inactif'
+                ];
+            }
+
+            // Vérifier si le challenge est ouvert
+            if (!$this->isChallengeOpen($challenge_id)) {
+                return [
+                    'has_access' => false,
+                    'message' => 'Ce challenge n\'est pas encore disponible',
+                    'code' => 'CHALLENGE_NOT_OPEN'
+                ];
+            }
+
+            // Vérifier la phase si nécessaire
+            if (isset($challenge['phase_id']) && $challenge['phase_id']) {
+                if (!$this->isPhaseActive($challenge['hackathon_id'], $challenge['phase_id'])) {
+                    return [
+                        'has_access' => false,
+                        'message' => 'La phase de ce challenge n\'est pas active',
+                        'code' => 'PHASE_NOT_ACTIVE'
+                    ];
+                }
+            }
+
+            // Récupérer les dépendances du challenge
+            $sql = "SELECT * FROM challenge_dependencies WHERE challenge_id = :challenge_id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':challenge_id', $challenge_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $dependencies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Si pas de dépendances, l'accès est accordé
+            if (empty($dependencies)) {
+                return [
+                    'has_access' => true,
+                    'message' => 'Aucune dépendance requise',
+                    'code' => 'NO_DEPENDENCIES'
+                ];
+            }
+
+            // Vérifier chaque dépendance
+            foreach ($dependencies as $dep) {
+                if ($dep['dependency_type'] === 'user') {
+                    // Vérifier si l'utilisateur a validé le challenge requis
+                    $sql = "SELECT 1 
+                            FROM validated_flags vf 
+                            INNER JOIN flags f ON vf.flag_id = f.id 
+                            WHERE f.challenge_id = :depends_on_id 
+                            AND vf.user_id = :user_id 
+                            AND vf.is_valid = 1";
+                    
+                    $stmt = $this->db->prepare($sql);
+                    $stmt->bindParam(':depends_on_id', $dep['depends_on_id'], PDO::PARAM_INT);
+                    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+                    $stmt->execute();
+                    
+                    if (!$stmt->fetch()) {
+                        return [
+                            'has_access' => false,
+                            'message' => 'Vous devez d\'abord terminer le challenge prérequis',
+                            'required_challenge' => $dep['depends_on_id'],
+                            'code' => 'MISSING_USER_DEPENDENCY'
+                        ];
+                    }
+                } 
+                elseif ($dep['dependency_type'] === 'team') {
+                    // Vérifier si un membre de l'équipe a validé le challenge requis
+                    $sql = "SELECT 1 
+                            FROM validated_flags vf 
+                            INNER JOIN flags f ON vf.flag_id = f.id 
+                            INNER JOIN team_members tm ON tm.user_id = vf.user_id
+                            WHERE f.challenge_id = :depends_on_id 
+                            AND tm.team_id = (
+                                SELECT team_id 
+                                FROM team_members 
+                                WHERE user_id = :user_id 
+                                LIMIT 1
+                            )
+                            AND vf.is_valid = 1";
+                    
+                    $stmt = $this->db->prepare($sql);
+                    $stmt->bindParam(':depends_on_id', $dep['depends_on_id'], PDO::PARAM_INT);
+                    $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+                    $stmt->execute();
+                    
+                    if (!$stmt->fetch()) {
+                        return [
+                            'has_access' => false,
+                            'message' => 'Votre équipe doit d\'abord terminer le challenge prérequis',
+                            'required_challenge' => $dep['depends_on_id'],
+                            'code' => 'MISSING_TEAM_DEPENDENCY'
+                        ];
+                    }
+                }
+            }
+
+            // Toutes les dépendances sont satisfaites
+            return [
+                'has_access' => true,
+                'message' => 'Toutes les dépendances sont satisfaites',
+                'code' => 'ALL_DEPENDENCIES_MET'
+            ];
+
+        } catch (PDOException $e) {
+            error_log('Erreur lors de la vérification des dépendances: ' . $e->getMessage());
+            return [
+                'has_access' => false,
+                'message' => 'Erreur lors de la vérification des dépendances',
+                'code' => 'DEPENDENCY_CHECK_ERROR'
+            ];
         }
     }
 }

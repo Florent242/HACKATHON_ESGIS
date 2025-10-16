@@ -152,7 +152,7 @@
                 </div>
 
                 <button id="view-leaderboard" class=" text-sm font-medium rounded-lg p-2" onclick="window.location.href='/user/leaderboard'">
-                    View Full Leaderboard
+                    Voir le classement
                 </button>
 
             </aside>
@@ -277,7 +277,6 @@
                     </div>
                     <h3 class="text-2xl font-bold max-md:text-xl max-md:font-semibold max-sm:text-lg" id="challenge-title"></h3>
                     <div class="flex items-center text-sm text-gray-400 gap-4 max-md:gap-2 max-sm:gap-1 mt-1 max-md:text-xs max-md:flex-wrap max-sm:font-normal max-sm:text-xs ">
-                        <span class="flex items-center max-md:text-xs max-md:font-medium max-sm:font-normal max-sm:text-xs "><i data-lucide="clock" class="stroke-current inline w-4 h-4 mr-1"></i><span id="challenge-time"></span></span>
                         <span class="flex items-center max-md:text-xs max-md:font-medium max-sm:font-normal max-sm:text-xs "><i data-lucide="users" class="stroke-current inline w-4 h-4 mr-1"></i><span id="challenge-hackers"></span></span>
                         <span class="flex items-center max-md:text-xs max-md:font-medium max-sm:font-normal max-sm:text-xs "><i data-lucide="user" class="stroke-current inline w-4 h-4 mr-1"></i><span id="challenge-author">#</span></span>
                         <span class="ml-auto max-md:ml-0 text-yellow-400 font-semibold flex items-center max-md:text-xs max-md:font-medium max-sm:font-normal max-sm:text-xs "><i data-lucide="trophy" class="stroke-current inline w-4 h-4 mr-1"></i><span id="challenge-points"></span>pts</span>

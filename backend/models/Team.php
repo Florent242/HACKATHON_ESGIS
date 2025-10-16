@@ -380,10 +380,13 @@ class Team
     public function getByUser($userId)
     {
         try {
-            $query = "SELECT t.* FROM {$this->table} t
-                     JOIN team_members tm ON t.id = tm.team_id
-                     WHERE tm.user_id = :user_id
-                     ORDER BY t.name";
+            $query = "SELECT t.*, (SELECT COUNT(*) 
+                    FROM team_members tm2 
+                    WHERE tm2.team_id = t.id) AS members_count FROM {$this->table} t
+                    JOIN team_members tm ON t.id = tm.team_id
+                    WHERE tm.user_id = :user_id
+                    GROUP BY t.id
+                    ORDER BY t.name";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
             $stmt->execute();
@@ -598,7 +601,6 @@ class Team
      */
     public function teamRequest($teamId, $userId): array
     {
-        error_log("Appel de teamRequest avec teamId: " . var_export($teamId, true) . ", userId: " . var_export($userId, true));
         try {
             // Vérifier si l'utilisateur est déjà membre de l'équipe
             if ($this->isMember($teamId, $userId)) {
@@ -617,12 +619,20 @@ class Team
             }
 
             // Vérifier s'il existe déjà une demande en attente
-            $checkRequest = "SELECT COUNT(*) FROM teams_adhesions 
+            try {
+                $checkRequest = "SELECT COUNT(*) FROM teams_adhesions 
                            WHERE teams_id = :teams_id AND user_id = :user_id AND status = 'pending'";
-            $stmtCheck = $this->db->prepare($checkRequest);
-            $stmtCheck->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
-            $stmtCheck->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $stmtCheck->execute();
+                $stmtCheck = $this->db->prepare($checkRequest);
+                $stmtCheck->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
+                $stmtCheck->bindParam(':user_id', $userId, PDO::PARAM_INT);
+                $stmtCheck->execute();
+            } catch (Exception $e) {
+                throw new Exception(
+                    'Erreur lors de la vérification de la demande d\'adhésion à l\'équipe !'
+                    // Pour le debug
+                    // . $e->getMessage()
+                );
+            }
 
             if ((int)$stmtCheck->fetchColumn() > 0) {
                 return [
@@ -633,13 +643,19 @@ class Team
             }
 
             // Récupérer le leader_id de l'équipe
-            $queryLeader = "SELECT id, leader_id, type, name FROM {$this->table} WHERE id = :team_id LIMIT 1";
-            $stmtLeader = $this->db->prepare($queryLeader);
-            $stmtLeader->bindParam(':team_id', $teamId, PDO::PARAM_INT);
-            $stmtLeader->execute();
-            $team = $stmtLeader->fetch(PDO::FETCH_ASSOC);
-
-            error_log("Résultat de la requête SQL pour teamId $teamId: " . var_export($team, true));
+            try {
+                $queryLeader = "SELECT id, leader_id, type, name FROM {$this->table} WHERE id = :team_id LIMIT 1";
+                $stmtLeader = $this->db->prepare($queryLeader);
+                $stmtLeader->bindParam(':team_id', $teamId, PDO::PARAM_INT);
+                $stmtLeader->execute();
+                $team = $stmtLeader->fetch(PDO::FETCH_ASSOC);
+            } catch (Exception $e) {
+                throw new Exception(
+                    'Erreur lors de la récupération de l\'équipe leader !'
+                    // Pour le debug
+                    // . $e->getMessage()
+                );
+            }
 
             if (!$team) {
                 return [
@@ -653,16 +669,22 @@ class Team
             $type = $team['type'];
 
             // Faire une demande d'adhésion
-            $query = "INSERT INTO teams_adhesions (teams_id, leader_id, user_id, status, type, joined_at) 
-                     VALUES (:teams_id, :leader_id, :user_id, 'pending', :type, NOW())";
-            $stmt = $this->db->prepare($query);
-            $stmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
-            $stmt->bindParam(':leader_id', $leaderId, PDO::PARAM_INT);
-            $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-            $stmt->bindValue(':type', $type, PDO::PARAM_STR);
-            $stmt->execute();
-
-            error_log("Demande d'adhésion insérée pour teamId: $teamId, userId: $userId");
+            try {
+                $query = "INSERT INTO teams_adhesions (teams_id, leader_id, user_id, status, type, joined_at) 
+                        VALUES (:teams_id, :leader_id, :user_id, 'pending', :type, NOW())";
+                $stmt = $this->db->prepare($query);
+                $stmt->bindParam(':teams_id', $teamId, PDO::PARAM_INT);
+                $stmt->bindParam(':leader_id', $leaderId, PDO::PARAM_INT);
+                $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+                $stmt->bindParam(':type', $type, PDO::PARAM_STR);
+                $stmt->execute();
+            } catch (Exception $e) {
+                throw new Exception(
+                    'Erreur lors de la demande d\'adhésion à l\'équipe !'
+                    // Pour le debug
+                    // . $e->getMessage()
+                );
+            }
 
             if ($stmt->rowCount() > 0) {
                 logActivity('join', 'Vous avez envoyé une demande d\'adhésion a l\'equipe ' . $team['name'], $teamId, $userId);
@@ -676,11 +698,8 @@ class Team
                 'message' => 'Erreur lors de la demande d\'adhésion'
             ];
         } catch (Exception $e) {
-            error_log('Erreur lors de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
             throw new Exception(
-                'Erreur lors de la demande d\'adhésion à l\'équipe !'
-                // Pour le debug
-                // . $e->getMessage()
+                $e->getMessage()
             );
         }
     }
@@ -717,7 +736,6 @@ class Team
                 $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
                 $stmt->execute();
             } catch (Exception $e) {
-                error_log('Erreur lors de la verification de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
                 throw new Exception(
                     'Erreur lors de la verification de la demande d\'adhésion à l\'équipe !'
                     // Pour le debug
@@ -734,7 +752,6 @@ class Team
                     $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
                     $stmt->execute();
                 } catch (Exception $e) {
-                    error_log('Erreur lors de la mise a jour de la demande d\'adhésion: ' . $e->getMessage());
                     throw new Exception(
                         'Erreur lors de la mise a jour de la demande d\'adhésion !'
                         // Pour le debug
@@ -752,7 +769,6 @@ class Team
                 $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
                 $stmt->execute();
             } catch (Exception $e) {
-                error_log('Erreur lors de l\'acceptation de la demande d\'adhésion: ' . $e->getMessage());
                 throw new Exception(
                     'Erreur lors de l\'acceptation de la demande d\'adhésion !'
                     // Pour le debug
@@ -776,11 +792,7 @@ class Team
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
-            error_log('Erreur lors de l\'acceptation de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
-            throw new Exception('Erreur lors de l\'acceptation de la demande d\'adhésion à l\'équipe !' 
-            // Pour le debug
-            // . $e->getMessage()
-            );
+            throw new Exception($e->getMessage());
         }
     }
 
@@ -816,7 +828,6 @@ class Team
                 $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
                 $stmt->execute();
             } catch (Exception $e) {
-                error_log('Erreur lors du rejet de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
                 throw new Exception(
                     'Erreur lors du rejet de la demande d\'adhésion à l\'équipe !'
                     // Pour le debug
@@ -838,7 +849,6 @@ class Team
             if ($this->db->inTransaction()) {
                 $this->db->rollBack();
             }
-            error_log('Erreur lors de la rejet de la demande d\'adhésion à l\'équipe: ' . $e->getMessage());
             throw new Exception($e->getMessage());
         }
     }
@@ -880,7 +890,6 @@ class Team
 
                 return true;
             } catch (Exception $e) {
-                error_log('Erreur lors de la suppression du membre de l\'équipe: ' . $e->getMessage());
                 throw new Exception(
                     'Erreur lors de l\'operation de suppression du membre de l\'équipe !'
                     // Pour le debug
