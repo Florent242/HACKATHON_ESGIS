@@ -14,6 +14,7 @@
   --border: #2d2d3a;
   --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
   --button-shadow: 0 4px 10px rgba(109, 40, 217, 0.3);
+  --background-hover: rgb(14, 14, 32);
 }
 
 * {
@@ -65,6 +66,7 @@ body {
 }
 
 .nav {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -98,11 +100,10 @@ body {
   display: flex;
   gap: 0.25rem;
   align-items: center;
-  justify-content: center;
   align-items: center;
   height: 100%;
+
   overflow-x: auto;
-  scrollbar-width: thin;
   scrollbar-color: #4a4a4a transparent;
   padding: 0;
   margin: 0;
@@ -192,15 +193,6 @@ body {
 }
 
 /* User Menu */
-.user-menu {
-  position: relative;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-  flex-shrink: 0;
-  z-index: 1001;
-}
 
 .dropdown-toggle {
   display: flex;
@@ -468,7 +460,7 @@ body {
   .nav-links {
     display: none;
     position: fixed;
-    top: 60px;
+    top: 0;
     left: 0;
     right: 0;
     bottom: 0;
@@ -484,8 +476,9 @@ body {
   }
 
   .nav-links.mobile-menu-open {
+    position: absolute;
+    bottom: 0;
     display: flex;
-    overflow-y: hidden;
   }
 
   .nav-link, #userDropdown {
@@ -500,7 +493,10 @@ body {
   }
 
   .user-menu {
+    position: relative;
     width: 100%;
+    display: flex;
+    gap: 2;
     flex-direction: column;
     align-items: flex-start;
     margin-top: 1rem;
@@ -855,15 +851,6 @@ tbody tr:hover {
   outline: none;
 }
 
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
 /* Dropdown */
 
 .dropdown {
@@ -899,11 +886,8 @@ tbody tr:hover {
   border-radius: 0.5rem;
   z-index: 9999;
   position: absolute;
-  top: 0;
   /* Z-index très élevé pour être au-dessus de tout */
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease;
   border: 1px solid rgba(255, 255, 255, 0.05);
   max-height: 80vh;
   /* Hauteur maximale pour éviter de dépasser l'écran */
@@ -947,7 +931,7 @@ body {
   transition: background-color 0.2s ease;
 }
 
-.dropdown-item:hover {
+a.dropdown-item:hover {
   background-color: var(--background-hover);
 }
 

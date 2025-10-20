@@ -50,6 +50,14 @@ class ProjectValidationManager {
 
         // Fermeture des modaux
         document.getElementById('closeEvaluationBtn').addEventListener('click', () => this.closeEvaluationModal());
+        document.getElementById('closeModalBtn').addEventListener('click', () => this.closeEvaluationModal());
+        
+        // Fermer modal en cliquant en dehors
+        document.getElementById('evaluationModal').addEventListener('click', (e) => {
+            if (e.target.id === 'evaluationModal') {
+                this.closeEvaluationModal();
+            }
+        });
 
         // Notifications
         document.querySelector('.notification-close')?.addEventListener('click', () => this.hideNotification());
@@ -60,8 +68,8 @@ class ProjectValidationManager {
      */
     async loadValidationStats() {
         try {
-            const response = await fetch('/api/admin/validation-stats');
-            const data = await response.json();
+            const response = await apiRequest('/admin/validation-stats');
+            const data = response;
 
             if (data.success) {
                 this.updateStatsDisplay(data.stats);
@@ -212,20 +220,20 @@ class ProjectValidationManager {
                 </td>
                 <td class="px-4 py-4 border-b border-gray-200">
                     <div class="flex flex-wrap justify-center gap-1">
-                        ${project.repository_url ? `
-                            <div class="flex items-center px-2 py-1 bg-gray-900 text-white rounded-md text-xs font-medium">
+                        ${project.repository_url && project.repository_url.trim() !== '' ? `
+                            <div class="flex items-center px-2 py-1 bg-gray-900 text-white rounded-md text-xs font-medium cursor-pointer hover:bg-gray-800 transition-colors" onclick="window.open('${project.repository_url.replace(/'/g, "\\'")}', '_blank')" title="Cliquer pour voir le code source">
                                 <i class="fab fa-github mr-1"></i>
                                 <span>GitHub</span>
                             </div>
                         ` : ''}
-                        ${project.demo_url ? `
-                            <div class="flex items-center px-2 py-1 bg-green-600 text-white rounded-md text-xs font-medium">
+                        ${project.demo_url && project.demo_url.trim() !== '' ? `
+                            <div class="flex items-center px-2 py-1 bg-green-600 text-white rounded-md text-xs font-medium cursor-pointer hover:bg-green-700 transition-colors" onclick="window.open('${project.demo_url.replace(/'/g, "\\'")}', '_blank')" title="Cliquer pour voir la démo">
                                 <i class="fas fa-external-link-alt mr-1"></i>
                                 <span>Démo</span>
                             </div>
                         ` : ''}
                         ${project.zip_path ? `
-                            <div class="flex items-center px-2 py-1 bg-blue-600 text-white rounded-md text-xs font-medium">
+                            <div class="flex items-center px-2 py-1 bg-blue-600 text-white rounded-md text-xs font-medium cursor-pointer hover:bg-blue-700 transition-colors" onclick="validationManager.downloadProject(${project.id})" title="Cliquer pour télécharger">
                                 <i class="fas fa-file-archive mr-1"></i>
                                 <span>ZIP</span>
                             </div>
@@ -317,12 +325,15 @@ class ProjectValidationManager {
      */
     async openEvaluationModal(projectId) {
         try {
-            const response = await fetch(`/api/projects/${projectId}/details`);
-            const data = await response.json();
+            console.log("start");
+            console.log(projectId)
+            const response = await apiRequest(`/projects/${projectId}`);
+            console.log("response", response);
 
-            if (data.success) {
-                this.currentProject = data.project;
-                this.populateEvaluationModal(data.project);
+            if (response.success) {
+                console.log("succes");
+                this.currentProject = response.data;
+                this.populateEvaluationModal(response.data);
                 this.showEvaluationModal();
             } else {
                 this.showError('Erreur lors du chargement du projet');
@@ -335,7 +346,7 @@ class ProjectValidationManager {
 
     populateEvaluationModal(project) {
         // Informations du projet
-        document.getElementById('projectTitle').textContent = project.title;
+        document.getElementById('projectTitle').textContent = project.challenge_title;
         document.getElementById('teamName').textContent = project.team_name;
         document.getElementById('projectDescription').textContent = project.description || 'Aucune description disponible';
 
@@ -354,26 +365,56 @@ class ProjectValidationManager {
         const repoLink = document.getElementById('repositoryLink');
         const demoLink = document.getElementById('demoLink');
         const downloadLink = document.getElementById('downloadLink');
+        const noLinksMessage = document.getElementById('noLinksMessage');
 
-        if (project.repository_url) {
+        let hasLinks = false;
+
+        if (project.repository_url && project.repository_url.trim() !== '') {
             repoLink.href = project.repository_url;
-            repoLink.style.display = 'inline-block';
+            repoLink.target = '_blank';
+            repoLink.style.display = 'inline-flex';
+            hasLinks = true;
         } else {
             repoLink.style.display = 'none';
         }
 
-        if (project.demo_url) {
+        if (project.demo_url && project.demo_url.trim() !== '') {
             demoLink.href = project.demo_url;
-            demoLink.style.display = 'inline-block';
+            demoLink.target = '_blank';
+            demoLink.style.display = 'inline-flex';
+            hasLinks = true;
         } else {
             demoLink.style.display = 'none';
         }
 
-        if (project.zip_path) {
-            downloadLink.href = project.zip_path;
-            downloadLink.style.display = 'inline-block';
+        if (project.zip_path && project.zip_path.trim() !== '') {
+            // Utiliser l'endpoint API sécurisé pour télécharger le fichier
+            downloadLink.href = '#';
+            downloadLink.onclick = (e) => {
+                e.preventDefault();
+                this.downloadProjectFile(project.id, project.file_name || 'project.zip');
+            };
+            downloadLink.style.display = 'inline-flex';
+            
+            // Mettre à jour le texte du lien avec le nom du fichier
+            const linkTextSpan = downloadLink.querySelector('span');
+            if (linkTextSpan && project.file_name) {
+                linkTextSpan.textContent = `Télécharger ${project.file_name}`;
+            } else if (linkTextSpan) {
+                linkTextSpan.textContent = 'Télécharger ZIP';
+            }
+            hasLinks = true;
         } else {
             downloadLink.style.display = 'none';
+        }
+
+        // Afficher le message "Aucun lien disponible" si aucun lien n'est disponible
+        if (noLinksMessage) {
+            if (!hasLinks) {
+                noLinksMessage.style.display = 'inline-flex';
+            } else {
+                noLinksMessage.style.display = 'none';
+            }
         }
     }
 
@@ -497,19 +538,38 @@ class ProjectValidationManager {
      */
     switchCommentTab(tabName) {
         // Désactiver tous les onglets
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('text-green-600', 'border-green-600', 'bg-green-50', 'text-orange-600', 'border-orange-600', 'bg-orange-50', 'text-blue-600', 'border-blue-600', 'bg-blue-50');
+            btn.classList.add('text-gray-600');
+            btn.classList.remove('border-b-2');
+        });
+        document.querySelectorAll('.tab-panel').forEach(panel => {
+            panel.classList.remove('block');
+            panel.classList.add('hidden');
+        });
 
         // Activer l'onglet sélectionné
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-        document.getElementById(`${tabName}-panel`).classList.add('active');
+        const activeTab = document.querySelector(`[data-tab="${tabName}"]`);
+        const activePanel = document.getElementById(`${tabName}-panel`);
+        
+        if (tabName === 'strengths') {
+            activeTab.classList.add('text-green-600', 'border-b-2', 'border-green-600', 'bg-green-50');
+        } else if (tabName === 'improvements') {
+            activeTab.classList.add('text-orange-600', 'border-b-2', 'border-orange-600', 'bg-orange-50');
+        } else if (tabName === 'general') {
+            activeTab.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'bg-blue-50');
+        }
+        
+        activeTab.classList.remove('text-gray-600');
+        activePanel.classList.remove('hidden');
+        activePanel.classList.add('block');
     }
 
     /**
      * Actions de validation
      */
     async validateProject() {
-        const evaluationData = this.collectEvaluationData();
+        const evaluationData = await this.collectEvaluationData();
         evaluationData.action = 'validate';
 
         const confirmation = await this.showConfirmation(
@@ -524,7 +584,7 @@ class ProjectValidationManager {
     }
 
     async requestRevision() {
-        const evaluationData = this.collectEvaluationData();
+        const evaluationData = await this.collectEvaluationData();
         evaluationData.action = 'request_revision';
 
         const confirmation = await this.showConfirmation(
@@ -539,7 +599,7 @@ class ProjectValidationManager {
     }
 
     async rejectProject() {
-        const evaluationData = this.collectEvaluationData();
+        const evaluationData = await this.collectEvaluationData();
         evaluationData.action = 'reject';
 
         const confirmation = await this.showConfirmation(
@@ -553,7 +613,7 @@ class ProjectValidationManager {
         }
     }
 
-    collectEvaluationData() {
+    async collectEvaluationData() {
         const criteriaScores = {};
         let totalScore = 0;
 
@@ -573,26 +633,30 @@ class ProjectValidationManager {
             general: document.getElementById('generalComment').value
         };
 
+        // Structure conforme au workflow
         return {
             project_id: this.currentProject.id,
-            criteria_scores: criteriaScores,
-            totalScore: totalScore,
-            comments: comments,
-            evaluated_by: this.getCurrentUserId(),
-            evaluated_at: new Date().toISOString()
+            judge_id: await getUserId(),                   
+            score: totalScore,                            
+            criteria: JSON.stringify(criteriaScores),      
+            comments: JSON.stringify(comments),            
+            evaluated_at: new Date().toISOString(),
+
         };
     }
 
     async submitEvaluation(evaluationData) {
         try {
-            const response = await fetch('/api/admin/evaluate-project', {
+            let user_Id=getUserId();
+            console.log("user_Id",user_Id);
+            const response = await apiRequest('/evaluations', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(evaluationData)
             });
-
+            console.log('Response:', response);
             const result = await response.json();
 
             if (result.success) {
@@ -660,14 +724,39 @@ class ProjectValidationManager {
         const messageEl = document.getElementById('notificationMessage');
         
         messageEl.textContent = message;
-        notification.className = `notification ${type}`;
+        
+        // Réinitialiser les classes
+        notification.className = 'fixed top-4 right-4 max-w-sm rounded-lg shadow-lg border';
+        
+        // Ajouter les classes selon le type
+        if (type === 'success') {
+            notification.classList.add('bg-green-50', 'border-green-200');
+            messageEl.classList.add('text-green-800');
+        } else if (type === 'error') {
+            notification.classList.add('bg-red-50', 'border-red-200');
+            messageEl.classList.add('text-red-800');
+        } else if (type === 'warning') {
+            notification.classList.add('bg-yellow-50', 'border-yellow-200');
+            messageEl.classList.add('text-yellow-800');
+        } else {
+            notification.classList.add('bg-blue-50', 'border-blue-200');
+            messageEl.classList.add('text-blue-800');
+        }
+        
         notification.style.display = 'block';
+        notification.style.zIndex = '10001';
 
         setTimeout(() => this.hideNotification(), 5000);
     }
 
     hideNotification() {
-        document.getElementById('notification').style.display = 'none';
+        const notification = document.getElementById('notification');
+        const messageEl = document.getElementById('notificationMessage');
+        
+        notification.style.display = 'none';
+        
+        // Réinitialiser les classes de couleur
+        messageEl.className = 'text-sm font-medium text-gray-800';
     }
 
     showLoading() {
@@ -717,21 +806,65 @@ class ProjectValidationManager {
     }
 
     getProjectRowClass(status) {
+        // Fonction conservée pour compatibilité, mais utilise maintenant Tailwind
+        return this.getProjectRowTailwind(status);
+    }
+
+    getProjectRowTailwind(status) {
         const classes = {
-            'submitted': 'row-submitted',
-            'in_evaluation': 'row-evaluating',
-            'validated': 'row-validated', 
-            'rejected': 'row-rejected',
-            'needs_revision': 'row-revision',
-            'ongoing': 'row-ongoing',
-            'completed': 'row-completed'
+            'submitted': 'border-l-blue-500 bg-blue-50/30',
+            'in_evaluation': 'border-l-yellow-500 bg-yellow-50/30',
+            'validated': 'border-l-emerald-500 bg-emerald-50/30', 
+            'rejected': 'border-l-red-500 bg-red-50/30',
+            'needs_revision': 'border-l-orange-500 bg-orange-50/30',
+            'ongoing': 'border-l-amber-500 bg-amber-50/30',
+            'completed': 'border-l-green-500 bg-green-50/30'
         };
-        return classes[status] || 'row-default';
+        return classes[status] || 'border-l-gray-300 bg-gray-50/30';
     }
 
     getTeamBadgeColor(index) {
         const colors = ['primary', 'success', 'info', 'warning', 'secondary', 'dark'];
         return colors[index % colors.length];
+    }
+
+    getTailwindTeamBadgeColor(index) {
+        const colors = [
+            'bg-blue-600',      // primary
+            'bg-emerald-600',   // success  
+            'bg-cyan-600',      // info
+            'bg-amber-600',     // warning
+            'bg-gray-600',      // secondary
+            'bg-gray-800'       // dark
+        ];
+        return colors[index % colors.length];
+    }
+
+    getTailwindStatusColor(status) {
+        const colors = {
+            'submitted': 'bg-blue-100 text-blue-800 border border-blue-200',
+            'in_evaluation': 'bg-yellow-100 text-yellow-800 border border-yellow-200',
+            'validated': 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+            'rejected': 'bg-red-100 text-red-800 border border-red-200',
+            'needs_revision': 'bg-orange-100 text-orange-800 border border-orange-200',
+            'ongoing': 'bg-amber-100 text-amber-800 border border-amber-200',
+            'completed': 'bg-green-100 text-green-800 border border-green-200'
+        };
+        return colors[status] || 'bg-gray-100 text-gray-800 border border-gray-200';
+    }
+
+    getTailwindScoreColor(score) {
+        if (score >= 80) return 'border-emerald-500';
+        if (score >= 60) return 'border-blue-500';
+        if (score >= 40) return 'border-amber-500';
+        return 'border-red-500';
+    }
+
+    getTailwindScoreTextColor(score) {
+        if (score >= 80) return 'text-emerald-600';
+        if (score >= 60) return 'text-blue-600';
+        if (score >= 40) return 'text-amber-600';
+        return 'text-red-600';
     }
 
     getScoreClass(score) {
@@ -784,6 +917,84 @@ class ProjectValidationManager {
         console.log('Applying filters...');
     }
 
+    // Nouvelles méthodes pour les fonctionnalités étendues
+    downloadProject(projectId) {
+        console.log('🔄 downloadProject appelé avec ID:', projectId);
+        
+        // Fermer le dropdown si ouvert
+        const dropdown = document.getElementById(`dropdown-${projectId}`);
+        if (dropdown) {
+            dropdown.classList.add('hidden');
+        }
+        
+        if (this.currentProject && this.currentProject.id === projectId) {
+            console.log('📂 Projet courant disponible:', this.currentProject.file_name);
+            this.downloadProjectFile(projectId, this.currentProject.file_name || 'project.zip');
+        } else {
+            console.log('📂 Récupération des infos du projet...');
+            // Récupérer les infos du projet si pas dans le modal
+            this.downloadProjectFile(projectId);
+        }
+    }
+
+    async downloadProjectFile(projectId, fileName = null) {
+        console.log('💾 downloadProjectFile appelé:', { projectId, fileName });
+        
+        try {
+            // Construire l'URL de téléchargement
+            const downloadUrl = `/projects/${projectId}/download`;
+            
+            // Créer une requête pour télécharger le fichier
+            const response = await apiRequest(downloadUrl, {
+                method: 'GET'
+            });
+            
+            if (!response.success) {
+                throw new Error(response.error || 'Erreur lors du téléchargement');
+            }
+
+            // Récupérer le nom du fichier depuis les headers ou utiliser celui fourni
+            const contentDisposition = response.headers?.get('Content-Disposition');
+            let downloadFileName = fileName;
+            
+            if (contentDisposition) {
+                const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (fileNameMatch && fileNameMatch[1]) {
+                    downloadFileName = fileNameMatch[1].replace(/['"]/g, '');
+                }
+            }
+
+            if (!downloadFileName) {
+                downloadFileName = `project_${projectId}.zip`;
+            }
+
+            // Créer un blob et déclencher le téléchargement
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = downloadFileName;
+            document.body.appendChild(link);
+            link.click();
+            
+            // Nettoyer
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+            
+            this.showSuccess(`Fichier "${downloadFileName}" téléchargé avec succès`);
+            
+        } catch (error) {
+            console.error('Erreur lors du téléchargement:', error);
+            this.showError(`Erreur lors du téléchargement: ${error.message}`);
+        }
+    }
+
+    viewHistory(projectId) {
+        console.log('Historique du projet:', projectId);
+        // À implémenter
+    }
+
     async exportEvaluations() {
         // À implémenter - export des évaluations
         console.log('Exporting evaluations...');
@@ -820,3 +1031,87 @@ function closeConfirmationModal() {
         validationManager.closeConfirmationModal();
     }
 }
+
+// Fonction globale pour gérer les dropdowns
+function toggleDropdown(projectId) {
+    console.log('🔽 toggleDropdown appelé pour projet:', projectId);
+    
+    // Fermer tous les autres dropdowns
+    document.querySelectorAll('[id^="dropdown-"]').forEach(dropdown => {
+        if (dropdown.id !== `dropdown-${projectId}`) {
+            dropdown.classList.add('hidden');
+        }
+    });
+    
+    // Toggle le dropdown actuel
+    const dropdown = document.getElementById(`dropdown-${projectId}`);
+    if (dropdown) {
+        dropdown.classList.toggle('hidden');
+        console.log('🔽 Dropdown toggleé:', !dropdown.classList.contains('hidden') ? 'Ouvert' : 'Fermé');
+    } else {
+        console.error('❌ Dropdown non trouvé:', `dropdown-${projectId}`);
+    }
+}
+
+// Fermer les dropdowns en cliquant ailleurs
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.relative')) {
+        document.querySelectorAll('[id^="dropdown-"]').forEach(dropdown => {
+            dropdown.classList.add('hidden');
+        });
+    }
+});
+
+// Fonction de debug pour tester le téléchargement
+window.debugDownload = function(projectId) {
+    console.log('🔧 Debug téléchargement pour projet:', projectId);
+    if (validationManager) {
+        validationManager.downloadProject(projectId);
+    } else {
+        console.error('❌ validationManager non initialisé');
+    }
+};
+
+// Fonction pour tester manuellement l'API
+window.testAPI = async function(projectId = 12) {
+    console.log('🧪 Test API pour projet:', projectId);
+    
+    const token = localStorage.getItem('auth_token');
+    console.log('🔑 Token:', token ? 'Présent' : 'Absent');
+    
+    if (!token) {
+        console.error('❌ Aucun token trouvé dans localStorage');
+        return;
+    }
+    
+    const url = `/api/projects/${projectId}/download`;
+    console.log('🌐 URL testée:', url);
+    
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        console.log('📡 Réponse:', response.status, response.statusText);
+        console.log('📋 Headers de réponse:', [...response.headers.entries()]);
+        
+        if (response.ok) {
+            console.log('✅ L\'API répond correctement');
+            const contentType = response.headers.get('Content-Type');
+            if (contentType && contentType.includes('application/zip')) {
+                console.log('📦 Contenu ZIP détecté');
+            } else {
+                const text = await response.text();
+                console.log('📄 Contenu reçu:', text.substring(0, 200));
+            }
+        } else {
+            const error = await response.text();
+            console.error('❌ Erreur API:', error);
+        }
+    } catch (error) {
+        console.error('💥 Erreur réseau:', error);
+    }
+};

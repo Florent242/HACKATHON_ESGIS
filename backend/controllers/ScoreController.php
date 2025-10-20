@@ -101,4 +101,73 @@ class ScoreController extends Controller
             ], 400);
         }
     }
+
+    public function freezePhase($hackathon_id, $phase_id)
+    {
+        try {
+            $this->validateMethod('POST');
+
+            // Verifier les entrees
+            if (!is_numeric($hackathon_id) || !is_numeric($phase_id)) {
+                throw new Exception('Hackathon ID et phase ID doivent être des nombres entiers.');
+            }
+            $this->score->freezePhase($hackathon_id, $phase_id);
+
+            jsonResponse([
+                'success' => true,
+                'message' => 'Phase freeze avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function unfreezePhase($hackathon_id, $phase_id)
+    {
+        try {
+            $this->validateMethod('POST');
+
+            // Verifier les entrees
+            if (!is_numeric($hackathon_id) || !is_numeric($phase_id)) {
+                throw new Exception('Hackathon ID et phase ID doivent être des nombres entiers.');
+            }
+            $this->score->unfreezePhase($hackathon_id, $phase_id);
+
+            jsonResponse([
+                'success' => true,
+                'message' => 'Phase dégelée avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function qualifyTeams($hackathon_id, $phase_id)
+    {
+        try {
+            $this->validateMethod('POST');
+
+            // Verifier les entrees
+            if (!is_numeric($hackathon_id) || !is_numeric($phase_id)) {
+                throw new Exception('Hackathon ID et phase ID doivent être des nombres entiers.');
+            }
+            $this->score->qualifyTeams($hackathon_id, $phase_id);
+
+            jsonResponse([
+                'success' => true,
+                'message' => 'Teams qualify avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
 }

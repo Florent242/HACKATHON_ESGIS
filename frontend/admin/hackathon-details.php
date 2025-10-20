@@ -252,6 +252,8 @@
                                     <th>Participant</th>
                                     <th>Email</th>
                                     <th>Date demande</th>
+                                    <th>Statut</th>
+                                    <th>Membres</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>

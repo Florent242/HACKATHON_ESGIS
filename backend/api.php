@@ -170,12 +170,15 @@ try {
                 //     }
                 //     break;
                 case 'logout':
+                    // Route: POST /api/auth/logout
                     $controller->logout();
                     break;
                 case 'forgot-password':
+                    // Route: POST /api/auth/forgot-password
                     $controller->forgotPassword();
                     break;
                 case 'reset-password':
+                    // Route: POST /api/auth/reset-password
                     $controller->resetPassword();
                     break;
                 default:
@@ -207,6 +210,10 @@ try {
                 // Route: POST /api/participants/{participant_id}/status
                 elseif ($id && $action === 'status' && $method === 'POST') {
                     $controller->updateStatus($id, $input);
+                }
+                // Route: POST /api/participants/{hackathon_id}/team-status
+                elseif ($id && $action === 'team-status' && $method === 'POST') {
+                    $controller->updateTeamStatus($id, $input);
                 }
                 // Route non reconnue
                 else {
@@ -395,7 +402,7 @@ try {
                     } elseif ($method === 'POST' && isset($request[2]) && $request[2] === 'create') {
                         // POST /api/admin/challenges/create
                         $controllerAdmin->createChallenge();
-                    } elseif (isset($request[2]) && is_numeric($request[2])) {
+                    } elseif (isset($request[2]) && is_numeric($request[2]) && !isset($request[3])) {
                         $challengeId = $request[2];
                         switch ($method) {
                             case 'GET':
@@ -413,6 +420,25 @@ try {
                             default:
                                 throw new Exception('Méthode non autorisée', 405);
                         }
+                    } elseif (is_numeric($action) && isset($request[3]) && $request[3] === 'dependencies') {
+                        $dependencyId = $request[4] ?? null;
+                        
+                        if ($method === 'GET') {
+                            // GET /api/admin/challenges/{id}/dependencies
+                            $controllerAdmin->getChallengeDependencies($action);
+                        } elseif ($method === 'POST') {
+                            // POST /api/admin/challenges/{id}/dependencies
+                            $controllerAdmin->addChallengeDependency($action, $input);
+                        } elseif ($method === 'DELETE' && $dependencyId) {
+                            // DELETE /api/admin/challenges/{id}/dependencies/{dependencyId}
+                            $controllerAdmin->removeChallengeDependency($action, $dependencyId);
+                        } else {
+                            jsonResponse(['success' => false, 'error' => 'Méthode non autorisée'], 405);
+                        }
+                    } 
+                    // Update unlock requirements
+                    elseif (is_numeric($id) && isset($request[3]) && $request[3] === 'unlock' && $method === 'PUT') {
+                        $controllerAdmin->updateChallengeUnlockRequirements($id, $input);
                     } else {
                         throw new Exception('Méthode non autorisée', 405);
                     }
@@ -594,6 +620,20 @@ try {
                 // Route /api/scores/{hackathon_id}/{phase_id}
                 if (isset($id) && is_numeric($id) && isset($action) && is_numeric($action) && isset($input['team_id']) && is_numeric($input['team_id'])) {
                     $controller->updateScore($input['team_id'], (int)$id, (int)$action, $input);
+                } else if (isset($id) && is_numeric($id) && isset($action) && isset($input['phase_id']) && is_numeric($input['phase_id'])) {
+                    // Route /api/scores/{hackathon_id}/{action}/{phase_id}
+                    if ($action === 'freeze') {
+                        $controller->freezePhase((int)$id,(int)$input['phase_id']);
+                    } else if ($action === 'unfreeze') {
+                        $controller->unfreezePhase((int)$id,(int)$input['phase_id']);
+                    } else if ($action === 'qualify') {
+                        $controller->qualifyTeams((int)$id,(int)$input['phase_id']);
+                    } else {
+                        jsonResponse([
+                            'success' => false,
+                            'error' => 'Action non reconnue.'
+                        ], 400);
+                    }
                 } else {
                     jsonResponse([
                         'success' => false,
@@ -1056,6 +1096,13 @@ try {
                         case 'evaluations':
                             $controller->getEvaluations($id);
                             break;
+                        case 'download':
+                            if ($method === 'GET') {
+                                $controller->downloadFile($id);
+                            } else {
+                                throw new Exception('Méthode non autorisée pour le téléchargement', 405);
+                            }
+                            break;
                         default:
                             throw new Exception('Action non reconnue', 404);
                     }
@@ -1119,7 +1166,8 @@ try {
                 if ($method === 'GET') {
                     $controller->getAll();
                 } elseif ($method === 'POST') {
-                    $controller->create();
+
+                    $controller->create($input);
                 } else {
                     throw new Exception('Méthode non autorisée', 405);
                 }
@@ -1193,7 +1241,9 @@ try {
                 throw new Exception('Route non reconnue ou invalide', 400);
             }
             break;
-            case 'logs':                
+            case 'logs':
+                $controller = new ActivityLogController($db, $tokenManager);
+                
                 // Vérification du token JWT
                 if ($method !== 'OPTIONS') {
                     try {
@@ -1209,9 +1259,9 @@ try {
             
                         $logUserId = $tokenValidation['user_id'];
                         
-                        // Vérifier si admin
-                        $adminController = new AdminController($db, $tokenManager);
-                        if (!$adminController->isAdmin($logUserId)) {
+                        // Vérifier si admin - utiliser directement le UserController
+                        $userController = new UserController($db, $tokenManager);
+                        if (!$userController->isAdmin($logUserId)) {
                             throw new Exception('Accès non autorisé', 403);
                         }
                     } catch (Exception $e) {
@@ -1223,7 +1273,7 @@ try {
                     }
                 }
             
-                // Routes
+                // Routes - MAINTENANT $controller est défini
                 if ($method === 'GET' && !isset($id)) {
                     // GET /api/logs
                     $controller->getAll();
@@ -1255,7 +1305,11 @@ try {
         return;
     }
     setFlashMessage('error', 'Erreur API', $e->getMessage());
-    header('Location: /auth');
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
+    header('Location: /auth_admin');
     exit();
 }
 function isAjaxRequest()

@@ -1,0 +1,260 @@
+
+:root{
+    --card:rgba(14, 8, 31, 1);
+    --alert:rgba(198, 53, 53, 0.69);
+    --gray-fade:rgba(214, 214, 214, 1);
+}
+main{
+    padding: 10px 20px 50px;
+    height: 100vh;
+    overflow: auto;
+}
+body{
+    overflow: hidden;
+}
+.search-icon, .filter-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}
+.search-icon{
+    left: 0.75rem;
+    pointer-events: none;
+}
+.filter-icon{
+    right: 0.75rem;    
+    border-radius: 6px;
+    padding: 4px;
+    background: var(--background-hover);
+    transition: background ease .3s;
+}
+.standard-hover:hover{
+    opacity: 0.7;
+    background: var(--border);
+    cursor: pointer;
+}
+.dropdown-menu li:hover{
+    background: var(--background-hover);
+    cursor:pointer;
+}
+.filter-menu{
+    position:absolute;
+    z-index: 999;
+    right:0;
+    box-shadow: 0 0 3px 0 gray!important;
+    display: none;
+    animation: fadeIn forwards 0.4s ease;
+    overflow: hidden;
+}
+#edit-form{
+    width:80%;
+    border-radius:10px;
+    background:#0d0d29;
+    padding:20px;
+    box-shadow: 0 0 5px 0 gray;
+    position:fixed;
+    z-index: 1001;
+}
+textarea{
+    resize: none;
+}
+input, textarea{
+    background-color: #f1f0f037;
+    width: 100%;
+    border-radius: 5px;
+    outline: none;
+    padding: 5px 10px;
+    margin-block: 5px;
+}
+.view-more, .view-less{
+    width:max-content;
+    text-align: center;
+    border: solid 0.7px gray;
+    padding: 3px 10px;
+    border-radius: 5px;
+    display: flex;
+    justify-self: flex-end;
+    transform: scale(0.8) translate(10%);
+    transition: 0.4s;
+    cursor: pointer;
+}
+.view-more:hover, .view-less:hover{
+    opacity: 0.7;
+    transform: scale(0.9) translateX(5%);
+    background: rgba(122, 122, 122, 0.73);
+}
+button:disabled{
+    opacity: 0.5;
+}
+.none{
+    display: none!important;
+}
+.modale{
+    border-radius:10px;
+    background: var(--card);
+    padding: 10px 15px;
+    position: fixed;
+    z-index:2000;
+    text-align: center;
+    box-shadow: 0 0 5px 0 rgba(40, 39, 39, 1);
+    max-width: 40%!important;
+}
+h2{
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height:1.6rem;
+}
+.remove-member-modal button{
+    padding: 5px 10px;
+    width: 48%;
+    border-radius: 8px;
+}
+button{
+    cursor:pointer;
+}
+button:hover{
+    opacity: 0.6;
+}
+.logo{
+    width: 100px;
+    height: 80px;
+    border-radius: 200px;
+    font-size:2rem;
+    background-color: beige;
+    color: black;
+    display:flex;
+    justify-content:center;
+
+}
+#edit-form ul{
+    width: 100%;
+}
+.team-members li{
+    padding: 10px; 
+    border: solid 0.7px gray;
+    border-radius: 5px;
+    margin-block: 10px;
+    display: flex;
+    gap: 20px;
+}
+.flex{
+    display: flex;
+    align-items: center;
+}
+.rounded{
+    border-radius:50%;
+    border: solid 0.5px rgba(20, 23, 51, 1);
+}
+.profil{
+    padding: 5px;
+    width: 55px; height: 45px;
+    background:#d7d7d7ff;
+    display:flex;
+    justify-content: center;
+    align-items:center;
+    color: black;
+}
+.dropdown-toggle{
+    position: relative;
+}
+.lead-flag{
+    border-radius: 20px;
+    padding: 1px 15px 3px;
+    background-color: rgba(243, 210, 47, 0.85);
+    box-shadow: 0 0 2px 0 gray;
+}
+.team-members button{
+    border-radius: 20px;
+    padding: 4px 15px 6px;
+    font-size:0.85rem;
+    cursor: pointer;
+}
+.buttons-form{
+    gap: 8px;
+}
+.remove-member{
+    background-color: var(--alert);
+}
+#edit-form button:hover{
+    box-shadow: 0 0 5px 0 darkgray;
+    opacity:0.6;
+}
+.promote-leader{
+    background-color: rgba(245, 238, 46, 0.88);
+}
+#edit-form > div{
+    margin-block: 10px;
+}
+@keyframes fadeIn{
+    from{
+        opacity:0;
+    }to{
+        opacity:1;
+    }
+}
+.flexDiv{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.option{
+    padding: 5px 15px;
+    border-radius: 20px;
+    background-color: var(--background-hover);
+    width: max-content;
+    margin-block: 10px;
+}
+.options-filter{
+    gap: 10px;
+}
+#hackathon{
+    max-height: 50px;
+    width: 100%;
+    border: solid 0.5px gray;
+    border-radius: 5px;
+    scrollbar-width: none;
+    margin-block: 10px;
+    padding: 5px 10px;
+}
+#hackathon option{
+    background-color: rgb(72, 72, 72)!important;
+}
+.filter-menu .option{
+    background-color: var(--background-hover);
+    cursor: pointer;
+} 
+.filter-menu .option:not(.selected):hover{
+    background-color: #f1f0f037;
+}
+.selected{
+    border: solid 0.3px lightgray;
+}
+.visible{
+    display: block!important;
+}
+.overlay{
+    position:fixed;
+    top:0; left:0;
+    width:100vw;
+    height:100vh;
+    overflow:hidden;
+    background: transparent;
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+}
+@media (max-width:750px){
+    .promote-leader span, .remove-member span{
+        display:none;
+    }
+    .promote-leader, .remove-member{
+        padding:10px!important;
+        border-radius: 8px!important;
+    }
+}
+@media (max-width:800px){
+    .buttons-form{
+        /* flex-direction:column; */
+    }
+
+}

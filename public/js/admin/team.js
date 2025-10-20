@@ -6,10 +6,10 @@ const API_BASE_URL = "/api"
 const TEAM_ELEMENTS = {
   loadingSpinner: "#global-loading-spinner",
   stats: {
-    totalTeams: ".stat-card:nth-child(1) .number",
-    members: ".stat-card:nth-child(2) .number",
-    participations: ".stat-card:nth-child(3) .number",
-    challengesCompleted: ".stat-card:nth-child(4) .number",
+    "teams_count": ".stat-card:nth-child(1) .number",
+    "users_count": ".stat-card:nth-child(2) .number",
+    "hackathons_count": ".stat-card:nth-child(3) .number",
+    "challenges_count": ".stat-card:nth-child(4) .number",
   },
   teamsTable: {
     container: "#teamsTable tbody",
@@ -20,6 +20,7 @@ const TEAM_ELEMENTS = {
   },
   searchInput: ".search-input",
 }
+let teams = null;
 
 /**
  * Initialise la page de gestion des équipes
@@ -48,6 +49,7 @@ async function loadTeams() {
     const response = await apiRequest("/admin/teams")
 
     if (response.success && response.data) {
+      teams = response.data;
       updateTeamsTable(response.data)
     }
   } catch (error) {
@@ -111,27 +113,14 @@ function updateTeamsTable(teams) {
       <td><span class="badge ${statusClass}">${statusText}</span></td>
       <td>
         <div class="dropdown">
-          <button class="dropdown-toggle">
+          <button class="dropdown-toggle" data-id="${team.id}">
             <i class="fas fa-ellipsis-v"></i>
           </button>
-          <div class="dropdown-menu">
-            <a href="#" class="dropdown-item action-button" data-action="edit" data-id="${team.id}">Modifier</a>
-            <a href="#" class="dropdown-item action-button" data-action="view" data-id="${team.id}">Voir détails</a>
-            ${
-              team.status === "suspended"
-                ? `<a href="#" class="dropdown-item action-button" data-action="activate" data-id="${team.id}">Activer</a>`
-                : `<a href="#" class="dropdown-item action-button" data-action="delete" data-id="${team.id}">Supprimer</a>`
-            }
-          </div>
         </div>
       </td>
     `
-
     container.appendChild(row)
   })
-
-  // Initialiser les dropdowns
-  initializeDropdowns()
 }
 
 
@@ -224,7 +213,7 @@ function updateFeaturedTeams(teams) {
           </div>
           <h3>${sanitizeText(team.name)}</h3>
         </div>
-        <p>${team.members_count || 0} membres</p>
+        <p>${team.members_count || 0} membre(s)</p>
         
         <div style="display: flex; justify-content: space-between; margin-top: 20px;">
           <div>
@@ -249,7 +238,6 @@ function updateFeaturedTeams(teams) {
  * Configure les gestionnaires d'événements
  */
 function setupEventListeners() {
-  manageTeamsOptions()
   // Gestionnaire pour le bouton "Créer une équipe"
   const createTeamButton = document.querySelector(".btn-primary")
   if (createTeamButton) {
@@ -260,37 +248,18 @@ function setupEventListeners() {
     })
   }
 
-  // Gestionnaire pour les boutons d'action
-  document.addEventListener("click", (e) => {
-    const actionButton = e.target.closest(".action-button")
-    if (actionButton) {
-      e.preventDefault()
-      const action = actionButton.dataset.action
-      const id = actionButton.dataset.id
-      
-
-      switch (action) {
-        case "edit":
-          editTeam(id)
-          break
-        case "view":
-          viewTeam(id)
-          break
-        case "delete":  
-          deleteTeam(id)
-          break
-        case "activate":
-          activateTeam(id)
-          break
-      }
-    }
-  })
-
   // Gestionnaire pour la recherche
   const searchInput = document.querySelector(TEAM_ELEMENTS.searchInput)
   if (searchInput) {
     searchInput.addEventListener("input", handleSearch)
   }
+
+  //Gestion toggle de la modale de filtre 
+  const filterIcon = document.querySelector('.filter-icon');
+  const filterMenu = document.querySelector('.filter-menu')
+  filterIcon?.addEventListener('click', ()=>{
+    filterMenu.classList.toggle('visible')
+  })
 
   // Initialiser les dropdowns
   initializeDropdowns()
@@ -300,9 +269,245 @@ function setupEventListeners() {
  * Édite une équipe
  * @param {string} id - ID de l'équipe
  */
-function editTeam(id) {
+async function editTeam(id) {
+    document.querySelector('.dropdown-menu')?.remove();
+    const team = teams.find(tm => tm.id == id);
+    const leader = await apiRequest(`/users/${team.leader_id}`)
+                    .then(response => {
+                      if(response.success)return response.data
+                    })
+                    .catch(err=>handleError('Erreur lors de la récupération des memebres.', err));
   // Rediriger vers la page d'édition d'équipe
-  window.location.href = `/admin/equipes/edit.php?id=${id}`
+  const form =document.createElement('form');
+
+  form.innerHTML=`
+            <div class="flex" style="gap: 10px;">
+              <div class="logo">${team.name[0].toUpperCase()}</div>
+              <div style="width:100%;">
+                <div>
+                    <label for="team-name"> Nom de l'équipe</label><br>
+                    <input required type="text" id="team-name" name="team-name" placeholder="Entrez un nom" value="${sanitizeText(team.name)}"/>
+                </div>
+                <div>
+                    <label>Description</label><br>
+                    <textarea required name="description" id="description" placeholder="Entrez une description">${sanitizeText(team.description)}</textarea>
+                </div>
+              </div>
+            </div>                    
+            
+            <ul class="team-members">Equipe
+                <div class="list">
+                  ${renderMembers([leader], true)}
+                  <div class="other-members"></div>
+                </div>
+                <div class="view-more">Voir tout</div>
+            </ul>
+
+            <div style="position: relative;">
+              <label>Intégrer des membres</label>
+              <input type="search" placeholder="Rechercher des participants" style="padding-left: 30px;"/>
+              <i data-lucide="search" style="position: absolute; left: 10px; top: 58%;" width="15" height="15"></i>
+            </div>
+
+            <button type="submit" disabled class='valid-form' style="width: 49.5%; padding-block: 5px; border-radius: 5px; background: rgba(17, 102, 249, 0.84);">Valider</button>
+            <button type="button" class="cancel" style="width: 49.5%; padding-block: 5px; border-radius: 5px; background: rgba(188, 188, 188, 0.84);">Annuler</button>
+  `
+  form.id="edit-form";
+  form.dataset.id = id;
+  form.dataset.lead=leader.id;
+
+  form.setAttribute('enctype', 'multipart/form-data');
+  document.body.appendChild(form)
+  form.style.cssText=`
+    top: calc((100vh - ${form.offsetHeight+'px'})/2);
+    left: calc((100vw - ${form.offsetWidth+'px'})/2);
+  `
+  
+  handleEditFormBtn()
+  blurBackground();
+  handleEditForm();
+  lucide.createIcons();
+}
+
+
+function renderMembers(members, isLeader){
+  if(members){
+   return members.map(member =>`
+      <li data-id='${member.id}'>
+        ${member.profile_picture ? `<img class="profil rounded" src="/storage/${member.profile_picture}" alt="profil"/>` : `<div class="profil rounded">${member.username[0].toUpperCase()}</div>`}
+        <div style="display: flex; gap: 10px; align-items: flex-start; width: 100%;">
+          <div>
+            <p>${sanitizeText(member.username)}</p>
+            <p>${member.special_comp}</p> 
+          </div>                    
+          ${isLeader ? `<div class="lead-flag flex" style="gap:5px; transform: scale(0.8);">
+           <p>Leader</p> 
+            <i data-lucide="crown" width="15" height="15" style="transform:translateY(1px);"></i>
+          </div>` : ''}
+        </div>
+        <div class="flex buttons-form">
+          ${!isLeader ? `<button type="button" class="promote-leader flex"><span>Promouvoir</span> <i data-lucide="crown" width="15" height="15"></i></button>` : ''}
+          <button type="button" class="remove-member flex" data-id='${member.id}'><span>Retirer</span> <i data-lucide="trash-2" width="15" height="15"></i></button>
+        </div>                    
+      </li>
+    `);
+  }
+} 
+
+
+function handleEditFormBtn(){
+  const team = {
+    id:document.getElementById('edit-form')?.dataset.id,
+    lead: document.getElementById('edit-form')?.dataset.lead
+  };
+
+  document.querySelector('.cancel')?.addEventListener('click', ()=>{
+    document.getElementById('edit-form')?.remove();
+    document.querySelector('.overlay')?.remove();
+  });
+
+  const viewMore = document.querySelector('.view-more') ?? document.querySelector('.view-less');
+  viewMore?.addEventListener('click', async()=>{
+    if(viewMore.className == "view-more"){
+      const members = await apiRequest(`/teams/${team.id}/members`)
+                      .then(response => {
+                        if(response.success)  return response.data;
+                      })
+                      .catch(err=>handleError('Erreur lors de la récupération des membres.', err));
+
+      document.querySelector('.team-members .other-members').insertAdjacentHTML('beforeend', renderMembers(members.filter(member => member.id != team.lead), false));
+      viewMore.className='view-less'
+      viewMore.textContent="Voir moins"
+      handleRemoveMember();
+      lucide.createIcons();
+    }else if(viewMore.className === "view-less"){
+      document.querySelector('.team-members .other-members').innerHTML="";
+      viewMore.className="view-more"
+      viewMore.textContent="Voir tout"
+    }
+  });
+}
+
+
+function blurBackground(){
+  const div = document.createElement('div');
+  div.className="overlay";
+  document.body.appendChild(div);
+}
+
+  function handleRemoveMember(members){
+    let handler ={
+      set: function(target, property, value, receiver){
+        if(property === 'deleted' || property==='added'){
+          disableButton();
+        }
+
+        return Reflect.set(target, property, value, receiver);
+      }
+    }
+
+  const proxy = new Proxy(members, handler)
+  
+    const removeBtn = document.querySelectorAll('.remove-member');
+    removeBtn.forEach(btn=> {
+      btn.onclick = ()=> {
+        const team = {
+          id:document.getElementById('edit-form')?.dataset.id,
+          lead: document.getElementById('edit-form')?.dataset.lead
+        };
+        const flag = document.querySelector(`li[data-id='${btn.dataset.id}'] .lead-flag`);
+        const card = document.createElement('div');
+        let memberCount= teams.find(tm => team.id == tm.id)?.members_count;
+        if(flag && memberCount>1){
+          card.innerHTML =`
+            <h2>Attention!</h2>
+            <p style="color: rgba(203, 203, 203, 0.89); text-align: left; margin-block: 10px;">Ce participant est leader de son équipe! Veuillez promouvoir un nouveau leader avant son retrait.</p>
+
+            <button style="width: max-content; display: flex; justify-self: end; border-radius: 10px; padding: 7px 20px; background: rgba(82, 125, 254, 1); box-shadow: 0 0 5px 0 rgba(223, 223, 223, 0.67);" onclick="document.querySelector('.modale')?.remove()">Ok</button>
+          `;
+          card.className = 'modale';
+
+        }else{
+          card.innerHTML =`
+          <h2>Veuillez confirmer la suppression <br>de ce membre!</h2>
+          <div class="flex" style="width: 100%; margin-block: 15px 0; gap: 4%;">
+            <button data-id='${btn.dataset.id}' class='confirm-remove' style="background: var(--alert);">Confirmer</button>
+            <button onclick="document.querySelector('.remove-member-modal')?.remove()" style="background:var(--gray-fade); color: black;">Annuler</button>
+          </div>
+        `
+          card.className = 'modale remove-member-modal';
+        }
+        
+        document.body.appendChild(card);
+        card.style.cssText=`
+          top: calc((100vh - ${card.offsetHeight+'px'})/2);
+          left: calc((100vw - ${card.offsetWidth+'px'})/2);        
+        `
+        const confirmRemove= document.querySelector('.confirm-remove');
+        confirmRemove?.addEventListener('click', async()=>{       
+        
+          proxy.deleted=[...proxy.deleted, confirmRemove.dataset.id].flat(Infinity);
+
+          const members = document.querySelector(`.team-members .list`);
+          members.querySelector(`li[data-id="${confirmRemove.dataset.id}"]`)?.remove();
+          document.querySelector('.view-more')?.classList.add('none');
+          memberCount--;
+
+          if(memberCount === 0){
+            members.innerHTML=`
+              <div class="flex" style="margin-block: 10px; gap: 7px; width:100%; padding: 10px; border-radius: 5px; background: #a54f4fa8;">
+                <i data-lucide="info" height="19" width='19' stroke="#ffdfdf"></i>
+                <p style="color: #ffdfdf;">Cette équipe sera supprimée après validation!</p>
+              </div>
+
+            `   
+            lucide.createIcons();     
+          }
+          document.querySelector('.remove-member-modal')?.remove();
+        });      
+      };    
+    });        
+  }
+
+function handleEditForm(){
+  const name = {
+   previousValue: document.getElementById('team-name').value,
+   input: document.getElementById('team-name'),
+   newValue:null
+  }
+  const description = {
+    input: document.getElementById('description'),
+    previousValue: document.getElementById('description').value,
+    newValue: null
+  };
+  const members = {
+    deleted:[],
+    added:[]
+  };
+  
+  handleRemoveMember(members);
+
+  name.input.oninput = (e)=>{
+    name.newValue=e.target.value;
+    disableButton();
+  }
+
+  description.input.oninput = (e)=>{
+    description.newValue=e.target.value;
+    disableButton();
+  }
+
+  
+  function disableButton(){
+    const valid = document.querySelector('#edit-form .valid-form');
+
+    valid.disabled = (!name.newValue) || 
+                     (name.newValue.trim() === "") || 
+                     (name.newValue === name.previousValue && (description.previousValue === description.newValue && description.previousValue.trim()!=='') && !members.deleted.length && !members.added.length); 
+  
+    if(members.deleted.length || members.added.length)
+      valid.disabled = false;
+  }
 }
 
 /**
@@ -391,24 +596,33 @@ function handleSearch(e) {
  * Initialise les dropdowns
  */
 function initializeDropdowns() {
-  document.querySelectorAll(".dropdown-toggle").forEach((button) => {
-    button.addEventListener("click", (e) => {
-      e.preventDefault()
-      e.stopPropagation()
-      const dropdown = button.nextElementSibling
-      dropdown.classList.toggle("show")
+const dropdownButton = document.querySelectorAll('.dropdown-toggle');
+  dropdownButton?.forEach(button => {
+    button?.addEventListener('click', (e)=>  {
+      e.stopPropagation();
+      const menu = document.querySelector('.dropdown-menu');
+      if(menu) menu.remove();
+        const div = document.createElement('ul');
+          div.insertAdjacentHTML('afterbegin', `
+            <li class="dropdown-item action-button" data-action="edit" data-id="${button.dataset.id}">Modifier</a>
+            <li class="dropdown-item action-button" data-action="view" data-id="${button.dataset.id}">Voir détails</a>
+            <li class="dropdown-item action-button" data-action="delete" data-id="${button.dataset.id}">Supprimer</a>
+          `);
+          div.className = 'dropdown-menu show on-window-click-close';
+          document.querySelector('.table-container').parentElement.insertAdjacentElement('beforeend', div);
+          div.style.cssText=`
+            position: absolute;
+            top:${button.parentElement.offsetTop}px;
+            left:${ e.x - (div.offsetWidth + 30)}px;
+            color: white;  
+            z-index:500;
+          `
+          div.onclick=(e)=> e.stopPropagation();
+          Array.from(div.childNodes).forEach(li => handleTeamsButtons(li));
     })
   })
-
-  // Fermer les dropdowns quand on clique ailleurs
-  document.addEventListener("click", (e) => {
-    if (!e.target.matches(".dropdown-toggle")) {
-      document.querySelectorAll(".dropdown-menu.show").forEach((dropdown) => {
-        dropdown.classList.remove("show")
-      })
-    }
-  })
 }
+
 
 /**
  * Affiche le spinner de chargement
@@ -707,12 +921,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 /* !!!!!!!!!!!!!!!!!! */
 
-const STATS = {
-  teamsCount: document.querySelector('.teams-count .number'),
-  membersCount: document.querySelector('.members-count .number'),
-  hacksCount: document.querySelector('.hackathons-count .number'),
-  challCount: document.querySelector('.challenges-count .number')
-}
 
 /**
  * Charge les statistiques des équipes
@@ -723,18 +931,7 @@ async function loadTeamStats(){
     await apiRequest('/admin/stats')
     .then(stats => {
         if(stats.success){
-          stats = stats.data; 
-          if(STATS.teamsCount)
-            STATS.teamsCount.textContent=stats?.teams_count;
-
-          if(STATS.membersCount)
-            STATS.membersCount.textContent=stats?.users_count;
-
-          if(STATS.hacksCount)
-            STATS.hacksCount.textContent=stats?.hackathons_count;
-
-          if(STATS.challCount)
-            STATS.challCount.textContent=stats?.challenges_count;
+          updateTeamStats(stats.data)
         }
     }).catch(err => handleError('Erreur lors du chargement des statistiques.', err))
   }catch(err){
@@ -742,27 +939,33 @@ async function loadTeamStats(){
   }
 }
 
-function manageTeamsOptions(){
-  const dropdownButton = document.querySelectorAll('dropdown-toggle');
-  dropdownButton?.forEach(menu => {
-    menu?.addEventListener('click', (e)=>  {
-      const menu = document.querySelector('.dropdown-menu');
-      g
-      if(menu) menu.remove();
-        const div = document.createElement('div');
-          div.innerHTML=sanitizeText(`
-            <a href="#" class="dropdown-item action-button" data-action="edit" data-id="1">Modifier</a>
-            <a href="#" class="dropdown-item action-button" data-action="view" data-id="1">Voir détails</a>
-            <a href="#" class="dropdown-item action-button" data-action="delete" data-id="1">Supprimer</a>
-          `);
-          div.className = 'dropdown-menu';
-          document.body.insertAdjacentHTML('beforeend', div);
-          div.style.cssText=`
-            position: absolute;
-            top:${e.target.offsetTop - div.offsetHeight}px;
-            left:${e.target.offsetLeft - div.offsetWidth}px;
-          `
-    })
-  })
+/*!!!!!!!!!!!!!!!!!!*/
+
+function filterTeams(){
 }
 
+function handleTeamsButtons(button){
+    button.addEventListener("click", (e) => {
+    const actionButton = e.target.closest(".action-button")
+    if (actionButton) {
+      const action = actionButton.dataset.action
+      const id = actionButton.dataset.id
+      
+      switch (action) {
+        case "edit":
+          editTeam(id)
+          break
+        case "view":
+          viewTeam(id)
+          break
+        case "delete":  
+          deleteTeam(id)
+          break
+        case "activate":
+          activateTeam(id)
+          break
+      }
+    }
+  })
+
+}

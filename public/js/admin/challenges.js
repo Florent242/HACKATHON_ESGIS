@@ -72,7 +72,8 @@ const ELEMENTS = {
         configuration: "#configurationTab",
         flags: "#flagsTab",
         code: "#codeTab",
-        technologies: "#technologiesTab"
+        technologies: "#technologiesTab",
+        restrictions: "#restrictionsTab"
     },
     containers: {
         flags: "#flagsContainer",
@@ -97,111 +98,211 @@ function initWizardNavigation() {
     const submitBtn = document.getElementById('wizardSubmit');
     const form = document.querySelector(ELEMENTS.form.challenge);
 
-    if (!form || !prevBtn || !nextBtn || !submitBtn) return;
+    if (!form || !prevBtn || !nextBtn || !submitBtn) {
+        console.warn('Éléments de navigation non trouvés, nouvelle tentative dans 100ms');
+        setTimeout(initWizardNavigation, 100);
+        return;
+    }
 
-    // Compute current wizard order based on visible tab buttons
+    // Ordre des onglets
     function getWizardTabs() {
         const base = ['general', 'content', 'configuration'];
-        const optional = ['flags', 'code', 'technologies'];
+        const optional = ['flags', 'code', 'technologies', 'restrictions'];
         const result = [...base];
+        
         optional.forEach(tab => {
-            const btn = document.querySelector(`.tab-button[data-tab="${tab}"]`);
-            if (btn && btn.style.display !== 'none') {
+            const tabElement = document.querySelector(`[data-tab="${tab}"]`);
+            if (tabElement && tabElement.offsetParent !== null) {
                 result.push(tab);
             }
         });
-        // Ensure unique and existing tab-content elements
-        return result.filter((tab, idx) => result.indexOf(tab) === idx && document.getElementById(`${tab}Tab`));
+        
+        return result;
     }
 
-    function currentTabName() {
-        const active = document.querySelector('.tab-button.active');
-        return active ? active.getAttribute('data-tab') : 'general';
+    // Obtenir l'onglet actif
+    function getCurrentTab() {
+        const activeTab = document.querySelector('.tab-button.active');
+        return activeTab ? activeTab.getAttribute('data-tab') : 'general';
     }
 
-    function goToTab(tab) {
-        switchTab(tab);
-        updateControls();
+    // Aller à un onglet spécifique
+    function goToTab(tabName) {
+        const tabs = getWizardTabs();
+        if (!tabs.includes(tabName)) return;
+
+        // Désactiver tous les onglets
+        document.querySelectorAll('.tab-button').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Activer l'onglet sélectionné
+        const tabToActivate = document.querySelector(`[data-tab="${tabName}"]`);
+        if (tabToActivate) {
+            tabToActivate.classList.add('active');
+        }
+        
+        // Masquer tous les contenus d'onglets
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        
+        // Afficher le contenu de l'onglet sélectionné
+        const contentToShow = document.getElementById(`${tabName}Tab`);
+        if (contentToShow) {
+            contentToShow.classList.add('active');
+        }
+        
+        // Mettre à jour la navigation
+        updateNavigation();
+        
+        // Faire défiler vers le haut
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function goToIndex(delta) {
-        const order = getWizardTabs();
-        const cur = currentTabName();
-        const idx = Math.max(0, order.indexOf(cur));
-        const nextIdx = Math.min(order.length - 1, Math.max(0, idx + delta));
-        if (nextIdx !== idx) {
-            goToTab(order[nextIdx]);
+    // Aller à l'onglet suivant
+    function goToNext() {
+        const currentTab = getCurrentTab();
+        const tabs = getWizardTabs();
+        const currentIndex = tabs.indexOf(currentTab);
+        
+        if (currentIndex < tabs.length - 1) {
+            if (validateCurrentTab()) {
+                goToTab(tabs[currentIndex + 1]);
+            }
         }
     }
 
-    function updateControls() {
-        const order = getWizardTabs();
-        const cur = currentTabName();
-        const idx = Math.max(0, order.indexOf(cur));
-        prevBtn.disabled = idx <= 0;
-        const isLast = idx >= order.length - 1;
-        nextBtn.style.display = isLast ? 'none' : 'inline-flex';
-        submitBtn.style.display = isLast ? 'inline-flex' : 'none';
-    }
-
-    function isFieldEmpty(field) {
-        if (field.type === 'checkbox' || field.type === 'radio') {
-            return !field.checked;
+    // Aller à l'onglet précédent
+    function goToPrev() {
+        const currentTab = getCurrentTab();
+        const tabs = getWizardTabs();
+        const currentIndex = tabs.indexOf(currentTab);
+        
+        if (currentIndex > 0) {
+            goToTab(tabs[currentIndex - 1]);
         }
-        return !String(field.value || '').trim();
     }
 
+    // Mettre à jour l'état des boutons de navigation
+    function updateNavigation() {
+        const currentTab = getCurrentTab();
+        const tabs = getWizardTabs();
+        const currentIndex = tabs.indexOf(currentTab);
+
+        // Mettre à jour les boutons
+        prevBtn.disabled = currentIndex <= 0;
+        nextBtn.disabled = currentIndex >= tabs.length - 1;
+        nextBtn.style.display = currentIndex >= tabs.length - 1 ? 'none' : 'inline-flex';
+        submitBtn.style.display = currentIndex >= tabs.length - 1 ? 'inline-flex' : 'none';
+
+        // Mettre à jour les indicateurs de progression
+        updateProgressIndicator(currentIndex, tabs.length);
+    }
+
+    // Mettre à jour l'indicateur de progression
+    function updateProgressIndicator(currentStep, totalSteps) {
+        const progress = document.getElementById('wizardProgress');
+        if (progress) {
+            const percentage = ((currentStep + 1) / totalSteps) * 100;
+            progress.style.width = `${percentage}%`;
+            progress.setAttribute('aria-valuenow', percentage);
+        }
+    }
+
+    // Valider l'onglet actuel
     function validateCurrentTab() {
-        const cur = currentTabName();
-        const panel = document.getElementById(`${cur}Tab`);
-        if (!panel) return true;
-        let ok = true;
-        const required = panel.querySelectorAll('input[required], select[required], textarea[required]');
-        required.forEach(field => {
-            // Clear previous inline errors
-            const err = field.parentNode.querySelector('.field-error');
-            if (err) err.remove();
+        const currentTab = getCurrentTab();
+        const tabContent = document.getElementById(`${currentTab}Tab`);
+        if (!tabContent) return true;
+
+        let isValid = true;
+        const requiredFields = tabContent.querySelectorAll('[required]');
+
+        requiredFields.forEach(field => {
+            // Nettoyer les erreurs précédentes
+            const errorElement = field.closest('.form-group')?.querySelector('.invalid-feedback');
+            if (errorElement) {
+                errorElement.remove();
+            }
             field.classList.remove('is-invalid');
 
-            if (isFieldEmpty(field)) {
-                ok = false;
-                try { if (typeof validateField === 'function') validateField(field); } catch (e) {
-                    field.classList.add('is-invalid');
-                    const div = document.createElement('div');
-                    div.className = 'field-error';
-                    div.textContent = 'Ce champ est requis';
-                    const parent = field.parentNode.classList.contains('form-group') ? field.parentNode : field.parentNode;
-                    parent.appendChild(div);
-                }
+            // Valider le champ
+            if (field.required && !field.value.trim()) {
+                isValid = false;
+                field.classList.add('is-invalid');
             }
         });
-        if (!ok && typeof showNotification === 'function') {
-            showNotification('Attention', 'Veuillez compléter les informations de cet onglet avant de continuer.', 'warning');
+
+        if (!isValid) {
+            const firstInvalid = tabContent.querySelector('.is-invalid');
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            showNotification('Champs requis', 'Veuillez remplir tous les champs obligatoires marqués d\'un astérisque (*)', 'warning');
         }
-        return ok;
+
+        return isValid;
     }
 
-    prevBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        goToIndex(-1);
-    });
+    // Initialisation des écouteurs d'événements
+    function setupEventListeners() {
+        // Navigation
+        prevBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            goToPrev();
+        });
 
-    nextBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (!validateCurrentTab()) return;
-        goToIndex(1);
-    });
+        nextBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            goToNext();
+        });
 
-    // Recompute wizard when type/category impacts optional tabs
-    document.querySelector(ELEMENTS.form.type)?.addEventListener('change', () => {
-        updateControls();
-    });
-    document.querySelector(ELEMENTS.form.category)?.addEventListener('change', () => {
-        updateControls();
-    });
+        // Navigation par onglets
+        document.querySelectorAll('.tab-button').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tabName = tab.getAttribute('data-tab');
+                if (tabName) {
+                    goToTab(tabName);
+                }
+            });
+        });
 
-    // Initialize on modal open
-    updateControls();
+        // Validation en temps réel
+        form.addEventListener('blur', (e) => {
+            if (e.target.matches('[required]')) {
+                validateCurrentTab();
+            }
+        }, true);
+
+        // Soumission du formulaire
+        form.addEventListener('submit', (e) => {
+            if (!validateCurrentTab()) {
+                e.preventDefault();
+                return false;
+            }
+            return true;
+        });
+    }
+
+    // Initialisation
+    function init() {
+        setupEventListeners();
+        updateNavigation();
+        goToTab('general'); // Commencer par le premier onglet
+    }
+
+    // Démarrer l'initialisation
+    init();
+
+    // Exposer les méthodes si nécessaire
+    return {
+        goToTab,
+        goToNext,
+        goToPrev,
+        updateNavigation
+    };
 }
 
 
@@ -211,7 +312,7 @@ function initWizardNavigation() {
 async function initializeChallengesPage() {
     try {
         showLoading();
-        
+
         // Charger toutes les données en parallèle
         await Promise.all([
             loadChallenges(),
@@ -219,12 +320,12 @@ async function initializeChallengesPage() {
             loadHackathons(),
             loadTechnologies()
         ]);
-        
+
         // Configurer les gestionnaires d'événements
         setupEventListeners();
         setupFormValidation();
         initializeCodeEditors();
-        
+
     } catch (error) {
         handleError("Erreur lors de l'initialisation de la page", error);
     } finally {
@@ -319,7 +420,7 @@ async function loadTechnologies() {
             },
             credentials: "include"
         })
-        
+
         if (response.success && response.data) {
             appState.technologies = response.data;
         }
@@ -400,9 +501,9 @@ function updateChallengesTable() {
             </td>
             <td>
                 <div class="action-buttons">
-                    <button class="btn btn-sm btn-primary" onclick="viewChallenge(${challenge.id})" title="Voir">
+                    <!-- <button class="btn btn-sm btn-primary" onclick="viewChallenge(${challenge.id})" title="Voir">
                         <i class="fas fa-eye"></i>
-                    </button>
+                    </button> -->
                     <button class="btn btn-sm btn-warning" onclick="editChallenge(${challenge.id})" title="Modifier">
                         <i class="fas fa-edit"></i>
                     </button>
@@ -431,15 +532,15 @@ function updateStats(stats) {
  */
 function updatePagination() {
     appState.totalPages = Math.ceil(appState.filteredChallenges.length / CHALLENGES_PER_PAGE);
-    
+
     const startIndex = (appState.currentPage - 1) * CHALLENGES_PER_PAGE + 1;
     const endIndex = Math.min(appState.currentPage * CHALLENGES_PER_PAGE, appState.filteredChallenges.length);
-    
+
     document.querySelector(ELEMENTS.pagination.current).textContent = appState.currentPage;
     document.querySelector(ELEMENTS.pagination.total).textContent = appState.totalPages;
-    document.querySelector(ELEMENTS.pagination.info).textContent = 
+    document.querySelector(ELEMENTS.pagination.info).textContent =
         `Affichage de ${startIndex} à ${endIndex} sur ${appState.filteredChallenges.length} résultats`;
-    
+
     document.querySelector(ELEMENTS.pagination.prev).disabled = appState.currentPage <= 1;
     document.querySelector(ELEMENTS.pagination.next).disabled = appState.currentPage >= appState.totalPages;
 }
@@ -469,16 +570,16 @@ function setupEventListeners() {
     document.querySelector(ELEMENTS.filters.type).addEventListener('change', handleFilter);
     document.querySelector(ELEMENTS.filters.difficulty).addEventListener('change', handleFilter);
     document.querySelector(ELEMENTS.filters.status).addEventListener('change', handleFilter);
-    
+
     // Pagination
     document.querySelector(ELEMENTS.pagination.prev).addEventListener('click', () => changePage(-1));
     document.querySelector(ELEMENTS.pagination.next).addEventListener('click', () => changePage(1));
-    
+
     // Formulaire
     document.querySelector(ELEMENTS.form.challenge).addEventListener('submit', handleFormSubmit);
     document.querySelector(ELEMENTS.form.type).addEventListener('change', handleTypeChange);
     document.querySelector(ELEMENTS.form.hackathon_id).addEventListener('change', handleHackathonChange);
-    
+
     // Boutons
     document.querySelector('[data-modal="newChallengeModal"]').addEventListener('click', () => openNewChallengeModal());
     document.querySelector(ELEMENTS.buttons.addFlag).addEventListener('click', addFlag);
@@ -486,10 +587,10 @@ function setupEventListeners() {
     document.querySelector(ELEMENTS.buttons.addTechnology).addEventListener('click', addTechnology);
     document.querySelector(ELEMENTS.buttons.export).addEventListener('click', exportChallenges);
     document.querySelector(ELEMENTS.buttons.confirmDelete).addEventListener('click', confirmDelete);
-    
+
     // Modals
     setupModalEventListeners();
-    
+
     // Onglets
     setupTabEventListeners();
 
@@ -502,7 +603,7 @@ function setupEventListeners() {
  */
 function setupFormValidation() {
     const form = document.querySelector(ELEMENTS.form.challenge);
-    
+
     // Validation en temps réel
     form.querySelectorAll('input[required], select[required], textarea[required]').forEach(field => {
         field.addEventListener('blur', () => validateField(field));
@@ -517,7 +618,7 @@ function initializeCodeEditors() {
     if (!appState.codeEditors) {
         appState.codeEditors = {};
     }
-    
+
     // Configuration des éditeurs par langage
     const editorsConfig = [
         { lang: 'python', mode: 'python' },
@@ -552,7 +653,7 @@ function initializeCodeEditors() {
             try {
                 const editor = CodeMirror.fromTextArea(textarea, editorOptions);
                 appState.codeEditors[config.lang] = editor;
-                
+
                 // Rafraîchir l'éditeur après un court délai
                 setTimeout(() => {
                     if (editor.refresh) editor.refresh();
@@ -586,13 +687,13 @@ function getCodeMirrorMode(language) {
  */
 function handleSearch(e) {
     const searchTerm = e.target.value.toLowerCase();
-    
-    appState.filteredChallenges = appState.challenges.filter(challenge => 
+
+    appState.filteredChallenges = appState.challenges.filter(challenge =>
         challenge.title.toLowerCase().includes(searchTerm) ||
         challenge.description.toLowerCase().includes(searchTerm) ||
         (challenge.category && challenge.category.toLowerCase().includes(searchTerm))
     );
-    
+
     appState.currentPage = 1;
     updateChallengesTable();
     updatePagination();
@@ -605,15 +706,15 @@ function handleFilter() {
     const typeFilter = document.querySelector(ELEMENTS.filters.type).value;
     const difficultyFilter = document.querySelector(ELEMENTS.filters.difficulty).value;
     const statusFilter = document.querySelector(ELEMENTS.filters.status).value;
-    
+
     appState.filteredChallenges = appState.challenges.filter(challenge => {
         const typeMatch = !typeFilter || challenge.type === typeFilter;
         const difficultyMatch = !difficultyFilter || challenge.difficulty === difficultyFilter;
         const statusMatch = !statusFilter || challenge.is_active.toString() === statusFilter;
-        
+
         return typeMatch && difficultyMatch && statusMatch;
     });
-    
+
     appState.currentPage = 1;
     updateChallengesTable();
     updatePagination();
@@ -624,7 +725,7 @@ function handleFilter() {
  */
 function changePage(direction) {
     const newPage = appState.currentPage + direction;
-    
+
     if (newPage >= 1 && newPage <= appState.totalPages) {
         appState.currentPage = newPage;
         updateChallengesTable();
@@ -647,24 +748,33 @@ function openNewChallengeModal() {
  */
 async function handleFormSubmit(e) {
     e.preventDefault();
-    
-    if (!validateForm()) {
-        showNotification('Veuillez corriger les erreurs dans le formulaire', 'error');
+
+    const form = e.target;
+    const invalidFields = form.querySelectorAll(':invalid');
+  
+    for (const field of invalidFields) {
+      const isVisible = !!(field.offsetWidth || field.offsetHeight || field.getClientRects().length);
+      const isDisabled = field.disabled;
+  
+      if (!isVisible || isDisabled) {
+        console.warn(`Champ requis non focusable: ${field.name}`);
+        showNotification('Attention',`Le champ '${field.name}' est requis. Veuillez le corriger.`, 'warning');
         return;
+      }
     }
-    
+
     try {
         showLoading();
-        
+
         const formData = new FormData(e.target);
         const challengeData = Object.fromEntries(formData.entries());
-        
+
         // Traitement des données spéciales
         challengeData.flags = getFlagsData();
         challengeData.tests = getTestsData();
         challengeData.snippets = getSnippetsData();
         challengeData.technologies = getTechnologiesData();
-        
+
         // Validation JSON
         if (challengeData.hint) {
             try {
@@ -673,7 +783,7 @@ async function handleFormSubmit(e) {
                 throw new Error('Format JSON invalide pour les indices');
             }
         }
-        
+
         if (challengeData.algo_config) {
             try {
                 JSON.parse(challengeData.algo_config);
@@ -681,11 +791,11 @@ async function handleFormSubmit(e) {
                 throw new Error('Format JSON invalide pour la configuration algo');
             }
         }
-        
+
         const isEditing = challengeData.id;
         const endpoint = isEditing ? `/admin/challenges/${challengeData.id}` : '/admin/challenges/create';
         const method = isEditing ? 'PUT' : 'POST';
-        
+
         const response = await apiRequest(endpoint, {
             method: method,
             body: JSON.stringify(challengeData),
@@ -693,7 +803,7 @@ async function handleFormSubmit(e) {
                 'Content-Type': 'application/json'
             }
         });
-        
+
         if (response.success) {
             showNotification(
                 isEditing ? 'Challenge modifié avec succès' : 'Challenge créé avec succès',
@@ -705,11 +815,229 @@ async function handleFormSubmit(e) {
         } else {
             throw new Error(response.message || response.error || 'Erreur lors de la sauvegarde');
         }
-        
+
     } catch (error) {
         handleError('Erreur lors de la sauvegarde du challenge', error);
     } finally {
         hideLoading();
+    }
+}
+
+/**
+ * Charge les dépendances d'un challenge
+ * @param {number|string} challengeId - L'ID du challenge
+ */
+async function loadChallengeDependencies(challengeId) {
+    try {
+        // Afficher l'indicateur de chargement
+        const dependenciesList = document.getElementById('dependenciesList');
+        const noDependencies = document.getElementById('noDependencies');
+
+        if (dependenciesList) {
+            dependenciesList.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Chargement...</span></div></div>';
+        }
+        if (noDependencies) {
+            noDependencies.style.display = 'none';
+        }
+
+        // Récupérer les dépendances depuis l'API
+        const response = await apiRequest(`/admin/challenges/${challengeId}/dependencies`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'same-origin'
+        });
+
+        const data = await response;
+
+        // Vérifier si la réponse est valide
+        if (!data || !data.success) {
+            throw new Error(data?.message || data?.error || 'Réponse invalide du serveur');
+        }
+
+        // S'assurer que data.data est un tableau
+        const dependencies = Array.isArray(data.data) ? data.data :
+            (Array.isArray(data) ? data : []);
+
+
+        // Mettre à jour l'interface utilisateur
+        updateDependenciesUI(dependencies || []);
+
+    } catch (error) {
+        console.error('Erreur lors du chargement des dépendances:', error);
+        showNotification(
+            'Erreur',
+            'Impossible de charger les dépendances du challenge. Veuillez réessayer.',
+            'error'
+        );
+
+        // Afficher le message d'absence de dépendances en cas d'erreur
+        const noDependencies = document.getElementById('noDependencies');
+        if (noDependencies) {
+            noDependencies.textContent = 'Impossible de charger les dépendances';
+            noDependencies.style.display = 'block';
+        }
+    }
+}
+
+/**
+ * Met à jour l'interface utilisateur des dépendances
+ * @param {Array} dependencies - Tableau des dépendances
+ */
+function updateDependenciesUI(dependencies) {
+    const dependenciesList = document.getElementById('dependenciesList');
+    const noDependencies = document.getElementById('noDependencies');
+
+    if (!dependenciesList || !noDependencies) return;
+
+    // Vider la liste
+    dependenciesList.innerHTML = '';
+
+    // S'assurer que dependencies est un tableau
+    const dependenciesArray = Array.isArray(dependencies) ? dependencies : [];
+
+    if (dependenciesArray.length === 0) {
+        noDependencies.style.display = 'block';
+        return;
+    }
+
+    // Ajouter chaque dépendance à la liste
+    dependencies.forEach(dep => {
+        const challenge = appState.challenges.find(c => c.id == dep.depends_on_id);
+        if (!challenge) return;
+
+        const dependencyItem = document.createElement('div');
+        dependencyItem.className = 'flex justify-between items-center p-2 border-b border-gray-200';
+        dependencyItem.dataset.dependencyId = dep.id;
+
+        const typeLabel = dep.dependency_type === 'user' ? 'Utilisateur' : 'Equipe';
+        const typeClass = dep.dependency_type === 'user' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800';
+
+        dependencyItem.innerHTML = `
+            <div>
+                <div class="font-medium">${escapeHtml(challenge.title)}</div>
+                <span class="text-xs ${typeClass} px-2 py-0.5 rounded-full">${typeLabel}</span>
+            </div>
+            <button type="button" class="text-red-500 hover:text-red-700" onclick="removeDependency(${dep.id}, this)">
+                <i class="fas fa-trash"></i>
+                <span class="sr-only">Supprimer</span>
+            </button>
+        `;
+
+        dependenciesList.appendChild(dependencyItem);
+    });
+
+    noDependencies.style.display = 'none';
+}
+
+/**
+ * Supprime une dépendance
+ * @param {number|string} dependencyId - L'ID de la dépendance à supprimer
+ * @param {HTMLElement} button - Le bouton de suppression
+ */
+async function removeDependency(dependencyId, button) {
+    const confirmaction = await showConfirmDialog('Êtes-vous sûr de vouloir supprimer cette dépendance ?');
+    
+    if (!confirmaction) {
+        return;
+    }
+    
+    try {
+        const challengeId = document.getElementById('challengeId').value;
+        if (!challengeId) {
+            throw new Error('ID de challenge manquant');
+        }
+
+        const response = await apiRequest(`/admin/challenges/${challengeId}/dependencies/${dependencyId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const data = response;
+
+        if (!response.success) {
+            throw new Error(data?.message || 'Erreur lors de la suppression');
+        }
+
+        // Supprimer l'élément de la liste
+        if (button && button.closest('div')) {
+            button.closest('div').remove();
+        }
+
+        // Mettre à jour l'interface utilisateur
+        const dependenciesList = document.getElementById('dependenciesList');
+        if (dependenciesList && dependenciesList.children.length === 0) {
+            const noDependencies = document.getElementById('noDependencies');
+            if (noDependencies) {
+                noDependencies.style.display = 'block';
+            }
+        }
+
+        showNotification('Succès', 'Dépendance supprimée avec succès', 'success');
+
+    } catch (error) {
+        console.error('Erreur lors de la suppression de la dépendance:', error);
+        showNotification(
+            'Erreur',
+            error.message || 'Une erreur est survenue lors de la suppression de la dépendance',
+            'error'
+        );
+    }
+}
+
+// Fonction utilitaire pour échapper le HTML
+function escapeHtml(unsafe) {
+    return unsafe
+        .toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+// Fonction pour sauvegarder les dépendances
+async function saveDependencies(challengeId) {
+    const dependencies = Array.from(document.querySelectorAll('#dependenciesList .list-group-item')).map(item => ({
+        depends_on_id: item.dataset.challengeId,
+        dependency_type: item.dataset.type
+    }));
+
+    // Récupérer les dépendances existantes
+    const existingDeps = await apiRequest(`/admin/challenges/${challengeId}/dependencies`, {
+        method: 'GET'
+    });
+
+    // Supprimer les dépendances qui n'existent plus
+    if (existingDeps.success) {
+        for (const dep of existingDeps.data) {
+            const stillExists = dependencies.some(d =>
+                d.depends_on_id == dep.depends_on_id && d.dependency_type === dep.dependency_type
+            );
+
+            if (!stillExists) {
+                await apiRequest(`/admin/challenges/${challengeId}/dependencies/${dep.id}`, {
+                    method: 'DELETE'
+                });
+            }
+        }
+    }
+
+    // Ajouter les nouvelles dépendances
+    for (const dep of dependencies) {
+        const exists = existingDeps.success && existingDeps.data.some(d =>
+            d.depends_on_id == dep.depends_on_id && d.dependency_type === dep.dependency_type
+        );
+
+        if (!exists) {
+            await apiRequest(`/admin/challenges/${challengeId}/dependencies`, {
+                method: 'POST',
+                body: JSON.stringify(dep)
+            });
+        }
     }
 }
 
@@ -749,12 +1077,12 @@ function handleTypeChange(e) {
 async function handleHackathonChange(e) {
     const hackathonId = e.target.value;
     const phaseSelect = document.querySelector(ELEMENTS.form.phase_id);
-    
+
     if (!hackathonId) {
         phaseSelect.innerHTML = '<option value="">Sélectionner une phase</option>';
         return;
     }
-    
+
     try {
         const response = await apiRequest(`/admin/hackathon-phases/${hackathonId}`);
         if (response.success && response.data) {
@@ -778,16 +1106,16 @@ function addFlag() {
     const container = document.querySelector(ELEMENTS.containers.flags);
     const template = document.querySelector('#flagTemplate');
     const flagItem = template.content.cloneNode(true);
-    
+
     const flagNumber = container.children.length + 1;
     flagItem.querySelector('.flag-number').textContent = flagNumber;
-    
+
     // Gestionnaire pour supprimer le flag
-    flagItem.querySelector('.remove-flag').addEventListener('click', function() {
+    flagItem.querySelector('.remove-flag').addEventListener('click', function () {
         this.closest('.flag-item').remove();
         updateFlagNumbers();
     });
-    
+
     container.appendChild(flagItem);
 }
 
@@ -810,16 +1138,16 @@ function addTest() {
     const container = document.querySelector(ELEMENTS.containers.tests);
     const template = document.querySelector('#testTemplate');
     const testItem = template.content.cloneNode(true);
-    
+
     const testNumber = container.children.length + 1;
     testItem.querySelector('.test-number').textContent = testNumber;
-    
+
     // Gestionnaire pour supprimer le test
-    testItem.querySelector('.remove-test').addEventListener('click', function() {
+    testItem.querySelector('.remove-test').addEventListener('click', function () {
         this.closest('.test-item').remove();
         updateTestNumbers();
     });
-    
+
     container.appendChild(testItem);
 }
 
@@ -844,10 +1172,10 @@ function addTechnology() {
     const container = document.querySelector(ELEMENTS.containers.technologies);
     const template = document.querySelector('#technologyTemplate');
     const techItem = template.content.cloneNode(true);
-    
+
     const techNumber = container.children.length + 1;
     techItem.querySelector('.technology-number').textContent = techNumber;
-    
+
     // Remplir le select avec les technologies disponibles
     const select = techItem.querySelector('select');
     appState.technologies.forEach(tech => {
@@ -856,13 +1184,13 @@ function addTechnology() {
         option.textContent = tech.name;
         select.appendChild(option);
     });
-    
+
     // Gestionnaire pour supprimer la technologie
-    techItem.querySelector('.remove-technology').addEventListener('click', function() {
+    techItem.querySelector('.remove-technology').addEventListener('click', function () {
         this.closest('.technology-item').remove();
         updateTechnologyNumbers();
     });
-    
+
     container.appendChild(techItem);
 }
 
@@ -945,20 +1273,26 @@ function getTechnologiesData() {
  */
 async function editChallenge(id) {
     try {
+        resetForm();
         showLoading();
         const response = await apiRequest(`/admin/challenges/${id}`);
-        
+
         if (response.success && response.data) {
             appState.editingChallenge = response.data;
             populateForm(response.data);
-            
+
             document.querySelector('#modalTitleText').textContent = 'Modifier le Challenge';
             document.querySelector('#saveButtonText').textContent = 'Modifier';
             openModal(ELEMENTS.modal.challenge);
+            // Réinitialiser la navigation de l'assistant
+            initWizardNavigation();
+
+            // Forcer le rafraîchissement des onglets
+            switchTab('general');
         } else {
             throw new Error(response.error || 'Challenge non trouvé');
         }
-        
+
     } catch (error) {
         handleError('Erreur lors du chargement du challenge', error);
     } finally {
@@ -986,10 +1320,10 @@ function deleteChallenge(id) {
  */
 async function confirmDelete() {
     if (!appState.challengeToDelete) return;
-    
+
     try {
         showLoading();
-        
+
         const response = await apiRequest(`/admin/challenges/${appState.challengeToDelete}`, {
             method: 'DELETE',
             headers: {
@@ -998,11 +1332,12 @@ async function confirmDelete() {
                 "X-Requested-With": "XMLHttpRequest",
             },
             credentials: "include",
-            body: JSON.stringify({ id: appState.challengeToDelete,
+            body: JSON.stringify({
+                id: appState.challengeToDelete,
                 csrf_token: getCSRFToken()
-             })
+            })
         });
-        
+
         if (response.success) {
             showNotification('Challenge supprimé avec succès', 'success');
             closeModal(ELEMENTS.modal.deleteConfirm);
@@ -1013,7 +1348,7 @@ async function confirmDelete() {
             console.log(response);
             throw new Error(response.error || response.message || response.debug_message || response.debug_file || response.debug_line || response.debug_trace || 'Erreur lors de la suppression');
         }
-        
+
     } catch (error) {
         handleError('Erreur lors de la suppression du challenge', error);
     } finally {
@@ -1035,7 +1370,7 @@ function exportChallenges() {
         Statut: challenge.is_active ? 'Actif' : 'Inactif',
         'Date de création': formatDate(challenge.created_at)
     }));
-    
+
     const csv = convertToCSV(data);
     downloadCSV(csv, 'challenges_export.csv');
 }
@@ -1043,7 +1378,8 @@ function exportChallenges() {
 /**
  * Remplit le formulaire avec les données d'un challenge
  */
-function populateForm(challenge) {
+async function populateForm(challenge) {
+
     // Champs de base
     document.querySelector(ELEMENTS.form.challengeId).value = challenge.id;
     document.querySelector(ELEMENTS.form.title).value = challenge.title;
@@ -1051,6 +1387,11 @@ function populateForm(challenge) {
     document.querySelector(ELEMENTS.form.category).value = challenge.category || '';
     document.querySelector(ELEMENTS.form.difficulty).value = challenge.difficulty;
     document.querySelector(ELEMENTS.form.hackathon_id).value = challenge.hackathon_id;
+    
+    // Déclencher les changements pour afficher les onglets appropriés
+    handleTypeChange({ target: { value: challenge.type } });
+    handleHackathonChange({ target: { value: challenge.hackathon_id } });
+
     document.querySelector(ELEMENTS.form.phase_id).value = challenge.phase_id || '';
     document.querySelector(ELEMENTS.form.points).value = challenge.points;
     document.querySelector(ELEMENTS.form.is_active).value = challenge.is_active ? '1' : '0';
@@ -1062,27 +1403,53 @@ function populateForm(challenge) {
     document.querySelector(ELEMENTS.form.is_dynamic).value = challenge.is_dynamic ? '1' : '0';
     document.querySelector(ELEMENTS.form.algo_config).value = challenge.algo_config || '';
     document.querySelector(ELEMENTS.form.created_by).value = challenge.created_by || '';
-    
-    // Déclencher les changements pour afficher les onglets appropriés
-    handleTypeChange({ target: { value: challenge.type } });
-    handleHackathonChange({ target: { value: challenge.hackathon_id } });
-    
+    const unlockPointsInput = document.getElementById('unlockPointsRequired');
+    const unlockChallengesInput = document.getElementById('unlockChallengesRequired');
+
+    if (unlockPointsInput) unlockPointsInput.value = challenge.unlock_points_required || '';
+    if (unlockChallengesInput) unlockChallengesInput.value = challenge.unlock_challenges_required || '';
+
+    // Charger les dépendances
+    if (challenge.id) {
+        setTimeout(() => {
+            loadChallengeDependencies(challenge.id).catch(error => {
+                console.error('Erreur lors du chargement des dépendances:', error);
+            });
+        }, 100);
+    }
+
+    setTimeout(() => {
+        // Réinitialiser l'onglet actif
+        switchTab('general');
+
+        // Réinitialiser la navigation de l'assistant
+        initWizardNavigation();
+
+        // Forcer l'affichage de l'onglet Restrictions si nécessaire
+        const restrictionsTab = document.querySelector('[data-tab="restrictions"]');
+        if (restrictionsTab) {
+            restrictionsTab.style.display = 'block';
+        }
+    }, 100);
+
     // Charger les données liées
     if (challenge.flags && Array.isArray(challenge.flags) && challenge.flags.length > 0) {
         loadFlags(challenge.flags);
     }
-    
+
     if (challenge.snippets && Object.keys(challenge.snippets).length > 0) {
         loadSnippets(challenge.snippets);
     }
-    
+
     if (challenge.tests && Array.isArray(challenge.tests) && challenge.tests.length > 0) {
         loadTests(challenge.tests);
     }
-    
+
     if (challenge.technologies && Array.isArray(challenge.technologies) && challenge.technologies.length > 0) {
         loadTechnologies(challenge.technologies);
     }
+
+    switchTab('general');
 }
 
 /**
@@ -1091,23 +1458,31 @@ function populateForm(challenge) {
 function resetForm() {
     document.querySelector(ELEMENTS.form.challenge).reset();
     document.querySelector(ELEMENTS.form.challengeId).value = '';
-    
+
     // Vider les conteneurs
     document.querySelector(ELEMENTS.containers.flags).innerHTML = '';
     document.querySelector(ELEMENTS.containers.tests).innerHTML = '';
     document.querySelector(ELEMENTS.containers.technologies).innerHTML = '';
-    
+    // Réinitialiser les champs de déblocage
+    document.getElementById('unlockPointsRequired').value = '';
+    document.getElementById('unlockChallengesRequired').value = '';
+
+    // Réinitialiser les dépendances
+    document.getElementById('dependenciesList').innerHTML = '';
+    document.getElementById('noDependencies').style.display = 'block';
+
     // Réinitialiser les éditeurs de code
     Object.values(appState.codeEditors).forEach(editor => {
         editor.setValue('');
     });
-    
+
     // Masquer tous les onglets spéciaux
     document.querySelectorAll('.tab-button[data-tab="flags"], .tab-button[data-tab="code"], .tab-button[data-tab="technologies"]').forEach(tab => {
         tab.style.display = 'none';
     });
-    
+
     appState.editingChallenge = null;
+    switchTab('general');
 }
 
 /**
@@ -1115,14 +1490,14 @@ function resetForm() {
  */
 function validateForm() {
     let isValid = true;
-    
+
     // Valider les champs requis
     document.querySelectorAll('input[required], select[required], textarea[required]').forEach(field => {
         if (!validateField(field)) {
             isValid = false;
         }
     });
-    
+
     return isValid;
 }
 
@@ -1132,12 +1507,12 @@ function validateForm() {
 function validateField(field) {
     const value = field.value.trim();
     const isRequired = field.hasAttribute('required');
-    
+
     if (isRequired && !value) {
         showFieldError(field, 'Ce champ est requis');
         return false;
     }
-    
+
     // Validation spécifique selon le type
     switch (field.type) {
         case 'number':
@@ -1153,7 +1528,7 @@ function validateField(field) {
             }
             break;
     }
-    
+
     clearFieldError(field);
     return true;
 }
@@ -1163,14 +1538,14 @@ function validateField(field) {
  */
 function showFieldError(field, message) {
     clearFieldError(field);
-    
+
     const errorDiv = document.createElement('div');
     errorDiv.className = 'field-error';
     errorDiv.textContent = message;
     errorDiv.style.color = '#dc3545';
     errorDiv.style.fontSize = '0.875rem';
     errorDiv.style.marginTop = '0.25rem';
-    
+
     field.parentNode.appendChild(errorDiv);
     field.classList.add('is-invalid');
 }
@@ -1267,13 +1642,13 @@ function formatDate(dateString) {
 
 function convertToCSV(data) {
     if (!data.length) return '';
-    
+
     const headers = Object.keys(data[0]);
     const csvContent = [
         headers.join(','),
         ...data.map(row => headers.map(header => `"${row[header]}"`).join(','))
     ].join('\n');
-    
+
     return csvContent;
 }
 
@@ -1300,7 +1675,7 @@ function setupModalEventListeners() {
             closeModal(modal);
         });
     });
-    
+
     // Fermer en cliquant à l'extérieur
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', (e) => {
@@ -1324,7 +1699,7 @@ function setupTabEventListeners() {
             switchTab(tabName);
         });
     });
-    
+
     // Onglets des snippets
     document.querySelectorAll('.snippet-tab').forEach(button => {
         button.addEventListener('click', (e) => {
@@ -1334,7 +1709,307 @@ function setupTabEventListeners() {
             switchSnippetTab(language);
         });
     });
+
+    // Attendre que le DOM soit chargé
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupTabEventListeners);
+        return;
+    }
+
+    // Sélecteurs mis à jour pour correspondre à votre HTML
+    const tabsContainer = document.querySelector('.form-tabs');
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    if (!tabsContainer) {
+        console.warn('Conteneur d\'onglets non trouvé, nouvelle tentative dans 100ms');
+        setTimeout(setupTabEventListeners, 100);
+        return;
+    }
+
+    // Ajouter l'onglet Restrictions
+    const restrictionsTab = document.createElement('button');
+    restrictionsTab.type = 'button';
+    restrictionsTab.className = 'tab-button';
+    restrictionsTab.dataset.tab = 'restrictions';
+    restrictionsTab.innerHTML = '<i class="fas fa-lock me-1"></i> Restrictions';
+    tabsContainer.appendChild(restrictionsTab);
+
+    // Créer le contenu de l'onglet Restrictions
+    const restrictionsContent = document.createElement('div');
+    restrictionsContent.className = 'tab-content';
+    restrictionsContent.id = 'restrictionsTab';
+    restrictionsContent.innerHTML = `
+            <div class="card mt-3">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Conditions de déblocage</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="unlockPointsRequired" class="form-label">Points requis (laisser vide pour aucun)</label>
+                            <input type="number" class="form-control" id="unlockPointsRequired" name="unlock_points_required" min="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="unlockChallengesRequired" class="form-label">Nombre de challenges requis</label>
+                            <input type="number" class="form-control" id="unlockChallengesRequired" name="unlock_challenges_required" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Dépendances</h5>
+                        <button type="button" class="btn btn-sm btn-primary" id="addDependencyBtn">
+                            <i class="fas fa-plus me-1"></i> Ajouter une dépendance
+                        </button>
+                    </div>
+                    
+                    <div id="dependenciesList" class="list-group mb-3">
+                        <!-- Les dépendances seront ajoutées ici dynamiquement -->
+                    </div>
+                    
+                    <div id="noDependencies" class="text-muted text-center py-3">
+                        Aucune dépendance définie
+                    </div>
+                </div>
+            </div>
+        `;
+
+    // Ajouter le contenu de l'onglet après le dernier onglet
+    const lastTabContent = document.querySelector('.tab-content:last-of-type');
+    if (lastTabContent) {
+        lastTabContent.insertAdjacentElement('afterend', restrictionsContent);
+    } else {
+        document.querySelector('.modal-body').appendChild(restrictionsContent);
+    }
+
+    // Gestionnaire pour le bouton d'ajout de dépendance
+    document.getElementById('addDependencyBtn')?.addEventListener('click', openAddDependencyModal);
+
+    // Gestionnaire pour le changement d'onglet
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.dataset.tab;
+
+            // Désactiver tous les onglets
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            // Activer l'onglet sélectionné
+            button.classList.add('active');
+            document.getElementById(`${tabName}Tab`)?.classList.add('active');
+        });
+    });
+
 }
+
+/**
+ * Ouvre la modale d'ajout de dépendance
+ */
+function openAddDependencyModal() {
+    // Vérifier si les challenges sont chargés
+    if (!appState.challenges || appState.challenges.length === 0) {
+        loadChallenges().then(() => openAddDependencyModal());
+        return;
+    }
+
+    // Créer la modale
+    const modalId = 'dependencyModal';
+    let modal = document.getElementById(modalId);
+
+    // Si la modale existe déjà, la supprimer
+    if (modal) {
+        modal.remove();
+    }
+
+    // Créer un nouvel élément modal
+    modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'fixed inset-0 bg-gray-500/20 backdrop-blur-sm flex items-center justify-center z-5000 p-4 hidden';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-labelledby', 'modalTitle');
+    modal.setAttribute('aria-modal', 'true');
+
+    // Contenu de la modale
+    modal.innerHTML = `
+        <div class="bg-gray-500/80 z-5000 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="modalTitle" class="text-lg font-semibold text-purple-900/80">Ajouter une dépendance</h3>
+                    <button type="button" class="text-gray-400 hover:text-gray-500" onclick="closeDependencyModal('${modalId}')">
+                        <span class="sr-only">Fermer</span>
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="dependencyChallenge" class="block text-sm font-medium text-gray-400 mb-1">
+                            Challenge à débloquer
+                        </label>
+                        <select id="dependencyChallenge" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">Sélectionner un challenge</option>
+                            ${appState.challenges
+            .filter(c => c.id !== appState.editingChallenge?.id)
+            .map(c => `<option class="text-gray-700 bg-gray-400/20" value="${c.id}">${c.title}</option>`)
+            .join('')}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-2">Type de dépendance</label>
+                        <div class="space-y-2">
+                            <div class="flex items-center">
+                                <input id="dependencyTypeRequired" name="dependencyType" type="radio" 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" 
+                                       value="user" checked>
+                                <label for="dependencyTypeRequired" class="ml-2 block text-sm text-gray-400">
+                                    Utilisateur
+                                </label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="dependencyTypeRecommended" name="dependencyType" type="radio" 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300" 
+                                       value="team">
+                                <label for="dependencyTypeRecommended" class="ml-2 block text-sm text-gray-400">
+                                    Equipe
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" onclick="closeDependencyModal()" 
+                            class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Annuler
+                    </button>
+                    <button type="button" id="saveDependencyBtn" 
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Enregistrer
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Ajouter la modale au DOM
+    document.body.appendChild(modal);
+
+    // Afficher la modale
+    setTimeout(() => {
+        modal.classList.remove('hidden');
+        // Ajouter une classe pour l'animation d'entrée
+        setTimeout(() => {
+            modal.querySelector('div').classList.add('opacity-100', 'translate-y-0');
+        }, 10);
+    }, 10);
+
+    // Gestionnaire d'événement pour le bouton d'enregistrement
+    document.getElementById('saveDependencyBtn').addEventListener('click', () => {
+        const challengeId = document.getElementById('dependencyChallenge').value;
+        const type = document.querySelector('input[name="dependencyType"]:checked').value;
+
+        if (!challengeId) {
+            showNotification('Erreur', 'Veuillez sélectionner un challenge', 'error');
+            return;
+        }
+
+        addDependency(challengeId, type);
+        closeDependencyModal();
+    });
+
+    // Fermer la modale en cliquant à l'extérieur
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeDependencyModal();
+        }
+    });
+
+    // Gérer la touche Echap
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            closeDependencyModal();
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    // Nettoyer les écouteurs d'événements lors de la fermeture
+    modal.addEventListener('close', () => {
+        document.removeEventListener('keydown', handleEscape);
+    });
+}
+
+function closeDependencyModal() {
+    const modal = document.getElementById('dependencyModal');
+    modal.classList.add('hidden');
+    modal.remove();
+}
+
+
+/**
+ * Ajoute une dépendance
+ * @param {number|string} challengeId - L'ID du challenge à ajouter comme dépendance
+ * @param {string} type - Le type de dépendance ('required' ou 'recommended')
+ */
+async function addDependency(challengeId, type) {
+    try {
+        const currentChallengeId = document.getElementById('challengeId').value;
+        if (!currentChallengeId) {
+            throw new Error('ID de challenge manquant');
+        }
+
+        const response = await apiRequest(`/admin/challenges/${currentChallengeId}/dependencies`, {
+            method: 'POST',
+            body: JSON.stringify({
+                depends_on_id: challengeId,
+                dependency_type: type
+            }),
+            credentials: 'same-origin'
+        });
+
+        const data = response;
+
+        if (!data.success) {
+            throw new Error(data?.message || 'Erreur lors de l\'ajout de la dépendance');
+        }
+
+        // Recharger les dépendances
+        await loadChallengeDependencies(currentChallengeId);
+
+        showNotification('Succès', 'Dépendance ajoutée avec succès', 'success');
+
+    } catch (error) {
+        console.error('Erreur lors de l\'ajout de la dépendance:', error);
+        showNotification(
+            'Erreur',
+            error.message || 'Une erreur est survenue lors de l\'ajout de la dépendance',
+            'error'
+        );
+    }
+}
+
+// Fonction pour charger les dépendances existantes
+function loadDependencies(dependencies) {
+    const container = document.getElementById('dependenciesList');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    if (!dependencies || dependencies.length === 0) {
+        document.getElementById('noDependencies').style.display = 'block';
+        return;
+    }
+
+    document.getElementById('noDependencies').style.display = 'none';
+
+    dependencies.forEach(dep => {
+        addDependency(dep.depends_on_id, dep.dependency_type);
+    });
+}
+
 
 function switchTab(tabName) {
     // Désactiver tous les onglets
@@ -1344,12 +2019,13 @@ function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(content => {
         content.classList.remove('active');
     });
-    
+
     // Activer l'onglet sélectionné
-    const tabButton = document.querySelector(`[data-tab="${tabName}"]`)
-    tabButton.classList.add('active');
-    const tabContent = document.querySelector(`#${tabName}Tab`)
-    tabContent.classList.add('active');
+    const tabButton = document.querySelector(`.tab-button[data-tab="${tabName}"]`);
+    const tabContent = document.getElementById(`${tabName}Tab`);
+
+    if (tabButton) tabButton.classList.add('active');
+    if (tabContent) tabContent.classList.add('active');
 }
 
 function switchSnippetTab(language) {
@@ -1359,7 +2035,7 @@ function switchSnippetTab(language) {
     document.querySelectorAll('.snippet-tab').forEach(button => {
         button.classList.remove('active');
     });
-    
+
     // Masquer tous les éditeurs
     document.querySelectorAll('.CodeMirror').forEach(editor => {
         editor.style.display = 'none';
@@ -1368,14 +2044,14 @@ function switchSnippetTab(language) {
     // Activer l'onglet sélectionné
     const tabButton = document.querySelector(`.snippet-tab[data-language="${language}"]`);
     const editorWrapper = document.querySelector(`#${language}_snippet`).nextSibling;
-    
+
     if (tabButton) {
         tabButton.classList.add('active');
     }
-    
+
     if (editorWrapper && editorWrapper.CodeMirror) {
         editorWrapper.style.display = 'block';
-        
+
         // Rafraîchir l'éditeur après un court délai
         setTimeout(() => {
             editorWrapper.CodeMirror.refresh();
@@ -1396,74 +2072,74 @@ function hideLoading() {
 
 function handleError(message, error) {
     console.error(message, error);
-    showNotification(`${message}`,`${error.message || error.error || error.debug_message || error || "Erreur inconnue"}`, 'error');
+    showNotification(`${message}`, `${error.message || error.error || error.debug_message || error || "Erreur inconnue"}`, 'error');
 }
 
 /**
  * Requête API
  */
-async function apiRequest(endpoint, options = {}) {
-    try {
-        const headers = {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        };
+// async function apiRequest(endpoint, options = {}) {
+//     try {
+//         const headers = {
+//             'Accept': 'application/json',
+//             'X-Requested-With': 'XMLHttpRequest'
+//         };
 
-        const response = await fetch(`/api${endpoint}`, {
-            ...options,
-            headers: { ...headers, ...options.headers }
-        });
+//         const response = await fetch(`/api${endpoint}`, {
+//             ...options,
+//             headers: { ...headers, ...options.headers }
+//         });
 
-        const data = await response.json(); // On parse toujours le body
+//         const data = await response.json(); // On parse toujours le body
 
-        // Afficher les détails de debug si disponibles (même pour les réponses 200)
-        if (data.debug_message) {
-            console.group('🔍 Debug API Info');
-            console.log('Message:', data.debug_message);
-            console.log('File:', data.debug_file);
-            console.log('Line:', data.debug_line);
-            if (data.debug_trace) console.log('Trace:', data.debug_trace);
-            console.groupEnd();
-        }
+//         // Afficher les détails de debug si disponibles (même pour les réponses 200)
+//         if (data.debug_message) {
+//             console.group('🔍 Debug API Info');
+//             console.log('Message:', data.debug_message);
+//             console.log('File:', data.debug_file);
+//             console.log('Line:', data.debug_line);
+//             if (data.debug_trace) console.log('Trace:', data.debug_trace);
+//             console.groupEnd();
+//         }
 
-        if (!response.ok) {
-            return {
-                success: false,
-                status: data.status || response.status,
-                message: data.message || data.error || 'Erreur inconnue',
-                debug_message: data.debug_message || null,
-                debug_file: data.debug_file || null,
-                debug_line: data.debug_line || null,
-                debug_trace: data.debug_trace || null,
-                data: null
-            };
-        }
+//         if (!response.ok) {
+//             return {
+//                 success: false,
+//                 status: data.status || response.status,
+//                 message: data.message || data.error || 'Erreur inconnue',
+//                 debug_message: data.debug_message || null,
+//                 debug_file: data.debug_file || null,
+//                 debug_line: data.debug_line || null,
+//                 debug_trace: data.debug_trace || null,
+//                 data: null
+//             };
+//         }
 
-        // Vérifier si la réponse contient une erreur même avec un status 200
-        if (data.success === false) {
-            return {
-                success: false,
-                status: response.status,
-                message: data.error || data.message || 'Erreur inconnue',
-                debug_message: data.debug_message || null,
-                debug_file: data.debug_file || null,
-                debug_line: data.debug_line || null,
-                debug_trace: data.debug_trace || null,
-                data: data
-            };
-        }
+//         // Vérifier si la réponse contient une erreur même avec un status 200
+//         if (data.success === false) {
+//             return {
+//                 success: false,
+//                 status: response.status,
+//                 message: data.error || data.message || 'Erreur inconnue',
+//                 debug_message: data.debug_message || null,
+//                 debug_file: data.debug_file || null,
+//                 debug_line: data.debug_line || null,
+//                 debug_trace: data.debug_trace || null,
+//                 data: data
+//             };
+//         }
 
-        return data;  // Retourne bien les données récupérées
-    } catch (error) {
-        handleError('Erreur lors de la requête API', error, 'error');
-        return {
-            success: false,
-            status: 'client_error',
-            message: 'Erreur côté client',
-            data: null
-        };
-    }
-}
+//         return data;  // Retourne bien les données récupérées
+//     } catch (error) {
+//         handleError('Erreur lors de la requête API', error, 'error');
+//         return {
+//             success: false,
+//             status: 'client_error',
+//             message: 'Erreur côté client',
+//             data: null
+//         };
+//     }
+// }
 
 /**
  * Charge les flags dans le formulaire
@@ -1472,20 +2148,20 @@ async function apiRequest(endpoint, options = {}) {
 function loadFlags(flags) {
     const flagsContainer = document.querySelector(ELEMENTS.containers.flags);
     const flagTemplate = document.querySelector('#flagTemplate');
-    
+
     // Vider les flags existants
     flagsContainer.innerHTML = '';
-    
+
     if (!flags || !Array.isArray(flags)) return;
-    
+
     flags.forEach((flag, index) => {
         // Cloner le template
         const flagElement = flagTemplate.content.cloneNode(true);
         const flagItem = flagElement.querySelector('.flag-item');
-        
+
         // Mettre à jour les champs avec les données du flag
         flagItem.querySelector('.flag-number').textContent = index + 1;
-        
+
         // Mettre à jour les champs du formulaire
         const nameInput = flagItem.querySelector('input[name$="[name]"]');
         const valueInput = flagItem.querySelector('input[name$="[value]"]');
@@ -1493,20 +2169,20 @@ function loadFlags(flags) {
         const minPointsInput = flagItem.querySelector('input[name$="[min_points]"]');
         const decayInput = flagItem.querySelector('input[name$="[decay]"]');
         const isDynamicCheckbox = flagItem.querySelector('input[name$="[is_dynamic]"]');
-        
+
         if (nameInput) nameInput.value = flag.name || '';
         if (valueInput) valueInput.value = flag.value || '';
         if (pointsInput) pointsInput.value = flag.points || flag.initial_points || '100';
         if (minPointsInput) minPointsInput.value = flag.min_points || '50';
         if (decayInput) decayInput.value = flag.decay || '10';
         if (isDynamicCheckbox) isDynamicCheckbox.checked = flag.is_dynamic === 1 || flag.is_dynamic === '1';
-        
+
         // Mettre à jour les noms des champs pour maintenir la structure du tableau
         const updateNames = (element, property, value) => {
             const regex = new RegExp(`(\[flags\]\[\]\[${property}\])`);
             element.name = element.name.replace(regex, `[flags][${index}][${property}]`);
         };
-        
+
         const inputs = flagItem.querySelectorAll('input');
         inputs.forEach(input => {
             const match = input.name.match(/\[flags\]\[\]\[(\w+)\]/);
@@ -1514,17 +2190,17 @@ function loadFlags(flags) {
                 input.name = input.name.replace('[flags][]', `[flags][${index}]`);
             }
         });
-        
+
         // Gestionnaire pour supprimer le flag
-        flagItem.querySelector('.remove-flag').addEventListener('click', function() {
+        flagItem.querySelector('.remove-flag').addEventListener('click', function () {
             this.closest('.flag-item').remove();
             updateFlagNumbers();
         });
-        
+
         // Ajouter le flag au conteneur
         flagsContainer.appendChild(flagItem);
     });
-    
+
     // Mettre à jour les numéros des flags
     updateFlagNumbers();
 }
@@ -1544,18 +2220,18 @@ function loadSnippets(snippets) {
 
     // Parcourir tous les snippets
     for (const language in snippets) {
-        if (snippets.hasOwnProperty(language) && 
-            appState.codeEditors && 
-            appState.codeEditors[language] && 
+        if (snippets.hasOwnProperty(language) &&
+            appState.codeEditors &&
+            appState.codeEditors[language] &&
             snippets[language] !== null) {
-            
+
             // Convertir en chaîne et nettoyer
             const content = String(snippets[language] || '');
-            
+
             // Définir la valeur du snippet dans l'éditeur
             try {
                 appState.codeEditors[language].setValue(content);
-                
+
                 // Rafraîchir l'éditeur
                 setTimeout(() => {
                     if (appState.codeEditors[language]) {
@@ -1570,16 +2246,16 @@ function loadSnippets(snippets) {
 
     // Basculer vers le premier onglet avec du contenu
     let firstLangWithContent = null;
-    
+
     for (const language in snippets) {
-        if (snippets.hasOwnProperty(language) && 
-            snippets[language] !== null && 
+        if (snippets.hasOwnProperty(language) &&
+            snippets[language] !== null &&
             String(snippets[language]).trim() !== '') {
             firstLangWithContent = language;
             break;
         }
     }
-    
+
     if (firstLangWithContent && appState.codeEditors[firstLangWithContent]) {
         switchSnippetTab(firstLangWithContent);
     } else if (appState.codeEditors.python) {
@@ -1594,20 +2270,20 @@ function loadSnippets(snippets) {
 function loadTests(tests) {
     const testsContainer = document.querySelector(ELEMENTS.containers.tests);
     const testTemplate = document.querySelector('#testTemplate');
-    
+
     // Vider les tests existants
     testsContainer.innerHTML = '';
-    
+
     if (!tests || !Array.isArray(tests)) return;
-    
+
     tests.forEach((test, index) => {
         // Cloner le template
         const testElement = testTemplate.content.cloneNode(true);
         const testItem = testElement.querySelector('.test-item');
-        
+
         // Mettre à jour le numéro du test
         testItem.querySelector('.test-number').textContent = index + 1;
-        
+
         // Mettre à jour les champs du formulaire
         const inputData = testItem.querySelector('textarea[name$="[input_data]"]');
         const expectedOutput = testItem.querySelector('textarea[name$="[expected_output]"]');
@@ -1615,14 +2291,14 @@ function loadTests(tests) {
         const timeout = testItem.querySelector('input[name$="[timeout_seconds]"]');
         const memory = testItem.querySelector('input[name$="[memory_limit_mb]"]');
         const isPublic = testItem.querySelector('input[name$="[is_public]"]');
-        
+
         if (inputData) inputData.value = test.input_data || '';
         if (expectedOutput) expectedOutput.value = test.expected_output || '';
         if (points) points.value = test.weight || test.points || '10';
         if (timeout) timeout.value = test.timeout_seconds || '2';
         if (memory) memory.value = test.memory_limit_mb || '128';
         if (isPublic) isPublic.checked = test.is_public === 1 || test.is_public === '1' || test.is_public === true;
-        
+
         // Mettre à jour les noms des champs pour maintenir la structure du tableau
         const inputs = testItem.querySelectorAll('input, textarea, select');
         inputs.forEach(input => {
@@ -1631,17 +2307,17 @@ function loadTests(tests) {
                 input.name = input.name.replace('[tests][]', `[tests][${index}]`);
             }
         });
-        
+
         // Gestionnaire pour supprimer le test
-        testItem.querySelector('.remove-test').addEventListener('click', function() {
+        testItem.querySelector('.remove-test').addEventListener('click', function () {
             this.closest('.test-item').remove();
             updateTestNumbers();
         });
-        
+
         // Ajouter le test au conteneur
         testsContainer.appendChild(testItem);
     });
-    
+
     // Mettre à jour les numéros des tests
     updateTestNumbers();
 }
@@ -1653,47 +2329,47 @@ function loadTests(tests) {
 function loadTechnologies(technologies) {
     const techContainer = document.querySelector(ELEMENTS.containers.technologies);
     const techTemplate = document.querySelector('#technologyTemplate');
-    
+
     // Vider les technologies existantes
     techContainer.innerHTML = '';
-    
+
     if (!technologies || !Array.isArray(technologies)) return;
-    
+
     technologies.forEach((tech, index) => {
         // Cloner le template
         const techElement = techTemplate.content.cloneNode(true);
         const techItem = techElement.querySelector('.technology-item');
-        
+
         // Mettre à jour le numéro de la technologie
         techItem.querySelector('.technology-number').textContent = index + 1;
-        
+
         // Mettre à jour le sélecteur de technologie
         const techSelect = techItem.querySelector('select[name="technologies[]"]');
-        
+
         if (techSelect) {
             // Sélectionner la technologie correspondante
             const optionToSelect = Array.from(techSelect.options).find(
                 option => option.value === tech.id || option.value === tech.technology_id
             );
-            
+
             if (optionToSelect) {
                 optionToSelect.selected = true;
             }
-            
+
             // Mettre à jour le nom du champ pour maintenir la structure du tableau
             techSelect.name = `technologies[${index}]`;
         }
-        
+
         // Gestionnaire pour supprimer la technologie
-        techItem.querySelector('.remove-technology').addEventListener('click', function() {
+        techItem.querySelector('.remove-technology').addEventListener('click', function () {
             this.closest('.technology-item').remove();
             updateTechnologyNumbers();
         });
-        
+
         // Ajouter la technologie au conteneur
         techContainer.appendChild(techItem);
     });
-    
+
     // Mettre à jour les numéros des technologies
     updateTechnologyNumbers();
 }

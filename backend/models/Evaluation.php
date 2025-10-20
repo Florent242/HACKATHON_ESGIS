@@ -19,17 +19,86 @@ class Evaluation {
         return $this->db->find($this->table, $id);
     }
 
-    public function create($data) {
-        return $this->db->create($this->table, $data);
+      public function create($data) {
+        try {
+            $sql = "INSERT INTO {$this->table} (
+                        project_id, 
+                        judge_id, 
+                        score, 
+                        criteria, 
+                        comments, 
+                        created_at
+                    ) VALUES (
+                        :project_id, 
+                        :judge_id, 
+                        :score, 
+                        :criteria, 
+                        :comments, 
+                        NOW()
+                    )";
+
+            $stmt = $this->db->prepare($sql);
+            $result = $stmt->execute([
+                ':project_id' => $data['project_id'],
+                ':judge_id' => $data['judge_id'],
+                ':score' => $data['score'],
+                ':criteria' => $data['criteria'],
+                ':comments' => $data['comments']
+                
+            ]);
+
+            if (!$result) {
+                throw new Exception('Erreur lors de la création de l\'évaluation');
+            }
+
+            return $this->db->lastInsertId();
+
+        } catch (PDOException $e) {
+            throw new Exception('Erreur base de données : ' . $e->getMessage());
+        }
     }
 
-    public function update($id, $data) {
-        return $this->db->update($this->table, $id, $data);
+     public function update($id, $data) {
+        try {
+            $sql = "UPDATE {$this->table} SET ";
+            $fields = [];
+            $params = [':id' => $id];
+
+            if (isset($data['score'])) {
+                $fields[] = "score = :score";
+                $params[':score'] = $data['score'];
+            }
+            if (isset($data['criteria'])) {
+                $fields[] = "criteria = :criteria";
+                $params[':criteria'] = $data['criteria'];
+            }
+            if (isset($data['comments'])) {
+                $fields[] = "comments = :comments";
+                $params[':comments'] = $data['comments'];
+            }
+            
+            $fields[] = "updated_at = NOW()";
+            $sql .= implode(', ', $fields) . " WHERE id = :id";
+
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute($params);
+
+        } catch (PDOException $e) {
+            throw new Exception('Erreur lors de la mise à jour : ' . $e->getMessage());
+        }
     }
 
-    public function delete($id) {
-        return $this->db->delete($this->table, $id);
+   public function delete($id) {
+        try {
+            $sql = "DELETE FROM {$this->table} WHERE id = :id";
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([':id' => $id]);
+
+        } catch (PDOException $e) {
+            throw new Exception('Erreur lors de la suppression : ' . $e->getMessage());
+        }
     }
+
 
     public function getByProjet($projetId) {
         return $this->db->query($this->table, ['projet_id' => $projetId]);

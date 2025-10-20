@@ -682,7 +682,7 @@ class Hackathon
                 COUNT(DISTINCT s.id) as submissions_count
             FROM teams t
             LEFT JOIN scores s ON t.id = s.team_id
-            WHERE t.hackathon_id = :hackathon_id
+            WHERE t.hackathon_id = :hackathon_id AND is_active = 1
             $phaseCondition
             GROUP BY t.id, t.name
             ORDER BY total_score DESC, submissions_count DESC
@@ -712,26 +712,21 @@ class Hackathon
     {
         try {
             $query = "
-            SELECT 
-                ht.*,
-                t.name as team_name,
-                t.leader_id,
-                u.id as user_id,
-                u.username,
-                u.fullname,
-                u.email,
-                u.profile_picture,
-                CASE 
-                    WHEN t.leader_id = u.id THEN 1 
-                    ELSE 0 
-                END as is_leader
-            FROM hackathon_teams ht
-            INNER JOIN teams t ON ht.team_id = t.id
-            INNER JOIN team_members tm ON t.id = tm.team_id
-            INNER JOIN users u ON tm.user_id = u.id
-            WHERE ht.hackathon_id = :hackathon_id AND ht.status = 'pending'
-            ORDER BY ht.registered_at DESC, t.name, is_leader DESC
-        ";
+                SELECT 
+                    ht.*,
+                    t.name as team_name,
+                    t.leader_id,
+                    (SELECT COUNT(*) FROM team_members WHERE team_id = t.id) as members,
+                    (SELECT username FROM users WHERE id = t.leader_id) as leader_username,
+                    (SELECT fullname FROM users WHERE id = t.leader_id) as leader_name,
+                    (SELECT email FROM users WHERE id = t.leader_id) as leader_email,
+                    u.email as email 
+                FROM hackathon_teams ht
+                INNER JOIN teams t ON ht.team_id = t.id
+                INNER JOIN users u ON t.leader_id = u.id 
+                WHERE ht.hackathon_id = :hackathon_id
+                ORDER BY ht.registered_at DESC, t.name
+            ";
 
             $stmt = $this->db->prepare($query);
             $stmt->execute(['hackathon_id' => $hackathonId]);
@@ -741,7 +736,7 @@ class Hackathon
             throw new Exception(
                 "Erreur lors de la récupération des inscriptions"
                 // Pour le debug
-                . $e->getMessage()
+                // . $e->getMessage()
             );
         }
     }

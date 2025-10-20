@@ -70,10 +70,13 @@ class Score
         try {
             $sql = "
                 SELECT 
-                    id,
-                    name,
-                    start,
-                    end
+                    *,
+                    CASE 
+                    WHEN frozen_leaderboard = 1 THEN 'frozen' 
+                    WHEN start <= NOW() AND end >= NOW() THEN 'active' 
+                    WHEN end < NOW() THEN 'ended' 
+                    ELSE 'inactive' 
+                END as status
                 FROM phases
                 WHERE hackathon_id = :hackathon_id
             ";
@@ -137,6 +140,57 @@ class Score
         } catch (Exception $e) {
             throw new Exception(
                 "Erreur lors de la mise à jour du score !"
+                // pour debug
+                // . $e->getMessage()
+            );
+        }
+    }
+
+    public function freezePhase($hackathon_id, $phase_id)
+    {
+        try {
+            $stmt = $this->db->prepare("UPDATE phases SET frozen_leaderboard = 1 WHERE hackathon_id = :hackathon_id AND id = :phase_id");
+            $stmt->execute([
+                ':hackathon_id' => $hackathon_id,
+                ':phase_id' => $phase_id
+            ]);
+        } catch (Exception $e) {
+            throw new Exception(
+                "Erreur lors de la freeze de la phase !"
+                // pour debug
+                // . $e->getMessage()
+            );
+        }
+    }
+
+    public function unfreezePhase($hackathon_id, $phase_id)
+    {
+        try {
+            $stmt = $this->db->prepare("UPDATE phases SET frozen_leaderboard = 0 WHERE hackathon_id = :hackathon_id AND id = :phase_id");
+            $stmt->execute([
+                ':hackathon_id' => $hackathon_id,
+                ':phase_id' => $phase_id
+            ]);
+        } catch (Exception $e) {
+            throw new Exception(
+                "Erreur lors de la unfreeze de la phase !"
+                // pour debug
+                // . $e->getMessage()
+            );
+        }
+    }
+
+    public function qualifyTeams($hackathon_id, $phase_id)
+    {
+        try {
+            $stmt = $this->db->prepare("UPDATE phases WHERE hackathon_id = :hackathon_id AND phase_id = :phase_id");
+            $stmt->execute([
+                ':hackathon_id' => $hackathon_id,
+                ':phase_id' => $phase_id
+            ]);
+        } catch (Exception $e) {
+            throw new Exception(
+                "Erreur lors de la qualification des équipes !"
                 // pour debug
                 // . $e->getMessage()
             );

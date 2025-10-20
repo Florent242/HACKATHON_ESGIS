@@ -6,6 +6,10 @@ use Exception;
 use PDO;
 use PDOException;
 
+if (!defined('FUNCTIONS_INCLUDED')) {
+    require_once __DIR__ . '../includes/functions.php';
+}
+
 class User
 {
     private $db;
@@ -15,6 +19,35 @@ class User
     public function __construct($db)
     {
         $this->db = $db;
+    }
+
+    /**
+     * Vérifie si l'utilisateur est un administrateur
+     * @param int $userId ID de l'utilisateur
+     * @return bool True si l'utilisateur est admin, false sinon
+     */
+    public function isAdmin(int $userId)
+    {
+        if (!isset($userId)) {
+            return false;
+        }
+
+        // Vérification du rôle global
+        $query = "SELECT role FROM users WHERE id = :id";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([':id' => $userId]);
+        $role = $stmt->fetchColumn();
+
+        if (!in_array($role, ['admin', 'organisateur'])) {
+            return false;
+        }
+
+        // Vérification dans la whitelist
+        $query = "SELECT 1 FROM admin_whitelist WHERE user_id = :id AND (expires_at > NOW() OR expires_at IS NULL) LIMIT 1";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([':id' => $userId]);
+
+        return (bool) $stmt->fetchColumn();
     }
 
     /**
@@ -51,6 +84,11 @@ class User
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$user) {
                 return ['success' => false, 'error' => 'Utilisateur non trouvé'];
+            }
+
+            // Vérifier le role de l'utilisateur
+            if (!$this->isAdmin($user['id'])) {
+                throw new Exception('Vous n\'avez pas accès à cette ressource.');
             }
 
             // Vérifier le statut de l'utilisateur
@@ -295,8 +333,8 @@ class User
             error_log('Erreur lors de la récupération de l\'utilisateur: ' . $e->getMessage());
             throw new Exception(
                 'Erreur lors de la récupération de l\'utilisateur !'
-                // Pour debuger
-                 . $e->getMessage()
+                    // Pour debuger
+                    . $e->getMessage()
             );
         }
     }

@@ -82,7 +82,7 @@ class Controller
         $stmt->execute([':id' => $userId]);
         $role = $stmt->fetchColumn();
 
-        if (!in_array($role, ['admin', 'organisateur'])) {
+        if (!in_array($role, ['admin', 'organizer', 'judge'])) {
             return false;
         }
 

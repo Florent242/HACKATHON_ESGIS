@@ -217,6 +217,7 @@ let currentSort = { field: 'created_at', order: 'desc' };
 let totalPages = 1;
 let selectedUsers = new Set();
 let currentUserId = null;
+let tabClickHandler = null;
 let allUsers = [];
 let filteredUsers = [];
 
@@ -321,6 +322,27 @@ function setupEventListeners() {
     showUserModal();
   });
 
+  // Bouton Annuler
+  const cancelBtn = document.getElementById('cancelModalBtn');
+  if (cancelBtn) {
+    // Ajouter le nouvel écouteur
+    cancelBtn.addEventListener('click', closeUserModal);
+  }
+
+  // Bouton closemodal
+  const closeBtn = document.getElementById('closeModalBtn');
+  if (closeBtn) {
+    // Ajouter le nouvel écouteur
+    closeBtn.addEventListener('click', closeUserModal);
+  }
+
+  // Fermeture avec la touche Échap
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      closeUserModal();
+    }
+  });
+
   // Bouton d'actions de masse
   document.getElementById('bulkActionsBtn')?.addEventListener('click', (e) => {
     if (selectedUsers.size > 0) {
@@ -348,10 +370,8 @@ function setupEventListeners() {
   });
 
   // Soumission du formulaire
-  document.getElementById('userForm')?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    handleUserFormSubmit(e);
+  document.getElementById('userForm')?.addEventListener('submit', async (e) => {
+    await handleUserFormSubmit(e);
   });
 
   // Actions de masse - Sélection d'action
@@ -473,6 +493,15 @@ function setupEventListeners() {
   initNotificationForm();
 
   lucide.createIcons();
+}
+
+// Fonction pour femer la modal
+function closeUserModal() {
+  const modal = document.getElementById('userModal');
+  if (modal) {
+    modal.classList.add('hidden');
+    document.body.classList.remove('modal-open');
+  }
 }
 
 // Fonction pour gérer le changement de scope
@@ -1338,9 +1367,14 @@ async function showUserModal(userId = null, activeTab = 'profile') {
   const modal = document.getElementById('userModal');
   modal.classList.remove('hidden');
 
-  // Réinitialiser le formulaire en prenant en compte les cas d'ajout et de modification
+  // Stocker l'ID de l'utilisateur actuellement modifié
+  if (userId !== null) {
+    currentUserId = userId;
+  }
+
+  // Ne réinitialiser le formulaire que pour une nouvelle création (userId === null)
   const form = document.getElementById('userForm');
-  if (userId) {
+  if (userId === null) {
     form.reset();
   }
 
@@ -1360,13 +1394,38 @@ async function showUserModal(userId = null, activeTab = 'profile') {
     }
   };
 
-  // Activer l'onglet demandé et désactiver les autres
+  // Supprimer l'ancien gestionnaire d'événements s'il existe
+  if (tabClickHandler) {
+    document.querySelectorAll('[id$="-tab"]').forEach(tab => {
+      tab.removeEventListener('click', tabClickHandler);
+    });
+  }
+
+  // Nouveau gestionnaire d'événements pour les onglets
+  tabClickHandler = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const tabId = e.currentTarget.id.replace('-tab', '');
+    showUserModal(currentUserId, tabId);  // On passe currentUserId au lieu de userId
+  };
+
+  // Ajouter le gestionnaire d'événements aux onglets
+  document.querySelectorAll('[id$="-tab"]').forEach(tab => {
+    tab.addEventListener('click', tabClickHandler);
+  });
+
+  // Activer l'onglet demandé
   Object.entries(tabs).forEach(([key, { tab, content }]) => {
     if (tab && content) {
       if (key === activeTab) {
         tab.classList.add('border-blue-500', 'text-blue-600');
         tab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
         content.classList.remove('hidden');
+
+        // Charger les données spécifiques à l'onglet si nécessaire
+        if (key === 'activity' && currentUserId) {
+          loadUserActivity(currentUserId);
+        }
       } else {
         tab.classList.remove('border-blue-500', 'text-blue-600');
         tab.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
@@ -1375,169 +1434,128 @@ async function showUserModal(userId = null, activeTab = 'profile') {
     }
   });
 
-  if (userId) {
-    // Mode édition
+  // Mode édition
+  if (currentUserId) {
     document.getElementById('modal-title').textContent = 'Modifier l\'utilisateur';
     document.getElementById('saveButtonText').textContent = 'Enregistrer les modifications';
 
     try {
-      const response = await apiRequest(`/admin/users/${userId}`);
+      // Vérifier si on a déjà les données de l'utilisateur
+      if (!form.dataset.loaded || form.dataset.loaded !== currentUserId) {
+        const response = await apiRequest(`/admin/users/${currentUserId}`);
 
-      if (response.success) {
-        const user = response.data;
-
-        const schoolOption = document.createElement('option');
-        schoolOption.value = user.school;
-        schoolOption.textContent = user.school ? user.school : 'Aucune';
-        document.getElementById('school')?.appendChild(schoolOption);
-        document.getElementById('school').value = user.school || '';
-        // Remplir le formulaire
-        document.getElementById('userId').value = user.id;
-        document.getElementById('username').value = user.username || '';
-        document.getElementById('email').value = user.email || '';
-        document.getElementById('fullName').value = user.fullname || '';
-        document.getElementById('role').value = user.role || 'user';
-        document.getElementById('status').value = user.status || 'active';
-        document.getElementById('bio').value = user.bio || '';
-        document.getElementById('twoFactorEnabled').checked = user.two_factor_enabled || false;
-        document.getElementById('number').value = user.number || '';
-        document.getElementById('study_level').value = user.study_level || '';
-
-        // Si l'onglet d'activité est actif, charger les activités
-        if (activeTab === 'activity') {
-          loadUserActivity(userId);
+        if (response.success) {
+          const user = response.data;
+          // Remplir le formulaire avec les données de l'utilisateur
+          fillUserForm(user);
+          form.dataset.loaded = currentUserId;
+        } else {
+          throw new Error(response.message || 'Erreur lors du chargement des données utilisateur');
         }
-      } else {
-        throw new Error(response.message || 'Erreur lors du chargement des données utilisateur');
       }
     } catch (error) {
       console.error('Erreur:', error);
-      showNotification('Impossible de charger les données de l\'utilisateur', error.message, 'error');
-      return;
+      showNotification('Erreur', 'Impossible de charger les données de l\'utilisateur', 'error');
     }
   } else {
     // Mode création
     document.getElementById('modal-title').textContent = 'Ajouter un utilisateur';
     document.getElementById('saveButtonText').textContent = 'Ajouter l\'utilisateur';
     document.getElementById('userId').value = '';
-
+    delete form.dataset.loaded;
   }
-
-  // Gestion des clics sur les onglets
-  document.querySelectorAll('[id$="-tab"]').forEach(tab => {
-    tab.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const tabId = tab.id.replace('-tab', '');
-      // gerer le cas d'un ajout d'un utilisateur
-      if (tabId === 'profile') {
-        showUserModal(null, tabId);
-      } else {
-        showUserModal(document.getElementById('userId')?.value || null, tabId);
-      }
-    });
-  });
-
-  // Gestion de la fermeture de la modal
-  document.getElementById('closeModal').addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    document.getElementById('userModal').classList.add('hidden');
-    document.getElementById('userForm').reset();
-  });
-  document.getElementById('cancelModalBtn').addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    document.getElementById('userModal').classList.add('hidden');
-    document.getElementById('userForm').reset();
-  });
-
 }
 
 async function handleUserFormSubmit(e) {
   e.preventDefault();
+  e.stopPropagation();
 
   const form = e.target;
-  const userId = document.getElementById('userId').value;
-  const isEdit = !!userId;
+  const invalidFields = form.querySelectorAll(':invalid');
 
-  // Validation
-  if (!validateForm(form)) {
-    return;
-  }
+  for (const field of invalidFields) {
+    const isVisible = !!(field.offsetWidth || field.offsetHeight || field.getClientRects().length);
+    const isDisabled = field.disabled;
 
-  const formData = {
-    username: form.username.value.trim(),
-    email: form.email.value.trim(),
-    fullname: form.fullName.value.trim() || null,
-    role: form.role.value,
-    school: form.school.value.trim() || null,
-    status: form.status.value,
-    bio: form.bio.value.trim() || null,
-    two_factor_enabled: form.twoFactorEnabled.checked,
-    force_password_reset: form.forcePasswordReset?.checked || false,
-    study_level: form.study_level.value.trim() || null,
-    number: form.number.value.trim() || null
-  };
-
-  // Ajouter le mot de passe uniquement s'il est fourni
-  if (form.password.value) {
-    if (form.password.value !== form.password_confirmation.value) {
-      showNotification('Les mots de passe ne correspondent pas', null, 'error');
+    if (!isVisible || isDisabled) {
+      console.warn(`Champ requis non focusable: ${field.name}`);
+      showNotification('Attention', `Le champ '${field.name}' est requis. Veuillez le corriger.`, 'warning');
       return;
     }
-    formData.password = form.password.value;
-    formData.password_confirmation = form.password_confirmation.value;
   }
+  const formData = new FormData(form);
+  const userId = formData.get('userId');
 
   try {
-    const saveSpinner = document.getElementById('saveSpinner');
-    const saveButtonText = document.getElementById('saveButtonText');
-
-    saveSpinner.classList.remove('hidden');
-    saveButtonText.textContent = isEdit ? 'Modification...' : 'Création...';
-
-    const url = isEdit ? `/admin/users/${userId}` : `/admin/users`;
-    const method = isEdit ? 'PUT' : 'POST';
+    const url = userId ? `/admin/users/${userId}` : '/admin/users';
+    const method = userId ? 'PUT' : 'POST';
 
     const response = await apiRequest(url, {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(formData)
+      method,
+      body: JSON.stringify(Object.fromEntries(formData))
     });
 
-    if (response.success) {
-      document.getElementById('userModal').classList.add('hidden');
-      document.getElementById('userForm').reset();
-      document.getElementById('userId').value = '';
+    const result = response;
 
+    if (result.success) {
       showNotification(
-        `Utilisateur ${isEdit ? 'mis à jour' : 'créé'} avec succès`,
-        null,
+        'Succès',
+        userId ? 'Utilisateur mis à jour avec succès' : 'Utilisateur créé avec succès',
         'success'
       );
-
       loadUsers();
-      loadUserStats();
+      document.getElementById('userModal').classList.add('hidden');
     } else {
-      throw new Error(response.message || response.error || 'Erreur lors de l\'enregistrement');
+      throw new Error(result.message || 'Une erreur est survenue');
     }
-
   } catch (error) {
     console.error('Erreur:', error);
     showNotification(
-      'Erreur lors de l\'enregistrement',
-      error.message || error.error || 'Erreur lors de l\'enregistrement',
+      'Erreur',
+      error.message || 'Une erreur est survenue lors de l\'enregistrement',
       'error'
     );
-  } finally {
-    const saveSpinner = document.getElementById('saveSpinner');
-    const saveButtonText = document.getElementById('saveButtonText');
+  }
+}
 
-    saveSpinner.classList.add('hidden');
-    saveButtonText.textContent = document.getElementById('userId').value ? 'Enregistrer' : 'Créer';
+// Fonction utilitaire pour remplir le formulaire
+function fillUserForm(user) {
+  // Ne pas réinitialiser les champs s'ils sont déjà remplis
+  if (!document.getElementById('userId').value) {
+    document.getElementById('userId').value = user.id;
+    document.getElementById('username').value = user.username || '';
+    document.getElementById('email').value = user.email || '';
+    document.getElementById('fullName').value = user.fullname || '';
+    document.getElementById('role').value = user.role || 'user';
+    document.getElementById('status').value = user.status || 'active';
+    document.getElementById('bio').value = user.bio || '';
+    document.getElementById('twoFactorEnabled').checked = user.two_factor_enabled || false;
+    document.getElementById('number').value = user.number || '';
+    document.getElementById('study_level').value = user.study_level || '';
+  }
+
+  // Gérer l'école
+  const schoolSelect = document.getElementById('school');
+  if (schoolSelect) {
+    // Ne pas réinitialiser si déjà une valeur
+    if (!schoolSelect.value && user.school) {
+      // Vérifier si l'option existe déjà
+      let optionExists = false;
+      for (let i = 0; i < schoolSelect.options.length; i++) {
+        if (schoolSelect.options[i].value === user.school) {
+          optionExists = true;
+          break;
+        }
+      }
+
+      if (!optionExists) {
+        const option = document.createElement('option');
+        option.value = user.school;
+        option.textContent = user.school;
+        schoolSelect.appendChild(option);
+      }
+      schoolSelect.value = user.school;
+    }
   }
 }
 
@@ -1685,32 +1703,55 @@ function confirmDeleteUser(userId, username) {
   const confirmBtn = modal.querySelector('#confirmDeleteBtn');
   const cancelBtn = modal.querySelector('#cancelDeleteBtn');
 
-  const closeModal = () => {
-    document.body.removeChild(modal);
-    document.body.classList.remove('overflow-hidden');
-  };
+  function closeUserModal() {
+    const modal = document.getElementById('userModal');
+    if (modal) {
+      // Réinitialiser le formulaire
+      const form = document.getElementById('userForm');
+      if (form) {
+        form.reset();
+        form.dataset.loaded = '';
+      }
+
+      // Réinitialiser les variables
+      currentUserId = null;
+
+      // Cacher la modal
+      modal.classList.add('hidden');
+
+      // Réinitialiser l'onglet actif
+      const activeTab = document.querySelector('.tab-button.active');
+      if (activeTab) {
+        activeTab.classList.remove('active');
+      }
+      const firstTab = document.querySelector('.tab-button');
+      if (firstTab) {
+        firstTab.classList.add('active');
+      }
+    }
+  }
 
   const handleConfirm = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     await deleteUser(userId, username);
-    closeModal();
+    closeUserModal();
   };
 
   confirmBtn.addEventListener('click', handleConfirm);
-  cancelBtn.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeUserModal);
 
   // Fermer en cliquant en dehors de la modale
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
-      closeModal();
+      closeUserModal();
     }
   });
 
   // Nettoyage
   return () => {
     confirmBtn.removeEventListener('click', handleConfirm);
-    cancelBtn.removeEventListener('click', closeModal);
+    cancelBtn.removeEventListener('click', closeUserModal);
   };
 }
 

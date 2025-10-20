@@ -181,7 +181,7 @@
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="challengeForm" class="challenge-form">
+                <form id="challengeForm" class="challenge-form" novalidate>
                     <input type="hidden" id="challengeId" name="id">
                     <input type="hidden" id="csrfToken" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
 
@@ -267,7 +267,7 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="phase_id">Phase</label>
+                                <label for="phase_id">Phase *</label>
                                 <select id="phase_id" name="phase_id" class="form-control" required>
                                     <option value="">Sélectionner une phase</option>
                                 </select>
@@ -423,14 +423,16 @@
                         <i class="fas fa-chevron-left"></i>
                         Précédent
                     </button>
-                    <button type="button" class="btn btn-primary" id="wizardNext">
-                        Suivant
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                    <button type="submit" form="challengeForm" class="btn btn-primary" id="wizardSubmit" style="display:none;">
-                        <i class="fas fa-save"></i>
-                        <span id="saveButtonText">Créer</span>
-                    </button>
+                    <div class="flex flex-row gap-2">
+                        <button type="button" class="btn btn-primary" id="wizardNext">
+                            Suivant
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button type="submit" form="challengeForm" class="btn btn-success" id="wizardSubmit" style="display:none;">
+                            <i class="fas fa-save"></i>
+                            <span id="saveButtonText">Créer</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

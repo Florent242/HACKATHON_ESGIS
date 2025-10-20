@@ -21,37 +21,66 @@ class EvaluationController extends Controller {
         $this->project = new \Auth\Model\Project($this->db);
     }
 
-    public function create() {
+    public function create($data) {
         try {
             $this->validateMethod('POST');
-
-            if (!hasRole('jury')) {
+            
+            // Récupérer l'utilisateur actuel depuis le token
+            $currentUserId = $this->tokenManager->getCurrentUserId();
+            
+            // Vérifier que c'est un juge
+            if (!$this->isAdmin($currentUserId, 'judge')) {
                 throw new Exception('Non autorisé - Réservé aux membres du jury');
             }
 
-            $requiredFields = ['project_id', 'jury_id', 'note', 'commentaire'];
-            $this->validateRequiredFields($_POST, $requiredFields);
+            
+            $requiredFields = ['project_id', 'score', 'criteria', 'comments'];
+            
 
-            $note = (float)$_POST['note'];
-            if ($note < 0 || $note > 20) {
-                throw new Exception('La note doit être comprise entre 0 et 20');
+            $this->validateRequiredFields($data, $requiredFields);
+
+            // Validation du score (0-100 au lieu de 0-20)
+            $score = (float)$data['score'];
+            if ($score < 0 || $score > 100) {
+                throw new Exception('Le score doit être compris entre 0 et 100');
             }
 
-            $data = [
-                'project_id' => (int)$_POST['project_id'],
-                'jury_id' => (int)$_POST['jury_id'],
-                'note' => $note,
-                'commentaire' => $_POST['commentaire'],
-                'created_at' => date('Y-m-d H:i:s')
+            // Validation du JSON des critères
+            $criteria = $data['criteria'];
+            if (!is_string($criteria) || !json_decode($criteria)) {
+                throw new Exception('Format des critères invalide');
+            }
+
+            // Validation du JSON des commentaires
+            $comments = $data['comments'];
+            if (!is_string($comments) || !json_decode($comments)) {
+                throw new Exception('Format des commentaires invalide');
+            }
+
+            // Préparer les données pour l'insertion
+            $evaluationData = [
+                'project_id' => (int)$data['project_id'],
+                'judge_id' => $currentUserId,  // Utilise l'ID du token
+                'score' => $score,
+                'criteria' => $criteria,       // JSON string
+                'comments' => $comments,       // JSON string
+                'evaluated_at' => date('Y-m-d H:i:s')
             ];
 
-            $evaluationId = $this->evaluation->create($data);
+            // Créer l'évaluation
+            $evaluationId = $this->evaluation->create($evaluationData);
+
+            // Traiter l'action sur le projet si spécifiée
+            if (isset($data['action']) && isset($data['status'])) {
+                $this->updateProjectStatus($data['project_id'], $data['status'], $data['action']);
+            }
 
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Évaluation créée avec succès',
                 'data' => ['id' => $evaluationId]
             ]);
+
         } catch (Exception $e) {
             $this->jsonResponse([
                 'success' => false,
@@ -268,6 +297,34 @@ class EvaluationController extends Controller {
                 'success' => false,
                 'error' => $e->getMessage()
             ], 404);
+        }
+    }
+
+    /**
+     * Méthode privée pour mettre à jour le statut du projet
+     */
+    private function updateProjectStatus($projectId, $status, $action) {
+        try {
+            $updateData = ['status' => $status];
+            
+            // Ajouter des métadonnées selon l'action
+            switch ($action) {
+                case 'validate':
+                    $updateData['validated_at'] = date('Y-m-d H:i:s');
+                    break;
+                case 'reject':
+                    $updateData['rejected_at'] = date('Y-m-d H:i:s');
+                    break;
+                case 'request_revision':
+                    $updateData['revision_requested_at'] = date('Y-m-d H:i:s');
+                    break;
+            }
+            
+            $this->project->update($projectId, $updateData);
+            
+        } catch (Exception $e) {
+            // Log l'erreur mais ne pas faire échouer l'évaluation
+            error_log("Erreur mise à jour statut projet {$projectId}: " . $e->getMessage());
         }
     }
 }

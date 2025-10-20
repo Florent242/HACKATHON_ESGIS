@@ -330,4 +330,87 @@ class ProjectController extends Controller {
             ], 400);
         }
     }
+
+    /**
+     * Télécharge le fichier ZIP d'un projet (sécurisé pour les juges)
+     */
+    public function downloadFile($id) {
+        try {
+            $this->validateMethod('GET');
+            
+            // Vérifier l'authentification
+            $this->validateAuth();
+            $currentUser = $this->getCurrentUser();
+            
+            // Vérifier que l'utilisateur a les permissions (admin ou juge)
+            if (!in_array($currentUser['role'], ['admin', 'judge'])) {
+                throw new Exception('Accès non autorisé - Permissions insuffisantes', 403);
+            }
+            
+            // Récupérer le projet
+            $project = $this->project->get($id);
+            if (!$project) {
+                throw new Exception('Projet non trouvé', 404);
+            }
+            
+            // Vérifier que le fichier ZIP existe
+            if (empty($project['zip_path']) || !file_exists($project['zip_path'])) {
+                throw new Exception('Fichier ZIP non disponible', 404);
+            }
+            
+            $filePath = $project['zip_path'];
+            $fileName = $project['file_name'] ?: basename($filePath);
+            
+            // Vérifications de sécurité du fichier
+            if (!is_readable($filePath)) {
+                throw new Exception('Fichier non accessible', 500);
+            }
+            
+            // Déterminer le type MIME
+            $mimeType = 'application/zip';
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if ($finfo) {
+                $detectedMime = finfo_file($finfo, $filePath);
+                if ($detectedMime && strpos($detectedMime, 'zip') !== false) {
+                    $mimeType = $detectedMime;
+                }
+                finfo_close($finfo);
+            }
+            
+            // Envoyer les headers pour le téléchargement
+            header('Content-Type: ' . $mimeType);
+            header('Content-Disposition: attachment; filename="' . addslashes($fileName) . '"');
+            header('Content-Length: ' . filesize($filePath));
+            header('Cache-Control: no-cache, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+            
+            // Lire et envoyer le fichier par chunks pour les gros fichiers
+            $handle = fopen($filePath, 'rb');
+            if ($handle === false) {
+                throw new Exception('Impossible de lire le fichier', 500);
+            }
+            
+            while (!feof($handle)) {
+                echo fread($handle, 8192);
+                if (ob_get_level()) {
+                    ob_flush();
+                }
+                flush();
+            }
+            
+            fclose($handle);
+            exit(); // Important : arrêter l'exécution après l'envoi du fichier
+            
+        } catch (Exception $e) {
+            // En cas d'erreur, envoyer une réponse JSON si pas déjà en cours de téléchargement
+            if (!headers_sent()) {
+                header('Content-Type: application/json');
+                $this->jsonResponse([
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ], $e->getCode() ?: 500);
+            }
+        }
+    }
 }

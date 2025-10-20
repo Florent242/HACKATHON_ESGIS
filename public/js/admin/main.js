@@ -182,6 +182,10 @@ function closeAllDropdowns() {
  * Solution robuste qui fonctionne même avec des conteneurs complexes
  */
 function initDropdowns() {
+    
+    if (window.LOGS_PAGE_ACTIVE || document.getElementById('logsContainer')) {
+        return;
+    }
     // Ne pas initialiser les dropdowns Bootstrap car ils sont déjà gérés par Bootstrap
     const dropdownToggles = document.querySelectorAll('.dropdown-toggle:not([data-bs-toggle="dropdown"]):not(.bootstrap-dropdown)');
 
@@ -1032,6 +1036,15 @@ function hideError(inputElement, errorElement) {
 
 document.addEventListener('DOMContentLoaded', async () => {
     initApp();
+
+    if (window.LOGS_PAGE_ACTIVE || document.getElementById('logsContainer')) {
+        console.log('Page des logs détectée, initialisation standard ignorée');
+    } else {
+        const customDropdowns = document.querySelectorAll('.dropdown:not(.bootstrap-dropdown)');
+        if (customDropdowns.length > 0) {
+            initDropdowns();
+        }
+    }
     // initialisation des tooltips
     initializeTooltips();
     // initialisation des notifications

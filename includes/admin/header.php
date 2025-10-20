@@ -9,7 +9,7 @@
             </button>
 
             <!-- Liens de navigation -->
-            <div class="nav-links" id="nav-links">
+            <div class="nav-links on-window-click-close" id="nav-links">
                 <?php
                 // Utilise uniquement le chemin sans les paramètres de requête
                 $currentPage = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -18,13 +18,15 @@
                     '/admin' => ['Tableau de bord', 'layout-dashboard'],
                     '/admin/hackathons' => ['Hackathons', 'laptop'],
                     '/admin/challenges' => ['Challenges', 'trophy'],
+                    '/admin/leaderboard' => ['Leaderboard', 'trophy'],
                     '/admin/utilisateurs' => ['Utilisateurs', 'users'],
                     '/admin/equipes' => ['Équipes', 'users-2'],
-                    '/admin/resources' => ['Ressources', 'book-open'],
                     '/admin/logs' => ['Journaux', 'file-text'],
                     '/admin/soumissions' => ['Soumissions', 'file-code-2'],
-                    '/admin/validation_projet' => ['Validation', 'check-circle'],
-                    
+                    '/admin/validation_projet' => ['Validation Projets', 'clipboard-check'],
+                    '/admin/evaluations' => ['Évaluations', 'star']
+
+
                 ];
 
                 // Générer les éléments de navigation principaux
@@ -45,13 +47,14 @@
                     </button>
 
                     <ul class="dropdown-menu" aria-labelledby="userDropdown">
-                        <li><a class="dropdown-item" href="/admin/notifications">
+                        <!-- <li><a class="dropdown-item" href="/admin/notifications">
                                 <i data-lucide="bell" class="nav-icon me-2"></i> Notifications
-                            </a></li>
+                            </a>
+                        </li>
                         <li><a class="dropdown-item" href="/admin/parametres">
                                 <i data-lucide="settings" class="nav-icon me-2"></i> Paramètres
                             </a></li>
-                        <li>
+                        <li> -->
                             <hr class="dropdown-divider">
                         </li>
                         <li><button id="logout-button" class="dropdown-item text-danger">

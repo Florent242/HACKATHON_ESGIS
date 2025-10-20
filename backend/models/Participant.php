@@ -166,6 +166,45 @@ class Participant
         }
     }
 
+    // Dans Participant.php
+    public function updateTeamStatus($hackathonId, $teamId, $status)
+    {
+        try {
+            $sql = "UPDATE hackathon_teams 
+                SET status = :status 
+                WHERE hackathon_id = :hackathon_id 
+                AND team_id = :team_id";
+
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':status' => $status,
+                ':hackathon_id' => $hackathonId,
+                ':team_id' => $teamId
+            ]);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la mise à jour du statut de l'équipe : " . $e->getMessage());
+        }
+    }
+
+    public function updateTeamMembersStatus($hackathonId, $teamId, $status)
+    {
+        try {
+            $status === 'active' ? $status = 'accepted' : $status;
+            $sql = "UPDATE hackathon_participants 
+                SET participation_status = :status 
+                WHERE hackathon_id = :hackathon_id 
+                AND team_id = :team_id";
+
+            $stmt = $this->db->prepare($sql);
+            return $stmt->execute([
+                ':status' => $status,
+                ':hackathon_id' => $hackathonId,
+                ':team_id' => $teamId
+            ]);
+        } catch (PDOException $e) {
+            throw new Exception("Erreur lors de la mise à jour des membres : " . $e->getMessage());
+        }
+    }
     public function unregisterTeam($hackathonId, $teamId)
     {
         try {
@@ -411,8 +450,8 @@ class Participant
         } catch (PDOException $e) {
             throw new Exception(
                 "Erreur lors de la mise à jour du participant. Si le problème persiste, contactez le support."
-                // pour le debugage
-                 . $e->getMessage()
+                    // pour le debugage
+                    . $e->getMessage()
             );
         }
     }

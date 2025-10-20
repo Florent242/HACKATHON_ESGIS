@@ -41,8 +41,8 @@ switch ($url) {
     case '/admin/equipes':
         require_once '../frontend/admin/equipes.php';
         break;
-    case '/admin/resources':
-        require_once '../frontend/admin/resources.php';
+    case '/admin/leaderboard':
+        require_once '../frontend/admin/leaderboard.php';
         break;
     case '/admin/logs':
         require_once '../frontend/admin/logs.php';
@@ -53,6 +53,8 @@ switch ($url) {
     case '/admin/validation_projet':
         require_once '../frontend/admin/validation.php';
         break;
+    case '/admin/evaluations' :
+        require_once '../frontend/admin/evaluation.php';
     // Ajoute ici d'autres routes admin si besoin
     default:
         // Gestion des routes dynamiques pour l'édition des challenges

@@ -322,6 +322,7 @@ class AuthController
     public function logout()
     {
         try {
+            $userId = $this->tokenManager->getCurrentUserId();
             // Révocation des tokens
             if (isset($_COOKIE['long_term_token'])) {
                 $this->tokenManager->revokeToken($_COOKIE['long_term_token']);
@@ -329,9 +330,8 @@ class AuthController
             if (isset($_COOKIE['jwt_token'])) {
                 $this->tokenManager->revokeToken($_COOKIE['jwt_token']);
                 LogHelper::init($this->db);
-                LogHelper::logLogout($$_SESSION['user']['id'], $_SESSION['user']['email']);
+                LogHelper::logLogout($userId, $_SESSION['user']['username']?? null);
             }
-            $userId = isset($_SESSION['user']) && isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null;
 
             // Suppression des cookies
             setcookie("jwt_token", "", time() - 3600, "/");

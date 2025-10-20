@@ -109,12 +109,97 @@ class AuthService {
             console.error('Logout failed:', error);
         }
     }
-hanf
+
     // Redirige vers l'accueil visiteur après déconnexion
     static redirectToVisitorHome() {
         window.location.href = this.ROUTES.visitor;
     }
 }
+
+
+/**
+ * Affiche une boîte de dialogue de confirmation personnalisée
+ * @param {string} message - Le message à afficher
+ * @param {string} [title='Confirmer'] - Le titre de la boîte de dialogue
+ * @param {string} [confirmText='Confirmer'] - Le texte du bouton de confirmation
+ * @param {string} [cancelText='Annuler'] - Le texte du bouton d'annulation
+ * @returns {Promise<boolean>} Résout à true si confirmé, false si annulé
+ */
+async function showConfirmDialog(message, title = 'Confirmer', confirmText = 'Confirmer', cancelText = 'Annuler') {
+    return new Promise((resolve) => {
+      // Créer la modale
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[4000] p-4';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.setAttribute('aria-labelledby', 'confirm-dialog-title');
+      modal.setAttribute('aria-describedby', 'confirm-dialog-description');
+  
+      modal.innerHTML = `
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md transform transition-all">
+                <div class="p-6">
+                    <h3 id="confirm-dialog-title" class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                        ${title}
+                    </h3>
+                    <p id="confirm-dialog-description" class="text-slate-600 dark:text-slate-300 mb-6">
+                        ${message}
+                    </p>
+                    <div class="flex justify-end space-x-3">
+                        <button 
+                            type="button" 
+                            class="confirm-cancel-btn px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                            data-action="cancel"
+                        >
+                            ${cancelText}
+                        </button>
+                        <button 
+                            type="button" 
+                            class="confirm-ok-btn px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                            data-action="confirm"
+                        >
+                            ${confirmText}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+  
+      // Ajouter la modale au document
+      document.body.appendChild(modal);
+      document.body.classList.add('overflow-hidden');
+  
+      // Gestionnaires d'événements
+      const handleAction = (e) => {
+        const action = e.currentTarget.getAttribute('data-action');
+        document.body.removeChild(modal);
+        document.body.classList.remove('overflow-hidden');
+        resolve(action === 'confirm');
+      };
+  
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          document.body.removeChild(modal);
+          document.body.classList.remove('overflow-hidden');
+          resolve(false);
+        } else if (e.key === 'Enter') {
+          document.body.removeChild(modal);
+          document.body.classList.remove('overflow-hidden');
+          resolve(true);
+        }
+      };
+  
+      // Ajouter les écouteurs
+      const confirmBtn = modal.querySelector('[data-action="confirm"]');
+      const cancelBtn = modal.querySelector('[data-action="cancel"]');
+  
+      confirmBtn.addEventListener('click', handleAction);
+      cancelBtn.addEventListener('click', handleAction);
+      modal.addEventListener('keydown', handleKeyDown);
+  
+      // Focus sur le bouton d'annulation par défaut
+      cancelBtn.focus();
+    });
+  }
 
 /**
  * Affiche une notification.
@@ -125,7 +210,7 @@ hanf
  */
 function showNotification(message, details = null, type = 'info', duration = 5000) {
     const notification = document.createElement('div');
-    notification.className = `fixed top-4 ${type === 'success' ? 'left-1/2' : 'right-4'} transform ${type === 'success' ? '-translate-x-1/2' : 'translate-x-0'} max-w-md w-auto bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 flex items-start justify-between gap-3 animate-fade-in z-1000 cursor-pointer`;
+    notification.className = `fixed top-4 ${type === 'success' ? 'left-1/2' : 'right-4'} transform ${type === 'success' ? '-translate-x-1/2' : 'translate-x-0'} max-w-md w-auto bg-gray-900/90 backdrop-blur-sm border ${type === 'success' ? 'border-green-500/30' : type === 'error' ? 'border-red-500/30' : type === 'warning' ? 'border-yellow-500/30' : 'border-blue-500/30'} rounded-lg shadow-lg shadow-black/30 p-3 flex items-start justify-between gap-3 animate-fade-in z-6000 cursor-pointer`;
 
     // Conteneur d'icône
     const iconContainer = document.createElement('div');
@@ -400,6 +485,40 @@ async function getUserId() {
 }
 
 /**
+ * Rafraîchit le token CSRF
+ * @returns {Promise<string>} Le nouveau token CSRF
+ */
+async function refreshCsrfToken() {
+    try {
+        const response = await fetch('/api/auth/refresh-csrf', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Échec du rafraîchissement du token CSRF');
+        }
+
+        const data = await response.json();
+        
+        // Mettre à jour le token dans le meta tag
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag && data.token) {
+            metaTag.setAttribute('content', data.token);
+        }
+
+        return data.token;
+    } catch (error) {
+        console.error('Erreur lors du rafraîchissement du token CSRF:', error);
+        throw error;
+    }
+}
+
+/**
  * @description Fonction utilitaire pour gérer les erreurs
  * @param {string} message 
  * @param {Error} error 
@@ -464,6 +583,17 @@ function updateDOM(elements, data) {
         }
     });
 }
+
+window.addEventListener('click', (e)=>{
+  const toClose = document.querySelectorAll('.on-window-click-close');
+  toClose.forEach(close => {
+    if(close && !close.contains(e.target)){
+        close.classList.remove('show');
+        close.classList.remove('mobile-menu-open');
+    }
+  })
+})
+
 document.addEventListener('DOMContentLoaded', async () => {
     // initialisation des notifications
     const notificationElement = document.getElementById('notification-data');

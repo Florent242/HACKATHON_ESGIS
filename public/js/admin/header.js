@@ -14,20 +14,17 @@ document.addEventListener('DOMContentLoaded', function() {
     let isMobileMenuOpen = false;
 
     // Gestion du menu déroulant utilisateur
-    if (dropdownToggle && dropdownMenu) {
-        // Cacher le menu au chargement
-        dropdownMenu.style.display = 'none';
-        
+    if (dropdownToggle && dropdownMenu) {        
         dropdownToggle.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
             // Basculer l'affichage du menu
-            if (dropdownMenu.style.display === 'block') {
-                dropdownMenu.style.display = 'none';
+            if (dropdownMenu.classList.contains('show')) {
+                dropdownMenu.classList.remove('show');
                 this.setAttribute('aria-expanded', 'false');
             } else {
-                dropdownMenu.style.display = 'block';
+                dropdownMenu.classList.add('show');
                 this.setAttribute('aria-expanded', 'true');
             }
         });
@@ -35,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Fermer le menu déroulant en cliquant à l'extérieur
         document.addEventListener('click', function(e) {
             if (!dropdownToggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                dropdownMenu.style.display = 'none';
+                dropdownMenu.classList.remove('show');
                 dropdownToggle.setAttribute('aria-expanded', 'false');
             }
         });
@@ -74,19 +71,14 @@ document.addEventListener('DOMContentLoaded', function() {
             this.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Déconnexion en cours...';
 
             try {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-                const response = await fetch('/HACKATHON_ESGIS/public/api/auth/admin/logout', {
+                const response = await apiRequest('/auth/logout', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken
-                    },
                     credentials: 'same-origin'
                 });
 
-                const data = await response.json();
+                const data = response;
 
-                if (response.ok) {
+                if (response.success) {
                     // Ajouter une animation de sortie
                     document.documentElement.classList.add('fade-out');
 
@@ -132,34 +124,24 @@ document.addEventListener('DOMContentLoaded', function() {
         resizeTimer = setTimeout(handleResize, 100);
     });
 
-    // Fonction utilitaire pour afficher les notifications
-    function showNotification(title, message, type = 'info') {
-        // Utiliser Toastr si disponible, sinon utiliser une alerte native
-        if (window.toastr) {
-            toastr[type](message, title);
-        } else {
-            alert(`${title}: ${message}`);
-        }
-    }
-
-    // Gestion des notifications de session
-    const notificationData = document.getElementById('notification-data');
-    if (notificationData) {
-        try {
-            const notification = JSON.parse(notificationData.dataset.notification);
-            if (notification && notification.message) {
-                showNotification(notification.title || 'Notification', notification.message, notification.type || 'info');
+    //  // Gestion des notifications de session
+    // const notificationData = document.getElementById('notification-data');
+    // if (notificationData) {
+    //     try {
+    //         const notification = JSON.parse(notificationData.dataset.notification);
+    //         if (notification && notification.message) {
+    //             showNotification(notification.title || 'Notification', notification.message, notification.type || 'info');
                 
-                // Effacer la notification après affichage
-                fetch('/HACKATHON_ESGIS/public/api/clear-notification', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                    }
-                });
-            }
-        } catch (e) {
-            console.error('Erreur lors du traitement de la notification:', e);
-        }
-    }
+    //             // Effacer la notification après affichage
+    //             fetch('/HACKATHON_ESGIS/public/api/clear-notification', {
+    //                 method: 'POST',
+    //                 headers: {
+    //                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+    //                 }
+    //             });
+    //         }
+    //     } catch (e) {
+    //         console.error('Erreur lors du traitement de la notification:', e);
+    //     }
+    // }
 });

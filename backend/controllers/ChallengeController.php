@@ -1,40 +1,50 @@
 <?php
+
 namespace Auth\Controller;
 
 use Exception;
 use Auth\Model\Challenge;
 use Auth\Model\Hackathon;
-use Auth\Model\TokenManager; 
+use Auth\Model\TokenManager;
+use Auth\Controller\UserController;
 
-if(!defined('CONFIG_INCLUDED')) {
+if (!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
 }
-if(!defined('FUNCTIONS_INCLUDED')) {
+if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/../includes/functions.php';
 }
-if(!class_exists('Challenge')) {
+if (!class_exists('Challenge')) {
     require_once __DIR__ . '/../models/Challenge.php';
 }
-if(!class_exists('Hackathon')) {
+if (!class_exists('Hackathon')) {
     require_once __DIR__ . '/../models/Hackathon.php';
 }
-if(!class_exists('Controller')) {
+if (!class_exists('Controller')) {
     require_once __DIR__ . '/Controller.php';
 }
+if (!class_exists('UserController')) {
+    require_once __DIR__ . '/UserController.php';
+}
 
-class ChallengeController extends Controller {
+class ChallengeController extends Controller
+{
     private $challenge;
     private $hackathon;
     private $db;
+    private $userController;
 
-    public function __construct($db, $tokenManager) {
+    public function __construct($db, $tokenManager)
+    {
         parent::__construct($tokenManager);
         $this->db = $db;
         $this->challenge = new Challenge($db);
         $this->hackathon = new Hackathon($db);
+        $this->userController = new UserController($db, $tokenManager);
     }
 
-    public function index($hackathonId) {
+    public function index($hackathonId)
+    {
         try {
             $this->validateMethod('GET');
 
@@ -63,7 +73,8 @@ class ChallengeController extends Controller {
     /**
      * Récupère tous les challenges
      */
-    public function getAll() {
+    public function getAll()
+    {
         try {
             $this->validateMethod('GET');
 
@@ -81,7 +92,8 @@ class ChallengeController extends Controller {
         }
     }
 
-    public function create() {
+    public function create()
+    {
         try {
             $this->validateMethod('POST');
 
@@ -120,7 +132,8 @@ class ChallengeController extends Controller {
         }
     }
 
-    public function update($id) {
+    public function update($id)
+    {
         try {
             $this->validateMethod('POST');
 
@@ -153,8 +166,9 @@ class ChallengeController extends Controller {
             ], 400);
         }
     }
-    public function getChallengesDev($hackathon_id){
-        try{
+    public function getChallengesDev($hackathon_id)
+    {
+        try {
             $this->validateMethod('GET');
             $challenges = $this->challenge->getchallengeDev($hackathon_id);
             $this->jsonResponse([
@@ -169,7 +183,8 @@ class ChallengeController extends Controller {
         }
     }
 
-    public function delete($id) {
+    public function delete($id)
+    {
         try {
             $this->validateMethod('POST');
 
@@ -190,9 +205,10 @@ class ChallengeController extends Controller {
             ], 400);
         }
     }
-    
 
-    public function get($id) {
+
+    public function get($id)
+    {
         try {
             $this->validateMethod('GET');
 
@@ -212,11 +228,12 @@ class ChallengeController extends Controller {
             ], 404);
         }
     }
-    public function getSolvesCount() {
+    public function getSolvesCount()
+    {
         try {
             $this->validateMethod('GET');
             $count = $this->challenge->getTotalSolvesCount();
-    
+
             $this->jsonResponse([
                 'success' => true,
                 'count' => $count
@@ -232,7 +249,8 @@ class ChallengeController extends Controller {
      * Récupère les challenges d'un hackathon
      * @param int $id ID du hackathon
      */
-    public function getByHackathon($id) {
+    public function getByHackathon($id)
+    {
         try {
             $this->validateMethod('GET');
 
@@ -241,6 +259,43 @@ class ChallengeController extends Controller {
             $this->jsonResponse([
                 'success' => true,
                 'data' => $challenges
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+
+    /**
+     * Get challenges for a hackathon that the user can access
+     * GET /api/challenges/ctf/{hackathonId}
+     */
+    public function getCtfChallenges($hackathonId)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            $userId = $this->tokenManager->getCurrentUserId(); // Implement this method to get current user ID
+            $teamId = $this->userController->getUserTeams($userId)[0]['id']; // Implement this method to get user's team ID
+
+            $phaseId = $_GET['phase_id'] ?? null;
+
+            $challenges = $this->challenge->getByHackathon($hackathonId);
+
+            // Filter challenges based on user access
+            $accessibleChallenges = [];
+            foreach ($challenges as $challenge) {
+                if ($challenge->canAccessChallenge($challenge['id'], $userId, $teamId)) {
+                    $accessibleChallenges[] = $challenge;
+                }
+            }
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $accessibleChallenges
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([

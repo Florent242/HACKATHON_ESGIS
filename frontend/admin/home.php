@@ -190,42 +190,42 @@
         </div>
 
         <div class="quick-access">
-            <a href="hackathons.php" class="quick-access-item">
+            <a href="/admin/hackathons" class="quick-access-item">
                 <div class="quick-access-icon">
                     <i class="fas fa-laptop-code"></i>
                 </div>
                 <div>Hackathons</div>
             </a>
             
-            <a href="challenges.php" class="quick-access-item">
+            <a href="/admin/challenges" class="quick-access-item">
                 <div class="quick-access-icon">
                     <i class="fas fa-trophy"></i>
                 </div>
                 <div>Challenges</div>
             </a>
             
-            <a href="utilisateurs.php" class="quick-access-item">
+            <a href="/admin/utilisateurs" class="quick-access-item">
                 <div class="quick-access-icon">
                     <i class="fas fa-users"></i>
                 </div>
                 <div>Utilisateurs</div>
             </a>
             
-            <a href="equipes.php" class="quick-access-item">
+            <a href="/admin/equipes" class="quick-access-item">
                 <div class="quick-access-icon">
                     <i class="fas fa-user-friends"></i>
                 </div>
                 <div>Équipes</div>
             </a>
             
-            <a href="ressources.php" class="quick-access-item">
+            <a href="/admin/logs" class="quick-access-item">
                 <div class="quick-access-icon">
                     <i class="fas fa-book"></i>
                 </div>
-                <div>Ressources</div>
+                <div>Logs</div>
             </a>
             
-            <a href="soumissions.php" class="quick-access-item">
+            <a href="/admin/soumissions" class="quick-access-item">
                 <div class="quick-access-icon">
                     <i class="fas fa-file-alt"></i>
                 </div>

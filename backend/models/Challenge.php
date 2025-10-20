@@ -1,19 +1,23 @@
 <?php
+
 namespace Auth\Model;
 
 use Exception;
 use PDO;
 use PDOException;
 
-class Challenge {
+class Challenge
+{
     private $db;
     private $table = 'challenges';
 
-    public function __construct($db) {
+    public function __construct($db)
+    {
         $this->db = $db;
     }
 
-    public function create($data) {
+    public function create($data)
+    {
         try {
             $this->validate($data);
 
@@ -36,7 +40,8 @@ class Challenge {
         }
     }
 
-    public function find($id) {
+    public function find($id)
+    {
         try {
             $sql = "SELECT c.*, u.username as created_by_username,
                     h.name as hackathon_titre,
@@ -60,7 +65,8 @@ class Challenge {
      * Récupère tous les challenges
      * @return array
      */
-    public function getAll() {
+    public function getAll()
+    {
         try {
             $sql = "SELECT c.*, u.username as created_by_name,
                     h.name as hackathon_titre,
@@ -80,7 +86,8 @@ class Challenge {
         }
     }
 
-    public function update($id, $data) {
+    public function update($id, $data)
+    {
         try {
             $fields = [];
             $params = [':id' => $id];
@@ -104,7 +111,8 @@ class Challenge {
         }
     }
 
-    public function delete($id) {
+    public function delete($id)
+    {
         try {
             // Vérifier si des projets sont associés
             $sql = "SELECT COUNT(*) FROM projects WHERE challenge_id = :id";
@@ -123,7 +131,8 @@ class Challenge {
         }
     }
 
-    public function getByHackathon($hackathonId) {
+    public function getByHackathon($hackathonId)
+    {
         try {
             $sql = "SELECT c.*, u.username as created_by_name,
                     COUNT(DISTINCT p.id) as nombre_projects
@@ -142,7 +151,8 @@ class Challenge {
         }
     }
 
-    private function validate($data) {
+    private function validate($data)
+    {
         if (empty($data['titre'])) {
             throw new Exception("Le titre est obligatoire");
         }
@@ -223,7 +233,8 @@ class Challenge {
      * @return int Le nombre total de résolutions.
      * @throws Exception Si une erreur de base de données survient.
      */
-    public function getTotalSolvesCount(): int {
+    public function getTotalSolvesCount(): int
+    {
         try {
             $stmt = $this->db->query("SELECT COUNT(*) FROM challenge_solves");
             $count = $stmt->fetchColumn();
@@ -240,7 +251,8 @@ class Challenge {
      * @return int Le nombre de résolutions pour le challenge.
      * @throws Exception Si une erreur de base de données survient.
      */
-    public function getSolvesCountByChallengeId(int $challengeId): int {
+    public function getSolvesCountByChallengeId(int $challengeId): int
+    {
         try {
             $stmt = $this->db->prepare("SELECT COUNT(*) FROM challenge_solves WHERE challenge_id = :challenge_id");
             $stmt->bindParam(':challenge_id', $challengeId, PDO::PARAM_INT);
@@ -251,7 +263,8 @@ class Challenge {
             throw new Exception("Erreur lors de la récupération du nombre de résolutions pour le challenge {$challengeId} : " . $e->getMessage());
         }
     }
-    public function getchallengeDev($hackathon_id) {
+    public function getchallengeDev($hackathon_id)
+    {
         try {
             $stmt = $this->db->prepare("
                 SELECT 
@@ -272,13 +285,230 @@ class Challenge {
                 WHERE h.id = :hackathon_id
                 GROUP BY c.id
             ");
-    
+
             $stmt->execute([':hackathon_id' => $hackathon_id]);
             $challenges = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
             return $challenges;
         } catch (Exception $e) {
             throw new Exception("Erreur lors de la récupération des challenges : " . $e->getMessage());
         }
+    }
+
+    /**
+     * Get all dependencies for a challenge
+     */
+    public function getDependencies($challengeId)
+    {
+        $sql = "SELECT cd.*, c.title as depends_on_title 
+            FROM challenge_dependencies cd
+            JOIN challenges c ON cd.depends_on_id = c.id
+            WHERE cd.challenge_id = :challenge_id
+            ORDER BY cd.created_at DESC";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':challenge_id' => $challengeId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Add a dependency to a challenge
+     */
+    public function addDependency($challengeId, $dependsOnId, $dependencyType)
+    {
+        // Check for self-dependency
+        if ($challengeId == $dependsOnId) {
+            throw new Exception("Un challenge ne peut pas dépendre de lui-même");
+        }
+
+        // Check for circular dependencies
+        if ($this->hasCircularDependency($challengeId, $dependsOnId)) {
+            throw new Exception("Cette dépendance créerait une référence circulaire");
+        }
+
+        $sql = "INSERT INTO challenge_dependencies (challenge_id, depends_on_id, dependency_type)
+            VALUES (:challenge_id, :depends_on_id, :dependency_type)";
+
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':challenge_id' => $challengeId,
+            ':depends_on_id' => $dependsOnId,
+            ':dependency_type' => $dependencyType
+        ]);
+    }
+
+    /**
+     * Check for circular dependencies using depth-first search
+     */
+    private function hasCircularDependency($startId, $targetId, $visited = [])
+    {
+        if ($startId == $targetId) {
+            return true;
+        }
+
+        if (in_array($startId, $visited)) {
+            return false;
+        }
+
+        $visited[] = $startId;
+
+        // Get all dependencies of the current challenge
+        $sql = "SELECT depends_on_id FROM challenge_dependencies WHERE challenge_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([':id' => $startId]);
+        $dependencies = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        foreach ($dependencies as $depId) {
+            if ($this->hasCircularDependency($depId, $targetId, $visited)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Remove a dependency
+     */
+    public function removeDependency($challengeId, $dependencyId)
+    {
+        $sql = "DELETE FROM challenge_dependencies 
+            WHERE challenge_id = :challenge_id AND id = :id";
+
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':challenge_id' => $challengeId,
+            ':id' => $dependencyId
+        ]);
+    }
+
+    /**
+     * Check if a user/team has access to a challenge
+     */
+    public function canAccessChallenge($challengeId, $userId, $teamId = null)
+    {
+        $challenge = $this->find($challengeId);
+        if (!$challenge) {
+            return false;
+        }
+
+        // Check points requirement
+        if ($challenge['unlock_points_required'] !== null) {
+            $points = $this->getUserPoints($userId, $teamId);
+            if ($points < $challenge['unlock_points_required']) {
+                return false;
+            }
+        }
+
+        // Check challenges required
+        if ($challenge['unlock_challenges_required'] !== null) {
+            $solvedCount = $this->getUserSolvedChallengesCount($userId, $teamId);
+            if ($solvedCount < $challenge['unlock_challenges_required']) {
+                return false;
+            }
+        }
+
+        // Check dependencies
+        $dependencies = $this->getDependencies($challengeId);
+        foreach ($dependencies as $dep) {
+            $hasDependency = $this->checkDependency($dep['depends_on_id'], $dep['dependency_type'], $userId, $teamId);
+            if (!$hasDependency) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function checkDependency($challengeId, $type, $userId, $teamId)
+    {
+        $sql = "SELECT 1 FROM validated_flags vf
+            JOIN flags f ON vf.flag_id = f.id
+            WHERE f.challenge_id = :challenge_id
+            AND vf.is_valid = 1
+            AND (";
+
+        $params = [':challenge_id' => $challengeId];
+
+        if ($type === 'user') {
+            $sql .= "vf.user_id = :user_id";
+            $params[':user_id'] = $userId;
+        } else {
+            // Team dependency - at least one team member must have solved it
+            $sql .= "vf.team_id = :team_id";
+            $params[':team_id'] = $teamId;
+        }
+
+        $sql .= ") LIMIT 1";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    private function getUserPoints($userId, $teamId = null)
+    {
+        $sql = "SELECT COALESCE(SUM(f.points), 0) as total_points
+            FROM validated_flags vf
+            JOIN flags f ON vf.flag_id = f.id
+            WHERE vf.is_valid = 1 AND (";
+
+        $params = [];
+
+        if ($teamId) {
+            $sql .= "vf.team_id = :team_id";
+            $params[':team_id'] = $teamId;
+        } else {
+            $sql .= "vf.user_id = :user_id";
+            $params[':user_id'] = $userId;
+        }
+
+        $sql .= ")";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
+    }
+
+    private function getUserSolvedChallengesCount($userId, $teamId = null)
+    {
+        $sql = "SELECT COUNT(DISTINCT f.challenge_id) as solved_count
+            FROM validated_flags vf
+            JOIN flags f ON vf.flag_id = f.id
+            WHERE vf.is_valid = 1 AND (";
+
+        $params = [];
+
+        if ($teamId) {
+            $sql .= "vf.team_id = :team_id";
+            $params[':team_id'] = $teamId;
+        } else {
+            $sql .= "vf.user_id = :user_id";
+            $params[':user_id'] = $userId;
+        }
+
+        $sql .= ")";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
+    }
+
+    /**
+     * Update challenge unlock requirements
+     */
+    public function updateUnlockRequirements($challengeId, $pointsRequired, $challengesRequired)
+    {
+        $sql = "UPDATE challenges 
+            SET unlock_points_required = :points_required,
+                unlock_challenges_required = :challenges_required
+            WHERE id = :id";
+
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            ':id' => $challengeId,
+            ':points_required' => $pointsRequired,
+            ':challenges_required' => $challengesRequired
+        ]);
     }
 }

@@ -375,38 +375,187 @@ async function loadRegistrations() {
     const tbody = document.getElementById('registrationsTableBody');
 
     if (response.success && response.data && response.data.length > 0) {
-      tbody.innerHTML = response.data.map(registration => `
-                <tr>
-                    <td>${registration.team_name || registration.name || 'N/A'}</td>
-                    <td>${registration.email}</td>
-                    <td>${formatDate(registration.registered_at)}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-success btn-sm" onclick="handleRegistration(${registration.id}, 'accept')">
-                                <i data-lucide="check"></i>
-                                <span>Accepter</span>
-                            </button>
-                            <button class="btn-danger btn-sm" onclick="handleRegistration(${registration.id}, 'reject')">
-                                <i data-lucide="x"></i>
-                                <span>Refuser</span>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
+      tbody.innerHTML = response.data.map(registration => {
+        // Déterminer les actions disponibles en fonction du statut
+        const isPending = registration.status === 'pending';
+        const isAccepted = registration.status === 'active';
+        const isRejected = registration.status === 'disqualified';
+
+        return `
+          <tr data-status="${registration.status}">
+              <td>${registration.team_name || 'N/A'}</td>
+              <td>${registration.email || 'N/A'}</td>
+              <td>${formatDate(registration.registered_at)}</td>
+              <td>
+                  <span class="status-badge ${registration.status}">
+                      ${getStatusLabel(registration.status)}
+                  </span>
+              </td>
+              <td>${registration.members || 'N/A'}</td>
+              <td>
+                <div class="action-buttons">
+                    ${isPending ? `
+                        <button class="btn-success btn-sm" 
+                                onclick="updateTeamStatus(${registration.team_id}, 'active')"
+                                title="Accepter l'équipe">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                            <span>Accepter</span>
+                        </button>
+                        <button class="btn-danger btn-sm" 
+                                onclick="updateTeamStatus(${registration.team_id}, 'rejected')"
+                                title="Refuser l'équipe">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                            <span>Refuser</span>
+                        </button>
+                    ` : ''}
+                    
+                    ${isAccepted ? `
+                        <button class="btn-warning btn-sm" 
+                                onclick="updateTeamStatus(${registration.team_id}, 'pending')"
+                                title="Mettre en attente">
+                            <i data-lucide="clock" class="w-4 h-4"></i>
+                            <span>Mettre en attente</span>
+                        </button>
+                        <button class="btn-danger btn-sm" 
+                                onclick="updateTeamStatus(${registration.team_id}, 'disqualified')"
+                                title="Désactiver l'équipe">
+                            <i data-lucide="user-x" class="w-4 h-4"></i>
+                            <span>Désactiver</span>
+                        </button>
+                    ` : ''}
+                    
+                    ${isRejected ? `
+                        <button class="btn-primary btn-sm" 
+                                onclick="updateTeamStatus(${registration.team_id}, 'active')"
+                                title="Réactiver l'équipe">
+                            <i data-lucide="refresh-ccw" class="w-4 h-4"></i>
+                            <span>Réactiver</span>
+                        </button>
+                    ` : ''}
+                </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
     } else {
       tbody.innerHTML = `
-                <tr>
-                    <td colspan="4" class="empty-state">
-                        <i data-lucide="user-plus"></i>
-                        <p>Aucune demande d'inscription</p>
-                    </td>
-                </tr>
-            `;
+        <tr>
+            <td colspan="6" class="empty-state">
+                <i data-lucide="users" class="w-8 h-8"></i>
+                <p>Aucune inscription en attente</p>
+            </td>
+        </tr>
+      `;
     }
     lucide.createIcons();
   } catch (error) {
-    showNotification('Erreur', 'Erreur de chargement des inscriptions', 'error');
+    console.error('Erreur lors du chargement des inscriptions:', error);
+    showNotification('Erreur', 'Impossible de charger les inscriptions', 'error');
+  }
+}
+
+// Fonction utilitaire pour obtenir le libellé du statut
+function getStatusLabel(status) {
+  const statusLabels = {
+    'pending': 'En attente',
+    'active': 'Accepté',
+    'disqualified': 'Refusé'
+  };
+  return statusLabels[status] || status;
+}
+
+// Fonction pour mettre à jour le statut d'une inscription
+async function updateRegistrationStatus(registrationId, status) {
+  try {
+    const response = await apiRequest(`/participants/${registrationId}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ status })
+    });
+
+    if (response.success) {
+      showNotification('Succès', `Inscription ${status === 'active' ? 'acceptée' : 'mise à jour'} avec succès`, 'success');
+      await loadRegistrations();
+    } else {
+      throw new Error(response.error || 'Erreur lors de la mise à jour');
+    }
+  } catch (error) {
+    console.error('Erreur:', error);
+    showNotification('Erreur', error.message || 'Erreur lors de la mise à jour du statut', 'error');
+  }
+}
+
+// Fonction pour mettre à jour le statut d'une équipe
+async function updateTeamStatus(teamId, newStatus) {
+  if (!confirm(`Voulez-vous vraiment marquer cette équipe comme ${newStatus}?`)) {
+    return;
+  }
+
+  try {
+    const response = await apiRequest(`/participants/${currentHackathonId}/team-status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: newStatus, team_id: teamId})
+    });
+
+    if (response.success) {
+      showNotification('Succès', response.message || 'Statut mis à jour avec succès', 'success');
+      loadRegistrations(); // Recharger la liste
+    } else {
+      throw new Error(response.error || 'Erreur lors de la mise à jour');
+    }
+  } catch (error) {
+    console.error('Erreur:', error);
+    showNotification('Erreur', error.message || 'Une erreur est survenue', 'error');
+  }
+}
+
+
+// Fonction pour enregistrer une équipe
+async function registerTeam(teamId, leaderId) {
+  if (!confirm('Êtes-vous sûr de vouloir enregistrer cette équipe ?')) {
+    return;
+  }
+
+  try {
+    const response = await apiRequest(`/participants/${currentHackathonId}/register-team`, {
+      method: 'POST',
+      body: JSON.stringify({ team_id: teamId, leader_id: leaderId })
+    });
+
+    if (response.success) {
+      showNotification('Succès', 'Équipe enregistrée avec succès', 'success');
+      await loadRegistrations();
+    } else {
+      throw new Error(response.error || 'Erreur lors de l\'enregistrement');
+    }
+  } catch (error) {
+    console.error('Erreur:', error);
+    showNotification('Erreur', error.message || 'Erreur lors de l\'enregistrement', 'error');
+  }
+}
+// Fonction pour désinscrire une équipe
+async function unregisterTeam(teamId) {
+  if (!confirm('Êtes-vous sûr de vouloir désinscrire cette équipe ?')) {
+    return;
+  }
+
+  try {
+    const response = await apiRequest(`/participants/${currentHackathonId}/unregister-team`, {
+      method: 'POST',
+      body: JSON.stringify({ team_id: teamId })
+    });
+
+    if (response.success) {
+      showNotification('Succès', 'Équipe désinscrite avec succès', 'success');
+      await loadRegistrations();
+    } else {
+      throw new Error(response.error || 'Erreur lors de la désinscription');
+    }
+  } catch (error) {
+    console.error('Erreur:', error);
+    showNotification('Erreur', error.message || 'Erreur lors de la désinscription', 'error');
   }
 }
 

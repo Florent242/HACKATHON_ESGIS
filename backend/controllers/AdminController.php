@@ -13,6 +13,7 @@ use PDOException;
 use Auth\Controller\Controller;
 use DateTime;
 use DateInterval;
+use Auth\Model\Challenge;
 
 if (!defined('CONFIG_INCLUDED')) {
     require_once __DIR__ . '/../includes/config.php';
@@ -29,6 +30,9 @@ if (!class_exists('Auth\Model\TokenManager')) {
 if (!class_exists('Auth\Model\Database')) {
     require_once __DIR__ . '/../models/Database.php';
 }
+if (!class_exists('Auth\Model\Challenge')) {
+    require_once __DIR__ . '/../models/Challenge.php';
+}
 
 class AdminController extends Controller
 {
@@ -37,12 +41,14 @@ class AdminController extends Controller
     private $user;
     private $TokenManager;
     private $key = 'your-secret-key';
+    private $Challenge;
 
     public function __construct($db, $tokenManager)
     {
         parent::__construct($tokenManager);
         $this->TokenManager = $tokenManager;
         $this->db = $db;
+        $this->Challenge = new Challenge($db);
     }
 
     /**
@@ -50,24 +56,40 @@ class AdminController extends Controller
      * @param int $userId ID de l'utilisateur
      * @return bool True si l'utilisateur est admin, false sinon
      */
-    public function isAdmin($userId)
+    public function isAdmin($userId, $expectedRole = null)
     {
-        if (!isset($userId)) {
+        if (!$userId) {
             return false;
         }
 
         // Vérification du rôle global
         $query = "SELECT role FROM users WHERE id = :id";
-        $stmt = $this->db->prepare($query);
-        $stmt->execute([':id' => $userId]);
-        $role = $stmt->fetchColumn();
+        $params = [':id' => $userId];
 
-        if (!in_array($role, ['admin', 'organisateur'])) {
+        if ($expectedRole !== null) {
+            $query .= " AND role = :role";
+            $params[':role'] = $expectedRole;
+        }
+
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+        $dbRole = $stmt->fetchColumn();
+
+        if ($dbRole === false) {
+            return false; // utilisateur introuvable
+        }
+
+        if (!in_array($dbRole, ['admin', 'organisateur', 'judge'])) {
             return false;
         }
 
         // Vérification dans la whitelist
-        $query = "SELECT 1 FROM admin_whitelist WHERE user_id = :id AND (expires_at > NOW() OR expires_at IS NULL) LIMIT 1";
+        $query = "SELECT 1 
+              FROM admin_whitelist 
+              WHERE user_id = :id 
+              AND (expires_at > NOW() OR expires_at IS NULL) 
+              LIMIT 1";
+
         $stmt = $this->db->prepare($query);
         $stmt->execute([':id' => $userId]);
 
@@ -316,12 +338,14 @@ class AdminController extends Controller
             $stmt->execute([':id' => $userId]);
 
             // Journalisation
-            $this->logActivity('account_unlocked', 
-            "Compte utilisateur #$userId débloqué",
-            $userId,
-            $user['role'],
-            $_SERVER['REMOTE_ADDR'],
-            $_SERVER['HTTP_USER_AGENT']);
+            $this->logActivity(
+                'account_unlocked',
+                "Compte utilisateur #$userId débloqué",
+                $userId,
+                $user['role'],
+                $_SERVER['REMOTE_ADDR'],
+                $_SERVER['HTTP_USER_AGENT']
+            );
 
             if ($isbulk) {
                 return;
@@ -1433,10 +1457,13 @@ class AdminController extends Controller
                 return;
             }
             $this->logActivity('update_user_status', 'Mise à jour du statut d\'un utilisateur par ' . $this->TokenManager->getCurrentUserId(), $data, 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
-            $this->jsonResponse(['success' => true, 'message' => 'Statut mis à jour avec succès',
-            'data' => [
-                'updated_count' => $stmt->rowCount(),
-            ]]);
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Statut mis à jour avec succès',
+                'data' => [
+                    'updated_count' => $stmt->rowCount(),
+                ]
+            ]);
         } catch (Exception $e) {
             $this->jsonResponse(['success' => false, 'error' => $e->getMessage()], $e->getCode() ?: 500);
         }
@@ -1577,10 +1604,10 @@ class AdminController extends Controller
             $query = "UPDATE users SET " . implode(', ', $updates) . ", updated_at = NOW() WHERE id = :id";
             $stmt = $this->db->prepare($query);
             $stmt->execute($params);
-            
+
             // Journalisation de l'action
             $this->logActivity('update_user', 'Mise à jour d\'un utilisateur par ' . $this->TokenManager->getCurrentUserId(), $data, 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
-            
+
             // Récupérer l'utilisateur mis à jour
             $data = $this->getUser($userId);
 
@@ -1615,7 +1642,7 @@ class AdminController extends Controller
 
             // Journalisation de l'action
             $this->logActivity('update_user_role', 'Mise à jour du rôle d\'un utilisateur par ' . $userId . ' (' . $user['username'] . ' - ' . $user['role'] . ')', ['role' => $role], 'admin_update', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
-            
+
             // Récupérer l'utilisateur mis à jour
             $data = $this->getUser($userId);
 
@@ -2546,11 +2573,13 @@ class AdminController extends Controller
             $sql = "INSERT INTO challenges (
                         code_name, title, type, category, description, hint, difficulty,
                         url_path, resource_link, instructions, points, is_active,
-                        is_dynamic, created_by, hackathon_id, phase_id, algo_config
+                        is_dynamic, created_by, hackathon_id, phase_id, algo_config,
+                        unlock_points_required, unlock_challenges_required
                     ) VALUES (
                         :code_name, :title, :type, :category, :description, :hint, :difficulty,
                         :url_path, :resource_link, :instructions, :points, :is_active,
-                        :is_dynamic, :created_by, :hackathon_id, :phase_id, :algo_config
+                        :is_dynamic, :created_by, :hackathon_id, :phase_id, :algo_config,
+                        :unlock_points_required, :unlock_challenges_required
                     )";
 
             $stmt = $this->db->prepare($sql);
@@ -2575,7 +2604,9 @@ class AdminController extends Controller
                 ':phase_id' => $input['phase_id'] ?? null,
                 ':algo_config' => isset($input['algo_config']) && $input['algo_config'] !== ''
                     ? json_encode($input['algo_config'])
-                    : null
+                    : null,
+                ':unlock_points_required' => (int) $input['unlock_points_required'] ?? null,
+                ':unlock_challenges_required' => (int) $input['unlock_challenges_required'] ?? null
             ]);
 
             $challengeId = $this->db->lastInsertId();
@@ -2702,10 +2733,6 @@ class AdminController extends Controller
                 throw new Exception('Challenge non trouvé');
             }
 
-            if ($challenge['is_active'] == 0) {
-                throw new Exception('Ce challenge est verrouillé et ne peut pas être modifié');
-            }
-
             // Validation des champs requis
             $requiredFields = ['title', 'type', 'difficulty', 'hackathon_id', 'points', 'description'];
             foreach ($requiredFields as $field) {
@@ -2765,7 +2792,9 @@ class AdminController extends Controller
                         hackathon_id = :hackathon_id,
                         phase_id = :phase_id, 
                         algo_config = :algo_config,
-                        updated_at = CURRENT_TIMESTAMP
+                        updated_at = CURRENT_TIMESTAMP,
+                        unlock_points_required = :unlock_points_required,
+                        unlock_challenges_required = :unlock_challenges_required
                         WHERE id = :id";
 
             $stmt = $this->db->prepare($sql);
@@ -2789,6 +2818,12 @@ class AdminController extends Controller
                 ':phase_id' => !empty($input['phase_id']) ? (int)$input['phase_id'] : null,
                 ':algo_config' => isset($input['algo_config']) && $input['algo_config'] !== ''
                     ? json_encode($input['algo_config'])
+                    : null,
+                ':unlock_points_required' => isset($input['unlock_points_required']) && $input['unlock_points_required'] !== ''
+                    ? (int)$input['unlock_points_required']
+                    : null,
+                ':unlock_challenges_required' => isset($input['unlock_challenges_required']) && $input['unlock_challenges_required'] !== ''
+                    ? (int)$input['unlock_challenges_required']
                     : null,
             ]);
 
@@ -2954,6 +2989,138 @@ class AdminController extends Controller
                 $this->logActivity('delete_challenge', 'Suppression d\'un challenge par ' . $this->TokenManager->getCurrentUserId(), $id, 'admin_delete', $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']);
 
                 throw $e; // Relancer l'exception pour le catch externe
+            }
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    // In controllers/AdminController.php
+
+    /**
+     * Get challenge dependencies
+     * GET /api/admin/challenges/{id}/dependencies
+     */
+    public function getChallengeDependencies($challengeId)
+    {
+        try {
+            $this->validateMethod('GET');
+
+            $challenge = new Challenge($this->db);
+            $dependencies = $challenge->getDependencies($challengeId);
+
+            $this->jsonResponse([
+                'success' => true,
+                'data' => $dependencies
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Add challenge dependency
+     * POST /api/admin/challenges/{id}/dependencies
+     */
+    public function addChallengeDependency($challengeId, $input = null)
+    {
+        try {
+            $this->validateMethod('POST');
+
+            $data = $input;
+
+            if (empty($data['depends_on_id']) || !in_array($data['dependency_type'], ['user', 'team'])) {
+                throw new Exception("Paramètres invalides");
+            }
+
+            $result = $this->Challenge->addDependency(
+                $challengeId,
+                $data['depends_on_id'],
+                $data['dependency_type']
+            );
+
+            if ($result) {
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => 'Dépendance ajoutée avec succès'
+                ]);
+            } else {
+                throw new Exception("Erreur lors de l'ajout de la dépendance");
+            }
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Remove challenge dependency
+     * DELETE /api/admin/challenges/{challengeId}/dependencies/{dependencyId}
+     */
+    public function removeChallengeDependency($challengeId, $dependencyId)
+    {
+        try {
+            $this->validateMethod('DELETE');
+
+            $result = $this->Challenge->removeDependency($challengeId, $dependencyId);
+
+            if ($result) {
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => 'Dépendance supprimée avec succès'
+                ]);
+            } else {
+                throw new Exception("Erreur lors de la suppression de la dépendance");
+            }
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    /**
+     * Update challenge unlock requirements
+     * PUT /api/admin/challenges/{id}/unlock
+     */
+    public function updateChallengeUnlockRequirements($challengeId, $input = null)
+    {
+        try {
+            $this->validateMethod('PUT');
+
+            $data = $input;
+
+            $pointsRequired = isset($data['unlock_points_required']) ?
+                (int)$data['unlock_points_required'] : null;
+            $challengesRequired = isset($data['unlock_challenges_required']) ?
+                (int)$data['unlock_challenges_required'] : null;
+
+            // Convert empty strings to null
+            $pointsRequired = $pointsRequired === '' ? null : $pointsRequired;
+            $challengesRequired = $challengesRequired === '' ? null : $challengesRequired;
+
+            $result = $this->Challenge->updateUnlockRequirements(
+                $challengeId,
+                $pointsRequired,
+                $challengesRequired
+            );
+
+            if ($result) {
+                $this->jsonResponse([
+                    'success' => true,
+                    'message' => 'Exigences de déblocage mises à jour avec succès'
+                ]);
+            } else {
+                throw new Exception("Erreur lors de la mise à jour des exigences de déblocage");
             }
         } catch (Exception $e) {
             $this->jsonResponse([

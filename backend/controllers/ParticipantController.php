@@ -68,7 +68,7 @@ class ParticipantController extends Controller
     }
 
     // S'inscrire à un hackathon
-    public function register($hackathonId)
+    public function register($hackathonId, $input = null)
     {
         try {
             // Vérifier si l'utilisateur est connecté
@@ -80,11 +80,6 @@ class ParticipantController extends Controller
                 throw new Exception('Méthode non autorisée');
             }
 
-            // Vérifier le token CSRF
-            if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
-                throw new Exception('Token de session invalide');
-            }
-
             // Enregistrer le participant
             $participantId = $this->participant->register([
                 'user_id' => $_SESSION['user_id'],
@@ -93,7 +88,7 @@ class ParticipantController extends Controller
 
             // Créer une notification
             $this->notification->create([
-                'user_id' => $_SESSION['user_id'],
+                'user_id' => $_SESSION['user']['id'] ?? 00,
                 'title' => 'Inscription au hackathon',
                 'message' => 'Votre inscription a été enregistrée avec succès',
                 'type' => 'success'
@@ -131,7 +126,7 @@ class ParticipantController extends Controller
             }
 
             $captainId = $input['leader_id'];
-            
+
             $success = $this->participant->registerTeam($hackathonId, $teamId, $captainId);
 
             if (!$success) {
@@ -141,6 +136,41 @@ class ParticipantController extends Controller
             $this->jsonResponse([
                 'success' => true,
                 'message' => 'Équipe inscrite avec succès'
+            ]);
+        } catch (Exception $e) {
+            $this->jsonResponse([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 400);
+        }
+    }
+
+    public function updateTeamStatus($hackathonId, $input)
+    {
+        try {
+            $userId = $this->tokenManager->getCurrentUserId();
+            if (!$this->isAdmin($userId)) {
+                throw new Exception('Action non autorisé');
+            }
+
+            $teamId = $input['team_id'] ?? throw new Exception ('ID de la team manquante');
+            $status = $input['status'] ?? throw new Exception ('Statut manquant');
+
+            if (!in_array($status, ['pending', 'active', 'disqualified', 'archived', 'rejected'])) {
+                throw new Exception('Statut invalide');
+            }
+
+            // Mise à jour du statut de l'équipe
+            $this->participant->updateTeamStatus($hackathonId, $teamId, $status);
+
+            // Si le statut est rejeté ou désactivé, on peut aussi mettre à jour les participants
+            if (in_array($status, ['disqualified', 'rejected','active'])) {
+                $this->participant->updateTeamMembersStatus($hackathonId, $teamId, $status);
+            }
+
+            $this->jsonResponse([
+                'success' => true,
+                'message' => 'Statut mis à jour avec succès'
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([

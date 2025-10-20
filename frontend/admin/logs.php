@@ -124,6 +124,7 @@
             <!-- Sera généré dynamiquement -->
         </div>
     </div>
+    <script src="/js/admin/main.js"></script>
     <script src="/js/admin/logs.js"></script>
 </body>
 </html>

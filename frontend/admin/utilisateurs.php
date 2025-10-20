@@ -292,7 +292,7 @@
                                 </div>
                                 <h3 id="modal-title" class="text-2xl font-bold text-white">Ajouter un utilisateur</h3>
                             </div>
-                            <button id="closeModal" class="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-xl transition-all duration-200">
+                            <button id="closeModalBtn" class="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-xl transition-all duration-200">
                                 <i data-lucide="x" class="w-6 h-6"></i>
                             </button>
                         </div>
@@ -325,7 +325,7 @@
                         </div>
 
                         <!-- Content -->
-                        <form id="userForm" class="p-6">
+                        <form id="userForm" class="p-6" novalidate>
                             <input type="hidden" id="userId" name="userId">
 
                             <!-- Profile Tab -->
@@ -421,10 +421,10 @@
 
                                     <div class="space-y-2">
                                         <label for="study_level" class="block text-sm font-semibold text-slate-300">
-                                            Niveau d'étude <span class="text-red-400">*</span>
+                                            Niveau d'étude
                                         </label>
                                         <div class="relative">
-                                            <select id="study_level" name="study_level" required
+                                            <select id="study_level" name="study_level"
                                                 class="block w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none">
                                                 <option value="">Selectionner un niveau d'étude</option>
                                                 <option value="bac">Bac</option>
@@ -647,7 +647,7 @@
     </div>
 
     <!-- Modal de notification -->
-    <div id="notificationModal" class="fixed inset-0 z-50 hidden">
+    <div id="notificationModal" class="fixed inset-0 z-1000 hidden">
         <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"></div>
         <div class="fixed inset-0 mx-auto overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-4">
