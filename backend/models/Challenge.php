@@ -5,6 +5,7 @@ namespace Auth\Model;
 use Exception;
 use PDO;
 use PDOException;
+use Auth\Model\RedisManager;
 
 if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/../includes/functions.php';
@@ -14,10 +15,12 @@ class Challenge
 {
     private $db;
     private $table = 'challenges';
+    private $redis;
 
     public function __construct($db)
     {
         $this->db = $db;
+        $this->redis = new RedisManager();
     }
 
     /**
@@ -106,44 +109,39 @@ class Challenge
      * @param mixed $input
      * @throws \Exception
      * @return array{message: string, success: bool, validated_flag_id: mixed|array{message: string, success: bool, validated_flag_id: null}}
-     */
+     *     /
+    */
+
     public function submitChallengeCTF($user_id, $input, $phase_id = null)
     {
         try {
             $isAdmin = isAdmin($user_id);
             $this->db->beginTransaction();
-            // Verifier si l'utiisateur est inscrit au hackathon
-            if (!$this->isRegistered($user_id, $input['hackathon_id']) && !$isAdmin && !$isAdmin) {
-                throw new Exception("L'utilisateur n'est pas inscrit au hackathon !");
-            }
 
+            // Validation des données requises
             if (!isset($input['challenge_id']) || !isset($input['flag_value']) || !isset($input['hackathon_id'])) {
                 if ($this->db->inTransaction()) $this->db->rollBack();
                 return [
                     'success' => false,
-                    'message' => 'Flag ou challenge invalide.',
+                    'message' => 'Données de soumission incomplètes (challenge_id, flag_value, hackathon_id requis).',
                     'validated_flag_id' => null
                 ];
             }
 
-            // Récupérer le flag et challenge
-            $stmt = $this->db->prepare("SELECT * FROM flags WHERE challenge_id = :challenge_id FOR UPDATE");
-            $stmt->execute([':challenge_id' => $input['challenge_id']]);
-            $flag = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            if (!$flag) {
+            // Vérifier si l'utilisateur est inscrit au hackathon
+            if (!$this->isRegistered($user_id, $input['hackathon_id']) && !$isAdmin) {
                 if ($this->db->inTransaction()) $this->db->rollBack();
                 return [
                     'success' => false,
-                    'message' => 'Flag ou challenge invalide.',
+                    'message' => "L'utilisateur n'est pas inscrit au hackathon !",
                     'validated_flag_id' => null
                 ];
             }
 
-            // Récupérer l’équipe du joueur
+            // Récupérer l'équipe du joueur
             $team_id = $this->getTeam($user_id);
-
             if (!$team_id && !$isAdmin) {
+                if ($this->db->inTransaction()) $this->db->rollBack();
                 return [
                     'success' => false,
                     'message' => "Vous n'appartenez à aucune équipe.",
@@ -151,22 +149,160 @@ class Challenge
                 ];
             }
 
-            // Vérifier si un membre de l’équipe a déjà validé ce challenge
+            // Récupérer le flag et challenge
+            $stmt = $this->db->prepare("SELECT f.*, c.phase_id FROM flags f
+                                     JOIN challenges c ON f.challenge_id = c.id
+                                     WHERE f.challenge_id = :challenge_id");
+            $stmt->execute([':challenge_id' => $input['challenge_id']]);
+            $flag = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$flag) {
+                if ($this->db->inTransaction()) $this->db->rollBack();
+                return [
+                    'success' => false,
+                    'message' => 'Challenge ou flag introuvable.',
+                    'validated_flag_id' => null
+                ];
+            }
+
+            // Utiliser la phase du challenge si non spécifiée
+            if ($phase_id === null) {
+                $phase_id = $flag['phase_id'];
+            }
+
+            // ===== RATE LIMITING REDIS - DOIT ÊTRE FAIT EN PREMIER =====
+            $challengeId = $input['challenge_id'];
+            $redisKey = "ctf:attempts:{$user_id}:{$challengeId}";
+            $blockKey = "ctf:block:{$user_id}:{$challengeId}";
+
+            // Vérifier si l'utilisateur est bloqué
+            if ($this->redis->get($blockKey)) {
+                $ttl = $this->redis->ttl($blockKey);
+
+                if ($this->db->inTransaction()) $this->db->rollBack();
+
+                // Logger la tentative bloquée (sans incrémenter attempt_number car bloqué)
+                $this->logCtfSubmission([
+                    'user_id' => $user_id,
+                    'team_id' => $team_id,
+                    'challenge_id' => $input['challenge_id'],
+                    'hackathon_id' => $input['hackathon_id'],
+                    'phase_id' => $phase_id,
+                    'flag_submitted' => $input['flag_value'],
+                    'flag_hash' => hash('sha256', $input['flag_value']),
+                    'is_correct' => false,
+                    'attempt_number' => 0, // 0 car bloqué
+                    'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0',
+                    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
+                    'submission_source' => (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                        strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                        ? 'api' : 'web',
+                    'blocked_reason' => "Trop de tentatives - Bloqué pendant {$ttl} secondes",
+                    'points_awarded' => 0
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => "Trop de tentatives ! Réessayez dans {$ttl} secondes.",
+                    'validated_flag_id' => null
+                ];
+            }
+
+            // Incrémenter le compteur de tentatives AVANT toute autre vérification
+            $attempts = $this->redis->increment($redisKey, 60); // expire en 60s
+
+            // Calculer le numéro de tentative (depuis la DB)
+            $attemptStmt = $this->db->prepare("
+            SELECT COUNT(*) + 1
+            FROM ctf_submissions
+            WHERE user_id = :user_id AND challenge_id = :challenge_id
+        ");
+            $attemptStmt->execute([
+                ':user_id' => $user_id,
+                ':challenge_id' => $input['challenge_id']
+            ]);
+            $attemptNumber = (int)$attemptStmt->fetchColumn();
+
+            // Capturer les informations de contexte
+            $ipAddress = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+            $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+            $submissionSource = (isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+                strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest')
+                ? 'api' : 'web';
+
+            // Hasher le flag soumis
+            $submittedHash = hash('sha256', $input['flag_value']);
+            $flagHash = hash('sha256', $input['flag_value']);
+
+            // Si plus de 5 tentatives → blocage IMMÉDIAT
+            if ($attempts > 5 && !$isAdmin) {
+                $this->redis->set($blockKey, 'blocked', 300); // blocage 5 minutes (pas 60s)
+
+                // Logger la tentative qui déclenche le blocage
+                $this->logCtfSubmission([
+                    'user_id' => $user_id,
+                    'team_id' => $team_id,
+                    'challenge_id' => $input['challenge_id'],
+                    'hackathon_id' => $input['hackathon_id'],
+                    'phase_id' => $phase_id,
+                    'flag_submitted' => $input['flag_value'],
+                    'flag_hash' => $flagHash,
+                    'is_correct' => false,
+                    'attempt_number' => $attemptNumber,
+                    'ip_address' => $ipAddress,
+                    'user_agent' => $userAgent,
+                    'submission_source' => $submissionSource,
+                    'blocked_reason' => "Limite de 5 tentatives atteinte - Bloqué 5 minutes",
+                    'points_awarded' => 0
+                ]);
+
+                if ($this->db->inTransaction()) $this->db->rollBack();
+
+                return [
+                    'success' => false,
+                    'message' => "Trop de tentatives ! Vous êtes bloqué pendant 5 minutes.",
+                    'validated_flag_id' => null
+                ];
+            }
+
+            // ===== VÉRIFICATIONS DE SÉCURITÉ =====
+
+            // 1. Vérifier si un membre de l'équipe a déjà validé ce challenge
             $checkQuery = "
-                SELECT vf.id 
-                FROM validated_flags vf
-                JOIN team_members tm ON tm.user_id = vf.user_id
-                WHERE vf.challenge_id = :challenge_id
-                AND tm.team_id = :team_id
-                AND vf.is_valid = 1
-            ";
-            $stmt = $this->db->prepare($checkQuery);
-            $stmt->execute([
+            SELECT vf.id
+            FROM validated_flags vf
+            JOIN team_members tm ON tm.user_id = vf.user_id
+            WHERE vf.challenge_id = :challenge_id
+            AND tm.team_id = :team_id
+            AND vf.is_valid = 1
+        ";
+            $checkStmt = $this->db->prepare($checkQuery);
+            $checkStmt->execute([
                 ':challenge_id' => $input['challenge_id'],
                 ':team_id' => $team_id
             ]);
-            if ($stmt->fetch()) {
+
+            if ($checkStmt->fetch() && !$isAdmin) {
+                // Logger la tentative bloquée
+                $this->logCtfSubmission([
+                    'user_id' => $user_id,
+                    'team_id' => $team_id,
+                    'challenge_id' => $input['challenge_id'],
+                    'hackathon_id' => $input['hackathon_id'],
+                    'phase_id' => $phase_id,
+                    'flag_submitted' => $input['flag_value'],
+                    'flag_hash' => $flagHash,
+                    'is_correct' => false,
+                    'attempt_number' => $attemptNumber,
+                    'ip_address' => $ipAddress,
+                    'user_agent' => $userAgent,
+                    'submission_source' => $submissionSource,
+                    'blocked_reason' => "Flag déjà validé par l'équipe",
+                    'points_awarded' => 0
+                ]);
+
                 if ($this->db->inTransaction()) $this->db->rollBack();
+
                 return [
                     'success' => false,
                     'message' => 'Ce flag a déjà été validé par un membre de votre équipe.',
@@ -174,32 +310,58 @@ class Challenge
                 ];
             }
 
-            // Vérification du flag
-            $submittedHash = hash('sha256', $input['flag_value']);
+            // ===== VÉRIFICATION DU FLAG =====
+
             if ($submittedHash !== $flag['value']) {
+                // Logger la tentative échouée
+                $this->logCtfSubmission([
+                    'user_id' => $user_id,
+                    'team_id' => $team_id,
+                    'challenge_id' => $input['challenge_id'],
+                    'hackathon_id' => $input['hackathon_id'],
+                    'phase_id' => $phase_id,
+                    'flag_submitted' => $input['flag_value'],
+                    'flag_hash' => $flagHash,
+                    'is_correct' => false,
+                    'attempt_number' => $attemptNumber,
+                    'ip_address' => $ipAddress,
+                    'user_agent' => $userAgent,
+                    'submission_source' => $submissionSource,
+                    'blocked_reason' => "Flag incorrect (tentative {$attempts}/5)",
+                    'points_awarded' => 0
+                ]);
+
                 if ($this->db->inTransaction()) $this->db->rollBack();
+
+                $remainingAttempts = 5 - $attempts;
                 return [
                     'success' => false,
-                    'message' => 'Flag incorrect.',
-                    'validated_flag_id' => null
+                    'message' => "Flag incorrect. Il vous reste {$remainingAttempts} tentative(s).",
+                    'validated_flag_id' => null,
+                    'attempts_remaining' => $remainingAttempts
                 ];
             }
 
+            // ===== FLAG CORRECT - TRAITEMENT =====
+
+            $points = 0;
+
             if (!$isAdmin) {
+                // Mettre à jour le compteur de résolutions
                 $stmt = $this->db->prepare("UPDATE flags SET solves = solves + 1 WHERE id = :flag_id");
                 $stmt->execute([':flag_id' => $flag['id']]);
 
-                // Récupère solve_count pour ce flag
+                // Récupérer le nombre de résolutions pour calcul dynamique
                 $stmt = $this->db->prepare("
-                        SELECT COUNT(DISTINCT user_id)
-                        FROM validated_flags
-                        WHERE flag_id = :flag_id
-                        AND is_valid = 1
-                    ");
+                SELECT COUNT(DISTINCT user_id)
+                FROM validated_flags
+                WHERE flag_id = :flag_id
+                AND is_valid = 1
+            ");
                 $stmt->execute([':flag_id' => $flag['id']]);
-                $solveCount = $stmt->fetchColumn();
+                $solveCount = (int)$stmt->fetchColumn();
 
-                // Calcule les nouveaux points dynamiques
+                // Calculer les points dynamiques
                 $points = $this->calculateDynamicFlagPoints(
                     (int)$flag['initial_points'],
                     (int)$flag['min_points'],
@@ -216,9 +378,10 @@ class Challenge
 
                 // Insertion de la validation
                 $stmt = $this->db->prepare("
-                INSERT INTO validated_flags (flag_id, user_id, challenge_id,points_gained, validated_at,flag_submitted, is_valid) 
+                INSERT INTO validated_flags
+                (flag_id, user_id, challenge_id, points_gained, validated_at, flag_submitted, is_valid)
                 VALUES (:flag_id, :user_id, :challenge_id, :points_gained, NOW(), :flag_submitted, 1)
-                ");
+            ");
                 $stmt->execute([
                     ':flag_id' => $flag['id'],
                     ':user_id' => $user_id,
@@ -226,29 +389,139 @@ class Challenge
                     ':points_gained' => $points,
                     ':flag_submitted' => $input['flag_value']
                 ]);
+
+                $validatedFlagId = $this->db->lastInsertId();
+            } else {
+                // Admin : utiliser les points du flag sans modification
+                $points = $flag['points'];
+                $validatedFlagId = null;
             }
-            $validatedFlagId = $this->db->lastInsertId();
+
+            // Logger la tentative réussie
+            $this->logCtfSubmission([
+                'user_id' => $user_id,
+                'team_id' => $team_id,
+                'challenge_id' => $input['challenge_id'],
+                'hackathon_id' => $input['hackathon_id'],
+                'phase_id' => $phase_id,
+                'flag_submitted' => $input['flag_value'],
+                'flag_hash' => $flagHash,
+                'is_correct' => true,
+                'attempt_number' => $attemptNumber,
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
+                'submission_source' => $submissionSource,
+                'blocked_reason' => null,
+                'points_awarded' => $points
+            ]);
+
             if ($this->db->inTransaction()) $this->db->commit();
 
+            // Mise à jour du score de l'équipe (sauf pour admin)
+            if (!$isAdmin) {
+                $this->updateTeamScore($team_id, $input['hackathon_id'], $phase_id, $points);
+            }
+
+            // Nettoyer Redis après succès
+            $this->redis->delete($redisKey);
+            $this->redis->delete($blockKey);
+
+            return [
+                'success' => true,
+                'message' => "Flag validé avec succès ! Vous gagnez {$points} points.",
+                'validated_flag_id' => $validatedFlagId,
+                'points' => $points
+            ];
+
+        } catch (PDOException $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            error_log("Erreur PDO dans submitChallengeCTF: " . $e->getMessage());
+            throw new Exception("Erreur lors de la soumission du challenge CTF !");
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            error_log("Erreur dans submitChallengeCTF: " . $e->getMessage());
+            throw new Exception($e->getMessage());
+        }
+    }
+
+
+    /**
+     * Logger une soumission CTF dans la base de données
+     *
+     * @param array $data Données de la soumission
+     * @return int ID de la soumission loggée
+     */
+    private function logCtfSubmission($data)
+    {
+        try {
+            $stmt = $this->db->prepare("
+                INSERT INTO ctf_submissions (
+                    user_id, team_id, challenge_id, hackathon_id, phase_id,
+                    flag_submitted, flag_hash, is_correct, attempt_number,
+                    ip_address, user_agent, submission_source, blocked_reason, points_awarded
+                ) VALUES (
+                    :user_id, :team_id, :challenge_id, :hackathon_id, :phase_id,
+                    :flag_submitted, :flag_hash, :is_correct, :attempt_number,
+                    :ip_address, :user_agent, :submission_source, :blocked_reason, :points_awarded
+                )
+            ");
+
+            $stmt->execute([
+                ':user_id' => $data['user_id'],
+                ':team_id' => $data['team_id'],
+                ':challenge_id' => $data['challenge_id'],
+                ':hackathon_id' => $data['hackathon_id'],
+                ':phase_id' => $data['phase_id'],
+                ':flag_submitted' => $data['flag_submitted'],
+                ':flag_hash' => $data['flag_hash'],
+                ':is_correct' => (int)$data['is_correct'],
+                ':attempt_number' => $data['attempt_number'],
+                ':ip_address' => $data['ip_address'],
+                ':user_agent' => $data['user_agent'],
+                ':submission_source' => $data['submission_source'],
+                ':blocked_reason' => $data['blocked_reason'] ?? null,
+                ':points_awarded' => $data['points_awarded'] ?? 0
+            ]);
+
+            return $this->db->lastInsertId();
+        } catch (PDOException $e) {
+            error_log("Erreur lors du logging CTF: " . $e->getMessage());
+            // Ne pas bloquer la soumission si le logging échoue
+            return 0;
+        }
+    }
+
+    /**
+     * Met à jour le score de l'équipe
+     *
+     * @param int $team_id ID de l'équipe
+     * @param int $hackathon_id ID du hackathon
+     * @param int|null $phase_id ID de la phase
+     * @param int $points Points à ajouter
+     */
+    private function updateTeamScore($team_id, $hackathon_id, $phase_id, $points)
+    {
+        try {
             // Vérifier si une ligne existe déjà
             $stmt = $this->db->prepare("
-                SELECT id FROM scores 
-                WHERE team_id = :team_id AND hackathon_id = :hackathon_id AND phase_id = :phase_id
+                SELECT id FROM scores
+                WHERE team_id = :team_id
+                AND hackathon_id = :hackathon_id
+                AND phase_id = :phase_id
             ");
             $stmt->execute([
                 ':team_id' => $team_id,
-                ':hackathon_id' => $input['hackathon_id'] ?? 1,
-                ':phase_id' => $phase_id ?? 1
+                ':hackathon_id' => $hackathon_id,
+                ':phase_id' => $phase_id
             ]);
 
             $scoreId = $stmt->fetchColumn();
 
-            if ($scoreId && !$isAdmin) {
-                // Update
+            if ($scoreId) {
+                // Mise à jour du score existant
                 $stmt = $this->db->prepare("
-                    UPDATE scores 
-                    SET total_points = total_points + :points , last_update
-                     = NOW() 
+                    UPDATE scores
+                    SET total_points = total_points + :points, last_update = NOW()
                     WHERE id = :id
                 ");
                 $stmt->execute([
@@ -256,42 +529,24 @@ class Challenge
                     ':id' => $scoreId
                 ]);
             } else {
-                if ($isAdmin) return [
-                    'success' => true,
-                    'message' => "Flag validé avec succès ! Vous gagnez ".$flag['points']." points.",
-                    'validated_flag_id' => $validatedFlagId,
-                    'points' => $flag['points']
-                ];
-                // Insert
+                // Création d'un nouveau score
                 $stmt = $this->db->prepare("
                     INSERT INTO scores (team_id, hackathon_id, phase_id, total_points)
                     VALUES (:team_id, :hackathon_id, :phase_id, :points)
                 ");
                 $stmt->execute([
                     ':team_id' => $team_id,
-                    ':hackathon_id' => $input['hackathon_id'] ?? 1,
-                    ':phase_id' => $phase_id ?? 1,
-                    ':points' => $points ?? 0
+                    ':hackathon_id' => $hackathon_id,
+                    ':phase_id' => $phase_id,
+                    ':points' => $points
                 ]);
             }
-
-            if ($this->db->inTransaction()) $this->db->commit();
-
-            return [
-                'success' => true,
-                'message' => "Flag validé avec succès ! Vous gagnez $points points.",
-                'validated_flag_id' => $validatedFlagId,
-                'points' => $points
-            ];
         } catch (PDOException $e) {
-            if ($this->db->inTransaction()) $this->db->rollBack();
-            throw new Exception(
-                "Erreur lors de la soumission du challenge CTF !"
-                // Pour debuger
-                // . $e->getMessage()
-            );
+            error_log("Erreur lors de la mise à jour du score: " . $e->getMessage());
+            // Ne pas bloquer si la mise à jour échoue
         }
     }
+
 
     public function calculateDynamicFlagPoints(int $initial, int $min, int $decay, int $solveCount): int
     {
