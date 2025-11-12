@@ -197,7 +197,7 @@ async function handlePhaseChange(event) {
         hideError();
     } catch (error) {
         console.error('Error loading leaderboard:', error);
-        showError('Impossible de charger le classement pour cette phase');
+        showError(error.message || 'Impossible de charger le classement pour cette phase');
         showLeaderboardError();
     }
 }
@@ -254,7 +254,11 @@ async function loadLeaderboard(eventId, phaseId) {
             populateLeaderboard(data.leaderboard || []);
             updateTimestamp();
         } else {
-            throw new Error(data.message || 'Erreur lors du chargement du classement');
+            if ( data.error?.includes('gelé') || data.message?.includes('gelé') ) {
+                showFrozenLeaderboard();
+                return;
+            }
+            throw new Error(data.message || data.error || 'Erreur lors du chargement du classement');
         }
     } catch (error) {
         console.error('Failed to load leaderboard:', error);
@@ -432,6 +436,35 @@ function showLeaderboardNoData() {
     const template = document.getElementById('no-data-template');
     if (template) {
         DOM.leaderboardBody.innerHTML = template.innerHTML;
+    }
+
+    // Réinitialiser les icônes
+    setTimeout(() => {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }, 100);
+}
+
+/**
+ * Affiche l'état "frozen" du leaderboard
+ */
+function showFrozenLeaderboard() {
+    if (!DOM.leaderboardBody) return;
+
+    const template = `
+        <tr>
+            <td colspan="4" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <div class="flex items-center flex-col justify-center h-full w-full">
+                    <i data-lucide="lock" class="w-12 h-12 text-blue-400"></i>
+                    <h2 class="text-xl font-bold mt-4 text-white">Classement figé</h2>
+                    <p class="text-blue-200/80 mt-2">Le classement est figé pour cette phase.</p>
+                </div>
+            </td>
+        </tr>
+    `;
+    if (template) {
+        DOM.leaderboardBody.innerHTML = template;
     }
 
     // Réinitialiser les icônes

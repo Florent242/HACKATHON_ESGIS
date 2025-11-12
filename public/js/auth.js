@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const prevBtn = document.querySelector('.prev-step-btn');
     const nextBtn = document.querySelector('.next-step-btn');
     const formSections = document.querySelectorAll('.form-section');
-    const termsSection = document.querySelector('.form-group.mt-6');
+    // const termsSection = document.querySelector('.form-group.mt-6');
     const submitBtn = document.querySelector('#signup');
 
     // Fonction pour valider le nom complet
@@ -401,7 +401,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     utilsScript: CDN.utils,
                     nationalMode: false, // keep international format with +
                     separateDialCode: false,
-                    autoPlaceholder: 'aggressive',
                     dropdownContainer: document.body,
                 });
 
@@ -649,18 +648,18 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (step === formSections.length) {
             nextBtn.style.display = 'none';
-            termsSection.style.display = 'block';
+            // termsSection.style.display = 'block';
             submitBtn.style.display = 'flex';
             prevBtn.style.display = 'flex';
         } else if (step === 1) {
             prevBtn.style.display = 'none';
             submitBtn.style.display = 'none';
-            termsSection.style.display = 'none';
+            // termsSection.style.display = 'none';
         } else {
             nextBtn.style.display = 'block';
             prevBtn.style.display = 'flex';
             nextBtn.textContent = 'Suivant';
-            termsSection.style.display = 'none';
+            // termsSection.style.display = 'none';
             submitBtn.style.display = 'none';
         }
         // Gérer le bouton précédent
@@ -702,15 +701,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
             case 3: // Étape 3: Hackathon
                 // Valider la compétence principale
-                if (main_skill.value === '') {
-                    showError(main_skill, document.getElementById('mainSkillError'), "Sélectionnez votre compétence principale");
+                if (special_comp?.value === '') {
+                    showError(special_comp, document.getElementById('mainSkillError'), "Sélectionnez votre compétence principale");
                     canProceed = false;
                     break;
                 }
 
                 // Valider le niveau d'étude
-                if (education_level.value === '') {
-                    showError(education_level, document.getElementById('educationLevelError'), "Sélectionnez votre niveau d'étude");
+                if (study_level?.value === '') {
+                    showError(study_level, document.getElementById('educationLevelError'), "Sélectionnez votre niveau d'étude");
                     canProceed = false;
                     break;
                 }

@@ -320,10 +320,15 @@ class AuthController
     {
         try {
             // Vérifier le token CSRF
-            $this->validateCsrfToken();
+            // $this->validateCsrfToken();
 
             // Récupération et nettoyage des données
             $data = $input;
+
+            // cas ou data['phone'] est present
+            if (isset($data['phone'])) {
+                $data['number'] = $data['phone'];
+            }
 
             // Validation des données
             if (empty($data['username']) || empty($data['email']) || empty($data['password']) || empty($data['number']) || empty($data['fullname']) || empty($data['school'])) {
@@ -386,7 +391,11 @@ class AuthController
             $identifier = trim(htmlspecialchars($data['identifier'], ENT_QUOTES, 'UTF-8'));
 
             // Recuperer le userId a partir de l'identifiant puisuq e le token n'est pas accessible avant connexion
-            $userId = $this->user->getId($identifier)['id'];
+            $userId = $this->user->getId($identifier);
+            if (!$userId) {
+                throw new Exception('Utilisateur non trouvé');
+            }
+            $userId = $userId['id'];
 
             // Vérifier si le compte est verrouillé
             $this->checkUserStatus($userId);

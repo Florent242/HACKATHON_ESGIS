@@ -93,6 +93,32 @@ class Score
         }
     }
 
+    public function getPhase($hackathon_id, $phase_id)
+    {
+        try {
+            $sql = "
+                SELECT *
+                FROM phases
+                WHERE hackathon_id = :hackathon_id
+                  AND id = :phase_id
+            ";
+
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':hackathon_id' => $hackathon_id,
+                ':phase_id' => $phase_id
+            ]);
+
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            throw new Exception(
+                "Erreur lors de la récupération de la phase !"
+                // pour debug
+                // . $e->getMessage()
+            );
+        }
+    }
+
     // TODO : Instruction interdite aux participants
     // public function updateScore($team_id, $hackathon_id, $phase_id, $points)
     // {

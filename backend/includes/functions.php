@@ -58,6 +58,13 @@ function sendResponse($statusCode, $data = [], $headers = [])
     exit;
 }
 
+/**
+ * Recalcule les scores des équipes pour le CTF
+ * @param PDO $db
+ * @param int $hackathonId
+ * @param int|null $phaseId
+ * @return void
+ */
 function recalculateCTFScores(PDO $db, int $hackathonId, ?int $phaseId = null): void
 {
     try {
@@ -71,14 +78,43 @@ function recalculateCTFScores(PDO $db, int $hackathonId, ?int $phaseId = null): 
         $teams = $teamsStmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (!$teams) {
-            echo "=== /!\ Operation de mise a jour des CTF de la table score echoue pour le hackathon $hackathonId ! === \n";
+            echo "=== /!\ Operation de mise a jour des CTF de la table score echoue pour le hackathon $hackathonId ! Aucune equipe trouvee === \n";
             return;
         }
 
         $phaseId ??= 1;
 
+        // Verification du type de la phase
+        $query = "SELECT phase_type FROM phases WHERE hackathon_id = :hackathon_id AND id = :phase_id LIMIT 1";
+        $stmt = $db->prepare($query);
+        $stmt->execute([':hackathon_id' => $hackathonId, ':phase_id' => $phaseId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $phaseType = $result['phase_type'];
+
         foreach ($teams as $team) {
             $teamId = $team['team_id'];
+
+            if ($phaseType === 'qualified') {
+                // Vérification de la qualification (équipe ou utilisateur)
+                $query = "SELECT 1 
+                FROM hackathon_qualifications 
+                WHERE hackathon_id = :hackathon_id 
+                AND phase_id = :phase_id 
+                AND team_id = :team_id 
+                LIMIT 1";
+                $stmt = $db->prepare($query);
+                $stmt->execute([
+                    ':hackathon_id' => $hackathonId,
+                    ':phase_id' => $phaseId,
+                    ':team_id' => $teamId,
+                ]);
+                $isQualified = (bool)$stmt->fetchColumn();
+
+                if (!$isQualified) {
+                    echo "=== /!\ L'équipe/utilisateur $teamId n'est pas qualifié(e) pour la phase $phaseId ! === \n";
+                    continue;  // Passe à l'itération suivante au lieu de retourner
+                }
+            }
 
             // Total des points pour cette équipe via les flags validés
             $scoreStmt = $db->prepare("
@@ -93,9 +129,9 @@ function recalculateCTFScores(PDO $db, int $hackathonId, ?int $phaseId = null): 
 
             // Mise à jour ou insertion dans la table scores
             $updateStmt = $db->prepare("
-                INSERT INTO scores (team_id, hackathon_id, phase_id, total_points)
-                VALUES (:team_id, :hackathon_id, :phase_id, :total_points)
-                ON DUPLICATE KEY UPDATE total_points = :update_points, last_update = NOW()
+                INSERT INTO scores (team_id, hackathon_id, phase_id, total_points, is_active)
+                VALUES (:team_id, :hackathon_id, :phase_id, :total_points, 1)
+                ON DUPLICATE KEY UPDATE total_points = :update_points, last_update = NOW(), is_active = 1
             ");
             $updateStmt->execute([
                 ':team_id' => $teamId,
@@ -118,6 +154,13 @@ function recalculateCTFScores(PDO $db, int $hackathonId, ?int $phaseId = null): 
     }
 }
 
+/**
+ * Recalcule les scores des équipes pour le Challenge
+ * @param PDO $db
+ * @param int $hackathonId
+ * @param int|null $phaseId
+ * @return void
+ */
 function recalculateChallengeScores(PDO $db, int $hackathonId, ?int $phaseId = null): void
 {
     try {
@@ -137,8 +180,37 @@ function recalculateChallengeScores(PDO $db, int $hackathonId, ?int $phaseId = n
 
         $phaseId ??= 2;
 
+        // Verification du type de la phase
+        $query = "SELECT phase_type FROM phases WHERE hackathon_id = :hackathon_id AND id = :phase_id LIMIT 1";
+        $stmt = $db->prepare($query);
+        $stmt->execute([':hackathon_id' => $hackathonId, ':phase_id' => $phaseId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $phaseType = $result['phase_type'];
+
+
         foreach ($teams as $team) {
             $teamId = $team['team_id'];
+            if ($phaseType === 'qualified') {
+                // Vérification de la qualification (équipe ou utilisateur)
+                $query = "SELECT 1 
+          FROM hackathon_qualifications 
+          WHERE hackathon_id = :hackathon_id 
+          AND phase_id = :phase_id 
+          AND team_id = :team_id 
+          LIMIT 1";
+                $stmt = $db->prepare($query);
+                $stmt->execute([
+                    ':hackathon_id' => $hackathonId,
+                    ':phase_id' => $phaseId,
+                    ':team_id' => $teamId,
+                ]);
+                $isQualified = (bool)$stmt->fetchColumn();
+
+                if (!$isQualified) {
+                    echo "=== /!\ L'équipe/utilisateur $teamId n'est pas qualifié(e) pour la phase $phaseId ! === \n";
+                    continue;  // Passe à l'itération suivante au lieu de retourner
+                }
+            }
 
             // Total des points cumulés depuis les soumissions
             $scoreStmt = $db->prepare("
@@ -153,9 +225,9 @@ function recalculateChallengeScores(PDO $db, int $hackathonId, ?int $phaseId = n
 
             // Mise à jour dans scores
             $updateStmt = $db->prepare("
-                INSERT INTO scores (team_id, hackathon_id, phase_id, total_points)
-                VALUES (:team_id, :hackathon_id, :phase_id, :total_points)
-                ON DUPLICATE KEY UPDATE total_points = :update_points, last_update = NOW()
+                INSERT INTO scores (team_id, hackathon_id, phase_id, total_points, is_active)
+                VALUES (:team_id, :hackathon_id, :phase_id, :total_points, 1)
+                ON DUPLICATE KEY UPDATE total_points = :update_points, last_update = NOW(), is_active = 1
             ");
             $updateStmt->execute([
                 ':team_id' => $teamId,
@@ -183,7 +255,8 @@ function deactivateOrphanScores(PDO $db, int $hackathonId, ?int $phaseId = null)
             UPDATE scores s
             LEFT JOIN hackathon_teams ht
               ON s.team_id = ht.team_id AND s.hackathon_id = ht.hackathon_id
-            SET s.is_active = 0
+            SET 
+                s.is_active = 0
             WHERE ht.id IS NULL
               AND s.hackathon_id = :hackathon_id
               AND (:phase_id IS NULL OR s.phase_id = :score_phase_id)
@@ -245,6 +318,7 @@ function recalculateAllHackathonScores(PDO $db): void
 
     // Désactivation des scores orphelins
     deactivateOrphanScores($db, 1, 1);
+    deactivateOrphanScores($db, 1, 5);
 
     updateFlagSolves($db);
 
@@ -261,7 +335,7 @@ function updateTopHackers(PDO $db): void
     try {
         // Désactiver temporairement les clés étrangères pour plus de performance
         $db->exec('SET FOREIGN_KEY_CHECKS=0');
-        
+
         // 1. Mettre à jour les enregistrements existants
         $updateStmt = $db->prepare("
             UPDATE top_hackers th
@@ -293,7 +367,7 @@ function updateTopHackers(PDO $db): void
                 OR th.ranking != new_ranks.new_rank
         ");
         $updateStmt->execute();
-        
+
         // 2. Insérer les nouveaux enregistrements qui n'existent pas
         $insertStmt = $db->prepare("
             INSERT INTO top_hackers 
@@ -328,7 +402,7 @@ function updateTopHackers(PDO $db): void
             WHERE th.user_id IS NULL
         ");
         $insertStmt->execute();
-        
+
         // 3. Supprimer les anciens enregistrements qui ne sont plus dans le top
         $deleteStmt = $db->prepare("
             DELETE th FROM top_hackers th
@@ -343,10 +417,9 @@ function updateTopHackers(PDO $db): void
             WHERE top_users.user_id IS NULL
         ");
         $deleteStmt->execute();
-        
+
         $db->exec('SET FOREIGN_KEY_CHECKS=1');
         error_log("[SUCCESS] Top hackers mis à jour avec succès");
-        
     } catch (Exception $e) {
         $db->exec('SET FOREIGN_KEY_CHECKS=1');
         error_log("[ERROR] Erreur dans updateTopHackers: " . $e->getMessage());

@@ -85,7 +85,7 @@ class ChallengeController extends Controller
         }
     }
 
-    public function submitChallengeCTF($user_id, $input, $phase_id = null)
+   public function submitChallengeCTF($user_id, $input, $phase_id = null)
     {
         try {
             $this->validateMethod('POST');
@@ -146,7 +146,6 @@ class ChallengeController extends Controller
             ]);
         }
     }
-
     public function downloadResource($challengeId, $resourceLink)
     {
         try {

@@ -34,11 +34,13 @@ if (!class_exists('Auth\Model\Database')) {
 class ScoreController extends Controller
 {
     protected $db;
+    protected $score;
 
     public function __construct($db, $tokenManager)
     {
         parent::__construct($tokenManager);
         $this->db = $db;
+        $this->score = new Score($db);
     }
 
     public function getLeaderboard($hackathon_id, $phase_id)
@@ -46,8 +48,18 @@ class ScoreController extends Controller
         try {
             $this->validateMethod('GET');
 
-            $score = new Score($this->db);
-            $leaderboard = $score->getLeaderboard($hackathon_id, $phase_id);
+            // Verifier si la phase est active
+            $phase = $this->score->getPhase($hackathon_id, $phase_id);
+            if (!$phase) {
+                throw new Exception("Phase non trouvée !");
+            }
+
+            // Verifier si la phase est gelée
+            if ($phase['frozen_leaderboard'] == 1) {
+                throw new Exception("Classement gelé !");
+            }
+
+            $leaderboard = $this->score->getLeaderboard($hackathon_id, $phase_id);
 
             jsonResponse([
                 'success' => true,
@@ -65,8 +77,7 @@ class ScoreController extends Controller
     {
         try {
             $this->validateMethod('GET');
-            $score = new Score($this->db);
-            $phases = $score->getPhases((int)$hackathon_id);
+            $phases = $this->score->getPhases((int)$hackathon_id);
 
             jsonResponse([
                 'success' => true,
@@ -85,8 +96,7 @@ class ScoreController extends Controller
     // {
     //     try {
     //         $this->validateMethod('POST');
-    //         $score = new Score($this->db);
-    //         $score->updateScore($team_id, $hackathon_id, $phase_id, $input);
+    //         $this->score->updateScore($team_id, $hackathon_id, $phase_id, $input);
 
     //         jsonResponse([
     //             'success' => true,

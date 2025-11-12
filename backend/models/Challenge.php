@@ -9,6 +9,8 @@ use Auth\Model\RedisManager;
 
 if (!defined('FUNCTIONS_INCLUDED')) {
     require_once __DIR__ . '/../includes/functions.php';
+    require_once __DIR__ . '/RedisManager.php';
+
 }
 
 class Challenge
@@ -213,10 +215,10 @@ class Challenge
 
             // Calculer le numéro de tentative (depuis la DB)
             $attemptStmt = $this->db->prepare("
-            SELECT COUNT(*) + 1
-            FROM ctf_submissions
-            WHERE user_id = :user_id AND challenge_id = :challenge_id
-        ");
+                SELECT COUNT(*) + 1
+                FROM ctf_submissions
+                WHERE user_id = :user_id AND challenge_id = :challenge_id
+            ");
             $attemptStmt->execute([
                 ':user_id' => $user_id,
                 ':challenge_id' => $input['challenge_id']
@@ -313,8 +315,11 @@ class Challenge
             // ===== VÉRIFICATION DU FLAG =====
 
             if ($submittedHash !== $flag['value']) {
+                
+                if ($this->db->inTransaction()) $this->db->rollBack();
+                
                 // Logger la tentative échouée
-                $this->logCtfSubmission([
+                $logId = $this->logCtfSubmission([
                     'user_id' => $user_id,
                     'team_id' => $team_id,
                     'challenge_id' => $input['challenge_id'],
@@ -331,12 +336,10 @@ class Challenge
                     'points_awarded' => 0
                 ]);
 
-                if ($this->db->inTransaction()) $this->db->rollBack();
-
                 $remainingAttempts = 5 - $attempts;
                 return [
                     'success' => false,
-                    'message' => "Flag incorrect. Il vous reste {$remainingAttempts} tentative(s).",
+                    'message' => "Flag incorrect.",
                     'validated_flag_id' => null,
                     'attempts_remaining' => $remainingAttempts
                 ];
@@ -445,6 +448,8 @@ class Challenge
     }
 
 
+
+
     /**
      * Logger une soumission CTF dans la base de données
      *
@@ -486,6 +491,8 @@ class Challenge
             return $this->db->lastInsertId();
         } catch (PDOException $e) {
             error_log("Erreur lors du logging CTF: " . $e->getMessage());
+            // Pour le debug
+            // throw new Exception($e->getMessage());
             // Ne pas bloquer la soumission si le logging échoue
             return 0;
         }

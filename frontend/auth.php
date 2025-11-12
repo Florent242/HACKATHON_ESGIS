@@ -17,8 +17,6 @@ if (empty($_SESSION['csrf_token'])) {
     <link rel="stylesheet" href="/css/styles/header.css">
     <link rel="stylesheet" href="/css/dist/output.css">
     <script defer src="/js/auth.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <?php require_once "../includes/head.php"; ?>
 
 </head>
@@ -156,7 +154,7 @@ if (empty($_SESSION['csrf_token'])) {
                                         type="tel"
                                         id="phone"
                                         name="phone"
-                                        placeholder="+229 XX XX XX XX"
+                                        placeholder="XX XX XX XX"
                                         autocomplete="tel"
                                         inputmode="tel"
                                         required>
@@ -209,13 +207,13 @@ if (empty($_SESSION['csrf_token'])) {
                         <h3 class="section-title">Participation au Hackathon</h3>
 
                         <div class="form-group mb-4">
-                            <label for="main_skill" class="label after:ml-1 after:text-red-500 after:content-['*'] mb-1.5 block text-sm font-medium text-gray-300">Compétence principale</label>
+                            <label for="special_comp" class="label after:ml-1 after:text-red-500 after:content-['*'] mb-1.5 block text-sm font-medium text-gray-300">Compétence principale</label>
                             <div class="relative w-full">
                                 <div class="flex items-center bg-gray-800/80 border border-gray-600/50 rounded-md px-2.5 py-1.5 text-sm focus-within:ring-1 focus-within:ring-indigo-500 focus-within:border-indigo-500 transition-all w-full duration-150">
                                     <i data-lucide="code" class="w-3.5 h-3.5 text-indigo-400 mr-2 flex-shrink-0"></i>
                                     <select
-                                        id="main_skill"
-                                        name="main_skill"
+                                        id="special_comp"
+                                        name="special_comp"
                                         required
                                         class="w-full bg-transparent text-sm text-gray-100 placeholder-gray-400 border-none focus:ring-0 focus:outline-none appearance-none cursor-pointer pr-5 py-0.5">
                                         <option value="" class="bg-gray-800 text-gray-300">Sélectionnez votre compétence</option>
@@ -255,11 +253,11 @@ if (empty($_SESSION['csrf_token'])) {
                         </div>
 
                         <div class="form-group">
-                            <label for="education_level" class="label after:ml-1 after:text-red-500 after:content-['*']">Niveau d'étude</label>
+                            <label for="study_level" class="label after:ml-1 after:text-red-500 after:content-['*']">Niveau d'étude</label>
                             <div class="custom-select-container">
                                 <div class="display p-2 shadow-lg shadow-indigo-300/10">
                                     <i data-lucide="book"></i>
-                                    <select id="education_level" name="education_level" required>
+                                    <select id="study_level" name="study_level" required>
                                         <option value="">Sélectionnez votre niveau</option>
                                         <option value="licence1">Licence 1</option>
                                         <option value="licence2">Licence 2</option>
@@ -277,12 +275,12 @@ if (empty($_SESSION['csrf_token'])) {
                     </div>
 
                     <!-- Section Conditions -->
-                    <div class="form-group mt-6">
+                    <!-- <div class="form-group mt-6">
                         <div class="flex items-center w-full">
                             <input class="checked:bg-blue-500 w-sm" type="checkbox" id="terms" name="terms" required class="mr-2">
                             <label for="terms" class="text-sm w-full">J'accepte les <a href="/conditions" target="_blank" class="text-indigo-500 hover:underline">conditions d'utilisation</a> et la <a href="/privacy" target="_blank" class="text-indigo-500 hover:underline">politique de confidentialité</a></label>
                         </div>
-                    </div>
+                    </div> -->
 
                     <div class="steps-navigation">
                         <button type="button" class="prev-step-btn" disabled>
