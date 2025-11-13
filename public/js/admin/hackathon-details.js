@@ -907,7 +907,7 @@ function addEligibilityCriterion(criterion = {}) {
 }
 
 // Fonctions pour les récompenses
-function addPrize(prize = { position: '', description: '' }) {
+function addPrize(prize = { position: '', description: '' , label: ''}) {
   const container = document.getElementById('prizes-container');
   const prizeId = Date.now();
 
@@ -923,11 +923,17 @@ function addPrize(prize = { position: '', description: '' }) {
                      placeholder="Position (1er, 2e...)"
                      value="${prize.position || ''}">
           </div>
+          <div class="col-span-2">
+              <input type="text" 
+                     class="prize-label bg-gray-900 border border-gray-700 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5" 
+                     placeholder="Label de la récompense"
+                     value="${prize.label || ''}">
+          </div>
           <div class="col-span-9">
               <input type="text" 
                      class="prize-description bg-gray-900 border border-gray-700 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5" 
                      placeholder="Description de la récompense"
-                     value="${prize.description || ''}">
+                     value="${prize.description || prize.reward || ''}">
           </div>
           <div class="col-span-1 flex justify-end">
               <button type="button" onclick="removeItem(this, 'prizes')" class="text-red-400 hover:text-red-300">
@@ -972,8 +978,9 @@ function loadPrizesFromData(hackathonData) {
 
   prizes.forEach(prize => {
     const formattedPrize = {
-      position: prize.label || prize.position || '',
-      description: prize.reward || prize.description || ''
+      position: prize.position || '',
+      description: prize.reward || prize.description || '',
+      label: prize.label || prize.position || prize.description || ''
     };
     addPrize(formattedPrize);
   });
@@ -1035,8 +1042,9 @@ function updatePrizesField() {
   document.querySelectorAll('.prize-item').forEach(item => {
     const position = item.querySelector('.prize-position').value;
     const description = item.querySelector('.prize-description').value;
+    const label = item.querySelector('.prize-label').value;
     if (position || description) {
-      prizes.push({ position, description });
+      prizes.push({ position, description, label, reward: description });
     }
   });
   document.getElementById('hackathonPrizes').value = JSON.stringify(prizes);

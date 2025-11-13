@@ -161,7 +161,7 @@ class ScoreController extends Controller
 
             jsonResponse([
                 'success' => true,
-                'message' => 'Teams qualify avec succès'
+                'message' => 'Equipes qualifiées avec succès'
             ]);
         } catch (Exception $e) {
             $this->jsonResponse([

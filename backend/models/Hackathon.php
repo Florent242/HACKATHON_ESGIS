@@ -221,46 +221,6 @@ class Hackathon
                 $data['slug'] = $slug;
             }
 
-            // Validation des dates si fournies
-            $startDate = isset($data['start_date']) ? new DateTime($data['start_date']) : null;
-            $endDate = isset($data['end_date']) ? new DateTime($data['end_date']) : null;
-
-            if ($startDate && $endDate && $startDate >= $endDate) {
-                throw new Exception('La date de fin doit être postérieure à la date de début');
-            }
-
-            // Validation de la date limite d'inscription
-            if (isset($data['registration_deadline']) && $startDate) {
-                $registrationDeadline = new DateTime($data['registration_deadline']);
-                if ($registrationDeadline > $startDate) {
-                    throw new Exception('La date limite d\'inscription doit être antérieure à la date de début');
-                }
-            }
-
-            // Validation du type si fourni
-            if (isset($data['type'])) {
-                $validTypes = ['ctf', 'dev', 'mixte'];
-                if (!in_array($data['type'], $validTypes)) {
-                    throw new Exception('Type de hackathon invalide');
-                }
-            }
-
-            // Validation du statut si fourni
-            if (isset($data['status'])) {
-                $validStatuses = ['draft', 'upcoming', 'inactive', 'active', 'ended', 'cancelled'];
-                if (!in_array($data['status'], $validStatuses)) {
-                    throw new Exception('Statut invalide');
-                }
-            }
-
-            // Validation de la visibilité si fournie
-            if (isset($data['visibility'])) {
-                $validVisibilities = ['public', 'private', 'unlisted'];
-                if (!in_array($data['visibility'], $validVisibilities)) {
-                    throw new Exception('Visibilité invalide');
-                }
-            }
-
             // Construction de la requête
             $fields = [];
             $params = [':id' => $id];

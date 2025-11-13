@@ -242,6 +242,7 @@ class HackathonController extends Controller
                 }
             }
 
+            // Validation des statuts
             if (isset($data['status'])) {
                 $validStatuses = ['draft', 'upcoming', 'inactive', 'active', 'ended', 'cancelled'];
                 if (!in_array($data['status'], $validStatuses)) {
@@ -249,6 +250,7 @@ class HackathonController extends Controller
                 }
             }
 
+            // Validation des visibilités
             if (isset($data['visibility'])) {
                 $validVisibilities = ['public', 'private', 'unlisted'];
                 if (!in_array($data['visibility'], $validVisibilities)) {

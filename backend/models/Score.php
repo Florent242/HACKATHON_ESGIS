@@ -180,20 +180,148 @@ class Score
         }
     }
 
-    public function qualifyTeams($hackathon_id, $phase_id)
-    {
-        try {
-            $stmt = $this->db->prepare("UPDATE phases WHERE hackathon_id = :hackathon_id AND phase_id = :phase_id");
-            $stmt->execute([
-                ':hackathon_id' => $hackathon_id,
-                ':phase_id' => $phase_id
-            ]);
-        } catch (Exception $e) {
-            throw new Exception(
-                "Erreur lors de la qualification des équipes !"
-                // pour debug
-                // . $e->getMessage()
-            );
+public function qualifyTeams($hackathon_id, $current_phase_id) {
+    try {
+        $this->db->beginTransaction();
+        // 1. Vérifier si la qualification a déjà été effectuée
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) as count 
+            FROM hackathon_qualifications 
+            WHERE hackathon_id = :hackathon_id 
+            AND phase_id = :phase_id
+        ");
+        $stmt->execute([
+            ':hackathon_id' => $hackathon_id,
+            ':phase_id' => $current_phase_id
+        ]);
+        
+        if ($stmt->fetch(PDO::FETCH_ASSOC)['count'] > 0) {
+            return [
+                'success' => false,
+                'message' => 'La qualification pour cette phase a déjà été effectuée.'
+            ];
         }
+
+        // 2. Récupérer les informations de la phase actuelle
+        $stmt = $this->db->prepare("
+            SELECT * FROM phases 
+            WHERE hackathon_id = :hackathon_id 
+            AND id = :phase_id
+        ");
+        $stmt->execute([
+            ':hackathon_id' => $hackathon_id,
+            ':phase_id' => $current_phase_id
+        ]);
+        $current_phase = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$current_phase) {
+            return ['success' => false, 'message' => 'Phase non trouvée.'];
+        }
+
+        // 3. Récupérer la phase suivante
+        $stmt = $this->db->prepare("
+            SELECT * FROM phases 
+            WHERE hackathon_id = :hackathon_id 
+            AND phase_order > :current_order
+            ORDER BY phase_order ASC
+            LIMIT 1
+        ");
+        $stmt->execute([
+            ':hackathon_id' => $hackathon_id,
+            ':current_order' => $current_phase['phase_order']
+        ]);
+        $next_phase = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$next_phase) {
+            return ['success' => false, 'message' => 'Aucune phase suivante trouvée.'];
+        }
+
+        // 4. Récupérer les meilleures équipes avec leurs scores
+        $stmt = $this->db->prepare("
+            SELECT 
+                s.team_id,
+                t.name as team_name,
+                s.total_points as total_score
+            FROM scores s
+            JOIN teams t ON s.team_id = t.id
+            WHERE s.hackathon_id = :hackathon_id
+            AND s.phase_id = :phase_id
+            AND s.is_active = 1
+            ORDER BY s.total_points DESC
+            LIMIT :limit
+        ");
+        $stmt->bindValue(':hackathon_id', $hackathon_id, PDO::PARAM_INT);
+        $stmt->bindValue(':phase_id', $current_phase_id, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $current_phase['teams_qualified'], PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $qualified_teams = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (empty($qualified_teams)) {
+            return ['success' => false, 'message' => 'Aucune équipe éligible pour la qualification.'];
+        }
+
+        // 5. Enregistrer les qualifications
+        $insertStmt = $this->db->prepare("
+            INSERT INTO hackathon_qualifications 
+            (phase_id, hackathon_id, team_id, score, qualified_by)
+            VALUES 
+            (:phase_id, :hackathon_id, :team_id, :score, 'system')
+        ");
+
+        $updateTeamStmt = $this->db->prepare("
+            UPDATE teams 
+            SET
+                updated_at = NOW()
+            WHERE id = :team_id
+        ");
+
+        $this->db->beginTransaction();
+        
+        $qualified_team_ids = [];
+        foreach ($qualified_teams as $team) {
+            // Enregistrer la qualification
+            $insertStmt->execute([
+                ':phase_id' => $current_phase_id,
+                ':hackathon_id' => $hackathon_id,
+                ':team_id' => $team['team_id'],
+                ':score' => $team['total_score']
+            ]);
+
+            // Mettre à jour l'équipe pour la phase suivante
+            $updateTeamStmt->execute([
+                ':team_id' => $team['team_id']
+            ]);
+
+            $qualified_team_ids[] = $team['team_id'];
+        }
+
+        // 6. Désactiver les scores des équipes non qualifiées - Attention risque de ne plus voir les equipes affichees dans le leaderboard
+        // $deactivateStmt = $this->db->prepare("
+        //     UPDATE scores 
+        //     SET is_active = 0
+        //     WHERE hackathon_id = :hackathon_id
+        //     AND phase_id = :phase_id
+        //     AND team_id NOT IN (" . implode(',', array_fill(0, count($qualified_team_ids), '?')) . ")
+        // ");
+        
+        // $params = array_merge([$hackathon_id, $current_phase_id], $qualified_team_ids);
+        // $deactivateStmt->execute($params);
+
+        $this->db->commit();
+
+        return [
+            'success' => true,
+            'message' => count($qualified_teams) . ' équipes ont été qualifiées pour la phase suivante.',
+            'qualified_teams' => $qualified_teams
+        ];
+
+    } catch (Exception $e) {
+        $this->db->rollBack();
+        return [
+            'success' => false,
+            'message' => 'Erreur lors de la qualification des équipes: ' . $e->getMessage()
+        ];
     }
+}
 }

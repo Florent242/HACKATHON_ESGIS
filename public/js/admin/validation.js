@@ -68,8 +68,8 @@ class ProjectValidationManager {
      */
     async loadValidationStats() {
         try {
-            const response = await apiRequest('/admin/validation-stats');
-            const data = response;
+            const response = await fetch('/api/admin/validation-stats');
+            const data = await response.json();
 
             if (data.success) {
                 this.updateStatsDisplay(data.stats);
@@ -941,20 +941,36 @@ class ProjectValidationManager {
         console.log('💾 downloadProjectFile appelé:', { projectId, fileName });
         
         try {
+            const token = this.getAuthToken();
+            console.log('🔑 Token récupéré:', token ? 'Présent' : 'Absent');
+            
+            if (!token) {
+                this.showError('Token d\'authentification manquant');
+                return;
+            }
+
             // Construire l'URL de téléchargement
-            const downloadUrl = `/projects/${projectId}/download`;
+            const downloadUrl = `/api/projects/${projectId}/download`;
+            console.log('🌐 URL de téléchargement:', downloadUrl);
             
             // Créer une requête pour télécharger le fichier
-            const response = await apiRequest(downloadUrl, {
-                method: 'GET'
+            const response = await fetch(downloadUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             });
             
-            if (!response.success) {
-                throw new Error(response.error || 'Erreur lors du téléchargement');
+            console.log('📡 Réponse reçue:', response.status, response.statusText);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Erreur lors du téléchargement');
             }
 
             // Récupérer le nom du fichier depuis les headers ou utiliser celui fourni
-            const contentDisposition = response.headers?.get('Content-Disposition');
+            const contentDisposition = response.headers.get('Content-Disposition');
             let downloadFileName = fileName;
             
             if (contentDisposition) {
@@ -1091,6 +1107,7 @@ window.testAPI = async function(projectId = 12) {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
+                'Authorization': `Bearer ${token}`,
                 'X-Requested-With': 'XMLHttpRequest'
             }
         });
