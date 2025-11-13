@@ -130,15 +130,22 @@ class Hackathon
     {
         try {
             $query = "SELECT h.*, 
-                     (SELECT COUNT(*) FROM hackathon_teams WHERE hackathon_id = h.id) as teams_count 
+                     (SELECT COUNT(*) FROM hackathon_teams WHERE hackathon_id = h.id) as teams_count
                      FROM {$this->table} h 
                      WHERE h.id = :id 
                      LIMIT 1";
             $stmt = $this->db->prepare($query);
             $stmt->bindParam(':id', $id, PDO::PARAM_INT);
             $stmt->execute();
-
-            return $stmt->fetch(PDO::FETCH_ASSOC);
+            $hackathon = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            $phasesQuery = "SELECT * FROM phases WHERE hackathon_id = :id";
+            $phasesStmt = $this->db->prepare($phasesQuery);
+            $phasesStmt->bindParam(':id', $id, PDO::PARAM_INT);
+            $phasesStmt->execute();
+            $hackathon['phases'] = $phasesStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return $hackathon;
         } catch (PDOException $e) {
             error_log('Erreur lors de la récupération du hackathon !'
             // Pour debuger

@@ -208,10 +208,89 @@ const renderHackathonTechno = (hackathon) => {
  * ]
  */
 const renderHackathonPhases = (phases = []) => {
-    if (phases.length)
-        return phases.map((phase) => `<div class="hackathon-phase">${phase}</div>`).join('');
+    if (!phases.length) {
+        return '<p style="color:var(--text-secondary);">Planning détaillé bientôt disponible.</p>';
+    }
 
-    return '<p style="color:var(--text-secondary);">Planning détaillé bientot disponible.</p>';
+    return phases.map((phase) => `
+        <div class="phase-card w-full" style="
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);">
+            
+            <h3 style="
+                color: var(--primary);
+                margin: 0 0 15px 0;
+                font-size: 1.2em;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                gap: 10px;">
+                <i data-lucide="flag" stroke="var(--primary)" width="20" height="20"></i>
+                ${phase.name}
+            </h3>
+            
+            <p style="
+                color: var(--text-secondary);
+                margin: 0 0 15px 0;
+                font-size: 0.95em;
+                line-height: 1.5;">
+                ${phase.description}
+            </p>
+            
+            <div style="
+                display: flex;
+                flex-wrap: wrap;
+                gap: 15px;
+                margin-top: 15px;">
+                
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    color: var(--text);
+                    font-size: 0.9em;
+                    background: var(--bg-secondary);
+                    padding: 6px 12px;
+                    border-radius: 20px;
+                    gap: 5px;">
+                    <i data-lucide="calendar" width="16" height="16" stroke="var(--primary)"></i>
+                    <span>${new Date(phase.start).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                    <i data-lucide="arrow-right" width="14" height="14" stroke="var(--text-secondary)"></i>
+                    <span>${new Date(phase.end).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                </div>
+                
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    color: var(--text);
+                    font-size: 0.9em;
+                    background: var(--bg-secondary);
+                    padding: 6px 12px;
+                    border-radius: 20px;
+                    gap: 5px;">
+                    <i data-lucide="${phase.phase_type === 'open' ? 'unlock' : 'lock'}" width="16" height="16" stroke="var(--primary)"></i>
+                    <span>${phase.phase_type === 'open' ? 'Ouverte à tous' : 'Sur invitation'}</span>
+                </div>
+                
+                ${phase.team_qualified ? `
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    color: var(--success);
+                    font-size: 0.9em;
+                    background: rgba(74, 222, 128, 0.1);
+                    padding: 6px 12px;
+                    border-radius: 20px;
+                    gap: 5px;">
+                    <i data-lucide="award" width="16" height="16" stroke="currentColor"></i>
+                    <span>${phase.team_qualified} équipes qualifiées</span>
+                </div>` : ''}
+            </div>
+        </div>
+        `).join('');
 }
 
 /**
@@ -231,12 +310,13 @@ const renderHackathonPrize = () => {
         const cleanedPrizes = hackathon.prizes.replace(/[\u200B-\u200D\uFEFF]/g, '');
         const prizes = JSON.parse(cleanedPrizes);
         const icon = ['🥇', '🥈', '🥉'];
-        return prizes.map((prize, index) =>
-            `<div class="prize">
-                <p>${icon[index] + prize.label}</p>
-                <p style="margin:10px auto;">${prize.reward}</p>
+        return prizes?.map((prize, index) =>
+            `<div class="prize" style="background: var(--card-bg); border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid var(--border-color); transition: transform 0.2s, box-shadow 0.2s; text-align: center;">
+                <div style="font-size: 2rem; margin-bottom: 8px;">${icon[index]}</div>
+                <h4 style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">${prize.label}</h4>
+                <p style="color: var(--primary); font-weight: 500; margin: 0;">${prize.reward}</p>
             </div>`
-        ).join('');
+        ).join('') || '<p class="error">Aucun prix disponible</p>';
     } catch (error) {
         return '<p class="error">Erreur lors du chargement des prix</p>';
     }
@@ -357,7 +437,7 @@ const createHeader = () => {
                     <span>${hackathon['teams_count']} équipes inscrites</span>
                </p>
 
-               <p class="flexDiv">Build innovation from Hack & Stack to the world.</p>
+               <p class="flexDiv">${hackathon['theme'] || 'Build innovation from Hack & Stack to the world.'}</p>
             </div>
             ${hackathon['image'] ? `<img id="hackathonImage" src="${hackathon['image']}" alt="Image du hackathon">` : ''}
         </section> 
@@ -370,37 +450,51 @@ const createMain = () => {
     const main = document.querySelector('main');
     main.innerHTML = `
     <div class="content-container flex flex-col justify-center items-center">
-        <div class="description card">
-            <div class="flexDiv">
-                 <i class="rounded" data-lucide="sparkle" stroke="#fff"></i>
-                <h2>Description & objectifs</h2>
+        <div class="card w-full">
+            <div class="flex items-center gap-3 mb-4">
+                <i data-lucide="sparkle" class="w-8 h-8 p-1.5 rounded-full bg-[var(--blue-opac)]" stroke="var(--blue)"></i>
+                <h2 class="text-xl font-semibold">Description & objectifs</h2>
             </div>
-        <p class="flexDiv">${hackathon['description']}</p>
+            <div class="prose max-w-none text-[var(--text-secondary)]">
+                ${hackathon['description']}
+            </div>
         </div>
 
-
-            <div class="card w-full" style="text-align:left!important;">
-                
-                <p style="text-align:center;">Exigences</p>
-
-               <p class="flexDiv" style="margin:20px;">
-                    <i data-lucide="shield" stroke="var(--blue)"></i>
-                    Nombre max d'équipes: <strong>${hackathon['max_teams']}</strong>
-               </p>
-               
-               <p class="flexDiv">
-                    <i data-lucide="users" stroke='var(--blue)'></i>
-                    Taille max des équipes: <strong>${hackathon['max_team_members']}</strong>
-               </p>
+        <div class="card w-full">
+            <div class="flex items-center gap-3 mb-4">
+                <i data-lucide="shield-check" class="w-8 h-8 p-1.5 rounded-full bg-[var(--blue-opac)]" stroke="var(--blue)"></i>
+                <h2 class="text-xl font-semibold">Exigences</h2>
             </div>
+            <div class="space-y-4">
+                <div class="flex items-center gap-3 p-3 bg-[var(--bg-secondary)] rounded-lg">
+                    <div class="p-2 rounded-full bg-[var(--blue-opac)]">
+                        <i data-lucide="users" class="w-5 h-5" stroke="var(--blue)"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-[var(--text-secondary)]">Taille maximale des équipes</p>
+                        <p class="font-medium">${hackathon['max_team_members']} membres</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-[var(--bg-secondary)] rounded-lg">
+                    <div class="p-2 rounded-full bg-[var(--blue-opac)]">
+                        <i data-lucide="shield" class="w-5 h-5" stroke="var(--blue)"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-[var(--text-secondary)]">Nombre maximum d'équipes</p>
+                        <p class="font-medium">${hackathon['max_teams']} équipes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-            <div class="card">
-                <p class="flex justify-center" >
-                    <i data-lucide="clock" stroke="var(--blue)" class="bg-[var(--blue-opac)] p-2 rounded" ></i>
-                    <strong  style="font-size:1.6em;">Phases du hackathon</strong>
-                </p>
-
-                <div class="flex justify-center items-center mt-5">${renderHackathonPhases()}</div>
+            <div class="card w-full">
+                <div class="flex items-center gap-3 mb-4">
+                    <i data-lucide="clock" class="w-8 h-8 p-1.5 rounded-full bg-[var(--blue-opac)]" stroke="var(--blue)"></i>
+                    <h2 class="text-xl font-semibold">Phases du hackathon</h2>
+                </div>
+                <div class="space-y-4">
+                    ${renderHackathonPhases(hackathon['phases'])}
+                </div>
             </div>
 
             <div class="card" style="margin:10px 0;">
@@ -456,15 +550,147 @@ const createMain = () => {
         </p>
 
         </div>
-        <div class="card deadline">
-            <p class="flexDiv" style="transform:translateX(-10px);">
-                <i data-lucide="clock" stroke="white" class="bg-[#c23c3c] p-2 rounded" ></i>
-                <strong style="color:#c23c3c;">Date limite d'inscription:</strong> 
-            </p>
-            <strong class="flexDiv" style="margin:20px auto 0; text-align:center;">${hackathon['registration_deadline'].replace(' ', ' à ')}</strong>
+        <div class="card w-full" style=" border-radius: 8px; padding: 20px; margin: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 4px solid var(--primary);">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 flex items-center justify-center rounded-full" style="background: rgba(var(--primary-rgb), 0.1); color: var(--primary);">
+                    <i data-lucide="alarm-clock" width="20" height="20" stroke="currentColor" stroke-width="1.5"></i>
+                </div>
+                <h3 class="text-lg font-semibold" style="color: var(--text-primary);">Date limite d'inscription</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="flex items-center gap-3 p-3" style="background: var(--bg-secondary); border-radius: 8px;">
+                    <div class="w-8 h-8 flex items-center justify-center rounded-full" style="background: rgba(var(--primary-rgb), 0.1); color: var(--primary);">
+                        <i data-lucide="calendar" width="16" height="16" stroke="currentColor"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs" style="color: var(--text-secondary);">Date limite</p>
+                        <p class="text-sm font-medium" style="color: var(--text-primary);">${new Date(hackathon['registration_deadline']).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 p-3" style="background: var(--bg-secondary); border-radius: 8px;">
+                    <div class="w-8 h-8 flex items-center justify-center rounded-full" style="background: rgba(var(--primary-rgb), 0.1); color: var(--primary);">
+                        <i data-lucide="clock" width="16" height="16" stroke="currentColor"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs" style="color: var(--text-secondary);">Heure limite</p>
+                        <p class="text-sm font-medium" style="color: var(--text-primary);">${new Date(hackathon['registration_deadline']).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 p-3" style="background: rgba(var(--accent-rgb), 0.1); border-radius: 8px;">
+                    <div class="w-8 h-8 flex items-center justify-center rounded-full" style="background: rgba(var(--accent-rgb), 0.2); color: var(--accent);">
+                        <i data-lucide="hourglass" width="16" height="16" stroke="currentColor"></i>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-xs" style="color: var(--accent);">Temps restant</p>
+                        <p class="text-sm font-medium deadline-counter" style="color: var(--accent);" data-deadline="${new Date(hackathon['registration_deadline']).toISOString()}">Chargement...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4 w-full rounded-full h-1.5 overflow-hidden" style="background: var(--text-secondary);">
+                <div class="h-full rounded-full deadline-progress" style="width: 0%; background: var(--primary);"></div>
+            </div>
         </div>
+
     </div>
     `;
+
+    // Mettre à jour le compteur immédiatement puis toutes les minutes
+    updateDeadlineCounter();
+    setInterval(updateDeadlineCounter, 60000);
+}
+
+/**
+ * Met à jour le compteur de temps restant avant la fin des inscriptions
+ * et gère la barre de progression
+ */
+function updateDeadlineCounter() {
+    const now = new Date();
+    
+    document.querySelectorAll('.deadline-counter').forEach(element => {
+        try {
+            // Récupération de la date limite depuis l'attribut data
+            const deadlineString = element.getAttribute('data-deadline');
+            if (!deadlineString) {
+                console.error('Aucune date de deadline définie');
+                return;
+            }
+            
+            const deadline = new Date(deadlineString);
+            if (isNaN(deadline.getTime())) {
+                console.error('Format de date invalide:', deadlineString);
+                return;
+            }
+            
+            const diff = deadline - now; // différence en millisecondes
+            const card = element.closest('.card');
+            const progressBar = card?.querySelector('.deadline-progress');
+            
+            // Si la date est dépassée
+            if (diff <= 0) {
+                element.textContent = 'Inscriptions closes';
+                element.style.color = 'var(--red)';
+                if (progressBar) {
+                    progressBar.style.background = 'var(--red)';
+                    progressBar.style.width = '100%';
+                }
+                return;
+            }
+            
+            // Calcul du temps restant
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            
+            // Formatage du texte de temps restant
+            const remainingHours = hours % 24;
+            const remainingMinutes = minutes % 60;
+            
+            if (days > 0) {
+                element.textContent = `${days}j ${remainingHours}h restants`;
+            } else if (hours > 0) {
+                element.textContent = `${hours}h ${remainingMinutes}min restantes`;
+            } else {
+                element.textContent = `${minutes}min restantes`;
+            }
+            
+            // Calcul de la progression (sur 30 jours par défaut)
+            if (progressBar) {
+                // On définit la date de début comme étant 30 jours avant la deadline
+                const startDate = new Date(deadline);
+                startDate.setDate(deadline.getDate() - 30);
+                
+                const totalDuration = deadline - startDate;
+                const elapsed = now - startDate;
+                
+                // Calcul du pourcentage de progression
+                let progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+                
+                // Si la date de début est dans le futur
+                if (elapsed < 0) progress = 0;
+                
+                // Mise à jour de la barre de progression
+                progressBar.style.width = `${progress}%`;
+                
+                // Changement de couleur en fonction de la progression
+                if (progress > 80) {
+                    progressBar.style.background = 'var(--red)';
+                } else if (progress > 60) {
+                    progressBar.style.background = 'var(--warning)';
+                } else {
+                    progressBar.style.background = 'var(--success)';
+                }
+            }
+            
+        } catch (error) {
+            console.error('Erreur dans updateDeadlineCounter:', error);
+            element.textContent = 'Erreur de calcul';
+        }
+    });
 }
 
 // Fonction pour créer la modale
@@ -780,7 +1006,7 @@ const showRegistrationModal = async () => {
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = 'Inscription en cours...';
 
-                const response = await apiRequest(`/participants/${hackathon.id}/register-team`, {method: 'POST', body: JSON.stringify(userTeam)});
+                const response = await apiRequest(`/participants/${hackathon.id}/register-team`, { method: 'POST', body: JSON.stringify(userTeam) });
                 if (response.success) {
                     closeModal(modal, 'slide-to-top', () => {
                         showNotification('Félicitations !', response.message || 'Inscription reussie', 'success');
